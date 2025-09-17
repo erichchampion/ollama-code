@@ -1,0 +1,38 @@
+# Cursor AI Assistant Context
+
+## Project Overview
+**Ollama Code CLI** - A command-line interface tool that enables developers to delegate coding tasks directly to Ollama AI from their terminal environment.
+
+## Technical Stack
+- **Language**: TypeScript 5.9.2
+- **Runtime**: Node.js 18.0.0+
+- **Architecture**: Modular CLI application with plugin system
+- **Dependencies**: inquirer, ora, zod, uuid, node-fetch, open, table, terminal-link
+- **Testing**: Jest with TypeScript support
+- **Platform**: Cross-platform (Windows, macOS, Linux)
+
+## Recent Changes
+- **001-technical-specification**: Created comprehensive technical documentation including technical specification, architecture documentation, and implementation guidelines
+
+## Key Modules
+- **ai/**: Ollama AI client and integration
+- **auth/**: Authentication and connection management  
+- **cli/**: Command-line interface and argument parsing
+- **commands/**: Command registration and execution system
+- **config/**: Configuration management and validation
+- **errors/**: Error handling and formatting
+- **fs/**: File system operations
+- **terminal/**: Terminal interface and formatting
+- **utils/**: Utility functions and helpers
+
+## Development Guidelines
+- Use TypeScript strict mode
+- Follow modular architecture patterns
+- Implement comprehensive error handling
+- Write tests for all new functionality
+- Document all public interfaces
+- Use semantic versioning
+- Follow conventional commit messages
+
+## Current Focus
+Technical documentation creation and maintenance for the Ollama Code CLI project, including comprehensive technical specifications, architecture documentation, and development guidelines.

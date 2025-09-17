@@ -1,0 +1,12 @@
+{
+  "name": "ollama-code-project",
+  "version": "0.1.0",
+  "description": "Ollama Code CLI - Local AI coding assistant powered by Ollama",
+  "private": true,
+  "scripts": {
+    "install-cli": "./install.sh",
+    "test": "cd ollama-code && npm test"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

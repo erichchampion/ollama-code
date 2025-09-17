@@ -1,0 +1,220 @@
+name: Documentation Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.md'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'tests/docs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.md'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'tests/docs/**'
+      - '.github/workflows/docs.yml'
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  documentation-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Run documentation validation
+      run: npm run docs:validate
+      
+    - name: Run documentation linting
+      run: npm run docs:lint
+      
+    - name: Check documentation links
+      run: npm run docs:check-links
+      
+    - name: Run documentation tests
+      run: npm run test:docs
+      
+    - name: Verify code examples
+      run: npm run docs:verify-examples
+      
+    - name: Generate documentation
+      run: npm run docs:generate-all
+      
+    - name: Run full documentation maintenance
+      run: npm run docs:full-maintenance
+      
+    - name: Upload documentation test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: docs-test-results-${{ matrix.node-version }}
+        path: |
+          docs/
+          *.md
+          docs/example-verification-report.json
+          docs/maintenance-report.json
+        retention-days: 30
+        
+    - name: Comment PR with documentation status
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Check if documentation tests passed
+          const testResults = fs.existsSync('docs/example-verification-report.json') 
+            ? JSON.parse(fs.readFileSync('docs/example-verification-report.json', 'utf8'))
+            : null;
+            
+          const maintenanceResults = fs.existsSync('docs/maintenance-report.json')
+            ? JSON.parse(fs.readFileSync('docs/maintenance-report.json', 'utf8'))
+            : null;
+          
+          let comment = '## 📚 Documentation Test Results\n\n';
+          
+          if (testResults) {
+            comment += `- **Code Examples**: ${testResults.summary.passed}/${testResults.summary.total} passed (${testResults.summary.successRate})\n`;
+            if (testResults.summary.failed > 0) {
+              comment += `- **Failed Examples**: ${testResults.summary.failed}\n`;
+            }
+          }
+          
+          if (maintenanceResults) {
+            comment += `- **Maintenance Issues**: ${maintenanceResults.issues.length}\n`;
+            comment += `- **Consistency Issues**: ${maintenanceResults.consistencyIssues.length}\n`;
+          }
+          
+          comment += '\n### 📋 Documentation Status\n';
+          comment += '- ✅ Markdown validation\n';
+          comment += '- ✅ Link checking\n';
+          comment += '- ✅ Code example verification\n';
+          comment += '- ✅ Documentation tests\n';
+          comment += '- ✅ Documentation generation\n';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  documentation-deployment:
+    runs-on: ubuntu-latest
+    needs: documentation-tests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Generate documentation
+      run: npm run docs:generate-all
+      
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        publish_branch: gh-pages
+        keep_files: true
+        
+    - name: Create deployment status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha,
+            environment: 'documentation',
+            description: 'Documentation deployment',
+            auto_merge: false
+          });
+
+  documentation-scheduled-validation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run scheduled validation
+      run: |
+        npm run docs:validate
+        npm run docs:check-links
+        npm run docs:verify-examples
+        
+    - name: Create issue if validation fails
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = 'Documentation validation failed on schedule';
+          const body = `
+          ## Documentation Validation Failed
+          
+          The scheduled documentation validation has failed. Please check the following:
+          
+          1. Run \`npm run docs:validate\` locally
+          2. Run \`npm run docs:check-links\` locally  
+          3. Run \`npm run docs:verify-examples\` locally
+          4. Fix any issues found
+          
+          **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['documentation', 'bug', 'scheduled-validation']
+          });

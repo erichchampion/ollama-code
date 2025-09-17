@@ -1,0 +1,32 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://localhost"
+    },
+    {
+      "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^https://example.com"
+    }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^../",
+      "replacement": "https://github.com/erichchampion/ollama-code/blob/main/"
+    }
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept-Encoding": "gzip, deflate, br"
+      }
+    }
+  ],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "1000ms",
+  "aliveStatusCodes": [200, 206]
+}
