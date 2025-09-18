@@ -24,6 +24,9 @@ import {
   validateRequiredArgs
 } from '../utils/command-helpers.js';
 // import { toolCommand } from './tool.js';
+import { registerGitCommands } from './git-commands.js';
+import { registerTestingCommands } from './testing-commands.js';
+import { registerRefactoringCommands } from './refactoring-commands.js';
 
 /**
  * Register all commands
@@ -62,6 +65,15 @@ export function registerCommands(): void {
   registerListModelsCommand();
   registerPullModelCommand();
   registerSetModelCommand();
+
+  // Register enhanced git commands
+  registerGitCommands();
+
+  // Register testing commands
+  registerTestingCommands();
+
+  // Register refactoring commands
+  registerRefactoringCommands();
 
   // Register tool system command - temporarily disabled due to import issues
   // commandRegistry.register(toolCommand);
