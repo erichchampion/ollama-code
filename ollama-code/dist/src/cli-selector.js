@@ -16,6 +16,7 @@ import { UserError } from './errors/types.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
 import { initTerminal } from './terminal/index.js';
 import { parseCommandInput } from './utils/command-parser.js';
+import { initializeToolSystem } from './tools/index.js';
 import { INTERACTIVE_MODE_HELP, HELP_COMMAND_SUGGESTION, EXIT_COMMANDS } from './constants.js';
 import pkg from '../package.json' with { type: 'json' };
 // Get version from package.json
@@ -243,6 +244,8 @@ async function runSimpleMode(commandName, args) {
  * Run advanced mode (full command registry)
  */
 async function runAdvancedMode(commandName, args) {
+    // Initialize tool system
+    initializeToolSystem();
     // Register commands
     registerCommands();
     // Get the command
@@ -263,6 +266,8 @@ async function runAdvancedMode(commandName, args) {
  * Run interactive mode (command loop)
  */
 async function runInteractiveMode() {
+    // Initialize tool system
+    initializeToolSystem();
     // Register commands
     registerCommands();
     // Initialize terminal

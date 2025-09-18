@@ -17,6 +17,7 @@ import { UserError } from './errors/types.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
 import { initTerminal } from './terminal/index.js';
 import { parseCommandInput } from './utils/command-parser.js';
+import { initializeToolSystem } from './tools/index.js';
 import {
   HELP_OUTPUT_WIDTH,
   INTERACTIVE_MODE_HELP,
@@ -298,23 +299,26 @@ async function runSimpleMode(commandName: string, args: string[]): Promise<void>
  * Run advanced mode (full command registry)
  */
 async function runAdvancedMode(commandName: string, args: string[]): Promise<void> {
+  // Initialize tool system
+  initializeToolSystem();
+
   // Register commands
   registerCommands();
-  
+
   // Get the command
   const command = commandRegistry.get(commandName);
-  
+
   if (!command) {
     console.error(`Unknown command: ${commandName}`);
     console.error(HELP_COMMAND_SUGGESTION);
     process.exit(1);
   }
-  
+
   // Ensure Ollama server is running before initializing AI
   logger.info('Ensuring Ollama server is running...');
   await ensureOllamaServerRunning();
   await initAI();
-  
+
   // Execute the command
   await executeCommand(commandName, args);
 }
@@ -323,12 +327,15 @@ async function runAdvancedMode(commandName: string, args: string[]): Promise<voi
  * Run interactive mode (command loop)
  */
 async function runInteractiveMode(): Promise<void> {
+  // Initialize tool system
+  initializeToolSystem();
+
   // Register commands
   registerCommands();
-  
+
   // Initialize terminal
   const terminal = await initTerminal({});
-  
+
   console.log(`Ollama Code CLI v${version} - Interactive Mode`);
   console.log(`${INTERACTIVE_MODE_HELP}\n`);
   

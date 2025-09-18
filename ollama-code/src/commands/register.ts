@@ -12,6 +12,7 @@ import { isNonEmptyString } from '../utils/validation.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
+// import { toolCommand } from './tool.js';
 
 /**
  * Register all commands
@@ -50,7 +51,10 @@ export function registerCommands(): void {
   registerListModelsCommand();
   registerPullModelCommand();
   registerSetModelCommand();
-  
+
+  // Register tool system command - temporarily disabled due to import issues
+  // commandRegistry.register(toolCommand);
+
   // Mark registry as initialized
   commandRegistry.markInitialized();
 
