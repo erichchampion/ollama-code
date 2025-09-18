@@ -10,7 +10,7 @@
 import { commandRegistry, executeCommand, generateCommandHelp } from './commands/index.js';
 import { logger } from './utils/logger.js';
 import { formatErrorForDisplay } from './errors/formatter.js';
-import { initAI } from './ai/index.js';
+import { initAI, cleanupAI } from './ai/index.js';
 import { registerCommands } from './commands/register.js';
 import { UserError } from './errors/types.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
@@ -21,6 +21,51 @@ import { INTERACTIVE_MODE_HELP, HELP_COMMAND_SUGGESTION, EXIT_COMMANDS } from '.
 import pkg from '../package.json' with { type: 'json' };
 // Get version from package.json
 const version = pkg.version;
+/**
+ * Global cleanup function
+ */
+function cleanup() {
+    logger.debug('Performing global cleanup');
+    try {
+        cleanupAI();
+    }
+    catch (error) {
+        logger.error('Error during cleanup:', error);
+    }
+}
+/**
+ * Setup process exit handlers
+ */
+function setupExitHandlers() {
+    // Handle normal process exit
+    process.on('exit', () => {
+        cleanup();
+    });
+    // Handle SIGINT (Ctrl+C)
+    process.on('SIGINT', () => {
+        logger.debug('Received SIGINT signal');
+        cleanup();
+        process.exit(0);
+    });
+    // Handle SIGTERM
+    process.on('SIGTERM', () => {
+        logger.debug('Received SIGTERM signal');
+        cleanup();
+        process.exit(0);
+    });
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (error) => {
+        logger.error('Uncaught exception:', error);
+        cleanup();
+        process.exit(1);
+    });
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (reason) => {
+        logger.error('Unhandled promise rejection:', reason);
+        cleanup();
+        process.exit(1);
+    });
+}
 /**
  * Display help information
  */
@@ -258,9 +303,13 @@ async function runAdvancedMode(commandName, args) {
     // Ensure Ollama server is running before initializing AI
     logger.info('Ensuring Ollama server is running...');
     await ensureOllamaServerRunning();
+    // Initialize enhanced AI capabilities
+    logger.info('Initializing enhanced AI capabilities...');
     await initAI();
     // Execute the command
     await executeCommand(commandName, args);
+    // Cleanup resources after standalone command execution
+    cleanup();
 }
 /**
  * Run interactive mode (command loop)
@@ -311,6 +360,8 @@ async function runInteractiveMode() {
             // Ensure Ollama server is running before initializing AI
             terminal.info('Ensuring Ollama server is running...');
             await ensureOllamaServerRunning();
+            // Initialize enhanced AI capabilities
+            terminal.info('Initializing enhanced AI capabilities...');
             await initAI();
             // Execute the command
             await executeCommand(commandName, commandArgs);
@@ -321,12 +372,16 @@ async function runInteractiveMode() {
         }
     }
     console.log('Goodbye!');
+    // Cleanup resources when interactive mode exits
+    cleanup();
 }
 /**
  * Initialize the CLI
  */
 async function initCLI() {
     try {
+        // Setup process exit handlers for cleanup
+        setupExitHandlers();
         // Parse command-line arguments
         const { mode, commandName, args } = parseCommandLineArgs();
         // Route to appropriate mode

@@ -5,12 +5,15 @@
  */
 import { commandRegistry, ArgType } from './index.js';
 import { logger } from '../utils/logger.js';
-import { getAIClient, initAI } from '../ai/index.js';
+import { getAIClient, getEnhancedClient, isEnhancedAIInitialized, initAI, cleanupAI } from '../ai/index.js';
 import { fileExists, readTextFile } from '../fs/operations.js';
 import { isNonEmptyString } from '../utils/validation.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
+import { createSpinner } from '../utils/spinner.js';
+import { MAX_SEARCH_RESULTS } from '../constants.js';
+import { validateNonEmptyString, validateFileExists } from '../utils/command-helpers.js';
 // import { toolCommand } from './tool.js';
 /**
  * Register all commands
@@ -63,12 +66,39 @@ function registerAskCommand() {
         handler: async (args) => {
             try {
                 const { question } = args;
-                if (!isNonEmptyString(question)) {
-                    console.error('Please provide a question to ask Ollama.');
+                if (!validateNonEmptyString(question, 'question')) {
                     return;
                 }
+                // Use enhanced AI client if available, otherwise fall back to basic client
+                let aiResponse;
+                if (isEnhancedAIInitialized()) {
+                    const spinner = createSpinner('Thinking...');
+                    spinner.start();
+                    try {
+                        const enhancedClient = getEnhancedClient();
+                        aiResponse = await enhancedClient.complete(question, {
+                            model: args.model,
+                            useProjectContext: true,
+                            enableToolUse: false // Don't use tools for simple ask command
+                        });
+                        spinner.succeed('Response ready');
+                        const responseText = aiResponse.content;
+                        console.log(responseText);
+                        if (responseText) {
+                            console.log('\n');
+                        }
+                        else {
+                            console.log('No response received');
+                        }
+                        return;
+                    }
+                    catch (error) {
+                        spinner.fail('Request failed');
+                        throw error;
+                    }
+                }
                 console.log('Asking Ollama...\n');
-                // Get AI client and send question with streaming
+                // Fall back to basic streaming client
                 const aiClient = getAIClient();
                 // Create abort controller for cancellation
                 const abortController = new AbortController();
@@ -145,26 +175,39 @@ function registerExplainCommand() {
             try {
                 const { file } = args;
                 // Validate file path
-                if (!isNonEmptyString(file)) {
-                    console.error('Please provide a file path to explain.');
+                if (!await validateFileExists(file)) {
                     return;
                 }
-                // Check if file exists
-                if (!await fileExists(file)) {
-                    console.error(`File not found: ${file}`);
-                    return;
-                }
-                console.log(`Explaining ${file}...\n`);
                 // Read the file
                 const fileContent = await readTextFile(file);
                 // Construct the prompt
                 const prompt = `Please explain this code:\n\n\`\`\`\n${fileContent}\n\`\`\``;
-                // Get AI client and send request
-                const aiClient = getAIClient();
-                const result = await aiClient.complete(prompt);
-                // Extract and print the response
-                const responseText = result.message?.content || 'No explanation received';
-                console.log(responseText);
+                const spinner = createSpinner(`Analyzing ${file}...`);
+                spinner.start();
+                try {
+                    // Use enhanced AI client if available for better context awareness
+                    let responseText;
+                    if (isEnhancedAIInitialized()) {
+                        const enhancedClient = getEnhancedClient();
+                        const aiResponse = await enhancedClient.complete(prompt, {
+                            useProjectContext: true,
+                            enableToolUse: false
+                        });
+                        responseText = aiResponse.content;
+                    }
+                    else {
+                        // Fall back to basic client
+                        const aiClient = getAIClient();
+                        const result = await aiClient.complete(prompt);
+                        responseText = result.message?.content || 'No explanation received';
+                    }
+                    spinner.succeed('Analysis complete');
+                    console.log(responseText);
+                }
+                catch (error) {
+                    spinner.fail('Analysis failed');
+                    throw error;
+                }
             }
             catch (error) {
                 console.error('Error explaining code:', formatErrorForDisplay(error));
@@ -220,11 +263,22 @@ function registerRefactorCommand() {
                 const fileContent = await readTextFile(file);
                 // Construct the prompt
                 const prompt = `Please refactor this code to improve ${focus}:\n\n\`\`\`\n${fileContent}\n\`\`\``;
-                // Get AI client and send request
-                const aiClient = getAIClient();
-                const result = await aiClient.complete(prompt);
-                // Extract and print the response
-                const responseText = result.message?.content || 'No refactored code received';
+                // Use enhanced AI client if available for better context awareness
+                let responseText;
+                if (isEnhancedAIInitialized()) {
+                    const enhancedClient = getEnhancedClient();
+                    const aiResponse = await enhancedClient.complete(prompt, {
+                        useProjectContext: true,
+                        enableToolUse: true // Enable tools for refactoring
+                    });
+                    responseText = aiResponse.content;
+                }
+                else {
+                    // Fall back to basic client
+                    const aiClient = getAIClient();
+                    const result = await aiClient.complete(prompt);
+                    responseText = result.message?.content || 'No refactored code received';
+                }
                 console.log(responseText);
             }
             catch (error) {
@@ -274,13 +328,7 @@ function registerFixCommand() {
             try {
                 const { file, issue } = args;
                 // Validate file path
-                if (!isNonEmptyString(file)) {
-                    console.error('Please provide a file path to fix.');
-                    return;
-                }
-                // Check if file exists
-                if (!await fileExists(file)) {
-                    console.error(`File not found: ${file}`);
+                if (!await validateFileExists(file)) {
                     return;
                 }
                 console.log(`Fixing ${file}...\n`);
@@ -291,11 +339,22 @@ function registerFixCommand() {
                 if (isNonEmptyString(issue)) {
                     prompt += `\n\nThe specific issue is: ${issue}`;
                 }
-                // Get AI client and send request
-                const aiClient = getAIClient();
-                const result = await aiClient.complete(prompt);
-                // Extract and print the response
-                const responseText = result.message?.content || 'No fixed code received';
+                // Use enhanced AI client if available for better context awareness
+                let responseText;
+                if (isEnhancedAIInitialized()) {
+                    const enhancedClient = getEnhancedClient();
+                    const aiResponse = await enhancedClient.complete(prompt, {
+                        useProjectContext: true,
+                        enableToolUse: true // Enable tools for fixing
+                    });
+                    responseText = aiResponse.content;
+                }
+                else {
+                    // Fall back to basic client
+                    const aiClient = getAIClient();
+                    const result = await aiClient.complete(prompt);
+                    responseText = result.message?.content || 'No fixed code received';
+                }
                 console.log(responseText);
             }
             catch (error) {
@@ -347,15 +406,34 @@ function registerGenerateCommand() {
                     console.error('Please provide a prompt for code generation.');
                     return;
                 }
-                console.log(`Generating ${language} code...\n`);
                 // Construct the prompt
                 const fullPrompt = `Generate ${language} code that ${prompt}. Please provide only the code without explanations.`;
-                // Get AI client and send request
-                const aiClient = getAIClient();
-                const result = await aiClient.complete(fullPrompt);
-                // Extract and print the response
-                const responseText = result.message?.content || 'No code generated';
-                console.log(responseText);
+                const spinner = createSpinner(`Generating ${language} code...`);
+                spinner.start();
+                try {
+                    // Use enhanced AI client if available for better context awareness
+                    let responseText;
+                    if (isEnhancedAIInitialized()) {
+                        const enhancedClient = getEnhancedClient();
+                        const aiResponse = await enhancedClient.complete(fullPrompt, {
+                            useProjectContext: true,
+                            enableToolUse: true // Enable tools for generation planning
+                        });
+                        responseText = aiResponse.content;
+                    }
+                    else {
+                        // Fall back to basic client
+                        const aiClient = getAIClient();
+                        const result = await aiClient.complete(fullPrompt);
+                        responseText = result.message?.content || 'No code generated';
+                    }
+                    spinner.succeed('Code generated');
+                    console.log(responseText);
+                }
+                catch (error) {
+                    spinner.fail('Generation failed');
+                    throw error;
+                }
             }
             catch (error) {
                 console.error('Error generating code:', formatErrorForDisplay(error));
@@ -548,7 +626,8 @@ function registerSearchCommand() {
         category: 'system',
         async handler(args) {
             logger.info('Executing search command');
-            const term = args.term;
+            // Support both positional argument and --pattern flag
+            const term = args.term || args.pattern;
             if (!isNonEmptyString(term)) {
                 throw createUserError('Search term is required', {
                     category: ErrorCategory.VALIDATION,
@@ -559,34 +638,100 @@ function registerSearchCommand() {
                 logger.info(`Searching for: ${term}`);
                 // Get search directory (current directory if not specified)
                 const searchDir = args.dir || process.cwd();
-                // Execute the search using ripgrep if available, otherwise fall back to simple grep
-                const { exec } = await import('child_process');
-                const util = await import('util');
-                const execPromise = util.promisify(exec);
-                let searchCommand;
-                const searchPattern = term.includes(' ') ? `"${term}"` : term;
+                const spinner = createSpinner(`Searching for "${term}"...`);
+                spinner.start();
                 try {
-                    // Try to use ripgrep (rg) for better performance
-                    await execPromise('rg --version');
-                    // Ripgrep is available, use it
-                    searchCommand = `rg --color=always --line-number --heading --smart-case ${searchPattern} ${searchDir}`;
+                    // Execute the search using ripgrep if available, otherwise fall back to simple grep
+                    const { exec } = await import('child_process');
+                    const util = await import('util');
+                    const execPromise = util.promisify(exec);
+                    let searchCommand;
+                    const searchPattern = term.includes(' ') ? `"${term}"` : term;
+                    // Build file type filters
+                    let typeFilter = '';
+                    if (args.type) {
+                        const fileType = args.type.toLowerCase();
+                        // Common file extensions for different types
+                        const typeMap = {
+                            'js': ['js', 'jsx', 'mjs', 'cjs'],
+                            'javascript': ['js', 'jsx', 'mjs', 'cjs'],
+                            'ts': ['ts', 'tsx'],
+                            'typescript': ['ts', 'tsx'],
+                            'py': ['py', 'pyw'],
+                            'python': ['py', 'pyw'],
+                            'java': ['java'],
+                            'cpp': ['cpp', 'cxx', 'cc', 'c++'],
+                            'c': ['c', 'h'],
+                            'go': ['go'],
+                            'rust': ['rs'],
+                            'php': ['php'],
+                            'ruby': ['rb'],
+                            'swift': ['swift'],
+                            'kotlin': ['kt'],
+                            'scala': ['scala'],
+                            'html': ['html', 'htm'],
+                            'css': ['css'],
+                            'scss': ['scss', 'sass'],
+                            'md': ['md', 'markdown'],
+                            'json': ['json'],
+                            'yaml': ['yaml', 'yml'],
+                            'xml': ['xml'],
+                            'sh': ['sh', 'bash']
+                        };
+                        const extensions = typeMap[fileType] || [fileType];
+                        typeFilter = extensions.join(',');
+                    }
+                    try {
+                        // Try to use ripgrep (rg) for better performance
+                        await execPromise('rg --version');
+                        // Ripgrep is available, use it with limits and exclusions
+                        let rgCommand = `rg --color=always --line-number --heading --smart-case --max-count ${MAX_SEARCH_RESULTS} --glob '!node_modules/*' --glob '!dist/*' --glob '!.git/*' --glob '!*.log'`;
+                        if (typeFilter) {
+                            // Add file type filter
+                            rgCommand += ` --type-add 'search:*.{${typeFilter}}' --type search`;
+                        }
+                        searchCommand = `${rgCommand} ${searchPattern} ${searchDir}`;
+                    }
+                    catch {
+                        // Fall back to grep (available on most Unix systems) with exclusions and head limit
+                        let grepCommand = `grep -r --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude='*.log' --color=always -n`;
+                        if (typeFilter) {
+                            // Add file type includes for grep
+                            const includePatterns = typeFilter.split(',').map(ext => `--include="*.${ext}"`).join(' ');
+                            grepCommand += ` ${includePatterns}`;
+                        }
+                        searchCommand = `${grepCommand} "${term}" ${searchDir} | head -${MAX_SEARCH_RESULTS}`;
+                    }
+                    logger.debug(`Running search command: ${searchCommand}`);
+                    const { stdout, stderr } = await execPromise(searchCommand, {
+                        maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+                        timeout: 30000 // 30 second timeout
+                    });
+                    if (stderr) {
+                        spinner.setText('Search completed with warnings');
+                        spinner.stop();
+                        console.error(stderr);
+                    }
+                    else {
+                        spinner.succeed('Search completed');
+                    }
+                    if (stdout) {
+                        console.log(stdout);
+                        // Check if results were likely truncated
+                        const lineCount = stdout.split('\n').length;
+                        if (lineCount >= MAX_SEARCH_RESULTS) {
+                            console.log(`\n⚠️  Results limited to ${MAX_SEARCH_RESULTS} matches. Use a more specific search term for fewer results.`);
+                        }
+                    }
+                    else {
+                        console.log(`No results found for '${term}'`);
+                    }
+                    logger.info('Search completed');
                 }
-                catch {
-                    // Fall back to grep (available on most Unix systems)
-                    searchCommand = `grep -r --color=always -n "${term}" ${searchDir}`;
+                catch (searchError) {
+                    spinner.fail('Search failed');
+                    throw searchError;
                 }
-                logger.debug(`Running search command: ${searchCommand}`);
-                const { stdout, stderr } = await execPromise(searchCommand);
-                if (stderr) {
-                    console.error(stderr);
-                }
-                if (stdout) {
-                    console.log(stdout);
-                }
-                else {
-                    console.log(`No results found for '${term}'`);
-                }
-                logger.info('Search completed');
             }
             catch (error) {
                 logger.error(`Error searching codebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -602,7 +747,19 @@ function registerSearchCommand() {
                 description: 'The term to search for',
                 type: ArgType.STRING,
                 position: 0,
-                required: true
+                required: false // Made optional since --pattern can be used instead
+            },
+            {
+                name: 'pattern',
+                description: 'Search pattern (alternative to positional term)',
+                type: ArgType.STRING,
+                shortFlag: 'p'
+            },
+            {
+                name: 'type',
+                description: 'File type to search (js, ts, py, java, etc.)',
+                type: ArgType.STRING,
+                shortFlag: 't'
             },
             {
                 name: 'dir',
@@ -614,7 +771,9 @@ function registerSearchCommand() {
         examples: [
             'search "function main"',
             'search TODO',
-            'search "import React" --dir ./src'
+            'search "import React" --dir ./src',
+            'search --pattern "function" --type js',
+            'search --pattern "class" --type ts --dir ./src'
         ]
     };
     commandRegistry.register(command);
@@ -958,6 +1117,13 @@ function registerExitCommand() {
         async handler() {
             logger.info('Executing exit command');
             console.log('Exiting Ollama Code CLI...');
+            // Cleanup resources before exiting
+            try {
+                cleanupAI();
+            }
+            catch (error) {
+                logger.error('Error during cleanup:', error);
+            }
             process.exit(0);
         },
         examples: [
@@ -978,6 +1144,13 @@ function registerQuitCommand() {
         async handler() {
             logger.info('Executing quit command');
             console.log('Exiting Ollama Code CLI...');
+            // Cleanup resources before exiting
+            try {
+                cleanupAI();
+            }
+            catch (error) {
+                logger.error('Error during cleanup:', error);
+            }
             process.exit(0);
         },
         examples: [

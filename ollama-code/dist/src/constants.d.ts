@@ -77,6 +77,20 @@ export declare const LOG_LEVELS: {
 };
 /** Commands that exit interactive mode */
 export declare const EXIT_COMMANDS: readonly ["exit", "quit", "q", ".exit"];
+/** Maximum number of files to analyze for project context */
+export declare const MAX_FILES_FOR_ANALYSIS = 50;
+/** Maximum number of files to include in context */
+export declare const MAX_FILES_LIMIT = 10;
+/** Maximum conversation history items to keep */
+export declare const MAX_CONVERSATION_HISTORY = 5;
+/** Maximum number of file watchers to maintain */
+export declare const MAX_FILE_WATCHERS = 10;
+/** Maximum number of relevant files to include in AI context */
+export declare const MAX_RELEVANT_FILES = 5;
+/** Maximum AI conversation history length */
+export declare const MAX_AI_CONVERSATION_HISTORY = 20;
+/** Maximum search results to return */
+export declare const MAX_SEARCH_RESULTS = 100;
 /** Application name */
 export declare const APP_NAME = "ollama-code";
 /** CLI command name */

@@ -328,4 +328,25 @@ function getLanguageFromFilePath(filePath: string): string {
   };
   
   return languageMap[extension] || '';
+}
+
+/**
+ * Generate a system prompt for enhanced AI
+ */
+export function generateSystemPrompt(context?: any): string {
+  return `${CODE_ASSISTANT_SYSTEM_PROMPT}
+
+You have access to project context and tools to assist with your tasks.
+Use the available tools effectively to provide accurate and helpful responses.`;
+}
+
+/**
+ * Generate a prompt for tool planning
+ */
+export function generateToolPlanningPrompt(userRequest: string, availableTools: string[]): string {
+  return `Given the user request: "${userRequest}"
+
+Available tools: ${availableTools.join(', ')}
+
+Plan which tools to use and in what order to fulfill this request effectively.`;
 } 

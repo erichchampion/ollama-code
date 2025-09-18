@@ -10,6 +10,9 @@ import { BaseTool, ToolExecution, ToolExecutionContext, ToolOrchestratorConfig, 
 import { toolRegistry } from './registry.js';
 import { logger } from '../utils/logger.js';
 
+// Re-export OrchestrationPlan for external use
+export type { OrchestrationPlan } from './types.js';
+
 interface ExecutionEvent {
   type: 'start' | 'progress' | 'complete' | 'error';
   execution: ToolExecution;
@@ -241,7 +244,7 @@ export class ToolOrchestrator extends EventEmitter {
   }
 
   private generateExecutionId(): string {
-    return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `exec_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private generateCacheKey(toolName: string, parameters: Record<string, any>): string {

@@ -5,16 +5,22 @@
  * This module handles initialization, configuration, and access to AI services.
  */
 import { OllamaClient } from './ollama-client.js';
+import { EnhancedAIClient } from './enhanced-client.js';
+import { ProjectContext } from './context.js';
+import { TaskPlanner } from './task-planner.js';
 import { logger } from '../utils/logger.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
-// Singleton AI client instance
+// Singleton instances
 let aiClient = null;
+let enhancedClient = null;
+let projectContext = null;
+let taskPlanner = null;
 /**
- * Initialize the AI module
+ * Initialize the AI module with enhanced capabilities
  */
 export async function initAI(config = {}) {
-    logger.info('Initializing AI module');
+    logger.info('Initializing enhanced AI module');
     try {
         // Create Ollama client
         aiClient = new OllamaClient(config);
@@ -27,8 +33,21 @@ export async function initAI(config = {}) {
                 resolution: 'Make sure Ollama is running. Try running "ollama serve" to start the server.'
             });
         }
-        logger.info('AI module initialized successfully');
-        return aiClient;
+        // Initialize project context
+        const projectRoot = process.cwd();
+        projectContext = new ProjectContext(projectRoot);
+        await projectContext.initialize();
+        // Initialize enhanced AI client
+        enhancedClient = new EnhancedAIClient(aiClient, projectContext);
+        // Initialize task planner
+        taskPlanner = new TaskPlanner(enhancedClient, projectContext);
+        logger.info('Enhanced AI module initialized successfully');
+        return {
+            ollamaClient: aiClient,
+            enhancedClient,
+            projectContext,
+            taskPlanner
+        };
     }
     catch (error) {
         logger.error('Failed to initialize AI module', error);
@@ -40,7 +59,7 @@ export async function initAI(config = {}) {
     }
 }
 /**
- * Get the AI client instance
+ * Get the basic AI client instance
  */
 export function getAIClient() {
     if (!aiClient) {
@@ -52,12 +71,79 @@ export function getAIClient() {
     return aiClient;
 }
 /**
+ * Get the enhanced AI client instance
+ */
+export function getEnhancedClient() {
+    if (!enhancedClient) {
+        throw createUserError('Enhanced AI client not initialized', {
+            category: ErrorCategory.INITIALIZATION,
+            resolution: 'Make sure to call initAI() before using enhanced AI capabilities.'
+        });
+    }
+    return enhancedClient;
+}
+/**
+ * Get the project context instance
+ */
+export function getProjectContext() {
+    if (!projectContext) {
+        throw createUserError('Project context not initialized', {
+            category: ErrorCategory.INITIALIZATION,
+            resolution: 'Make sure to call initAI() before using project context capabilities.'
+        });
+    }
+    return projectContext;
+}
+/**
+ * Get the task planner instance
+ */
+export function getTaskPlanner() {
+    if (!taskPlanner) {
+        throw createUserError('Task planner not initialized', {
+            category: ErrorCategory.INITIALIZATION,
+            resolution: 'Make sure to call initAI() before using task planning capabilities.'
+        });
+    }
+    return taskPlanner;
+}
+/**
  * Check if AI module is initialized
  */
 export function isAIInitialized() {
     return !!aiClient;
 }
-// Re-export types and components
+/**
+ * Check if enhanced AI capabilities are initialized
+ */
+export function isEnhancedAIInitialized() {
+    return !!(aiClient && enhancedClient && projectContext && taskPlanner);
+}
+/**
+ * Cleanup all AI resources
+ */
+export function cleanupAI() {
+    logger.debug('Cleaning up AI resources');
+    try {
+        // Cleanup project context (closes file watchers)
+        if (projectContext) {
+            projectContext.cleanup();
+        }
+        // Clear singleton instances
+        aiClient = null;
+        enhancedClient = null;
+        projectContext = null;
+        taskPlanner = null;
+        logger.debug('AI resources cleanup completed');
+    }
+    catch (error) {
+        logger.error('Error during AI cleanup:', error);
+    }
+}
+// Re-export core types and components
 export * from './ollama-client.js';
 export * from './prompts.js';
+// Re-export enhanced AI components
+export { ProjectContext } from './context.js';
+export { EnhancedAIClient } from './enhanced-client.js';
+export { TaskPlanner } from './task-planner.js';
 //# sourceMappingURL=index.js.map

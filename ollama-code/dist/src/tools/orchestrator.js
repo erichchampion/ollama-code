@@ -183,7 +183,7 @@ export class ToolOrchestrator extends EventEmitter {
         this.activeExecutions.clear();
     }
     generateExecutionId() {
-        return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `exec_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     }
     generateCacheKey(toolName, parameters) {
         const paramString = JSON.stringify(parameters, Object.keys(parameters).sort());

@@ -382,6 +382,76 @@ ollama-code
 > list-models
 ```
 
+### What ollama-code Thinks of Itself
+```
+➜  ollama-code git:(main) ✗ ./dist/src/cli-selector.js --mode advanced explain src/index.ts
+[2025-09-18T16:35:18.337Z] INFO: Tool system initialized successfully
+[2025-09-18T16:35:18.339Z] INFO: Commands registered successfully
+[2025-09-18T16:35:18.339Z] INFO: Ensuring Ollama server is running...
+[2025-09-18T16:35:18.379Z] INFO: Initializing enhanced AI capabilities...
+[2025-09-18T16:35:18.379Z] INFO: Initializing enhanced AI module
+[2025-09-18T16:35:18.386Z] INFO: Initializing project context for: /Users/erich/git/github/erichchampion/ollama-code/ollama-code
+[2025-09-18T16:35:19.173Z] INFO: Project context initialized successfully
+[2025-09-18T16:35:19.174Z] INFO: Enhanced AI module initialized successfully
+Explaining src/index.ts...
+
+This code is a command-line interface (CLI) for an application called Ollama Code. It appears to be a comprehensive tool that integrates various subsystems, such as AI processing, codebase analysis, file operations, and telemetry.
+
+### Key Components
+
+1. **Initialization (`initialize` function)**:
+   - **Purpose**: This function is responsible for setting up all the necessary subsystems before starting the main loop.
+   - **Process**:
+     1. **Error Handling**: Initializes error handling to manage any fatal errors that occur during initialization.
+     2. **Configuration Loading**: Loads the configuration file (`loadConfig`).
+     3. **Subsystem Initialization**: Initializes each of the following subsystems asynchronously:
+        - Terminal
+        - AI Client
+        - Codebase Analysis
+        - File Operations
+        - Execution Environment
+        - Command Processor
+        - Telemetry (if enabled)
+   - **Error Handling**: If any error occurs during initialization, it logs the error and handles it using the `errors` subsystem.
+
+2. **Main Loop (`run` function)**:
+   - **Purpose**: This function starts the main loop of the application after all subsystems have been initialized.
+   - **Process**:
+     1. **Display Welcome Message**: Uses the terminal to display a welcome message.
+     2. **Background Analysis**: Starts background codebase analysis using the `codebase` subsystem.
+     3. **Command Loop**: Enters the main command loop where commands can be processed.
+
+3. **Shutdown (`shutdown` function)**:
+   - **Purpose**: This function gracefully shuts down the application, cleaning up any resources and submitting telemetry data if enabled.
+   - **Process**:
+     1. **Stop Background Tasks**: Stops background codebase analysis.
+     2. **Telemetry Submission**: Submits telemetry data using the `telemetry` subsystem (if enabled).
+     3. **Service Disconnection**: Disconnects from any services used by the AI client.
+
+4. **Signal Handling (`setupProcessHandlers` function)**:
+   - **Purpose**: This function sets up handlers for process signals to ensure a clean shutdown.
+   - **Signals Handled**:
+     - `SIGINT`: Received when the user interrupts the application (e.g., via Ctrl+C).
+     - `SIGTERM`: Received when the application is terminated by an external signal.
+     - `unhandledRejection`: Handles unhandled promise rejections.
+     - `uncaughtException`: Handles uncaught exceptions.
+
+5. **Main Entry Point (`main` function)**:
+   - **Purpose**: This is the main entry point of the application, which initializes the subsystems, sets up signal handlers, and runs the main loop.
+   - **Process**:
+     1. **Initialization**: Initializes the application using the `initialize` function.
+     2. **Signal Handling**: Sets up process signal handlers.
+     3. **Main Loop**: Runs the main loop using the `run` function.
+
+### Key Features
+
+- **Modular Architecture**: The code is organized into separate modules for each subsystem (`ai`, `terminal`, `codebase`, `commands`, etc.), making it easier to maintain and scale.
+- **Error Handling**: Robust error handling mechanisms are in place, ensuring that any issues during initialization or runtime are logged and managed appropriately.
+- **Telemetry**: Telemetry data can be submitted if enabled, providing insights into the application's usage and performance.
+
+This code provides a solid foundation for a complex CLI tool, ensuring that all subsystems are properly initialized and managed throughout the lifecycle of the application.
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -508,6 +578,5 @@ ollama-code pull-model phi4:latest
 
 ## Acknowledgments
 
-- Built on top of the Ollama Code CLI architecture
 - Powered by [Ollama](https://ollama.ai) for local AI inference
 - Inspired by the need for privacy-focused, local AI coding assistants

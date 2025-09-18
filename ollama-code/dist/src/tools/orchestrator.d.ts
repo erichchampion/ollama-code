@@ -6,6 +6,7 @@
  */
 import { EventEmitter } from 'events';
 import { ToolExecutionContext, ToolOrchestratorConfig, ToolResult, OrchestrationPlan } from './types.js';
+export type { OrchestrationPlan } from './types.js';
 export declare class ToolOrchestrator extends EventEmitter {
     private config;
     private activeExecutions;

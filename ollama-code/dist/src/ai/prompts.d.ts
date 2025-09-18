@@ -89,3 +89,11 @@ export declare function createAssistantMessage(content: string): Message;
  * Create a message with file context
  */
 export declare function createFileContextMessage(filePath: string, content: string, language?: string): string;
+/**
+ * Generate a system prompt for enhanced AI
+ */
+export declare function generateSystemPrompt(context?: any): string;
+/**
+ * Generate a prompt for tool planning
+ */
+export declare function generateToolPlanningPrompt(userRequest: string, availableTools: string[]): string;
