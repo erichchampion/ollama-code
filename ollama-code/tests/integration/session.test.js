@@ -58,7 +58,7 @@ describe('Session Commands', () => {
       expect(result.exitCode).toBe(0);
       verifyOutput(result.stdout, [
         'Ollama Code CLI',
-        'Interactive mode (default)'
+        'Advanced mode (default)'
       ]);
     });
   });

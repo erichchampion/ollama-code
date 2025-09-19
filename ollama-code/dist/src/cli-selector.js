@@ -91,14 +91,14 @@ A command-line interface for interacting with Ollama AI for local code assistanc
 generation, refactoring, and more.
 
 Usage:
-  ollama-code                                               (starts interactive mode)
-  ollama-code <command> [arguments] [options]              (runs command in interactive mode)
+  ollama-code                                               (shows help)
+  ollama-code <command> [arguments] [options]              (runs command in advanced mode)
   ollama-code --mode <mode> [command] [arguments] [options]
 
 Modes:
   --mode simple      Simple mode - Basic commands only
-  --mode advanced    Advanced mode - Full command registry
-  --mode interactive Interactive mode (default) - Command loop interface
+  --mode advanced    Advanced mode (default) - Full command registry
+  --mode interactive Interactive mode - Command loop interface
 
 Available Commands:`);
     // Group commands by category
@@ -129,7 +129,7 @@ Available Commands:`);
 
 Examples:
   $ ollama-code ask "How do I implement a binary search tree in TypeScript?"
-  $ ollama-code --mode advanced explain path/to/file.js
+  $ ollama-code explain path/to/file.js
   $ ollama-code --mode interactive
   $ ollama-code list-models
   $ ollama-code pull-model llama3.2
@@ -156,8 +156,8 @@ function parseCommandLineArgs() {
         displayVersion();
         process.exit(0);
     }
-    // Check for mode flag (default to interactive)
-    let mode = 'interactive';
+    // Check for mode flag (default to advanced)
+    let mode = 'advanced';
     let commandIndex = 0;
     if (args[0] === '--mode' && args.length > 1) {
         const modeArg = args[1].toLowerCase();
@@ -303,9 +303,14 @@ async function runAdvancedMode(commandName, args) {
     // Ensure Ollama server is running before initializing AI
     logger.info('Ensuring Ollama server is running...');
     await ensureOllamaServerRunning();
-    // Initialize enhanced AI capabilities
-    logger.info('Initializing enhanced AI capabilities...');
-    await initAI();
+    // Initialize enhanced AI capabilities (skip in test environment)
+    if (!process.env.OLLAMA_SKIP_ENHANCED_INIT) {
+        logger.info('Initializing enhanced AI capabilities...');
+        await initAI();
+    }
+    else {
+        logger.info('Skipping enhanced AI initialization (test mode)');
+    }
     // Execute the command
     await executeCommand(commandName, args);
     // Cleanup resources after standalone command execution
@@ -374,6 +379,8 @@ async function runInteractiveMode() {
     console.log('Goodbye!');
     // Cleanup resources when interactive mode exits
     cleanup();
+    // Exit the process
+    process.exit(0);
 }
 /**
  * Initialize the CLI

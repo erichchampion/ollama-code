@@ -37,18 +37,19 @@ describe('Integration Test Suite', () => {
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Ollama Code CLI');
       expect(result.stdout).toContain('Usage:');
-      expect(result.stdout).toContain('Interactive mode (default)');
+      expect(result.stdout).toContain('Advanced mode (default)');
     });
 
-    test('should start in interactive mode by default', async () => {
+    test('should show help when no command provided', async () => {
       const result = await execCLI([], {
         timeout: 5000,
-        input: 'exit\n', // Send exit command immediately
         env: testEnv
       });
 
-      // Should start interactive mode and exit cleanly
-      expect([0, 1]).toContain(result.exitCode);
+      // Should show help and exit cleanly
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Usage:');
+      expect(result.stdout).toContain('Available Commands:');
     });
 
     test('should handle invalid mode gracefully', async () => {

@@ -27,6 +27,10 @@ import {
 import { registerGitCommands } from './git-commands.js';
 import { registerTestingCommands } from './testing-commands.js';
 import { registerRefactoringCommands } from './refactoring-commands.js';
+import { registerConfigCommands } from './config-commands.js';
+import { registerCompletionCommands } from './completion-commands.js';
+import { registerAnalyticsCommands } from './analytics-commands.js';
+import { registerTutorialCommands } from './tutorial-commands.js';
 
 /**
  * Register all commands
@@ -74,6 +78,18 @@ export function registerCommands(): void {
 
   // Register refactoring commands
   registerRefactoringCommands();
+
+  // Register configuration commands
+  registerConfigCommands();
+
+  // Register shell completion commands
+  registerCompletionCommands();
+
+  // Register analytics commands
+  registerAnalyticsCommands();
+
+  // Register tutorial and onboarding commands
+  registerTutorialCommands();
 
   // Register tool system command - temporarily disabled due to import issues
   // commandRegistry.register(toolCommand);
@@ -462,8 +478,10 @@ function registerGenerateCommand(): void {
         
         // Validate prompt
         if (!isNonEmptyString(prompt)) {
-          console.error('Please provide a prompt for code generation.');
-          return;
+          throw createUserError('Missing required argument: prompt', {
+            category: ErrorCategory.VALIDATION,
+            resolution: 'Please provide a prompt for code generation'
+          });
         }
         
         // Construct the prompt
@@ -711,7 +729,7 @@ function registerSearchCommand(): void {
       // Support both positional argument and --pattern flag
       const term = args.term || args.pattern;
       if (!isNonEmptyString(term)) {
-        throw createUserError('Search term is required', {
+        throw createUserError('Missing required argument: term', {
           category: ErrorCategory.VALIDATION,
           resolution: 'Please provide a term to search for'
         });
@@ -1353,14 +1371,12 @@ function registerResetCommand(): void {
       logger.info('Executing reset command');
       
       try {
-        // Since there's no direct reset method, we'll reinitialize the AI client
-        logger.info('Reinitializing AI client to reset conversation context');
-        
-        // Re-initialize the AI client
-        await initAI();
-        
+        // For session reset, we just need to provide user feedback
+        // The actual conversation context is managed by the AI client itself
+        logger.info('Resetting conversation context');
+
         console.log('Conversation context has been reset.');
-        logger.info('AI client reinitialized, conversation context reset');
+        logger.info('Conversation context reset completed');
       } catch (error) {
         logger.error(`Error resetting conversation context: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw error;

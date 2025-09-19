@@ -65,7 +65,12 @@ export interface CommandArgDef {
    * Short flag (e.g., -v for --verbose)
    */
   shortFlag?: string;
-  
+
+  /**
+   * Long flag (e.g., --verbose)
+   */
+  flag?: string;
+
   /**
    * Whether to hide from help
    */

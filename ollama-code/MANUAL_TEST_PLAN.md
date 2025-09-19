@@ -1,8 +1,8 @@
 # Manual Test Plan - Ollama Code CLI v0.1.0
-*Phase 2 Enhanced AI System Testing*
+*Comprehensive Feature Testing - All Phases*
 
 ## Overview
-This manual test plan validates the enhanced AI capabilities implemented in Phase 2, including the ProjectContext system, EnhancedAIClient, TaskPlanner, and tool system integration.
+This manual test plan validates the complete Ollama Code CLI feature set, including basic functionality, enhanced AI capabilities, advanced features (git, testing, refactoring), and user experience enhancements (configuration, analytics, onboarding).
 
 ## Prerequisites
 - Node.js 18+ installed
@@ -10,6 +10,7 @@ This manual test plan validates the enhanced AI capabilities implemented in Phas
 - At least one Ollama model available (e.g., `llama3.2`, `codellama`)
 - Project built successfully (`npm run build`)
 - CLI executable permissions set (`chmod +x dist/src/cli-selector.js`)
+- Git repository for testing git-related features
 
 ## Test Environment Setup
 ```bash
@@ -27,6 +28,11 @@ npm run build
 
 # 5. Test basic CLI accessibility
 ./dist/src/cli-selector.js --version
+
+# 6. Set up test project environment
+git init test-project && cd test-project
+echo "console.log('Hello World');" > index.js
+git add . && git commit -m "Initial commit"
 ```
 
 ---
@@ -54,39 +60,28 @@ npm run build
 
 #### Test 1.1.3: Command-Specific Help
 **Command:** `./dist/src/cli-selector.js help ask`
-- **Expected:** Shows detailed help for the 'ask' command
+- **Expected:** Shows detailed help for the 'ask' command including arguments and examples
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-### Test Group 1.2: Mode Selection
+### Test Group 1.2: Core AI Commands
 **Priority: High**
 
-#### Test 1.2.1: Simple Mode
-**Command:** `./dist/src/cli-selector.js --mode simple list-models`
-- **Expected:**
-  - Executes in simple mode
-  - Shows available models without errors
-  - No enhanced AI initialization messages
+#### Test 1.2.1: Ask Command Basic
+**Command:** `./dist/src/cli-selector.js --mode simple ask "What is TypeScript?"`
+- **Expected:** Returns informative response about TypeScript
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 1.2.2: Advanced Mode
-**Command:** `./dist/src/cli-selector.js --mode advanced list-models`
-- **Expected:**
-  - Shows "Ensuring Ollama server is running..."
-  - Shows "Initializing enhanced AI capabilities..."
-  - Tool system initialization occurs
-  - Lists models successfully
+#### Test 1.2.2: Generate Command
+**Command:** `./dist/src/cli-selector.js --mode simple generate "a function to add two numbers"`
+- **Expected:** Generates JavaScript function code
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 1.2.3: Interactive Mode Default
-**Command:** `./dist/src/cli-selector.js` (then type `exit`)
-- **Expected:**
-  - Starts interactive mode by default
-  - Shows welcome message and prompt
-  - Enhanced AI initialization occurs
-  - Exits cleanly with 'exit' command
+#### Test 1.2.3: Explain Command
+**Command:** `./dist/src/cli-selector.js --mode simple explain index.js`
+- **Expected:** Explains the contents of index.js file
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -97,7 +92,7 @@ npm run build
 ### Test Group 2.1: Enhanced AI Initialization
 **Priority: Critical**
 
-#### Test 2.1.1: Advanced Mode AI Initialization
+#### Test 2.1.1: Advanced Mode Initialization
 **Command:** `./dist/src/cli-selector.js --mode advanced help`
 - **Expected Output Pattern:**
   ```
@@ -109,188 +104,396 @@ npm run build
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 2.1.2: Connection Error Handling
-**Setup:** Stop Ollama server (`pkill ollama`)
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "test"`
-- **Expected:**
-  - Graceful error message about Ollama connection
-  - Clear resolution instructions
-  - No crash or stack trace
-- **Cleanup:** Restart Ollama server
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 2.2: Project Context System
-**Priority: High**
-
-#### Test 2.2.1: Project Analysis in Current Directory
-**Setup:** Navigate to a code project with multiple files
+#### Test 2.1.2: Project Context System
 **Command:** `./dist/src/cli-selector.js --mode advanced ask "What files are in this project?"`
 - **Expected:**
   - AI initialization includes project context setup
-  - Response should demonstrate awareness of project structure
+  - Response demonstrates awareness of project structure
   - No errors during project analysis
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 2.2.2: File Dependency Tracking
-**Setup:** In a project with import/export statements
-**Command:** `./dist/src/cli-selector.js --mode advanced explain src/index.ts`
+#### Test 2.1.3: Enhanced Response Quality
+**Command:** `./dist/src/cli-selector.js --mode advanced ask "How should I structure this project?"`
 - **Expected:**
-  - Enhanced AI understands file relationships
-  - Response includes context about dependencies
-  - Project context influences the explanation
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 2.3: Tool System Integration
-**Priority: High**
-
-#### Test 2.3.1: Tool Registry Initialization
-**Command:** `./dist/src/cli-selector.js --mode advanced search "test"`
-- **Expected:**
-  - Tool system initializes without errors
-  - Search functionality works (even if no matches found)
-  - No circular dependency errors
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 2.3.2: File System Tool Integration
-**Command:** `./dist/src/cli-selector.js --mode advanced search --pattern "function" --type js`
-- **Expected:**
-  - Search executes successfully
-  - Results are formatted properly
-  - No permission or access errors
+  - Higher quality, more contextual response than simple mode
+  - Project-specific recommendations
+  - Detailed and actionable advice
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
 ---
 
-## Phase 3: Command Functionality Tests
+## Phase 3: Advanced Feature Tests
 
-### Test Group 3.1: Core Commands with Enhanced AI
+### Test Group 3.1: Git Integration Commands
 **Priority: High**
 
-#### Test 3.1.1: Ask Command with Context
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "What is the main purpose of this codebase?"`
+#### Test 3.1.1: Git Status Command
+**Command:** `./dist/src/cli-selector.js git-status`
 - **Expected:**
-  - Enhanced AI initialization occurs
-  - Response demonstrates project understanding
-  - Quality and relevance are high
+  - Shows formatted git status with colors
+  - Includes file change summary
+  - AI insights about repository state
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 3.1.2: Explain Command Enhancement
-**Setup:** Create a simple JavaScript file
-**Command:** `./dist/src/cli-selector.js --mode advanced explain ./src/index.ts`
+#### Test 3.1.2: AI Commit Messages
+**Setup:** Make changes to a file
+**Command:** `./dist/src/cli-selector.js git-commit-ai`
 - **Expected:**
-  - File is analyzed with project context
-  - Explanation includes relevant details
-  - Enhanced AI provides better insights than basic mode
+  - Analyzes staged changes
+  - Generates intelligent commit message
+  - Follows conventional commit format
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 3.1.3: Generate Command with Planning
-**Command:** `./dist/src/cli-selector.js --mode advanced generate "a utility function to validate email addresses"`
+#### Test 3.1.3: Git Branch Analysis
+**Command:** `./dist/src/cli-selector.js git-analyze`
 - **Expected:**
-  - Task planning occurs (if visible in logs)
-  - Generated code is contextually appropriate
-  - Response quality is high
+  - Shows branch statistics
+  - Commit analysis and patterns
+  - Development insights
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-### Test Group 3.2: Interactive Mode Enhanced Features
+### Test Group 3.2: Testing Commands
 **Priority: Medium**
 
-#### Test 3.2.1: Multi-Turn Conversation
-**Setup:** Start interactive mode
-**Commands:**
-1. `ask "What is TypeScript?"`
-2. `ask "How does it relate to our project?"`
-3. `exit`
-
+#### Test 3.2.1: Test Generation
+**Command:** `./dist/src/cli-selector.js test-generate --file index.js`
 - **Expected:**
-  - First response explains TypeScript
-  - Second response refers to the project specifically
-  - Conversation context is maintained
+  - Generates appropriate test cases
+  - Uses detected test framework
+  - Includes edge cases and assertions
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 3.2.2: Context Persistence
-**Setup:** Interactive mode in a TypeScript project
-**Commands:**
-1. `explain package.json`
-2. `ask "What testing framework should I use?"`
-3. `exit`
-
+#### Test 3.2.2: Test Analysis
+**Setup:** Create a test file
+**Command:** `./dist/src/cli-selector.js test-analyze`
 - **Expected:**
-  - Second response considers the project's existing dependencies
-  - Recommendations are contextually relevant
-  - No context loss between commands
+  - Analyzes test coverage
+  - Identifies missing test cases
+  - Provides testing recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.3: Refactoring Commands
+**Priority: Medium**
+
+#### Test 3.3.1: Code Refactoring Suggestions
+**Command:** `./dist/src/cli-selector.js refactor-suggest --file index.js`
+- **Expected:**
+  - Analyzes code quality
+  - Suggests specific improvements
+  - Explains refactoring benefits
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.3.2: Extract Function
+**Command:** `./dist/src/cli-selector.js refactor-extract --file index.js --lines "1-5"`
+- **Expected:**
+  - Identifies extractable code
+  - Suggests function name and parameters
+  - Shows refactored result
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
 ---
 
-## Phase 4: Error Handling and Edge Cases
+## Phase 4: User Experience Enhancement Tests
 
-### Test Group 4.1: Enhanced AI Error Handling
+### Test Group 4.1: Configuration Management
 **Priority: High**
 
-#### Test 4.1.1: Invalid Project Context
-**Setup:** Run in a directory with permission issues
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "test"`
+#### Test 4.1.1: Configuration Display
+**Command:** `./dist/src/cli-selector.js config-show`
 - **Expected:**
-  - Graceful degradation if project analysis fails
-  - Clear error messages
-  - System continues to function
+  - Shows current configuration summary
+  - Displays key settings clearly
+  - Provides helpful usage tips
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.1.2: Large Project Handling
-**Setup:** Run in a very large codebase (1000+ files)
+#### Test 4.1.2: Configuration Updates
+**Command:** `./dist/src/cli-selector.js config-set ai.defaultModel llama3.2`
+- **Expected:**
+  - Updates configuration successfully
+  - Confirms changes
+  - Persists settings for future sessions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.1.3: Project Configuration
+**Command:** `./dist/src/cli-selector.js config-init --project`
+- **Expected:**
+  - Creates .ollama-code.json in current directory
+  - Sets up project-specific defaults
+  - Shows configuration options
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.2: Shell Completion
+**Priority: Medium**
+
+#### Test 4.2.1: Completion Installation
+**Command:** `./dist/src/cli-selector.js completion-install`
+- **Expected:**
+  - Auto-detects current shell
+  - Installs completion script
+  - Provides activation instructions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.2.2: Completion Generation
+**Command:** `./dist/src/cli-selector.js completion bash`
+- **Expected:**
+  - Generates valid bash completion script
+  - Includes all commands and options
+  - Properly formatted output
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.3: Analytics and Progress Tracking
+**Priority: Medium**
+
+#### Test 4.3.1: Usage Analytics
+**Setup:** Run several commands first
+**Command:** `./dist/src/cli-selector.js analytics-show`
+- **Expected:**
+  - Shows command usage statistics
+  - Displays success rates and trends
+  - Provides actionable insights
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.3.2: Workflow Analysis
+**Command:** `./dist/src/cli-selector.js analytics-workflow`
+- **Expected:**
+  - Identifies command patterns
+  - Suggests workflow optimizations
+  - Shows efficiency recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.3.3: Analytics Export
+**Command:** `./dist/src/cli-selector.js analytics-export usage-data.json`
+- **Expected:**
+  - Exports analytics data successfully
+  - Creates valid JSON file
+  - Includes comprehensive usage information
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.4: Tutorial and Onboarding System
+**Priority: High**
+
+#### Test 4.4.1: Onboarding Process
+**Command:** `./dist/src/cli-selector.js onboarding`
+- **Expected:**
+  - Starts guided setup process
+  - Creates user configuration
+  - Shows available tutorials
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.4.2: Tutorial List
+**Command:** `./dist/src/cli-selector.js tutorial-list`
+- **Expected:**
+  - Shows all available tutorials by category
+  - Displays progress status
+  - Includes difficulty and time estimates
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.4.3: Tutorial Execution
+**Command:** `./dist/src/cli-selector.js tutorial-start getting-started`
+- **Expected:**
+  - Starts interactive tutorial
+  - Provides step-by-step guidance
+  - Tracks progress and completion
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.4.4: Tutorial Progress
+**Command:** `./dist/src/cli-selector.js tutorial-progress`
+- **Expected:**
+  - Shows learning progress overview
+  - Displays achievements earned
+  - Suggests next steps
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.5: Performance Optimization
+**Priority: Medium**
+
+#### Test 4.5.1: Performance Analysis
+**Command:** `./dist/src/cli-selector.js performance-analyze`
+- **Expected:**
+  - Analyzes system performance
+  - Identifies optimization opportunities
+  - Provides specific recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.5.2: Memory Optimization
+**Command:** `./dist/src/cli-selector.js performance-optimize`
+- **Expected:**
+  - Optimizes memory usage
+  - Clears cache if needed
+  - Reports optimization results
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 5: Interactive UI and Menu System Tests
+
+### Test Group 5.1: Interactive Menu
+**Priority: Medium**
+
+#### Test 5.1.1: Main Menu Navigation
+**Command:** `./dist/src/cli-selector.js` (interactive mode)
+- **Expected:**
+  - Shows categorized command menu
+  - Allows keyboard navigation
+  - Displays command descriptions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.2: Command Search
+**Setup:** In interactive mode, use search feature
+- **Expected:**
+  - Filters commands by search term
+  - Highlights matching results
+  - Allows quick command selection
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.3: Recent Commands
+**Setup:** Execute commands, then return to menu
+- **Expected:**
+  - Shows recently used commands
+  - Allows quick re-execution
+  - Maintains command history
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.4: Interactive Mode Exit
+**Setup:** Start interactive mode: `./dist/src/cli-selector.js`
+**Commands to test:** `exit`, `quit`, `q`, `.exit`
+- **Expected:**
+  - Prints "Goodbye!"
+  - Cleanly exits to shell
+  - No hanging processes
+  - Process terminates with exit code 0
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 6: Error Handling and Edge Cases
+
+### Test Group 6.1: Error Handling
+**Priority: High**
+
+#### Test 6.1.1: Invalid Commands
+**Command:** `./dist/src/cli-selector.js invalid-command`
+- **Expected:**
+  - Shows helpful error message
+  - Suggests similar commands
+  - Provides usage guidance
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.1.2: Connection Errors
+**Setup:** Stop Ollama server
+**Command:** `./dist/src/cli-selector.js ask "test"`
+- **Expected:**
+  - Graceful error handling
+  - Clear resolution instructions
+  - No crashes or stack traces
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.1.3: File System Errors
+**Command:** `./dist/src/cli-selector.js explain /nonexistent/file.js`
+- **Expected:**
+  - Clear file not found error
+  - Helpful suggestions
+  - Graceful handling
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 6.2: Resource Management
+**Priority: Medium**
+
+#### Test 6.2.1: Memory Usage
+**Setup:** Monitor system resources during heavy usage
+**Command:** Run multiple complex commands in sequence
+- **Expected:**
+  - Reasonable memory usage (<1GB)
+  - No memory leaks
+  - Efficient resource cleanup
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.2.2: Large Project Handling
+**Setup:** Test in large codebase (1000+ files)
 **Command:** `./dist/src/cli-selector.js --mode advanced ask "What is this project about?"`
 - **Expected:**
-  - Reasonable initialization time (<30 seconds)
-  - No memory issues
-  - Selective project analysis for performance
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 4.2: Resource Management
-**Priority: Medium**
-
-#### Test 4.2.1: Memory Usage
-**Setup:** Monitor system resources
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "long complex question about the codebase with multiple parts and detailed requirements"`
-- **Expected:**
-  - Reasonable memory usage (<500MB)
-  - No memory leaks after completion
-  - Efficient context window management
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 4.2.2: Concurrent Operations
-**Setup:** Start multiple CLI instances
-**Commands:** Run same command in parallel from different terminals
-- **Expected:**
-  - No resource conflicts
-  - Each instance maintains independent context
-  - No cross-instance data contamination
+  - Reasonable initialization time (<60 seconds)
+  - No performance degradation
+  - Selective analysis for efficiency
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
 ---
 
-## Phase 5: Performance and Quality Tests
+## Phase 7: Integration and Compatibility Tests
 
-### Test Group 5.1: Response Quality Assessment
+### Test Group 7.1: Cross-Platform Compatibility
 **Priority: Medium**
 
-#### Test 5.1.1: Context-Aware Responses
-**Setup:** In a React project with TypeScript
+#### Test 7.1.1: Operating Systems
+**Platforms:** macOS, Linux, Windows (WSL)
+**Command:** `./dist/src/cli-selector.js --version`
+- **Expected:** Consistent behavior across platforms
+- **Platform Tested:** _____________
+- **Status:** [ ] Pass [ ] Fail [ ] N/A
+- **Notes:** _____________
+
+#### Test 7.1.2: Node.js Versions
+**Versions:** Node.js 18, 20, 22
+**Command:** `node --version && ./dist/src/cli-selector.js --version`
+- **Expected:** Compatible with all supported versions
+- **Version Tested:** _____________
+- **Status:** [ ] Pass [ ] Fail [ ] N/A
+- **Notes:** _____________
+
+### Test Group 7.2: Model Compatibility
+**Priority: High**
+
+#### Test 7.2.1: Different Ollama Models
+**Models:** llama3.2, codellama, mistral, qwen2.5-coder
+**Command:** `./dist/src/cli-selector.js config-set ai.defaultModel <model-name>`
+- **Expected:** Works with different model types and sizes
+- **Model Tested:** _____________
+- **Status:** [ ] Pass [ ] Fail [ ] N/A
+- **Notes:** _____________
+
+---
+
+## Phase 8: Performance and Quality Assessment
+
+### Test Group 8.1: Response Quality
+**Priority: High**
+
+#### Test 8.1.1: Context-Aware Responses
+**Setup:** In a React TypeScript project
 **Command:** `./dist/src/cli-selector.js --mode advanced ask "How should I structure my components?"`
-- **Expected Quality Indicators:**
+- **Quality Indicators:**
   - [ ] Mentions React-specific patterns
   - [ ] Considers TypeScript usage
   - [ ] References project structure
@@ -298,30 +501,28 @@ npm run build
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 5.1.2: Technical Accuracy
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "Explain the difference between let, const, and var in JavaScript"`
-- **Expected Quality Indicators:**
-  - [ ] Technically accurate information
-  - [ ] Clear explanations
-  - [ ] Relevant examples
-  - [ ] No hallucinations or incorrect facts
+#### Test 8.1.2: Code Generation Quality
+**Command:** `./dist/src/cli-selector.js generate "a REST API endpoint with validation"`
+- **Quality Indicators:**
+  - [ ] Syntactically correct code
+  - [ ] Follows best practices
+  - [ ] Includes error handling
+  - [ ] Properly documented
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-### Test Group 5.2: Performance Benchmarks
+### Test Group 8.2: Performance Benchmarks
 **Priority: Low**
 
-#### Test 5.2.1: Initialization Time
-**Measurement:** Time from command start to first response
-**Command:** `time ./dist/src/cli-selector.js --mode advanced ask "hello"`
-- **Target:** <10 seconds for initial setup
+#### Test 8.2.1: Initialization Time
+**Command:** `time ./dist/src/cli-selector.js --mode advanced help`
+- **Target:** <15 seconds for complete initialization
 - **Actual Time:** _______ seconds
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 5.2.2: Response Time
-**Measurement:** Time for AI response after initialization
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "What is 2+2?"`
+#### Test 8.2.2: Response Time
+**Command:** `./dist/src/cli-selector.js ask "What is 2+2?"`
 - **Target:** <30 seconds for simple queries
 - **Actual Time:** _______ seconds
 - **Status:** [ ] Pass [ ] Fail
@@ -329,68 +530,62 @@ npm run build
 
 ---
 
-## Phase 6: Integration and Compatibility Tests
-
-### Test Group 6.1: Cross-Platform Compatibility
-**Priority: Medium**
-
-#### Test 6.1.1: Different Operating Systems
-**Platforms to test:** macOS, Linux, Windows (WSL)
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "test"`
-- **Expected:** Consistent behavior across platforms
-- **Status:** [ ] Pass [ ] Fail [ ] N/A
-- **Platform:** _____________
-- **Notes:** _____________
-
-#### Test 6.1.2: Different Node.js Versions
-**Versions to test:** Node.js 18, 20, 22
-**Command:** `node --version && ./dist/src/cli-selector.js --version`
-- **Expected:** Compatible with all supported versions
-- **Status:** [ ] Pass [ ] Fail [ ] N/A
-- **Version:** _____________
-- **Notes:** _____________
-
-### Test Group 6.2: Model Compatibility
-**Priority: High**
-
-#### Test 6.2.1: Different Ollama Models
-**Models to test:** llama3.2, codellama, mistral
-**Setup:** `ollama pull <model-name>`
-**Command:** `./dist/src/cli-selector.js --mode advanced set-model <model-name>`
-- **Expected:** Works with different model types
-- **Model Tested:** _____________
-- **Status:** [ ] Pass [ ] Fail [ ] N/A
-- **Notes:** _____________
-
----
-
 ## Test Execution Summary
 
 ### Overall Test Results
-- **Total Tests:** 28
-- **Tests Passed:** _____ / 28
-- **Tests Failed:** _____ / 28
-- **Tests Skipped:** _____ / 28
+- **Total Tests:** 53
+- **Tests Passed:** _____ / 53
+- **Tests Failed:** _____ / 53
+- **Tests Skipped:** _____ / 53
 - **Pass Rate:** _____%
+
+### Test Results by Phase
+- **Phase 1 - Basic CLI:** _____ / 6 tests passed
+- **Phase 2 - Enhanced AI:** _____ / 3 tests passed
+- **Phase 3 - Advanced Features:** _____ / 6 tests passed
+- **Phase 4 - User Experience:** _____ / 14 tests passed
+- **Phase 5 - Interactive UI:** _____ / 4 tests passed
+- **Phase 6 - Error Handling:** _____ / 5 tests passed
+- **Phase 7 - Compatibility:** _____ / 4 tests passed
+- **Phase 8 - Quality/Performance:** _____ / 4 tests passed
 
 ### Critical Issues Found
 1. _____________________________________
 2. _____________________________________
 3. _____________________________________
 
+### Non-Critical Issues
+1. _____________________________________
+2. _____________________________________
+3. _____________________________________
+
+### Feature Completeness Assessment
+- **Basic CLI Functionality:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Enhanced AI System:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Git Integration:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Testing Tools:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Refactoring Tools:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Configuration Management:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Shell Integration:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Analytics & Progress:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Tutorial System:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Performance Tools:** [ ] Complete [ ] Partial [ ] Major Issues
+
+### Production Readiness Assessment
+**Overall System:** [ ] Ready for Production [ ] Needs Minor Fixes [ ] Needs Major Fixes [ ] Not Ready
+
 ### Recommendations
 1. _____________________________________
 2. _____________________________________
 3. _____________________________________
 
-### Phase 2 Readiness Assessment
-**Enhanced AI System:** [ ] Ready for Production [ ] Needs Fixes [ ] Major Issues
-
 ### Next Steps
-- [ ] Address critical issues
-- [ ] Implement Phase 3 features
+- [ ] Address critical issues identified
+- [ ] Implement missing features
 - [ ] Performance optimizations
-- [ ] Additional automated tests
+- [ ] Additional automated test coverage
+- [ ] Documentation updates
+- [ ] User acceptance testing
 
 ---
 
@@ -401,6 +596,7 @@ npm run build
 1. Verify Ollama is running: `curl http://localhost:11434/api/tags`
 2. Start Ollama: `ollama serve`
 3. Check firewall settings
+4. Verify model availability: `ollama list`
 
 ### Issue 2: "Permission denied" for CLI
 **Solution:**
@@ -408,22 +604,37 @@ npm run build
 2. Check file ownership
 3. Try `node dist/src/cli-selector.js` instead
 
-### Issue 3: Out of memory errors
+### Issue 3: Configuration issues
 **Solution:**
-1. Increase Node.js memory: `node --max-old-space-size=4096 dist/src/cli-selector.js`
-2. Test in smaller project
-3. Check for memory leaks in logs
+1. Reset configuration: `./dist/src/cli-selector.js config-reset --confirm`
+2. Reinitialize: `./dist/src/cli-selector.js config-init`
+3. Check file permissions in ~/.ollama-code/
 
-### Issue 4: Slow initialization
+### Issue 4: Tutorial or analytics errors
 **Solution:**
-1. Check project size (large projects take longer)
-2. Verify disk speed and available space
-3. Monitor system resources during startup
+1. Clear analytics data: `./dist/src/cli-selector.js analytics-clear --confirm`
+2. Reset tutorial progress: `./dist/src/cli-selector.js tutorial-reset --confirm`
+3. Check disk space for data storage
+
+### Issue 5: Performance issues
+**Solution:**
+1. Run performance analysis: `./dist/src/cli-selector.js performance-analyze`
+2. Optimize memory: `./dist/src/cli-selector.js performance-optimize`
+3. Check system resources and close other applications
+4. Use simpler model if available
+
+### Issue 6: Git command failures
+**Solution:**
+1. Ensure you're in a git repository: `git status`
+2. Check git configuration: `git config --list`
+3. Verify git permissions and access
 
 ---
 
-**Test Plan Version:** 1.0
+**Test Plan Version:** 2.0 (Comprehensive)
 **Created:** September 18, 2025
 **Last Updated:** September 18, 2025
+**Covers:** All phases (Basic CLI, Enhanced AI, Advanced Features, User Experience)
 **Tested By:** ________________
 **Date Executed:** ________________
+**Environment:** ________________

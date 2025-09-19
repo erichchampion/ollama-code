@@ -1,0 +1,466 @@
+/**
+ * Configuration Commands
+ *
+ * Commands for managing user and project configurations
+ */
+import { commandRegistry, ArgType } from './index.js';
+import { logger } from '../utils/logger.js';
+import { configManager } from '../config/manager.js';
+import { validateNonEmptyString, validateFileExists } from '../utils/command-helpers.js';
+import { createUserError } from '../errors/formatter.js';
+import { ErrorCategory } from '../errors/types.js';
+/**
+ * Register configuration commands
+ */
+export function registerConfigCommands() {
+    logger.debug('Registering configuration commands');
+    registerConfigShowCommand();
+    registerConfigSetCommand();
+    registerConfigGetCommand();
+    registerConfigResetCommand();
+    registerConfigExportCommand();
+    registerConfigImportCommand();
+    registerConfigInitCommand();
+}
+/**
+ * Show current configuration
+ */
+function registerConfigShowCommand() {
+    const command = {
+        name: 'config-show',
+        description: 'Display current configuration settings',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { section, project = false } = args;
+                await configManager.loadConfig();
+                if (project) {
+                    // Show project configuration
+                    const projectConfig = configManager.getProjectConfig();
+                    if (!projectConfig) {
+                        console.log('📁 No project configuration found');
+                        console.log('\n💡 Create one with: config-init --project');
+                        return;
+                    }
+                    console.log('📁 Project Configuration:\n');
+                    console.log(JSON.stringify(projectConfig, null, 2));
+                }
+                else if (section) {
+                    // Show specific section
+                    const config = configManager.getUserConfig();
+                    const sectionData = config[section];
+                    if (!sectionData) {
+                        throw createUserError(`Configuration section '${section}' not found`, {
+                            category: ErrorCategory.VALIDATION,
+                            resolution: 'Valid sections: ai, ui, git, testing, refactoring, performance, development'
+                        });
+                    }
+                    console.log(`⚙️ Configuration - ${section}:\n`);
+                    console.log(JSON.stringify(sectionData, null, 2));
+                }
+                else {
+                    // Show summary
+                    const summary = configManager.getConfigSummary();
+                    console.log('⚙️ Configuration Summary:\n');
+                    console.log(`📍 User Config: ${summary.userConfigPath}`);
+                    console.log(`📁 Project Config: ${summary.projectConfigPath}`);
+                    console.log(`🔗 Has Project Config: ${summary.hasProjectConfig ? '✅' : '❌'}\n`);
+                    console.log('🎯 Key Settings:');
+                    console.log(`   AI Model: ${summary.settings.defaultModel}`);
+                    console.log(`   Theme: ${summary.settings.theme}`);
+                    console.log(`   Project Context: ${summary.settings.enableProjectContext ? '✅' : '❌'}`);
+                    console.log(`   Test Framework: ${summary.settings.preferredTestFramework}`);
+                    console.log(`   Log Level: ${summary.settings.logLevel}`);
+                    console.log('\n💡 Commands:');
+                    console.log('   config-show --section ai      # Show AI settings');
+                    console.log('   config-show --project         # Show project config');
+                    console.log('   config-set ai.defaultModel llama3.2  # Update setting');
+                }
+            }
+            catch (error) {
+                logger.error('Config show command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'section',
+                description: 'Configuration section to show (ai, ui, git, testing, etc.)',
+                type: ArgType.STRING,
+                flag: '--section',
+                required: false
+            },
+            {
+                name: 'project',
+                description: 'Show project configuration instead of user config',
+                type: ArgType.BOOLEAN,
+                flag: '--project',
+                required: false
+            }
+        ],
+        examples: [
+            'config-show',
+            'config-show --section ai',
+            'config-show --project'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Set configuration value
+ */
+function registerConfigSetCommand() {
+    const command = {
+        name: 'config-set',
+        description: 'Set a configuration value',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { key, value, project = false } = args;
+                if (!validateNonEmptyString(key, 'configuration key')) {
+                    return;
+                }
+                if (value === undefined || value === null) {
+                    throw createUserError('Configuration value is required', {
+                        category: ErrorCategory.VALIDATION,
+                        resolution: 'Provide a value to set'
+                    });
+                }
+                await configManager.loadConfig();
+                // Parse value based on type
+                let parsedValue = value;
+                try {
+                    // Try to parse as JSON for complex values
+                    if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('[') || value === 'true' || value === 'false' || !isNaN(Number(value)))) {
+                        parsedValue = JSON.parse(value);
+                    }
+                }
+                catch {
+                    // Keep as string if JSON parsing fails
+                }
+                if (project) {
+                    // Set project configuration
+                    const currentConfig = configManager.getProjectConfig() || {};
+                    const keys = key.split('.');
+                    let target = currentConfig;
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        const k = keys[i];
+                        if (!target[k] || typeof target[k] !== 'object') {
+                            target[k] = {};
+                        }
+                        target = target[k];
+                    }
+                    target[keys[keys.length - 1]] = parsedValue;
+                    await configManager.updateProjectConfig(currentConfig);
+                    console.log(`✅ Project configuration updated:`);
+                    console.log(`   ${key} = ${JSON.stringify(parsedValue)}`);
+                }
+                else {
+                    // Set user configuration
+                    await configManager.set(key, parsedValue);
+                    console.log(`✅ Configuration updated:`);
+                    console.log(`   ${key} = ${JSON.stringify(parsedValue)}`);
+                }
+                console.log('\n💡 Changes take effect immediately');
+            }
+            catch (error) {
+                logger.error('Config set command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'key',
+                description: 'Configuration key (e.g., ai.defaultModel)',
+                type: ArgType.STRING,
+                position: 0,
+                required: true
+            },
+            {
+                name: 'value',
+                description: 'Value to set',
+                type: ArgType.STRING,
+                position: 1,
+                required: true
+            },
+            {
+                name: 'project',
+                description: 'Set in project configuration instead of user config',
+                type: ArgType.BOOLEAN,
+                flag: '--project',
+                required: false
+            }
+        ],
+        examples: [
+            'config-set ai.defaultModel llama3.2',
+            'config-set ui.theme dark',
+            'config-set testing.coverageThreshold 90',
+            'config-set tools.testFramework jest --project'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Get configuration value
+ */
+function registerConfigGetCommand() {
+    const command = {
+        name: 'config-get',
+        description: 'Get a configuration value',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { key } = args;
+                if (!validateNonEmptyString(key, 'configuration key')) {
+                    return;
+                }
+                await configManager.loadConfig();
+                const value = configManager.get(key);
+                if (value === undefined) {
+                    console.log(`❌ Configuration key '${key}' not found`);
+                    return;
+                }
+                console.log(`📋 Configuration value:`);
+                console.log(`   ${key} = ${JSON.stringify(value, null, 2)}`);
+            }
+            catch (error) {
+                logger.error('Config get command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'key',
+                description: 'Configuration key to retrieve',
+                type: ArgType.STRING,
+                position: 0,
+                required: true
+            }
+        ],
+        examples: [
+            'config-get ai.defaultModel',
+            'config-get ui.theme',
+            'config-get testing'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Reset configuration to defaults
+ */
+function registerConfigResetCommand() {
+    const command = {
+        name: 'config-reset',
+        description: 'Reset configuration to default values',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { confirm = false } = args;
+                if (!confirm) {
+                    console.log('⚠️  This will reset ALL configuration settings to defaults!');
+                    console.log('\nThis action cannot be undone. Your current settings will be lost.');
+                    console.log('\n💡 To proceed, run: config-reset --confirm');
+                    return;
+                }
+                await configManager.resetConfig();
+                console.log('✅ Configuration reset to defaults');
+                console.log('\n🔄 Default settings restored:');
+                console.log('   • AI model: qwen2.5-coder:latest');
+                console.log('   • Theme: auto');
+                console.log('   • Project context: enabled');
+                console.log('   • Test framework: jest');
+                console.log('   • And more...');
+                console.log('\n💡 Customize with: config-set <key> <value>');
+            }
+            catch (error) {
+                logger.error('Config reset command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'confirm',
+                description: 'Confirm the reset operation',
+                type: ArgType.BOOLEAN,
+                flag: '--confirm',
+                required: false
+            }
+        ],
+        examples: [
+            'config-reset',
+            'config-reset --confirm'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Export configuration
+ */
+function registerConfigExportCommand() {
+    const command = {
+        name: 'config-export',
+        description: 'Export configuration to a file',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { file } = args;
+                if (!validateNonEmptyString(file, 'export file path')) {
+                    return;
+                }
+                await configManager.loadConfig();
+                await configManager.exportConfig(file);
+                console.log(`✅ Configuration exported to: ${file}`);
+                console.log('\n📦 Export includes:');
+                console.log('   • User configuration settings');
+                console.log('   • Project configuration (if exists)');
+                console.log('   • Metadata and version info');
+                console.log('\n💡 Import on another system with: config-import ' + file);
+            }
+            catch (error) {
+                logger.error('Config export command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'file',
+                description: 'File path to export configuration to',
+                type: ArgType.STRING,
+                position: 0,
+                required: true
+            }
+        ],
+        examples: [
+            'config-export my-config.json',
+            'config-export ./backups/ollama-config-backup.json'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Import configuration
+ */
+function registerConfigImportCommand() {
+    const command = {
+        name: 'config-import',
+        description: 'Import configuration from a file',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { file } = args;
+                if (!await validateFileExists(file)) {
+                    return;
+                }
+                await configManager.importConfig(file);
+                console.log(`✅ Configuration imported from: ${file}`);
+                console.log('\n🔄 Settings have been updated');
+                console.log('\n💡 View current settings with: config-show');
+            }
+            catch (error) {
+                logger.error('Config import command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'file',
+                description: 'File path to import configuration from',
+                type: ArgType.STRING,
+                position: 0,
+                required: true
+            }
+        ],
+        examples: [
+            'config-import my-config.json',
+            'config-import ./backups/ollama-config-backup.json'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Initialize configuration
+ */
+function registerConfigInitCommand() {
+    const command = {
+        name: 'config-init',
+        description: 'Initialize configuration with guided setup',
+        category: 'Configuration',
+        async handler(args) {
+            try {
+                const { project = false, force = false } = args;
+                if (project) {
+                    // Initialize project configuration
+                    const projectConfig = configManager.getProjectConfig();
+                    if (projectConfig && !force) {
+                        console.log('📁 Project configuration already exists');
+                        console.log('\n💡 Use --force to overwrite or config-show --project to view');
+                        return;
+                    }
+                    const defaultProjectConfig = {
+                        ai: {
+                            model: 'qwen2.5-coder:latest',
+                            excludePatterns: ['node_modules/**', 'dist/**', '.git/**']
+                        },
+                        tools: {
+                            testFramework: 'jest',
+                            buildCommand: 'npm run build',
+                            testCommand: 'npm test'
+                        },
+                        git: {
+                            commitFormat: 'conventional'
+                        }
+                    };
+                    await configManager.saveProjectConfig(defaultProjectConfig);
+                    console.log('✅ Project configuration initialized');
+                    console.log('\n📁 Created .ollama-code.json in current directory');
+                    console.log('\n🎯 Default project settings:');
+                    console.log('   • AI model: qwen2.5-coder:latest');
+                    console.log('   • Test framework: jest');
+                    console.log('   • Commit format: conventional');
+                }
+                else {
+                    // Initialize user configuration
+                    await configManager.loadConfig();
+                    console.log('✅ User configuration initialized');
+                    console.log('\n⚙️ Configuration file created with defaults');
+                    const summary = configManager.getConfigSummary();
+                    console.log(`📍 Location: ${summary.userConfigPath}`);
+                    console.log('\n🎯 Default settings applied:');
+                    console.log('   • AI model: qwen2.5-coder:latest');
+                    console.log('   • Theme: auto');
+                    console.log('   • Project context: enabled');
+                    console.log('   • Test framework: jest');
+                }
+                console.log('\n💡 Customize settings with: config-set <key> <value>');
+                console.log('💡 View all settings with: config-show');
+            }
+            catch (error) {
+                logger.error('Config init command failed:', error);
+                throw error;
+            }
+        },
+        args: [
+            {
+                name: 'project',
+                description: 'Initialize project configuration instead of user config',
+                type: ArgType.BOOLEAN,
+                flag: '--project',
+                required: false
+            },
+            {
+                name: 'force',
+                description: 'Overwrite existing configuration',
+                type: ArgType.BOOLEAN,
+                flag: '--force',
+                required: false
+            }
+        ],
+        examples: [
+            'config-init',
+            'config-init --project',
+            'config-init --project --force'
+        ]
+    };
+    commandRegistry.register(command);
+}
+//# sourceMappingURL=config-commands.js.map
