@@ -50,7 +50,9 @@ export async function initAI(config = {}) {
                 autoExecute: false
             }
         };
-        enhancedClient = new EnhancedClient(enhancedConfig, projectContext);
+        enhancedClient = new EnhancedClient(aiClient, projectContext, enhancedConfig);
+        // Initialize the enhanced client
+        await enhancedClient.initialize();
         // Initialize task planner
         taskPlanner = new TaskPlanner(enhancedClient, projectContext);
         logger.info('Enhanced AI module initialized successfully');

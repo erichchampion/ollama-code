@@ -58,16 +58,34 @@ export async function startOllamaServer() {
                 }));
             }
         }, 30000); // 30 second timeout
-        // Monitor server output for startup confirmation
+        // Start periodic health checks instead of relying on output parsing
+        const healthCheckInterval = setInterval(async () => {
+            if (serverStarted) {
+                clearInterval(healthCheckInterval);
+                return;
+            }
+            const isRunning = await isOllamaServerRunning();
+            if (isRunning) {
+                serverStarted = true;
+                clearTimeout(startupTimeout);
+                clearInterval(healthCheckInterval);
+                logger.info('Ollama server started successfully');
+                resolve();
+            }
+        }, 2000); // Check every 2 seconds
+        // Monitor server output for startup confirmation (fallback)
         ollamaProcess.stdout?.on('data', (data) => {
             const output = data.toString();
             logger.debug('Ollama server output:', output);
             // Look for server startup indicators
-            if (output.includes('Listening on') || output.includes('server started')) {
-                serverStarted = true;
-                clearTimeout(startupTimeout);
-                logger.info('Ollama server started successfully');
-                resolve();
+            if (output.includes('Listening on') || output.includes('server started') || output.includes('127.0.0.1:11434')) {
+                if (!serverStarted) {
+                    serverStarted = true;
+                    clearTimeout(startupTimeout);
+                    clearInterval(healthCheckInterval);
+                    logger.info('Ollama server started successfully');
+                    resolve();
+                }
             }
         });
         ollamaProcess.stderr?.on('data', (data) => {
@@ -75,14 +93,18 @@ export async function startOllamaServer() {
             logger.debug('Ollama server error:', error);
             // Some errors are not fatal (like port already in use)
             if (error.includes('address already in use') || error.includes('port 11434')) {
-                serverStarted = true;
-                clearTimeout(startupTimeout);
-                logger.info('Ollama server already running');
-                resolve();
+                if (!serverStarted) {
+                    serverStarted = true;
+                    clearTimeout(startupTimeout);
+                    clearInterval(healthCheckInterval);
+                    logger.info('Ollama server already running');
+                    resolve();
+                }
             }
         });
         ollamaProcess.on('error', (error) => {
             clearTimeout(startupTimeout);
+            clearInterval(healthCheckInterval);
             reject(createUserError(`Failed to start Ollama server: ${error.message}`, {
                 cause: error,
                 category: ErrorCategory.SERVER,
@@ -91,6 +113,7 @@ export async function startOllamaServer() {
         });
         ollamaProcess.on('exit', (code) => {
             clearTimeout(startupTimeout);
+            clearInterval(healthCheckInterval);
             if (!serverStarted) {
                 reject(createUserError(`Ollama server exited with code ${code}`, {
                     category: ErrorCategory.SERVER,
