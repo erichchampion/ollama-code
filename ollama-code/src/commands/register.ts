@@ -133,15 +133,11 @@ function registerAskCommand(): void {
 
           try {
             const enhancedClient = getEnhancedClient();
-            aiResponse = await enhancedClient.complete(question, {
-              model: args.model,
-              useProjectContext: true,
-              enableToolUse: false  // Don't use tools for simple ask command
-            });
+            const processingResult = await enhancedClient.processMessage(question);
 
             spinner.succeed('Response ready');
 
-            const responseText = aiResponse.message?.content;
+            const responseText = processingResult.response;
             console.log(responseText);
 
             if (responseText) {
@@ -257,11 +253,8 @@ function registerExplainCommand(): void {
           let responseText;
           if (isEnhancedAIInitialized()) {
             const enhancedClient = getEnhancedClient();
-            const aiResponse = await enhancedClient.complete(prompt, {
-              useProjectContext: true,
-              enableToolUse: false
-            });
-            responseText = aiResponse.message?.content;
+            const processingResult = await enhancedClient.processMessage(prompt);
+            responseText = processingResult.response;
           } else {
             // Fall back to basic client
             const aiClient = getAIClient();
@@ -341,11 +334,8 @@ function registerRefactorCommand(): void {
         let responseText;
         if (isEnhancedAIInitialized()) {
           const enhancedClient = getEnhancedClient();
-          const aiResponse = await enhancedClient.complete(prompt, {
-            useProjectContext: true,
-            enableToolUse: true  // Enable tools for refactoring
-          });
-          responseText = aiResponse.message?.content;
+          const processingResult = await enhancedClient.processMessage(prompt);
+          responseText = processingResult.response;
         } else {
           // Fall back to basic client
           const aiClient = getAIClient();
@@ -424,11 +414,8 @@ function registerFixCommand(): void {
         let responseText;
         if (isEnhancedAIInitialized()) {
           const enhancedClient = getEnhancedClient();
-          const aiResponse = await enhancedClient.complete(prompt, {
-            useProjectContext: true,
-            enableToolUse: true  // Enable tools for fixing
-          });
-          responseText = aiResponse.message?.content;
+          const processingResult = await enhancedClient.processMessage(prompt);
+          responseText = processingResult.response;
         } else {
           // Fall back to basic client
           const aiClient = getAIClient();
@@ -503,11 +490,8 @@ function registerGenerateCommand(): void {
           let responseText;
           if (isEnhancedAIInitialized()) {
             const enhancedClient = getEnhancedClient();
-            const aiResponse = await enhancedClient.complete(fullPrompt, {
-              useProjectContext: true,
-              enableToolUse: true  // Enable tools for generation planning
-            });
-            responseText = aiResponse.message?.content;
+            const processingResult = await enhancedClient.processMessage(fullPrompt);
+            responseText = processingResult.response;
           } else {
             // Fall back to basic client
             const aiClient = getAIClient();
