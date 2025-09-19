@@ -1,131 +1,144 @@
 /**
  * Enhanced AI Client
  *
- * Provides advanced AI capabilities including multi-turn conversations,
- * context-aware prompting, tool use planning, and response quality validation.
+ * Integrates all phases into a comprehensive AI-powered development assistant
+ * with natural language understanding, autonomous code modification, and
+ * intelligent task planning and execution.
  */
-import { OllamaClient, OllamaCompletionOptions } from './ollama-client.js';
-import { ProjectContext, ConversationTurn } from './context.js';
-export interface ToolResult {
-    toolName: string;
-    result: any;
-    data?: any;
-    executionTime: number;
+import { ProjectContext } from './context.js';
+import { UserIntent } from './intent-analyzer.js';
+import { TaskPlan } from './task-planner.js';
+import { ExecutionResult } from '../execution/execution-engine.js';
+export interface EnhancedClientConfig {
+    model: string;
+    baseUrl: string;
+    contextWindow: number;
+    enableTaskPlanning: boolean;
+    enableAutonomousModification: boolean;
+    executionPreferences: {
+        parallelism: number;
+        riskTolerance: 'conservative' | 'balanced' | 'aggressive';
+        autoExecute: boolean;
+    };
+}
+export interface ProcessingResult {
     success: boolean;
+    intent: UserIntent;
+    response: string;
+    executionPlan?: TaskPlan;
+    executionResults?: Map<string, ExecutionResult>;
+    conversationId: string;
+    processingTime: number;
     error?: string;
 }
-export interface EnhancedCompletionOptions extends OllamaCompletionOptions {
-    useProjectContext?: boolean;
-    enableToolUse?: boolean;
-    conversationId?: string;
-    maxContextTokens?: number;
-    responseQuality?: 'fast' | 'balanced' | 'high';
+export interface SessionState {
+    conversationId: string;
+    activeTaskPlan?: TaskPlan;
+    pendingTasks: string[];
+    executionHistory: ExecutionSummary[];
+    preferences: UserPreferences;
 }
-export interface AIResponse {
-    content: string;
-    confidence: number;
-    toolsUsed: string[];
-    filesReferenced: string[];
-    metadata: {
-        tokensUsed: number;
-        executionTime: number;
-        contextSize: number;
-        qualityScore: number;
-    };
-    followUpSuggestions: string[];
+export interface ExecutionSummary {
+    planId: string;
+    title: string;
+    completedAt: Date;
+    totalTasks: number;
+    successfulTasks: number;
+    duration: number;
 }
-export interface ToolUsePlan {
-    tools: Array<{
-        name: string;
-        parameters: Record<string, any>;
-        rationale: string;
-        dependencies: string[];
-    }>;
-    executionOrder: string[];
-    estimatedTime: number;
-    confidence: number;
+export interface UserPreferences {
+    verbosity: 'minimal' | 'standard' | 'detailed';
+    autoConfirm: boolean;
+    riskTolerance: 'conservative' | 'balanced' | 'aggressive';
+    preferredExecutionMode: 'manual' | 'assisted' | 'autonomous';
 }
-export interface ResponseValidation {
-    isValid: boolean;
-    confidence: number;
-    issues: string[];
-}
-export declare class EnhancedAIClient {
-    private baseClient;
+export declare class EnhancedClient {
+    private ollamaClient;
     private projectContext;
-    private toolOrchestrator;
-    private conversations;
-    private defaultOptions;
-    constructor(baseClient: OllamaClient, projectContext?: ProjectContext, options?: Partial<EnhancedCompletionOptions>);
+    private intentAnalyzer;
+    private conversationManager;
+    private taskPlanner;
+    private executionEngine;
+    private autonomousModifier;
+    private nlRouter;
+    private config;
+    private sessionState;
+    constructor(config: EnhancedClientConfig, projectContext: ProjectContext);
     /**
-     * Initialize with project context
+     * Initialize all components
      */
-    initializeWithProject(projectRoot: string): Promise<void>;
+    initialize(): Promise<void>;
     /**
-     * Enhanced completion with context awareness and tool use
+     * Process a user message with full enhanced capabilities
      */
-    complete(prompt: string, options?: EnhancedCompletionOptions): Promise<AIResponse>;
+    processMessage(message: string): Promise<ProcessingResult>;
     /**
-     * Stream completion with enhanced capabilities
+     * Create and potentially execute a plan for the intent
      */
-    completeStream(prompt: string, options: EnhancedCompletionOptions | undefined, onChunk: (chunk: {
-        content: string;
-        partial: AIResponse;
-    }) => void, abortSignal?: AbortSignal): Promise<AIResponse>;
+    private createAndExecutePlan;
     /**
-     * Build context-aware prompt with project information
-     */
-    private buildContextAwarePrompt;
-    /**
-     * Plan tool use based on user request
-     */
-    private planToolUse;
-    /**
-     * Execute planned tools
-     */
-    private executeToolPlan;
-    /**
-     * Generate AI response with tool results
+     * Generate a response based on intent and routing result
      */
     private generateResponse;
     /**
-     * Calculate response confidence score
+     * Determine if plan should be auto-executed
      */
-    private calculateConfidence;
+    private shouldAutoExecute;
     /**
-     * Validate response quality
+     * Generate plan proposal for user approval
      */
-    private validateResponseQuality;
+    private generatePlanProposal;
     /**
-     * Generate follow-up suggestions
+     * Generate response after execution completion
      */
-    private generateFollowUpSuggestions;
+    private generateExecutionResponse;
     /**
-     * Estimate token count (simplified)
+     * Record execution in session history
      */
-    private estimateTokens;
+    private recordExecution;
     /**
-     * Add conversation turn to history
+     * Execute pending plan (when user approves)
      */
-    private addConversationTurn;
+    executePendingPlan(): Promise<ProcessingResult>;
+    /**
+     * Get current session state
+     */
+    getSessionState(): SessionState;
+    /**
+     * Update user preferences
+     */
+    updatePreferences(preferences: Partial<UserPreferences>): void;
     /**
      * Get conversation history
      */
-    getConversationHistory(conversationId?: string): ConversationTurn[];
+    getConversationHistory(): any[];
     /**
-     * Clear conversation history
+     * Get execution history
      */
-    clearConversationHistory(conversationId?: string): void;
+    getExecutionHistory(): ExecutionSummary[];
+    /**
+     * Start new conversation
+     */
+    startNewConversation(): string;
     /**
      * Get project context
      */
-    getProjectContext(): ProjectContext | null;
+    getProjectContext(): ProjectContext;
     /**
-     * Convert project summary to ProjectState format
+     * Get default user preferences
      */
-    private createProjectStateFromSummary;
+    private getDefaultPreferences;
     /**
-     * Cleanup resources
+     * Check if client is ready
      */
-    cleanup(): void;
+    isReady(): Promise<boolean>;
+    /**
+     * Get system status
+     */
+    getSystemStatus(): {
+        ready: boolean;
+        activeExecutions: number;
+        conversationId: string;
+        executionHistory: number;
+    };
 }

@@ -1,8 +1,13 @@
 # Manual Test Plan - Ollama Code CLI v0.1.0
-*Comprehensive Feature Testing - All Phases*
+*Comprehensive Testing for Three-Phase AI-Powered Development Assistant*
 
 ## Overview
-This manual test plan validates the complete Ollama Code CLI feature set, including basic functionality, enhanced AI capabilities, advanced features (git, testing, refactoring), and user experience enhancements (configuration, analytics, onboarding).
+This manual test plan validates the complete three-phase architecture implementation:
+- **Phase 1:** Natural Language Understanding & Intent Recognition
+- **Phase 2:** Autonomous Code Modification System
+- **Phase 3:** Enhanced Task Planning & Execution Engine
+
+The system transforms user requests into intelligent task plans, executes them autonomously with safety guarantees, and provides comprehensive AI-powered development assistance.
 
 ## Prerequisites
 - Node.js 18+ installed
@@ -23,451 +28,665 @@ ollama list
 # 3. If no models, pull one for testing
 ollama pull llama3.2
 
-# 4. Build the project
+# 4. Build the project and verify compilation
 npm run build
+npm test
 
 # 5. Test basic CLI accessibility
 ./dist/src/cli-selector.js --version
 
 # 6. Set up test project environment
-git init test-project && cd test-project
+mkdir test-project && cd test-project
+git init
 echo "console.log('Hello World');" > index.js
+echo "export function add(a, b) { return a + b; }" > math.js
 git add . && git commit -m "Initial commit"
 ```
 
 ---
 
-## Phase 1: Basic CLI Functionality Tests
+## Phase 1: Natural Language Understanding & Intent Recognition Tests
 
-### Test Group 1.1: Version and Help Commands
-**Priority: High**
-
-#### Test 1.1.1: Version Display
-**Command:** `./dist/src/cli-selector.js --version`
-- **Expected:** Displays "Ollama Code CLI v0.1.0"
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 1.1.2: Help Display
-**Command:** `./dist/src/cli-selector.js --help`
-- **Expected:**
-  - Shows usage information
-  - Lists all available modes (simple, advanced, interactive)
-  - Shows command categories (Assistance, Code Generation, Models, etc.)
-  - No errors or warnings
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 1.1.3: Command-Specific Help
-**Command:** `./dist/src/cli-selector.js help ask`
-- **Expected:** Shows detailed help for the 'ask' command including arguments and examples
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 1.2: Core AI Commands
-**Priority: High**
-
-#### Test 1.2.1: Ask Command Basic
-**Command:** `./dist/src/cli-selector.js --mode simple ask "What is TypeScript?"`
-- **Expected:** Returns informative response about TypeScript
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 1.2.2: Generate Command
-**Command:** `./dist/src/cli-selector.js --mode simple generate "a function to add two numbers"`
-- **Expected:** Generates JavaScript function code
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 1.2.3: Explain Command
-**Command:** `./dist/src/cli-selector.js --mode simple explain index.js`
-- **Expected:** Explains the contents of index.js file
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
----
-
-## Phase 2: Enhanced AI System Tests
-
-### Test Group 2.1: Enhanced AI Initialization
+### Test Group 1.1: Intent Analysis System
 **Priority: Critical**
 
-#### Test 2.1.1: Advanced Mode Initialization
-**Command:** `./dist/src/cli-selector.js --mode advanced help`
-- **Expected Output Pattern:**
-  ```
-  [INFO]: Ensuring Ollama server is running...
-  [INFO]: Initializing enhanced AI capabilities...
-  [INFO]: Enhanced AI module initialized successfully
-  [INFO]: Commands registered successfully
-  ```
+#### Test 1.1.1: Basic Intent Classification
+**Test Scenarios:**
+1. **Question Intent:** `./dist/src/cli-selector.js --mode advanced ask "What files are in this project?"`
+2. **Task Request Intent:** `./dist/src/cli-selector.js --mode advanced ask "Create a function to calculate factorial"`
+3. **Command Intent:** `./dist/src/cli-selector.js --mode advanced ask "Run the tests"`
+
+**Expected Results:**
+- System correctly identifies intent type (question/task_request/command)
+- Extracts relevant entities (files, technologies, concepts)
+- Assigns appropriate confidence scores
+- Determines complexity and risk levels
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 2.1.2: Project Context System
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "What files are in this project?"`
-- **Expected:**
-  - AI initialization includes project context setup
-  - Response demonstrates awareness of project structure
-  - No errors during project analysis
+#### Test 1.1.2: Entity Extraction Accuracy
+**Test Command:** `./dist/src/cli-selector.js --mode advanced ask "Refactor the math.js file to use TypeScript and add unit tests"`
+
+**Expected Entities:**
+- Files: ["math.js"]
+- Technologies: ["TypeScript", "unit tests"]
+- Concepts: ["refactor"]
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 2.1.3: Enhanced Response Quality
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "How should I structure this project?"`
-- **Expected:**
-  - Higher quality, more contextual response than simple mode
-  - Project-specific recommendations
-  - Detailed and actionable advice
+#### Test 1.1.3: Multi-Step Intent Detection
+**Test Command:** `./dist/src/cli-selector.js --mode advanced ask "Analyze this codebase, create documentation, and set up a CI pipeline"`
+
+**Expected:**
+- Detected as multi-step request
+- High complexity classification
+- Multiple sub-intents identified
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
----
-
-## Phase 3: Advanced Feature Tests
-
-### Test Group 3.1: Git Integration Commands
+### Test Group 1.2: Conversation Management
 **Priority: High**
 
-#### Test 3.1.1: Git Status Command
-**Command:** `./dist/src/cli-selector.js git-status`
-- **Expected:**
-  - Shows formatted git status with colors
-  - Includes file change summary
-  - AI insights about repository state
+#### Test 1.2.1: Context Preservation
+**Test Sequence:**
+1. `./dist/src/cli-selector.js --mode advanced ask "What's in index.js?"`
+2. `./dist/src/cli-selector.js --mode advanced ask "Can you improve it?"`
+
+**Expected:**
+- Second request references context from first
+- Conversation ID maintained across requests
+- Context-aware response about index.js improvements
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 3.1.2: AI Commit Messages
-**Setup:** Make changes to a file
-**Command:** `./dist/src/cli-selector.js git-commit-ai`
-- **Expected:**
-  - Analyzes staged changes
-  - Generates intelligent commit message
-  - Follows conventional commit format
+#### Test 1.2.2: Conversation History
+**Test Command:** After multiple interactions, check conversation persistence
+
+**Expected:**
+- Previous conversation turns stored
+- Context available for reference
+- Conversation metadata tracked
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 3.1.3: Git Branch Analysis
-**Command:** `./dist/src/cli-selector.js git-analyze`
-- **Expected:**
-  - Shows branch statistics
-  - Commit analysis and patterns
-  - Development insights
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 3.2: Testing Commands
-**Priority: Medium**
-
-#### Test 3.2.1: Test Generation
-**Command:** `./dist/src/cli-selector.js test-generate --file index.js`
-- **Expected:**
-  - Generates appropriate test cases
-  - Uses detected test framework
-  - Includes edge cases and assertions
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 3.2.2: Test Analysis
-**Setup:** Create a test file
-**Command:** `./dist/src/cli-selector.js test-analyze`
-- **Expected:**
-  - Analyzes test coverage
-  - Identifies missing test cases
-  - Provides testing recommendations
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 3.3: Refactoring Commands
-**Priority: Medium**
-
-#### Test 3.3.1: Code Refactoring Suggestions
-**Command:** `./dist/src/cli-selector.js refactor-suggest --file index.js`
-- **Expected:**
-  - Analyzes code quality
-  - Suggests specific improvements
-  - Explains refactoring benefits
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 3.3.2: Extract Function
-**Command:** `./dist/src/cli-selector.js refactor-extract --file index.js --lines "1-5"`
-- **Expected:**
-  - Identifies extractable code
-  - Suggests function name and parameters
-  - Shows refactored result
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
----
-
-## Phase 4: User Experience Enhancement Tests
-
-### Test Group 4.1: Configuration Management
+### Test Group 1.3: Natural Language Routing
 **Priority: High**
 
-#### Test 4.1.1: Configuration Display
-**Command:** `./dist/src/cli-selector.js config-show`
-- **Expected:**
-  - Shows current configuration summary
-  - Displays key settings clearly
-  - Provides helpful usage tips
+#### Test 1.3.1: Command Mapping
+**Test Commands:**
+1. `./dist/src/cli-selector.js --mode advanced ask "Show me the git status"`
+2. `./dist/src/cli-selector.js --mode advanced ask "Generate code for a web server"`
+
+**Expected:**
+- Natural language mapped to appropriate system commands
+- Correct routing decisions made
+- Execution requirements identified
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.1.2: Configuration Updates
-**Command:** `./dist/src/cli-selector.js config-set ai.defaultModel llama3.2`
-- **Expected:**
-  - Updates configuration successfully
-  - Confirms changes
-  - Persists settings for future sessions
+#### Test 1.3.2: Clarification Requests
+**Test Command:** `./dist/src/cli-selector.js --mode advanced ask "Make it better"`
+
+**Expected:**
+- System recognizes ambiguous request
+- Generates clarification questions
+- Provides context options
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.1.3: Project Configuration
-**Command:** `./dist/src/cli-selector.js config-init --project`
-- **Expected:**
-  - Creates .ollama-code.json in current directory
-  - Sets up project-specific defaults
-  - Shows configuration options
+---
+
+## Phase 2: Autonomous Code Modification System Tests
+
+### Test Group 2.1: Safe Code Editor
+**Priority: Critical**
+
+#### Test 2.1.1: Atomic File Operations
+**Setup:** Create test file: `echo "function test() { console.log('test'); }" > test.js`
+**Test:** Initiate code modification that creates backup
+
+**Expected:**
+- Original file backed up before modification
+- Changes applied atomically
+- Validation performed before commit
+- Backup files created in `.ollama-code-backups/`
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-### Test Group 4.2: Shell Completion
-**Priority: Medium**
+#### Test 2.1.2: Content Validation
+**Test:** Attempt to create file with invalid JavaScript syntax
 
-#### Test 4.2.1: Completion Installation
-**Command:** `./dist/src/cli-selector.js completion-install`
-- **Expected:**
-  - Auto-detects current shell
-  - Installs completion script
-  - Provides activation instructions
+**Expected:**
+- Syntax validation catches errors
+- Invalid changes rejected
+- Clear error messages provided
+- Original file remains unchanged
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.2.2: Completion Generation
-**Command:** `./dist/src/cli-selector.js completion bash`
-- **Expected:**
-  - Generates valid bash completion script
-  - Includes all commands and options
-  - Properly formatted output
+#### Test 2.1.3: Rollback Capability
+**Test:** Create modification, then test rollback functionality
+
+**Expected:**
+- Successful rollback to previous state
+- Backup files used for restoration
+- File integrity maintained
+- No data loss
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-### Test Group 4.3: Analytics and Progress Tracking
-**Priority: Medium**
-
-#### Test 4.3.1: Usage Analytics
-**Setup:** Run several commands first
-**Command:** `./dist/src/cli-selector.js analytics-show`
-- **Expected:**
-  - Shows command usage statistics
-  - Displays success rates and trends
-  - Provides actionable insights
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 4.3.2: Workflow Analysis
-**Command:** `./dist/src/cli-selector.js analytics-workflow`
-- **Expected:**
-  - Identifies command patterns
-  - Suggests workflow optimizations
-  - Shows efficiency recommendations
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 4.3.3: Analytics Export
-**Command:** `./dist/src/cli-selector.js analytics-export usage-data.json`
-- **Expected:**
-  - Exports analytics data successfully
-  - Creates valid JSON file
-  - Includes comprehensive usage information
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 4.4: Tutorial and Onboarding System
+### Test Group 2.2: AST Manipulation
 **Priority: High**
 
-#### Test 4.4.1: Onboarding Process
-**Command:** `./dist/src/cli-selector.js onboarding`
-- **Expected:**
-  - Starts guided setup process
-  - Creates user configuration
-  - Shows available tutorials
+#### Test 2.2.1: Function Extraction
+**Setup:** Create file with extractable function
+**Test:** AST analysis and function identification
+
+**Expected:**
+- Functions correctly identified
+- Parameters and return types extracted
+- Scope information preserved
+- Export status detected
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.4.2: Tutorial List
-**Command:** `./dist/src/cli-selector.js tutorial-list`
-- **Expected:**
-  - Shows all available tutorials by category
-  - Displays progress status
-  - Includes difficulty and time estimates
+#### Test 2.2.2: Symbol Renaming
+**Test:** Rename variable across multiple scopes
+
+**Expected:**
+- All references updated consistently
+- Scope boundaries respected
+- No naming conflicts created
+- Proper transformation applied
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.4.3: Tutorial Execution
-**Command:** `./dist/src/cli-selector.js tutorial-start getting-started`
-- **Expected:**
-  - Starts interactive tutorial
-  - Provides step-by-step guidance
-  - Tracks progress and completion
+#### Test 2.2.3: Import Management
+**Test:** Add/modify import statements
+
+**Expected:**
+- Import statements correctly parsed
+- Dependencies tracked
+- Module resolution respected
+- Clean import organization
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 4.4.4: Tutorial Progress
-**Command:** `./dist/src/cli-selector.js tutorial-progress`
-- **Expected:**
-  - Shows learning progress overview
-  - Displays achievements earned
-  - Suggests next steps
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 4.5: Performance Optimization
-**Priority: Medium**
-
-#### Test 4.5.1: Performance Analysis
-**Command:** `./dist/src/cli-selector.js performance-analyze`
-- **Expected:**
-  - Analyzes system performance
-  - Identifies optimization opportunities
-  - Provides specific recommendations
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 4.5.2: Memory Optimization
-**Command:** `./dist/src/cli-selector.js performance-optimize`
-- **Expected:**
-  - Optimizes memory usage
-  - Clears cache if needed
-  - Reports optimization results
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
----
-
-## Phase 5: Interactive UI and Menu System Tests
-
-### Test Group 5.1: Interactive Menu
-**Priority: Medium**
-
-#### Test 5.1.1: Main Menu Navigation
-**Command:** `./dist/src/cli-selector.js` (interactive mode)
-- **Expected:**
-  - Shows categorized command menu
-  - Allows keyboard navigation
-  - Displays command descriptions
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 5.1.2: Command Search
-**Setup:** In interactive mode, use search feature
-- **Expected:**
-  - Filters commands by search term
-  - Highlights matching results
-  - Allows quick command selection
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 5.1.3: Recent Commands
-**Setup:** Execute commands, then return to menu
-- **Expected:**
-  - Shows recently used commands
-  - Allows quick re-execution
-  - Maintains command history
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 5.1.4: Interactive Mode Exit
-**Setup:** Start interactive mode: `./dist/src/cli-selector.js`
-**Commands to test:** `exit`, `quit`, `q`, `.exit`
-- **Expected:**
-  - Prints "Goodbye!"
-  - Cleanly exits to shell
-  - No hanging processes
-  - Process terminates with exit code 0
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
----
-
-## Phase 6: Error Handling and Edge Cases
-
-### Test Group 6.1: Error Handling
+### Test Group 2.3: Backup Management
 **Priority: High**
 
-#### Test 6.1.1: Invalid Commands
-**Command:** `./dist/src/cli-selector.js invalid-command`
-- **Expected:**
-  - Shows helpful error message
-  - Suggests similar commands
-  - Provides usage guidance
+#### Test 2.3.1: Checkpoint Creation
+**Test:** Create checkpoint before major modifications
+
+**Expected:**
+- Checkpoint metadata stored
+- File hashes calculated
+- Git integration (if available)
+- Timestamp and description recorded
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 6.1.2: Connection Errors
-**Setup:** Stop Ollama server
-**Command:** `./dist/src/cli-selector.js ask "test"`
-- **Expected:**
-  - Graceful error handling
-  - Clear resolution instructions
-  - No crashes or stack traces
+#### Test 2.3.2: Checkpoint Restoration
+**Test:** Restore from specific checkpoint
+
+**Expected:**
+- Files restored to checkpoint state
+- Conflict detection works
+- Metadata consistency maintained
+- Git state restored (if applicable)
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 6.1.3: File System Errors
-**Command:** `./dist/src/cli-selector.js explain /nonexistent/file.js`
-- **Expected:**
-  - Clear file not found error
-  - Helpful suggestions
-  - Graceful handling
+#### Test 2.3.3: Backup Cleanup
+**Test:** Verify automatic cleanup of old backups
+
+**Expected:**
+- Old backups removed based on retention policy
+- Important checkpoints preserved
+- Disk space managed efficiently
+- No critical data lost
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-### Test Group 6.2: Resource Management
-**Priority: Medium**
+### Test Group 2.4: Autonomous Modifier Orchestration
+**Priority: Critical**
 
-#### Test 6.2.1: Memory Usage
-**Setup:** Monitor system resources during heavy usage
-**Command:** Run multiple complex commands in sequence
-- **Expected:**
-  - Reasonable memory usage (<1GB)
-  - No memory leaks
-  - Efficient resource cleanup
+#### Test 2.4.1: Modification Plan Execution
+**Test:** Execute complex modification plan with multiple operations
+
+**Expected:**
+- Plan executed in correct order
+- Dependencies respected
+- Rollback on failure
+- Progress tracking works
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test 6.2.2: Large Project Handling
-**Setup:** Test in large codebase (1000+ files)
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "What is this project about?"`
-- **Expected:**
-  - Reasonable initialization time (<60 seconds)
-  - No performance degradation
-  - Selective analysis for efficiency
+#### Test 2.4.2: Risk Assessment
+**Test:** High-risk modification with safety checks
+
+**Expected:**
+- Risk level correctly assessed
+- Safety measures activated
+- User confirmation required for high-risk
+- Automatic rollback on critical failure
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.4.3: Error Recovery
+**Test:** Trigger error during modification
+
+**Expected:**
+- Graceful error handling
+- Partial changes rolled back
+- Clear error reporting
+- System state preserved
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
 ---
 
-## Phase 7: Integration and Compatibility Tests
+## Phase 3: Enhanced Task Planning & Execution Engine Tests
 
-### Test Group 7.1: Cross-Platform Compatibility
+### Test Group 3.1: Task Decomposition
+**Priority: Critical**
+
+#### Test 3.1.1: Complex Request Breakdown
+**Test Command:** `./dist/src/cli-selector.js --mode advanced ask "Create a REST API with authentication, database integration, and comprehensive tests"`
+
+**Expected:**
+- Request decomposed into logical tasks
+- Dependencies identified and ordered
+- Risk assessment performed
+- Timeline estimation provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.1.2: Dependency Analysis
+**Test:** Multi-step implementation plan
+
+**Expected:**
+- Implicit dependencies added
+- Circular dependencies detected
+- Task priority ordering
+- Critical path identified
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.1.3: Task Types and Priorities
+**Test:** Various request types (analysis, implementation, testing, documentation)
+
+**Expected:**
+- Appropriate task types assigned
+- Priorities set correctly
+- Setup and validation tasks added
+- Resource requirements estimated
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.2: Execution Strategies
+**Priority: High**
+
+#### Test 3.2.1: Strategy Selection
+**Test:** Different task types with varying complexity
+
+**Expected:**
+- Appropriate strategy selected for each task
+- Suitability scoring works correctly
+- Context factors considered
+- Historical performance influences selection
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.2.2: Parallel vs Sequential Execution
+**Test:** Plan with parallelizable and dependent tasks
+
+**Expected:**
+- Independent tasks run in parallel
+- Dependent tasks wait for prerequisites
+- Resource constraints respected
+- Failure handling preserves consistency
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.2.3: Adaptive Learning
+**Test:** Repeated similar tasks over time
+
+**Expected:**
+- Performance history tracked
+- Strategy selection improves
+- Similar task patterns recognized
+- Learning from success/failure rates
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.3: Enhanced Client Integration
+**Priority: Critical**
+
+#### Test 3.3.1: End-to-End Request Processing
+**Test Command:** `./dist/src/cli-selector.js --mode advanced ask "Analyze this project and suggest improvements"`
+
+**Expected:**
+- Intent analysis performed
+- Execution plan created
+- Plan presented for approval (if required)
+- Results summarized clearly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.3.2: Session Management
+**Test:** Multiple requests in same session
+
+**Expected:**
+- Session state maintained
+- Conversation history preserved
+- Execution history tracked
+- Preferences applied consistently
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.3.3: User Preferences and Auto-execution
+**Test:** Different risk tolerance and execution mode settings
+
+**Expected:**
+- Low-risk plans auto-executed (if enabled)
+- High-risk plans require approval
+- User preferences respected
+- Override options available
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.4: Plan Management
+**Priority: High**
+
+#### Test 3.4.1: Plan Proposal Generation
+**Test:** Complex request that requires approval
+
+**Expected:**
+- Clear plan description
+- Task breakdown with estimates
+- Risk level communicated
+- Approval options provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.4.2: Plan Modification
+**Test:** Request plan adjustments before execution
+
+**Expected:**
+- Plan can be modified
+- Dependencies updated automatically
+- Risk assessment recalculated
+- New timeline generated
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.4.3: Execution Monitoring
+**Test:** Monitor long-running plan execution
+
+**Expected:**
+- Real-time progress updates
+- Task status tracking
+- Resource usage monitoring
+- Cancellation capability
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 4: Integration and System-Wide Tests
+
+### Test Group 4.1: Cross-Phase Integration
+**Priority: Critical**
+
+#### Test 4.1.1: Full Pipeline Test
+**Test Command:** `./dist/src/cli-selector.js --mode advanced ask "Refactor this codebase to use modern JavaScript features and add comprehensive error handling"`
+
+**Expected:**
+- Phase 1: Intent correctly analyzed
+- Phase 2: Safe code modifications planned
+- Phase 3: Execution plan created and executed
+- All phases work together seamlessly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.1.2: Error Propagation
+**Test:** Trigger error in each phase
+
+**Expected:**
+- Errors handled gracefully at each level
+- Clear error messages propagated
+- System state preserved
+- Recovery options provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.1.3: Resource Management
+**Test:** Resource-intensive operations
+
+**Expected:**
+- Memory usage reasonable
+- CPU utilization controlled
+- Disk space managed
+- Network resources optimized
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.2: Safety and Reliability
+**Priority: Critical**
+
+#### Test 4.2.1: Data Integrity
+**Test:** Multiple concurrent operations
+
+**Expected:**
+- No data corruption
+- Atomic operations maintained
+- Backup integrity preserved
+- Version control consistency
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.2.2: Failure Recovery
+**Test:** System interruption during operation
+
+**Expected:**
+- Graceful shutdown handling
+- State recovery on restart
+- No partial modifications
+- Backup availability maintained
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.2.3: Security Considerations
+**Test:** Potential security risks
+
+**Expected:**
+- No arbitrary code execution
+- File access restrictions respected
+- User permissions validated
+- Sensitive data protected
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 5: Performance and Quality Tests
+
+### Test Group 5.1: Performance Benchmarks
 **Priority: Medium**
 
-#### Test 7.1.1: Operating Systems
+#### Test 5.1.1: Initialization Time
+**Test:** `time ./dist/src/cli-selector.js --mode advanced help`
+
+**Targets:**
+- Enhanced AI initialization: <30 seconds
+- First request processing: <60 seconds
+- **Actual Time:** _______ seconds
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.2: Request Processing Speed
+**Test:** Simple vs complex requests
+
+**Targets:**
+- Simple questions: <30 seconds
+- Complex task plans: <120 seconds
+- **Actual Times:** Simple: ___ Complex: ___ seconds
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.3: Memory Usage
+**Test:** Monitor memory during typical usage
+
+**Targets:**
+- Base memory usage: <500MB
+- Peak usage during processing: <2GB
+- **Actual Usage:** Base: ___ Peak: ___ MB
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.2: Response Quality
+**Priority: High**
+
+#### Test 5.2.1: Context Awareness
+**Setup:** In a React TypeScript project
+**Test:** `./dist/src/cli-selector.js --mode advanced ask "How should I organize my components?"`
+
+**Quality Indicators:**
+- [ ] Mentions React-specific patterns
+- [ ] Considers TypeScript usage
+- [ ] References project structure
+- [ ] Provides actionable advice
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.2.2: Code Generation Quality
+**Test:** `./dist/src/cli-selector.js --mode advanced ask "Create a user authentication system"`
+
+**Quality Indicators:**
+- [ ] Generated code is syntactically correct
+- [ ] Follows security best practices
+- [ ] Includes proper error handling
+- [ ] Well-documented and commented
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.2.3: Plan Quality Assessment
+**Test:** Complex multi-step request
+
+**Quality Indicators:**
+- [ ] Logical task breakdown
+- [ ] Realistic time estimates
+- [ ] Appropriate risk assessment
+- [ ] Clear success criteria
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 6: Edge Cases and Error Handling
+
+### Test Group 6.1: System Limits
+**Priority: Medium**
+
+#### Test 6.1.1: Large Project Handling
+**Setup:** Large codebase (1000+ files)
+**Test:** Project analysis and task planning
+
+**Expected:**
+- Selective analysis for performance
+- Reasonable memory usage
+- Progressive loading
+- Timeout handling
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.1.2: Complex Dependency Chains
+**Test:** Plan with 20+ interdependent tasks
+
+**Expected:**
+- Dependency resolution completes
+- No circular dependencies
+- Reasonable execution order
+- Clear visualization
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.1.3: Resource Exhaustion
+**Test:** Operations under resource constraints
+
+**Expected:**
+- Graceful degradation
+- Priority-based resource allocation
+- Clear resource limit messages
+- Recovery when resources available
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 6.2: Error Scenarios
+**Priority: High**
+
+#### Test 6.2.1: Ollama Server Issues
+**Setup:** Stop Ollama server during operation
+**Test:** Continue using system
+
+**Expected:**
+- Clear connection error messages
+- Graceful fallback behavior
+- Recovery when server restored
+- No data loss or corruption
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.2.2: File System Errors
+**Test:** Insufficient permissions, disk full, etc.
+
+**Expected:**
+- Clear error messages
+- No partial file writes
+- Backup systems protected
+- Recovery options provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 6.2.3: Invalid User Input
+**Test:** Malformed requests, invalid commands
+
+**Expected:**
+- Input validation works
+- Helpful error messages
+- Suggestion for corrections
+- No system crashes
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 7: Compatibility and Platform Tests
+
+### Test Group 7.1: Operating System Compatibility
+**Priority: Medium**
+
+#### Test 7.1.1: Cross-Platform File Operations
 **Platforms:** macOS, Linux, Windows (WSL)
-**Command:** `./dist/src/cli-selector.js --version`
-- **Expected:** Consistent behavior across platforms
+**Test:** File creation, modification, backup operations
+
+**Expected:**
+- Consistent behavior across platforms
+- Proper path handling
+- File permission respect
 - **Platform Tested:** _____________
 - **Status:** [ ] Pass [ ] Fail [ ] N/A
 - **Notes:** _____________
 
-#### Test 7.1.2: Node.js Versions
+#### Test 7.1.2: Node.js Version Compatibility
 **Versions:** Node.js 18, 20, 22
-**Command:** `node --version && ./dist/src/cli-selector.js --version`
-- **Expected:** Compatible with all supported versions
+**Test:** All core functionality
+
+**Expected:**
+- No version-specific issues
+- Consistent API behavior
+- Proper dependency resolution
 - **Version Tested:** _____________
 - **Status:** [ ] Pass [ ] Fail [ ] N/A
 - **Notes:** _____________
@@ -477,55 +696,14 @@ git add . && git commit -m "Initial commit"
 
 #### Test 7.2.1: Different Ollama Models
 **Models:** llama3.2, codellama, mistral, qwen2.5-coder
-**Command:** `./dist/src/cli-selector.js config-set ai.defaultModel <model-name>`
-- **Expected:** Works with different model types and sizes
+**Test:** Intent analysis and code generation
+
+**Expected:**
+- Works with different model capabilities
+- Adapts to model strengths
+- Consistent interface
 - **Model Tested:** _____________
 - **Status:** [ ] Pass [ ] Fail [ ] N/A
-- **Notes:** _____________
-
----
-
-## Phase 8: Performance and Quality Assessment
-
-### Test Group 8.1: Response Quality
-**Priority: High**
-
-#### Test 8.1.1: Context-Aware Responses
-**Setup:** In a React TypeScript project
-**Command:** `./dist/src/cli-selector.js --mode advanced ask "How should I structure my components?"`
-- **Quality Indicators:**
-  - [ ] Mentions React-specific patterns
-  - [ ] Considers TypeScript usage
-  - [ ] References project structure
-  - [ ] Provides actionable advice
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 8.1.2: Code Generation Quality
-**Command:** `./dist/src/cli-selector.js generate "a REST API endpoint with validation"`
-- **Quality Indicators:**
-  - [ ] Syntactically correct code
-  - [ ] Follows best practices
-  - [ ] Includes error handling
-  - [ ] Properly documented
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-### Test Group 8.2: Performance Benchmarks
-**Priority: Low**
-
-#### Test 8.2.1: Initialization Time
-**Command:** `time ./dist/src/cli-selector.js --mode advanced help`
-- **Target:** <15 seconds for complete initialization
-- **Actual Time:** _______ seconds
-- **Status:** [ ] Pass [ ] Fail
-- **Notes:** _____________
-
-#### Test 8.2.2: Response Time
-**Command:** `./dist/src/cli-selector.js ask "What is 2+2?"`
-- **Target:** <30 seconds for simple queries
-- **Actual Time:** _______ seconds
-- **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
 ---
@@ -533,21 +711,20 @@ git add . && git commit -m "Initial commit"
 ## Test Execution Summary
 
 ### Overall Test Results
-- **Total Tests:** 53
-- **Tests Passed:** _____ / 53
-- **Tests Failed:** _____ / 53
-- **Tests Skipped:** _____ / 53
+- **Total Tests:** 65
+- **Tests Passed:** _____ / 65
+- **Tests Failed:** _____ / 65
+- **Tests Skipped:** _____ / 65
 - **Pass Rate:** _____%
 
 ### Test Results by Phase
-- **Phase 1 - Basic CLI:** _____ / 6 tests passed
-- **Phase 2 - Enhanced AI:** _____ / 3 tests passed
-- **Phase 3 - Advanced Features:** _____ / 6 tests passed
-- **Phase 4 - User Experience:** _____ / 14 tests passed
-- **Phase 5 - Interactive UI:** _____ / 4 tests passed
-- **Phase 6 - Error Handling:** _____ / 5 tests passed
-- **Phase 7 - Compatibility:** _____ / 4 tests passed
-- **Phase 8 - Quality/Performance:** _____ / 4 tests passed
+- **Phase 1 - Natural Language Understanding:** _____ / 9 tests passed
+- **Phase 2 - Autonomous Code Modification:** _____ / 12 tests passed
+- **Phase 3 - Task Planning & Execution:** _____ / 12 tests passed
+- **Phase 4 - Integration & System-Wide:** _____ / 9 tests passed
+- **Phase 5 - Performance & Quality:** _____ / 9 tests passed
+- **Phase 6 - Edge Cases & Error Handling:** _____ / 9 tests passed
+- **Phase 7 - Compatibility & Platform:** _____ / 5 tests passed
 
 ### Critical Issues Found
 1. _____________________________________
@@ -560,81 +737,91 @@ git add . && git commit -m "Initial commit"
 3. _____________________________________
 
 ### Feature Completeness Assessment
-- **Basic CLI Functionality:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Enhanced AI System:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Git Integration:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Testing Tools:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Refactoring Tools:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Configuration Management:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Shell Integration:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Analytics & Progress:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Tutorial System:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Performance Tools:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Natural Language Understanding:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Intent Analysis & Routing:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Conversation Management:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Safe Code Editing:** [ ] Complete [ ] Partial [ ] Major Issues
+- **AST Manipulation:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Backup & Recovery:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Task Planning:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Execution Strategies:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Risk Management:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Session Management:** [ ] Complete [ ] Partial [ ] Major Issues
 
 ### Production Readiness Assessment
 **Overall System:** [ ] Ready for Production [ ] Needs Minor Fixes [ ] Needs Major Fixes [ ] Not Ready
 
-### Recommendations
-1. _____________________________________
-2. _____________________________________
-3. _____________________________________
+### Specific Recommendations
+1. **Performance Optimizations:** _____________________________________
+2. **Safety Enhancements:** _____________________________________
+3. **User Experience Improvements:** _____________________________________
+4. **Error Handling Refinements:** _____________________________________
 
 ### Next Steps
 - [ ] Address critical issues identified
-- [ ] Implement missing features
-- [ ] Performance optimizations
-- [ ] Additional automated test coverage
-- [ ] Documentation updates
-- [ ] User acceptance testing
+- [ ] Implement performance optimizations
+- [ ] Enhance error messaging and recovery
+- [ ] Add missing safety checks
+- [ ] Improve user documentation
+- [ ] Conduct user acceptance testing
+- [ ] Prepare production deployment
 
 ---
 
-## Appendix: Troubleshooting Common Issues
+## Appendix: Advanced Testing Scenarios
 
-### Issue 1: "Connection to Ollama failed"
-**Solution:**
-1. Verify Ollama is running: `curl http://localhost:11434/api/tags`
-2. Start Ollama: `ollama serve`
-3. Check firewall settings
-4. Verify model availability: `ollama list`
+### Scenario A: Full Development Workflow
+**Goal:** Test complete development assistance workflow
+**Steps:**
+1. Project analysis request
+2. Architecture recommendations
+3. Code implementation
+4. Testing strategy
+5. Documentation generation
+6. Deployment planning
 
-### Issue 2: "Permission denied" for CLI
-**Solution:**
-1. Set executable permissions: `chmod +x dist/src/cli-selector.js`
-2. Check file ownership
-3. Try `node dist/src/cli-selector.js` instead
+**Success Criteria:**
+- All phases complete successfully
+- Consistent quality throughout
+- Proper safety measures maintained
+- User satisfaction with results
 
-### Issue 3: Configuration issues
-**Solution:**
-1. Reset configuration: `./dist/src/cli-selector.js config-reset --confirm`
-2. Reinitialize: `./dist/src/cli-selector.js config-init`
-3. Check file permissions in ~/.ollama-code/
+### Scenario B: Emergency Recovery
+**Goal:** Test system recovery under adverse conditions
+**Steps:**
+1. Begin complex modification plan
+2. Simulate system interruption
+3. Restart system
+4. Verify data integrity
+5. Resume or rollback as appropriate
 
-### Issue 4: Tutorial or analytics errors
-**Solution:**
-1. Clear analytics data: `./dist/src/cli-selector.js analytics-clear --confirm`
-2. Reset tutorial progress: `./dist/src/cli-selector.js tutorial-reset --confirm`
-3. Check disk space for data storage
+**Success Criteria:**
+- No data loss or corruption
+- Clear recovery options
+- System stability maintained
+- User confidence preserved
 
-### Issue 5: Performance issues
-**Solution:**
-1. Run performance analysis: `./dist/src/cli-selector.js performance-analyze`
-2. Optimize memory: `./dist/src/cli-selector.js performance-optimize`
-3. Check system resources and close other applications
-4. Use simpler model if available
+### Scenario C: Collaborative Development
+**Goal:** Test system in team environment
+**Steps:**
+1. Multiple users working on same project
+2. Concurrent modification requests
+3. Shared backup and history
+4. Conflict resolution
 
-### Issue 6: Git command failures
-**Solution:**
-1. Ensure you're in a git repository: `git status`
-2. Check git configuration: `git config --list`
-3. Verify git permissions and access
+**Success Criteria:**
+- Proper concurrency handling
+- No conflicts or data races
+- Clear ownership and permissions
+- Seamless collaboration experience
 
 ---
 
-**Test Plan Version:** 2.0 (Comprehensive)
-**Created:** September 18, 2025
-**Last Updated:** September 18, 2025
-**Covers:** All phases (Basic CLI, Enhanced AI, Advanced Features, User Experience)
+**Test Plan Version:** 3.0 (Three-Phase Architecture)
+**Created:** September 19, 2025
+**Last Updated:** September 19, 2025
+**Covers:** Complete AI-powered development assistant with autonomous capabilities
 **Tested By:** ________________
 **Date Executed:** ________________
 **Environment:** ________________
+**Notes:** This test plan covers the comprehensive three-phase implementation including natural language understanding, autonomous code modification, and intelligent task planning and execution.

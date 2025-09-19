@@ -5,7 +5,7 @@
  * This module handles initialization, configuration, and access to AI services.
  */
 import { OllamaClient } from './ollama-client.js';
-import { EnhancedAIClient } from './enhanced-client.js';
+import { EnhancedClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
 import { TaskPlanner } from './task-planner.js';
 import { logger } from '../utils/logger.js';
@@ -38,7 +38,7 @@ export async function initAI(config = {}) {
         projectContext = new ProjectContext(projectRoot);
         await projectContext.initialize();
         // Initialize enhanced AI client
-        enhancedClient = new EnhancedAIClient(aiClient, projectContext);
+        enhancedClient = new EnhancedClient(aiClient, projectContext);
         // Initialize task planner
         taskPlanner = new TaskPlanner(enhancedClient, projectContext);
         logger.info('Enhanced AI module initialized successfully');
@@ -144,6 +144,6 @@ export * from './ollama-client.js';
 export * from './prompts.js';
 // Re-export enhanced AI components
 export { ProjectContext } from './context.js';
-export { EnhancedAIClient } from './enhanced-client.js';
+export { EnhancedClient } from './enhanced-client.js';
 export { TaskPlanner } from './task-planner.js';
 //# sourceMappingURL=index.js.map

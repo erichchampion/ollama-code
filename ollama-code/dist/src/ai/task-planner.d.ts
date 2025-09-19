@@ -4,7 +4,7 @@
  * Decomposes complex user requests into smaller, manageable tasks with
  * dependency analysis, progress tracking, and adaptive planning capabilities.
  */
-import { EnhancedAIClient } from './enhanced-client.js';
+import { EnhancedClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
 export interface Task {
     id: string;
@@ -64,7 +64,7 @@ export declare class TaskPlanner {
     private aiClient;
     private projectContext;
     private activePlans;
-    constructor(aiClient: EnhancedAIClient, projectContext: ProjectContext);
+    constructor(aiClient: EnhancedClient, projectContext: ProjectContext);
     /**
      * Create a task plan from user request
      */

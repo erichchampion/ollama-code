@@ -7,11 +7,12 @@
  */
 
 import { logger } from '../utils/logger.js';
-import { OllamaClient } from './client.js';
+import { OllamaClient } from './ollama-client.js';
 import { ProjectContext } from './context.js';
 import { IntentAnalyzer, UserIntent } from './intent-analyzer.js';
 import { ConversationManager } from './conversation-manager.js';
-import { TaskPlanner, ExecutionPlan } from '../planning/task-planner.js';
+import { TaskPlanner } from './task-planner.js';
+import { TaskPlan } from './task-planner.js';
 import { ExecutionEngine, ExecutionResult } from '../execution/execution-engine.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
 import { NaturalLanguageRouter } from '../routing/nl-router.js';
@@ -33,7 +34,7 @@ export interface ProcessingResult {
   success: boolean;
   intent: UserIntent;
   response: string;
-  executionPlan?: ExecutionPlan;
+  executionPlan?: TaskPlan;
   executionResults?: Map<string, ExecutionResult>;
   conversationId: string;
   processingTime: number;
@@ -42,7 +43,7 @@ export interface ProcessingResult {
 
 export interface SessionState {
   conversationId: string;
-  activeExecutionPlan?: ExecutionPlan;
+  activeTaskPlan?: TaskPlan;
   pendingTasks: string[];
   executionHistory: ExecutionSummary[];
   preferences: UserPreferences;
@@ -84,21 +85,24 @@ export class EnhancedClient {
     this.projectContext = projectContext;
 
     // Initialize core components
-    this.ollamaClient = new OllamaClient(config.baseUrl, config.model);
-    this.intentAnalyzer = new IntentAnalyzer(this.ollamaClient, projectContext);
+    this.ollamaClient = new OllamaClient({
+      apiBaseUrl: config.baseUrl,
+      defaultModel: config.model
+    });
+    this.intentAnalyzer = new IntentAnalyzer(this.ollamaClient);
     this.conversationManager = new ConversationManager();
     this.autonomousModifier = new AutonomousModifier();
-    this.taskPlanner = new TaskPlanner(projectContext);
+    this.taskPlanner = new TaskPlanner(this, projectContext);
     this.executionEngine = new ExecutionEngine(
       projectContext,
       this.autonomousModifier,
       this.ollamaClient
     );
-    this.nlRouter = new NaturalLanguageRouter();
+    this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner);
 
     // Initialize session state
     this.sessionState = {
-      conversationId: this.conversationManager.startNewConversation(),
+      conversationId: this.conversationManager.getConversationContext().sessionId,
       pendingTasks: [],
       executionHistory: [],
       preferences: this.getDefaultPreferences()
@@ -112,11 +116,13 @@ export class EnhancedClient {
     try {
       logger.info('Initializing Enhanced AI Client');
 
-      await Promise.all([
-        this.ollamaClient.initialize(),
-        this.autonomousModifier.initialize(),
-        this.projectContext.initialize()
-      ]);
+      // Initialize project context if available
+      if (this.projectContext) {
+        await this.projectContext.initialize();
+      }
+
+      // Test Ollama connection
+      await this.ollamaClient.testConnection();
 
       logger.info('Enhanced AI Client initialized successfully');
     } catch (error) {
@@ -135,10 +141,15 @@ export class EnhancedClient {
       logger.info('Processing user message', { message: message.substring(0, 100) });
 
       // Add to conversation
-      this.conversationManager.addUserMessage(this.sessionState.conversationId, message);
+      // User message is handled when adding turn
 
       // Analyze intent
-      const intent = await this.intentAnalyzer.analyzeIntent(message);
+      const intent = await this.intentAnalyzer.analyze(message, {
+        projectContext: this.projectContext,
+        conversationHistory: this.conversationManager.getRecentHistory(5).map(turn => turn.userInput),
+        workingDirectory: process.cwd(),
+        recentFiles: this.projectContext?.allFiles.slice(0, 20).map(f => f.path) || []
+      });
 
       logger.debug('Intent analyzed', {
         type: intent.type,
@@ -148,13 +159,23 @@ export class EnhancedClient {
       });
 
       // Route to appropriate handler
-      const routingResult = await this.nlRouter.route(intent, this.projectContext);
+      const routingContext = {
+        projectContext: this.projectContext,
+        conversationManager: this.conversationManager,
+        workingDirectory: process.cwd(),
+        userPreferences: {
+          autoApprove: this.config.executionPreferences.autoExecute,
+          confirmHighRisk: this.config.executionPreferences.riskTolerance !== 'aggressive',
+          preferredApproach: this.config.executionPreferences.riskTolerance
+        }
+      };
+      const routingResult = await this.nlRouter.route(message, routingContext);
 
       let response: string;
-      let executionPlan: ExecutionPlan | undefined;
+      let executionPlan: TaskPlan | undefined;
       let executionResults: Map<string, ExecutionResult> | undefined;
 
-      if (routingResult.requiresExecution && this.config.enableTaskPlanning) {
+      if (routingResult.type === 'task_plan' && this.config.enableTaskPlanning) {
         // Create and potentially execute plan
         const planResult = await this.createAndExecutePlan(intent);
         response = planResult.response;
@@ -166,17 +187,14 @@ export class EnhancedClient {
       }
 
       // Add response to conversation
-      this.conversationManager.addAssistantMessage(
-        this.sessionState.conversationId,
-        response
-      );
+      // Assistant message is handled when adding turn
 
       const processingTime = Date.now() - startTime;
 
       logger.info('Message processing completed', {
         processingTime,
         intentType: intent.type,
-        hasExecutionPlan: !!executionPlan
+        hasTaskPlan: !!executionPlan
       });
 
       return {
@@ -199,13 +217,22 @@ export class EnhancedClient {
       return {
         success: false,
         intent: {
-          type: 'unknown',
+          type: 'conversation',
           action: message,
-          entities: { files: [], technologies: [], concepts: [] },
+          entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
           confidence: 0,
-          complexity: 'low',
+          complexity: 'simple',
           multiStep: false,
-          riskLevel: 'low'
+          riskLevel: 'low',
+          requiresClarification: false,
+          suggestedClarifications: [],
+          estimatedDuration: 0,
+          context: {
+            projectAware: false,
+            fileSpecific: false,
+            followUp: false,
+            references: []
+          }
         },
         response: errorResponse,
         conversationId: this.sessionState.conversationId,
@@ -220,15 +247,22 @@ export class EnhancedClient {
    */
   private async createAndExecutePlan(intent: UserIntent): Promise<{
     response: string;
-    executionPlan?: ExecutionPlan;
+    executionPlan?: TaskPlan;
     executionResults?: Map<string, ExecutionResult>;
   }> {
     try {
       // Create execution plan
-      const executionPlan = await this.taskPlanner.createExecutionPlan(intent);
+      const executionPlan = await this.taskPlanner.createPlan(intent.action, {
+        projectRoot: this.projectContext?.root || process.cwd(),
+        availableTools: [],
+        projectLanguages: this.projectContext?.projectLanguages || [],
+        codebaseSize: 'medium',
+        userExperience: 'intermediate',
+        qualityRequirements: 'production'
+      });
 
       // Store as active plan
-      this.sessionState.activeExecutionPlan = executionPlan;
+      this.sessionState.activeTaskPlan = executionPlan;
 
       // Determine if we should auto-execute
       const shouldAutoExecute = this.shouldAutoExecute(executionPlan, intent);
@@ -273,24 +307,24 @@ export class EnhancedClient {
     );
 
     // Use the conversation context to generate an appropriate response
-    const response = await this.ollamaClient.generateResponse(
+    const response = await this.ollamaClient.complete(
       `Based on the user's intent (${intent.type}: ${intent.action}), please provide a helpful response.
 
       Context: ${context}
 
       User's message: ${intent.action}`,
       {
-        contextWindow: this.config.contextWindow
+        temperature: 0.7
       }
     );
 
-    return response;
+    return response.message.content;
   }
 
   /**
    * Determine if plan should be auto-executed
    */
-  private shouldAutoExecute(plan: ExecutionPlan, intent: UserIntent): boolean {
+  private shouldAutoExecute(plan: TaskPlan, intent: UserIntent): boolean {
     if (!this.config.executionPreferences.autoExecute) {
       return false;
     }
@@ -302,7 +336,7 @@ export class EnhancedClient {
     }
 
     // Auto-execute simple analysis tasks
-    if (intent.type === 'question' && intent.complexity === 'low') {
+    if (intent.type === 'question' && intent.complexity === 'simple') {
       return true;
     }
 
@@ -312,7 +346,7 @@ export class EnhancedClient {
   /**
    * Generate plan proposal for user approval
    */
-  private generatePlanProposal(plan: ExecutionPlan): string {
+  private generatePlanProposal(plan: TaskPlan): string {
     const taskSummary = plan.tasks.map(t => `- ${t.title}`).join('\n');
     const estimatedDuration = Math.round(
       plan.timeline.estimatedEnd.getTime() - plan.timeline.estimatedStart.getTime()
@@ -341,7 +375,7 @@ You can also ask for more details about any specific task or phase.`;
    * Generate response after execution completion
    */
   private generateExecutionResponse(
-    plan: ExecutionPlan,
+    plan: TaskPlan,
     results: Map<string, ExecutionResult>
   ): string {
     const totalTasks = results.size;
@@ -380,7 +414,7 @@ You can also ask for more details about any specific task or phase.`;
    * Record execution in session history
    */
   private recordExecution(
-    plan: ExecutionPlan,
+    plan: TaskPlan,
     results: Map<string, ExecutionResult>
   ): void {
     const successfulTasks = Array.from(results.values()).filter(r => r.success).length;
@@ -400,19 +434,19 @@ You can also ask for more details about any specific task or phase.`;
     this.sessionState.executionHistory.push(summary);
 
     // Clear active plan
-    this.sessionState.activeExecutionPlan = undefined;
+    this.sessionState.activeTaskPlan = undefined;
   }
 
   /**
    * Execute pending plan (when user approves)
    */
   async executePendingPlan(): Promise<ProcessingResult> {
-    if (!this.sessionState.activeExecutionPlan) {
+    if (!this.sessionState.activeTaskPlan) {
       throw new Error('No pending execution plan');
     }
 
     const startTime = Date.now();
-    const plan = this.sessionState.activeExecutionPlan;
+    const plan = this.sessionState.activeTaskPlan;
 
     try {
       const executionResults = await this.executionEngine.executePlan(plan);
@@ -425,11 +459,20 @@ You can also ask for more details about any specific task or phase.`;
         intent: {
           type: 'command',
           action: 'execute plan',
-          entities: { files: [], technologies: [], concepts: [] },
+          entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
           confidence: 1.0,
-          complexity: 'medium',
+          complexity: 'moderate',
           multiStep: true,
-          riskLevel: plan.riskAssessment.overallRisk
+          riskLevel: plan.metadata.complexity === 'expert' ? 'high' : plan.metadata.complexity === 'complex' ? 'medium' : 'low',
+          requiresClarification: false,
+          suggestedClarifications: [],
+          estimatedDuration: plan.estimatedDuration,
+          context: {
+            projectAware: true,
+            fileSpecific: false,
+            followUp: false,
+            references: []
+          }
         },
         response,
         executionPlan: plan,
@@ -467,7 +510,7 @@ You can also ask for more details about any specific task or phase.`;
    * Get conversation history
    */
   getConversationHistory(): any[] {
-    return this.conversationManager.getConversationHistory(this.sessionState.conversationId);
+    return this.conversationManager.getRecentHistory();
   }
 
   /**
@@ -481,8 +524,8 @@ You can also ask for more details about any specific task or phase.`;
    * Start new conversation
    */
   startNewConversation(): string {
-    this.sessionState.conversationId = this.conversationManager.startNewConversation();
-    this.sessionState.activeExecutionPlan = undefined;
+    this.sessionState.conversationId = this.conversationManager.getConversationContext().sessionId;
+    this.sessionState.activeTaskPlan = undefined;
     return this.sessionState.conversationId;
   }
 
@@ -510,7 +553,7 @@ You can also ask for more details about any specific task or phase.`;
    */
   async isReady(): Promise<boolean> {
     try {
-      await this.ollamaClient.generateResponse('test', { maxTokens: 1 });
+      await this.ollamaClient.complete('test');
       return true;
     } catch {
       return false;

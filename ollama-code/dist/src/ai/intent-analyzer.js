@@ -526,9 +526,8 @@ Return ONLY the category name.`;
     cleanEntities(entities) {
         Object.keys(entities).forEach(key => {
             const entityArray = entities[key];
-            entities[key] = [
-                ...new Set(entityArray.filter(entity => entity.length > 1))
-            ];
+            const uniqueEntities = new Set(entityArray.filter(entity => entity.length > 1));
+            entities[key] = Array.from(uniqueEntities);
         });
     }
     findAmbiguousReferences(entities, context) {

@@ -7,7 +7,7 @@
 
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
-import { EnhancedAIClient } from './enhanced-client.js';
+import { EnhancedClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
 
 export interface Task {
@@ -70,11 +70,11 @@ export type TaskStatus = Task['status'];
 export type PlanningResult = TaskPlan;
 
 export class TaskPlanner {
-  private aiClient: EnhancedAIClient;
+  private aiClient: EnhancedClient;
   private projectContext: ProjectContext;
   private activePlans = new Map<string, TaskPlan>();
 
-  constructor(aiClient: EnhancedAIClient, projectContext: ProjectContext) {
+  constructor(aiClient: EnhancedClient, projectContext: ProjectContext) {
     this.aiClient = aiClient;
     this.projectContext = projectContext;
   }

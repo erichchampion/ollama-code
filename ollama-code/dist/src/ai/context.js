@@ -5,7 +5,7 @@
  * conversation history, and context window optimization for AI interactions.
  */
 import { watch } from 'fs';
-import path from 'path';
+import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
 import { MAX_FILES_FOR_ANALYSIS, MAX_FILES_LIMIT, MAX_CONVERSATION_HISTORY, MAX_FILE_WATCHERS } from '../constants.js';
@@ -445,7 +445,13 @@ Total Files: ${this.structure.files.size}
     }
     get projectLanguages() {
         const files = Array.from(this.structure.files.values());
-        return [...new Set(files.map(f => f.language).filter(Boolean))];
+        const languages = new Set();
+        files.forEach(f => {
+            if (f.language) {
+                languages.add(f.language);
+            }
+        });
+        return Array.from(languages);
     }
 }
 //# sourceMappingURL=context.js.map
