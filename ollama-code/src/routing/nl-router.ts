@@ -205,19 +205,24 @@ export class NaturalLanguageRouter {
 
     // Check for direct command mapping
     const commandMapping = await this.checkCommandMapping(intent);
-    if (commandMapping.isCommand && intent.confidence > this.commandConfidenceThreshold) {
-      return {
-        type: 'command',
-        action: commandMapping.commandName!,
-        data: {
-          commandName: commandMapping.commandName,
-          args: commandMapping.args || [],
-          intent
-        },
-        requiresConfirmation: this.shouldRequireConfirmation(intent, context),
-        estimatedTime: intent.estimatedDuration,
-        riskLevel: intent.riskLevel
-      };
+    if (commandMapping.isCommand) {
+      // For pattern-based command mappings, override confidence requirements
+      const isPatternBasedCommand = this.isPatternBasedCommand(intent.action.toLowerCase());
+
+      if (isPatternBasedCommand || intent.confidence > this.commandConfidenceThreshold) {
+        return {
+          type: 'command',
+          action: commandMapping.commandName!,
+          data: {
+            commandName: commandMapping.commandName,
+            args: commandMapping.args || [],
+            intent
+          },
+          requiresConfirmation: this.shouldRequireConfirmation(intent, context),
+          estimatedTime: intent.estimatedDuration,
+          riskLevel: intent.riskLevel
+        };
+      }
     }
 
     // Route to task planning for complex tasks
@@ -271,7 +276,8 @@ export class NaturalLanguageRouter {
       'run': 'run',
       'execute': 'run',
       'test': 'run',
-      'build': 'run'
+      'build': 'run',
+      'status': 'git-status'
     };
 
     const commandName = actionMappings[action];
@@ -282,7 +288,20 @@ export class NaturalLanguageRouter {
       };
     }
 
-    // Pattern-based mappings
+    // Git-specific pattern-based mappings
+    if (this.isGitStatusRequest(action)) {
+      return { commandName: 'git-status', args: [] };
+    }
+
+    if (this.isGitCommitRequest(action)) {
+      return { commandName: 'git-commit', args: [] };
+    }
+
+    if (this.isGitBranchRequest(action)) {
+      return { commandName: 'git-branch', args: [] };
+    }
+
+    // General pattern-based mappings
     if (action.includes('model') && (action.includes('list') || action.includes('show'))) {
       return { commandName: 'list-models', args: [] };
     }
@@ -302,6 +321,68 @@ export class NaturalLanguageRouter {
     }
 
     return null;
+  }
+
+  /**
+   * Check if the action is a git status request
+   */
+  private isGitStatusRequest(action: string): boolean {
+    const statusPatterns = [
+      'check status',
+      'check the status',
+      'git status',
+      'repo status',
+      'repository status',
+      'status of repo',
+      'status of repository',
+      'status of this repo',
+      'status of the repo',
+      'show status',
+      'show git status',
+      'what is the status',
+      'current status'
+    ];
+
+    return statusPatterns.some(pattern => action.includes(pattern));
+  }
+
+  /**
+   * Check if the action is a git commit request
+   */
+  private isGitCommitRequest(action: string): boolean {
+    const commitPatterns = [
+      'git commit',
+      'create commit',
+      'make commit',
+      'commit changes',
+      'commit the changes'
+    ];
+
+    return commitPatterns.some(pattern => action.includes(pattern));
+  }
+
+  /**
+   * Check if the action is a git branch request
+   */
+  private isGitBranchRequest(action: string): boolean {
+    const branchPatterns = [
+      'git branch',
+      'list branch',
+      'show branch',
+      'branch info',
+      'current branch'
+    ];
+
+    return branchPatterns.some(pattern => action.includes(pattern));
+  }
+
+  /**
+   * Check if the action is detected by pattern-based command mapping
+   */
+  private isPatternBasedCommand(action: string): boolean {
+    return this.isGitStatusRequest(action) ||
+           this.isGitCommitRequest(action) ||
+           this.isGitBranchRequest(action);
   }
 
   /**

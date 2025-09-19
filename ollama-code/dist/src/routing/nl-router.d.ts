@@ -71,6 +71,22 @@ export declare class NaturalLanguageRouter {
      */
     private mapDirectCommand;
     /**
+     * Check if the action is a git status request
+     */
+    private isGitStatusRequest;
+    /**
+     * Check if the action is a git commit request
+     */
+    private isGitCommitRequest;
+    /**
+     * Check if the action is a git branch request
+     */
+    private isGitBranchRequest;
+    /**
+     * Check if the action is detected by pattern-based command mapping
+     */
+    private isPatternBasedCommand;
+    /**
      * Use AI to map natural language to commands
      */
     private mapCommandWithAI;

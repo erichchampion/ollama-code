@@ -107,7 +107,11 @@ export class EnhancedClient {
             const routingResult = await this.nlRouter.route(message, routingContext);
             let response;
             let executionPlan;
-            if (routingResult.type === 'task_plan' && this.config.enableTaskPlanning) {
+            if (routingResult.type === 'command') {
+                // Execute the identified command directly
+                response = await this.executeCommand(routingResult);
+            }
+            else if (routingResult.type === 'task_plan' && this.config.enableTaskPlanning) {
                 // Create and potentially execute plan
                 const planResult = await this.createAndExecutePlan(intent);
                 response = planResult.response;
@@ -211,6 +215,33 @@ export class EnhancedClient {
         catch (error) {
             logger.error('Plan creation/execution failed:', error);
             throw error;
+        }
+    }
+    /**
+     * Execute a command directly
+     */
+    async executeCommand(routingResult) {
+        try {
+            const { commandName, args } = routingResult.data;
+            // Import the executeCommand function
+            const { executeCommand } = await import('../commands/index.js');
+            // Execute the command and capture output
+            let output = '';
+            const originalConsoleLog = console.log;
+            console.log = (...args) => {
+                output += args.join(' ') + '\n';
+            };
+            try {
+                await executeCommand(commandName, args);
+                return output || `✅ Command '${commandName}' executed successfully.`;
+            }
+            finally {
+                console.log = originalConsoleLog;
+            }
+        }
+        catch (error) {
+            logger.error('Command execution failed:', error);
+            return `❌ Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`;
         }
     }
     /**

@@ -81,6 +81,10 @@ export declare class EnhancedClient {
      */
     private createAndExecutePlan;
     /**
+     * Execute a command directly
+     */
+    private executeCommand;
+    /**
      * Generate a response based on intent and routing result
      */
     private generateResponse;
