@@ -103,13 +103,9 @@ function registerAskCommand() {
                     spinner.start();
                     try {
                         const enhancedClient = getEnhancedClient();
-                        aiResponse = await enhancedClient.complete(question, {
-                            model: args.model,
-                            useProjectContext: true,
-                            enableToolUse: false // Don't use tools for simple ask command
-                        });
+                        const processingResult = await enhancedClient.processMessage(question);
                         spinner.succeed('Response ready');
-                        const responseText = aiResponse.content;
+                        const responseText = processingResult.response;
                         console.log(responseText);
                         if (responseText) {
                             console.log('\n');
@@ -216,11 +212,8 @@ function registerExplainCommand() {
                     let responseText;
                     if (isEnhancedAIInitialized()) {
                         const enhancedClient = getEnhancedClient();
-                        const aiResponse = await enhancedClient.complete(prompt, {
-                            useProjectContext: true,
-                            enableToolUse: false
-                        });
-                        responseText = aiResponse.content;
+                        const processingResult = await enhancedClient.processMessage(prompt);
+                        responseText = processingResult.response;
                     }
                     else {
                         // Fall back to basic client
@@ -294,11 +287,8 @@ function registerRefactorCommand() {
                 let responseText;
                 if (isEnhancedAIInitialized()) {
                     const enhancedClient = getEnhancedClient();
-                    const aiResponse = await enhancedClient.complete(prompt, {
-                        useProjectContext: true,
-                        enableToolUse: true // Enable tools for refactoring
-                    });
-                    responseText = aiResponse.content;
+                    const processingResult = await enhancedClient.processMessage(prompt);
+                    responseText = processingResult.response;
                 }
                 else {
                     // Fall back to basic client
@@ -370,11 +360,8 @@ function registerFixCommand() {
                 let responseText;
                 if (isEnhancedAIInitialized()) {
                     const enhancedClient = getEnhancedClient();
-                    const aiResponse = await enhancedClient.complete(prompt, {
-                        useProjectContext: true,
-                        enableToolUse: true // Enable tools for fixing
-                    });
-                    responseText = aiResponse.content;
+                    const processingResult = await enhancedClient.processMessage(prompt);
+                    responseText = processingResult.response;
                 }
                 else {
                     // Fall back to basic client
@@ -444,11 +431,8 @@ function registerGenerateCommand() {
                     let responseText;
                     if (isEnhancedAIInitialized()) {
                         const enhancedClient = getEnhancedClient();
-                        const aiResponse = await enhancedClient.complete(fullPrompt, {
-                            useProjectContext: true,
-                            enableToolUse: true // Enable tools for generation planning
-                        });
-                        responseText = aiResponse.content;
+                        const processingResult = await enhancedClient.processMessage(fullPrompt);
+                        responseText = processingResult.response;
                     }
                     else {
                         // Fall back to basic client

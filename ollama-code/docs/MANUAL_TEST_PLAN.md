@@ -89,7 +89,7 @@ git add . && git commit -m "Initial commit"
 
 #### Test 1.2.1: Context Preservation
 **Test Sequence:**
-1. `./dist/src/cli-selector.js --mode advanced ask "What's in index.js?"`
+1. `./dist/src/cli-selector.js --mode advanced ask "What's in index.ts?"`
 2. `./dist/src/cli-selector.js --mode advanced ask "Can you improve it?"`
 
 **Expected:**
