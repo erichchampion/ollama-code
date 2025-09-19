@@ -171,9 +171,10 @@ export const configSchema = z.object({
     tabWidth: 2,
     insertSpaces: true,
     formatOnSave: true
-  }),
-  
-  // MCP configuration schema
+  })
+});
+
+// MCP configuration schema
 const MCPServerConfigSchema = z.object({
   enabled: z.boolean().default(false),
   port: z.number().int().positive().default(3001),
@@ -263,6 +264,9 @@ const MCPConfigSchema = z.object({
   })
 });
 
+
+// Extended configuration schema with MCP and other features
+export const extendedConfigSchema = configSchema.extend({
   // MCP configuration
   mcp: MCPConfigSchema.default({
     server: {

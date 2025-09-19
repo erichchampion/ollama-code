@@ -4,20 +4,28 @@ export default {
   testMatch: [
     '**/tests/**/*.test.js',
     '**/tests/**/*.spec.js',
+    '**/tests/**/*.test.ts',
+    '**/tests/**/*.spec.ts',
     '**/tests/**/*.test.cjs',
     '**/tests/**/*.spec.cjs'
   ],
   projects: [
     {
       displayName: 'unit',
-      testMatch: ['**/tests/*.test.js'],
-      testEnvironment: 'node'
+      testMatch: ['**/tests/*.test.js', '**/tests/unit/**/*.test.js'],
+      testEnvironment: 'node',
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
     },
     {
       displayName: 'integration',
       testMatch: ['**/tests/integration/*.test.js'],
       testEnvironment: 'node',
-      testTimeout: 30000
+      testTimeout: 30000,
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
     },
     {
       displayName: 'docs',
@@ -30,7 +38,9 @@ export default {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/**/*.test.js',
-    '!src/**/*.spec.js'
+    '!src/**/*.spec.js',
+    '!src/**/*.test.ts',
+    '!src/**/*.spec.ts'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -40,9 +50,6 @@ export default {
     '/node_modules/',
     '/dist/'
   ],
-  transform: {
-    '^.+\\.js$': 'babel-jest'
-  },
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
   ]

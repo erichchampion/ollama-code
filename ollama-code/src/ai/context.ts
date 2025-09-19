@@ -7,7 +7,7 @@
 
 import { promises as fs } from 'fs';
 import { watch } from 'fs';
-import path from 'path';
+import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
 import {
@@ -632,5 +632,25 @@ Total Files: ${this.structure.files.size}
     this.fileWatchers.clear();
 
     logger.debug('Project context cleanup completed');
+  }
+
+  // Getter methods for accessing private properties
+  get root(): string {
+    return this.projectRoot;
+  }
+
+  get allFiles(): FileInfo[] {
+    return Array.from(this.structure.files.values());
+  }
+
+  get projectLanguages(): string[] {
+    const files = Array.from(this.structure.files.values());
+    const languages = new Set<string>();
+    files.forEach(f => {
+      if (f.language) {
+        languages.add(f.language);
+      }
+    });
+    return Array.from(languages);
   }
 }
