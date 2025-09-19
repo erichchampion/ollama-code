@@ -87,6 +87,14 @@ export declare class NaturalLanguageRouter {
      */
     private isPatternBasedCommand;
     /**
+     * Fast command mapping that bypasses AI analysis for obvious commands
+     */
+    private checkFastCommandMapping;
+    /**
+     * Create a simple intent object for fast-path commands
+     */
+    private createSimpleIntent;
+    /**
      * Use AI to map natural language to commands
      */
     private mapCommandWithAI;

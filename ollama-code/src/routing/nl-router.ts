@@ -63,6 +63,24 @@ export class NaturalLanguageRouter {
     try {
       logger.debug('Routing user input', { input: input.substring(0, 100) });
 
+      // Fast-path: Check for obvious pattern-based commands first to avoid slow AI analysis
+      const fastCommandCheck = this.checkFastCommandMapping(input);
+      if (fastCommandCheck) {
+        logger.debug('Fast command mapping found', { command: fastCommandCheck.commandName });
+        return {
+          type: 'command',
+          action: fastCommandCheck.commandName,
+          data: {
+            commandName: fastCommandCheck.commandName,
+            args: fastCommandCheck.args,
+            intent: this.createSimpleIntent(input, fastCommandCheck.commandName)
+          },
+          requiresConfirmation: false,
+          estimatedTime: 5,
+          riskLevel: 'low'
+        };
+      }
+
       // Build analysis context
       const analysisContext: AnalysisContext = {
         conversationHistory: this.getConversationHistory(context.conversationManager),
@@ -339,8 +357,20 @@ export class NaturalLanguageRouter {
       'status of the repo',
       'show status',
       'show git status',
+      'show me status',
+      'show me git status',
+      'show me the status',
+      'show me the git status',
+      'display status',
+      'display git status',
+      'display the status',
+      'get status',
+      'get git status',
+      'get the status',
       'what is the status',
-      'current status'
+      'what is the git status',
+      'current status',
+      'current git status'
     ];
 
     return statusPatterns.some(pattern => action.includes(pattern));
@@ -383,6 +413,73 @@ export class NaturalLanguageRouter {
     return this.isGitStatusRequest(action) ||
            this.isGitCommitRequest(action) ||
            this.isGitBranchRequest(action);
+  }
+
+  /**
+   * Fast command mapping that bypasses AI analysis for obvious commands
+   */
+  private checkFastCommandMapping(input: string): { commandName: string; args: string[] } | null {
+    const action = input.toLowerCase();
+
+    // Git commands (most common)
+    if (this.isGitStatusRequest(action)) {
+      return { commandName: 'git-status', args: [] };
+    }
+
+    if (this.isGitCommitRequest(action)) {
+      return { commandName: 'git-commit', args: [] };
+    }
+
+    if (this.isGitBranchRequest(action)) {
+      return { commandName: 'git-branch', args: [] };
+    }
+
+    // Simple direct mappings
+    const simpleMappings: Record<string, string> = {
+      'help': 'help',
+      'list models': 'list-models',
+      'show models': 'list-models'
+    };
+
+    for (const [pattern, command] of Object.entries(simpleMappings)) {
+      if (action.includes(pattern) && commandRegistry.exists(command)) {
+        return { commandName: command, args: [] };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Create a simple intent object for fast-path commands
+   */
+  private createSimpleIntent(input: string, commandName: string): UserIntent {
+    return {
+      type: 'command',
+      action: input,
+      entities: {
+        files: [],
+        directories: [],
+        functions: [],
+        classes: [],
+        technologies: [],
+        concepts: [],
+        variables: []
+      },
+      confidence: 1.0, // High confidence for pattern-matched commands
+      complexity: 'simple',
+      multiStep: false,
+      riskLevel: 'low',
+      requiresClarification: false,
+      suggestedClarifications: [],
+      estimatedDuration: 5,
+      context: {
+        projectAware: false,
+        fileSpecific: false,
+        followUp: false,
+        references: []
+      }
+    };
   }
 
   /**
