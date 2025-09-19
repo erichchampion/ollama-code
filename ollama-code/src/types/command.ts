@@ -5,4 +5,4 @@
  * for backward compatibility.
  */
 
-export { CommandDef as Command, type CommandArgDef } from '../commands/index.js';
+export type { CommandDef as Command, CommandArgDef } from '../commands/index.js';

@@ -5,6 +5,7 @@
  */
 import { logger } from '../utils/logger.js';
 import { UserError } from '../errors/types.js';
+import { ArgType } from './types.js';
 import { loadConfig, saveConfig } from '../config/loader.js';
 import { MCPClientConnectionSchema } from '../config/schema.js';
 export const mcpClientStatusCommand = {
@@ -103,17 +104,17 @@ export const mcpClientListResourcesCommand = {
 export const mcpClientCallToolCommand = {
     name: 'mcp-call-tool',
     description: 'Call a tool from a connected MCP server',
-    usage: 'mcp-call-tool <tool-name> [args-json]',
+    examples: ['mcp-call-tool <tool-name> [args-json]'],
     category: 'MCP',
     handler: async (args) => {
-        if (args.length < 1) {
+        const { toolName, argsJson } = args;
+        if (!toolName) {
             throw new UserError('Please provide a tool name to call');
         }
-        const toolName = args[0];
         let toolArgs = {};
-        if (args.length > 1) {
+        if (argsJson) {
             try {
-                toolArgs = JSON.parse(args[1]);
+                toolArgs = JSON.parse(argsJson);
             }
             catch (error) {
                 throw new UserError('Invalid JSON for tool arguments');
@@ -150,18 +151,34 @@ export const mcpClientCallToolCommand = {
             logger.error('Failed to call MCP tool:', error);
             throw new UserError(`Failed to call MCP tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }
+    },
+    args: [
+        {
+            name: 'toolName',
+            description: 'Name of the tool to call',
+            type: ArgType.STRING,
+            position: 0,
+            required: true
+        },
+        {
+            name: 'argsJson',
+            description: 'JSON string containing tool arguments',
+            type: ArgType.STRING,
+            position: 1,
+            required: false
+        }
+    ]
 };
 export const mcpClientGetResourceCommand = {
     name: 'mcp-get-resource',
     description: 'Get a resource from a connected MCP server',
-    usage: 'mcp-get-resource <resource-uri>',
+    examples: ['mcp-get-resource <resource-uri>'],
     category: 'MCP',
     handler: async (args) => {
-        if (args.length < 1) {
+        const { resourceUri } = args;
+        if (!resourceUri) {
             throw new UserError('Please provide a resource URI');
         }
-        const resourceUri = args[0];
         try {
             const { getMCPClient } = await import('../core/services.js');
             const mcpClient = await getMCPClient();
@@ -184,31 +201,44 @@ export const mcpClientGetResourceCommand = {
             logger.error('Failed to get MCP resource:', error);
             throw new UserError(`Failed to get MCP resource: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }
+    },
+    args: [
+        {
+            name: 'resourceUri',
+            description: 'URI of the resource to get',
+            type: ArgType.STRING,
+            position: 0,
+            required: true
+        }
+    ]
 };
 export const mcpClientAddConnectionCommand = {
     name: 'mcp-add-connection',
     description: 'Add a new MCP server connection',
-    usage: 'mcp-add-connection <name> <command> [args...]',
+    examples: ['mcp-add-connection <name> <command> [args...]'],
     category: 'MCP',
     handler: async (args) => {
-        if (args.length < 2) {
+        const { name, command, commandArgs } = args;
+        if (!name || !command) {
             throw new UserError('Please provide connection name and command');
         }
-        const [name, command, ...commandArgs] = args;
+        // Parse commandArgs if it's a string (space-separated) or use as array
+        const parsedCommandArgs = typeof commandArgs === 'string' ?
+            commandArgs.split(' ').filter(arg => arg.length > 0) :
+            (Array.isArray(commandArgs) ? commandArgs : []);
         try {
             // Validate the connection configuration
             const connectionConfig = {
                 name,
                 command,
-                args: commandArgs,
+                args: parsedCommandArgs,
                 enabled: true
             };
             MCPClientConnectionSchema.parse(connectionConfig);
             // Load current config
             const config = await loadConfig();
             // Check if connection already exists
-            const existingIndex = config.mcp.client.connections.findIndex(conn => conn.name === name);
+            const existingIndex = config.mcp.client.connections.findIndex((conn) => conn.name === name);
             if (existingIndex !== -1) {
                 throw new UserError(`MCP connection '${name}' already exists`);
             }
@@ -234,7 +264,7 @@ export const mcpClientAddConnectionCommand = {
 export const mcpClientRemoveConnectionCommand = {
     name: 'mcp-remove-connection',
     description: 'Remove an MCP server connection',
-    usage: 'mcp-remove-connection <name>',
+    examples: ['mcp-remove-connection <name>'],
     category: 'MCP',
     handler: async (args) => {
         if (args.length < 1) {
@@ -245,7 +275,7 @@ export const mcpClientRemoveConnectionCommand = {
             // Load current config
             const config = await loadConfig();
             // Find the connection
-            const connectionIndex = config.mcp.client.connections.findIndex(conn => conn.name === name);
+            const connectionIndex = config.mcp.client.connections.findIndex((conn) => conn.name === name);
             if (connectionIndex === -1) {
                 throw new UserError(`MCP connection '${name}' not found`);
             }
@@ -267,7 +297,7 @@ export const mcpClientRemoveConnectionCommand = {
 export const mcpClientReconnectCommand = {
     name: 'mcp-reconnect',
     description: 'Reconnect to a specific MCP server',
-    usage: 'mcp-reconnect <connection-name>',
+    examples: ['mcp-reconnect <connection-name>'],
     category: 'MCP',
     handler: async (args) => {
         if (args.length < 1) {

@@ -357,7 +357,7 @@ Provide specific, actionable suggestions.`;
         temperature: 0.4
       });
 
-      const suggestions = response.content.split('\n').filter(line =>
+      const suggestions = response.content.split('\n').filter((line: string) =>
         line.trim().length > 0
       );
 

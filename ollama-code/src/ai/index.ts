@@ -204,10 +204,11 @@ export type {
   PlanningContext
 } from './context.js';
 
-export type {
-  ToolUsePlan,
-  ResponseValidation
-} from './enhanced-client.js';
+// Re-export enhanced AI types (commented out until implemented)
+// export type {
+//   ToolUsePlan,
+//   ResponseValidation
+// } from './enhanced-client.js';
 
 export type {
   TaskType,

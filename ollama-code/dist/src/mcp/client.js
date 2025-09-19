@@ -22,8 +22,8 @@ export class MCPClient {
         }
         logger.info('Initializing MCP client connections...');
         const connectionPromises = this.config.connections
-            .filter(conn => conn.enabled)
-            .map(conn => this.connectToServer(conn));
+            .filter((conn) => conn.enabled)
+            .map((conn) => this.connectToServer(conn));
         const results = await Promise.allSettled(connectionPromises);
         let successCount = 0;
         let failureCount = 0;

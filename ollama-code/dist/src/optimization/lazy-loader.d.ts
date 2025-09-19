@@ -40,7 +40,7 @@ export declare class LazyLoader {
  */
 export declare const CommandRequirements: {
     BASIC: string[];
-    AI_ONLY: never[];
+    AI_ONLY: string[];
     PROJECT_AWARE: string[];
     FULL_INIT: string[];
 };

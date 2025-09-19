@@ -86,6 +86,7 @@ export interface ServiceRegistry {
     configValidator: any;
     lazyLoader: any;
     mcpServer: any;
+    mcpClient: any;
     terminal: any;
     projectContext: any;
 }

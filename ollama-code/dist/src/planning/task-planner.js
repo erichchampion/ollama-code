@@ -137,7 +137,7 @@ export class TaskPlanner {
             dependencies: tasks.length > 3 ? [tasks[tasks.length - 1].id] : [tasks[0].id]
         }));
         // Documentation phase
-        if (intent.complexity === 'high' || intent.multiStep) {
+        if (intent.complexity === 'complex' || intent.complexity === 'expert' || intent.multiStep) {
             tasks.push(await this.createTask({
                 title: 'Update documentation',
                 description: `Update documentation for: ${intent.action}`,
@@ -463,7 +463,7 @@ export class TaskPlanner {
      * Helper methods for task planning
      */
     determineScope(intent) {
-        if (intent.multiStep || intent.complexity === 'high')
+        if (intent.multiStep || intent.complexity === 'complex' || intent.complexity === 'expert')
             return 'global';
         if (intent.entities.files && intent.entities.files.length > 3)
             return 'module';
@@ -472,7 +472,7 @@ export class TaskPlanner {
     determineImpact(intent) {
         if (intent.riskLevel === 'high')
             return 'significant';
-        if (intent.complexity === 'high' || intent.multiStep)
+        if (intent.complexity === 'complex' || intent.complexity === 'expert' || intent.multiStep)
             return 'moderate';
         return 'minimal';
     }

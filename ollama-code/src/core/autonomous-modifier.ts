@@ -70,7 +70,6 @@ export class AutonomousModifier {
     try {
       await Promise.all([
         this.codeEditor.initialize(),
-        this.astManipulator.initialize(),
         this.backupManager.initialize()
       ]);
 

@@ -95,5 +95,5 @@ declare class ExecutionEnvironment {
  * Initialize the execution environment
  */
 export declare function initExecutionEnvironment(config: any): Promise<ExecutionEnvironment>;
-export { ExecutionResult, ExecutionOptions, BackgroundProcess, BackgroundProcessOptions };
+export type { ExecutionResult, ExecutionOptions, BackgroundProcess, BackgroundProcessOptions };
 export default ExecutionEnvironment;

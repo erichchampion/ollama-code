@@ -77,7 +77,15 @@ export async function registerServices(): Promise<void> {
     const { createMCPClient } = await import('../mcp/client.js');
     const { loadConfig } = await import('../config/loader.js');
     const config = await loadConfig();
-    const client = createMCPClient(config.mcp.client);
+    // Provide default MCP client config if not present
+    const mcpClientConfig = config.mcp?.client || {
+      enabled: false,
+      connections: [],
+      globalTimeout: 60000,
+      maxConcurrentConnections: 3,
+      logging: { enabled: false, level: 'info', logFile: 'mcp-client.log' }
+    };
+    const client = createMCPClient(mcpClientConfig);
     await client.initialize();
     return client;
   });
@@ -90,9 +98,9 @@ export async function registerServices(): Promise<void> {
 
   // Register enhanced AI client
   globalContainer.singleton('enhancedClient', async (container) => {
-    const { EnhancedAIClient } = await import('../ai/enhanced-client.js');
+    const { EnhancedClient } = await import('../ai/enhanced-client.js');
     const aiClient = await container.resolve('aiClient') as any;
-    return new EnhancedAIClient(aiClient);
+    return new EnhancedClient(aiClient);
   }, ['aiClient']);
 
   // Register project context

@@ -222,7 +222,7 @@ const MCPClientConnectionSchema = z.object({
   enabled: z.boolean().default(true),
   command: z.string(),
   args: z.array(z.string()).default([]),
-  env: z.record(z.string()).default({}),
+  env: z.record(z.string(), z.string()).default({}),
   cwd: z.string().optional(),
   timeout: z.number().int().positive().default(30000), // 30 seconds
   retryCount: z.number().int().min(0).default(3),

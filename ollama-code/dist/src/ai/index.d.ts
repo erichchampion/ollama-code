@@ -51,5 +51,4 @@ export { ProjectContext } from './context.js';
 export { EnhancedClient } from './enhanced-client.js';
 export { TaskPlanner } from './task-planner.js';
 export type { FileInfo, ProjectDependencies, ConversationTurn, ContextWindow, PromptContext, AIResponse, QualityMetrics, Task, TaskDependency, ExecutionPlan, PlanningContext } from './context.js';
-export type { ToolUsePlan, ResponseValidation } from './enhanced-client.js';
 export type { TaskType, TaskPriority, TaskStatus, PlanningResult } from './task-planner.js';

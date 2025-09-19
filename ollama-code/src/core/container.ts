@@ -249,6 +249,7 @@ export interface ServiceRegistry {
 
   // MCP services
   mcpServer: any;
+  mcpClient: any;
 
   // Other services
   terminal: any;

@@ -13,17 +13,21 @@ import { IntentAnalyzer, UserIntent } from './intent-analyzer.js';
 import { ConversationManager } from './conversation-manager.js';
 import { TaskPlanner } from './task-planner.js';
 import { TaskPlan } from './task-planner.js';
-import { ExecutionEngine, ExecutionResult } from '../execution/execution-engine.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
 import { NaturalLanguageRouter } from '../routing/nl-router.js';
 
 export interface EnhancedClientConfig {
   model: string;
-  baseUrl: string;
-  contextWindow: number;
+  baseUrl?: string;
+  contextWindow?: number;
+  temperature?: number;
   enableTaskPlanning: boolean;
-  enableAutonomousModification: boolean;
-  executionPreferences: {
+  enableConversationHistory: boolean;
+  enableContextAwareness: boolean;
+  maxConversationHistory: number;
+  autoSaveConversations: boolean;
+  enableAutonomousModification?: boolean;
+  executionPreferences?: {
     parallelism: number;
     riskTolerance: 'conservative' | 'balanced' | 'aggressive';
     autoExecute: boolean;
@@ -35,7 +39,6 @@ export interface ProcessingResult {
   intent: UserIntent;
   response: string;
   executionPlan?: TaskPlan;
-  executionResults?: Map<string, ExecutionResult>;
   conversationId: string;
   processingTime: number;
   error?: string;
@@ -71,33 +74,37 @@ export class EnhancedClient {
   private intentAnalyzer: IntentAnalyzer;
   private conversationManager: ConversationManager;
   private taskPlanner: TaskPlanner;
-  private executionEngine: ExecutionEngine;
   private autonomousModifier: AutonomousModifier;
   private nlRouter: NaturalLanguageRouter;
   private config: EnhancedClientConfig;
   private sessionState: SessionState;
+  private sessionMetrics: Map<string, number> = new Map();
+  private responseCache: Map<string, string> = new Map();
 
   constructor(
-    config: EnhancedClientConfig,
-    projectContext: ProjectContext
+    ollamaClient: any,
+    projectContext?: ProjectContext,
+    config?: Partial<EnhancedClientConfig>
   ) {
-    this.config = config;
-    this.projectContext = projectContext;
+    this.ollamaClient = ollamaClient;
+    this.projectContext = projectContext || new ProjectContext(process.cwd());
+    this.config = {
+      model: 'qwen2.5-coder:latest',
+      temperature: 0.7,
+      enableTaskPlanning: true,
+      enableConversationHistory: true,
+      enableContextAwareness: true,
+      maxConversationHistory: 50,
+      autoSaveConversations: true,
+      ...config
+    };
 
     // Initialize core components
-    this.ollamaClient = new OllamaClient({
-      apiBaseUrl: config.baseUrl,
-      defaultModel: config.model
-    });
+    // Use the provided ollamaClient
     this.intentAnalyzer = new IntentAnalyzer(this.ollamaClient);
     this.conversationManager = new ConversationManager();
     this.autonomousModifier = new AutonomousModifier();
-    this.taskPlanner = new TaskPlanner(this, projectContext);
-    this.executionEngine = new ExecutionEngine(
-      projectContext,
-      this.autonomousModifier,
-      this.ollamaClient
-    );
+    this.taskPlanner = new TaskPlanner(this, this.projectContext);
     this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner);
 
     // Initialize session state
@@ -164,23 +171,21 @@ export class EnhancedClient {
         conversationManager: this.conversationManager,
         workingDirectory: process.cwd(),
         userPreferences: {
-          autoApprove: this.config.executionPreferences.autoExecute,
-          confirmHighRisk: this.config.executionPreferences.riskTolerance !== 'aggressive',
-          preferredApproach: this.config.executionPreferences.riskTolerance
+          autoApprove: this.config.executionPreferences?.autoExecute || false,
+          confirmHighRisk: this.config.executionPreferences?.riskTolerance !== 'aggressive',
+          preferredApproach: this.config.executionPreferences?.riskTolerance || 'balanced'
         }
       };
       const routingResult = await this.nlRouter.route(message, routingContext);
 
       let response: string;
       let executionPlan: TaskPlan | undefined;
-      let executionResults: Map<string, ExecutionResult> | undefined;
 
       if (routingResult.type === 'task_plan' && this.config.enableTaskPlanning) {
         // Create and potentially execute plan
         const planResult = await this.createAndExecutePlan(intent);
         response = planResult.response;
         executionPlan = planResult.executionPlan;
-        executionResults = planResult.executionResults;
       } else {
         // Handle as conversation or simple command
         response = await this.generateResponse(intent, routingResult);
@@ -190,6 +195,18 @@ export class EnhancedClient {
       // Assistant message is handled when adding turn
 
       const processingTime = Date.now() - startTime;
+
+      // Track metrics
+      const currentProcessingTime = this.sessionMetrics.get('avgProcessingTime') || 0;
+      const messageCount = this.sessionMetrics.get('messageCount') || 0;
+      this.sessionMetrics.set('messageCount', messageCount + 1);
+      this.sessionMetrics.set('avgProcessingTime',
+        (currentProcessingTime * messageCount + processingTime) / (messageCount + 1)
+      );
+
+      // Cache response if it's useful for future reference
+      const cacheKey = `${intent.type}_${intent.action}`;
+      this.responseCache.set(cacheKey, response);
 
       logger.info('Message processing completed', {
         processingTime,
@@ -202,7 +219,6 @@ export class EnhancedClient {
         intent,
         response,
         executionPlan,
-        executionResults,
         conversationId: this.sessionState.conversationId,
         processingTime
       };
@@ -248,8 +264,7 @@ export class EnhancedClient {
   private async createAndExecutePlan(intent: UserIntent): Promise<{
     response: string;
     executionPlan?: TaskPlan;
-    executionResults?: Map<string, ExecutionResult>;
-  }> {
+    }> {
     try {
       // Create execution plan
       const executionPlan = await this.taskPlanner.createPlan(intent.action, {
@@ -268,18 +283,13 @@ export class EnhancedClient {
       const shouldAutoExecute = this.shouldAutoExecute(executionPlan, intent);
 
       if (shouldAutoExecute) {
-        // Execute the plan
-        const executionResults = await this.executionEngine.executePlan(executionPlan);
-
-        // Record execution in history
-        this.recordExecution(executionPlan, executionResults);
-
-        const response = this.generateExecutionResponse(executionPlan, executionResults);
+        // TODO: Implement direct task execution without execution engine
+        // For now, return the plan with a note about auto-execution
+        const response = `${this.generatePlanProposal(executionPlan)}\n\n⚠️ Auto-execution is temporarily disabled due to architectural changes.`;
 
         return {
           response,
-          executionPlan,
-          executionResults
+          executionPlan
         };
       } else {
         // Return plan for user approval
@@ -325,13 +335,14 @@ export class EnhancedClient {
    * Determine if plan should be auto-executed
    */
   private shouldAutoExecute(plan: TaskPlan, intent: UserIntent): boolean {
-    if (!this.config.executionPreferences.autoExecute) {
+    if (!this.config.executionPreferences?.autoExecute) {
       return false;
     }
 
     // Auto-execute only low-risk plans in aggressive mode
-    if (this.sessionState.preferences.riskTolerance === 'aggressive' &&
-        plan.riskAssessment.overallRisk === 'low') {
+    // Consider plans with fewer tasks and shorter duration as low-risk
+    const isLowRisk = plan.tasks.length <= 3 && plan.estimatedDuration <= 5;
+    if (this.sessionState.preferences.riskTolerance === 'aggressive' && isLowRisk) {
       return true;
     }
 
@@ -348,9 +359,11 @@ export class EnhancedClient {
    */
   private generatePlanProposal(plan: TaskPlan): string {
     const taskSummary = plan.tasks.map(t => `- ${t.title}`).join('\n');
-    const estimatedDuration = Math.round(
-      plan.timeline.estimatedEnd.getTime() - plan.timeline.estimatedStart.getTime()
-    ) / 60000; // Convert to minutes
+    const estimatedDuration = plan.estimatedDuration;
+
+    // Assess risk based on task count and duration
+    const riskLevel = plan.tasks.length > 5 || plan.estimatedDuration > 15 ? 'high' :
+                     plan.tasks.length > 3 || plan.estimatedDuration > 5 ? 'medium' : 'low';
 
     return `I've created an execution plan for your request:
 
@@ -360,8 +373,7 @@ export class EnhancedClient {
 ${taskSummary}
 
 **Estimated Duration:** ${estimatedDuration} minutes
-**Risk Level:** ${plan.riskAssessment.overallRisk}
-**Phases:** ${plan.phases.length}
+**Risk Level:** ${riskLevel}
 
 Would you like me to execute this plan? You can:
 - Say "yes" or "execute" to run the plan
@@ -371,71 +383,6 @@ Would you like me to execute this plan? You can:
 You can also ask for more details about any specific task or phase.`;
   }
 
-  /**
-   * Generate response after execution completion
-   */
-  private generateExecutionResponse(
-    plan: TaskPlan,
-    results: Map<string, ExecutionResult>
-  ): string {
-    const totalTasks = results.size;
-    const successfulTasks = Array.from(results.values()).filter(r => r.success).length;
-    const failedTasks = totalTasks - successfulTasks;
-
-    let response = `Execution completed for: ${plan.title}\n\n`;
-    response += `**Results:**\n`;
-    response += `- Total tasks: ${totalTasks}\n`;
-    response += `- Successful: ${successfulTasks}\n`;
-    response += `- Failed: ${failedTasks}\n\n`;
-
-    if (failedTasks > 0) {
-      response += `**Failed Tasks:**\n`;
-      for (const [taskId, result] of results) {
-        if (!result.success) {
-          const task = plan.tasks.find(t => t.id === taskId);
-          response += `- ${task?.title || taskId}: ${result.error}\n`;
-        }
-      }
-      response += '\n';
-    }
-
-    if (successfulTasks === totalTasks) {
-      response += '✅ All tasks completed successfully!';
-    } else if (successfulTasks > 0) {
-      response += '⚠️ Partial completion - some tasks need attention.';
-    } else {
-      response += '❌ Execution failed - please review the errors above.';
-    }
-
-    return response;
-  }
-
-  /**
-   * Record execution in session history
-   */
-  private recordExecution(
-    plan: TaskPlan,
-    results: Map<string, ExecutionResult>
-  ): void {
-    const successfulTasks = Array.from(results.values()).filter(r => r.success).length;
-    const totalDuration = Array.from(results.values()).reduce(
-      (sum, r) => sum + r.duration, 0
-    );
-
-    const summary: ExecutionSummary = {
-      planId: plan.id,
-      title: plan.title,
-      completedAt: new Date(),
-      totalTasks: results.size,
-      successfulTasks,
-      duration: totalDuration
-    };
-
-    this.sessionState.executionHistory.push(summary);
-
-    // Clear active plan
-    this.sessionState.activeTaskPlan = undefined;
-  }
 
   /**
    * Execute pending plan (when user approves)
@@ -449,10 +396,9 @@ You can also ask for more details about any specific task or phase.`;
     const plan = this.sessionState.activeTaskPlan;
 
     try {
-      const executionResults = await this.executionEngine.executePlan(plan);
-      this.recordExecution(plan, executionResults);
-
-      const response = this.generateExecutionResponse(plan, executionResults);
+      // TODO: Implement direct task execution without execution engine
+      // For now, return a response indicating the plan is ready for execution
+      const response = `Plan "${plan.title}" is ready for execution.\n\n⚠️ Auto-execution is temporarily disabled due to architectural changes.`;
 
       return {
         success: true,
@@ -476,7 +422,6 @@ You can also ask for more details about any specific task or phase.`;
         },
         response,
         executionPlan: plan,
-        executionResults,
         conversationId: this.sessionState.conversationId,
         processingTime: Date.now() - startTime
       };
@@ -500,10 +445,7 @@ You can also ask for more details about any specific task or phase.`;
   updatePreferences(preferences: Partial<UserPreferences>): void {
     Object.assign(this.sessionState.preferences, preferences);
 
-    // Update execution engine preferences based on user preferences
-    this.executionEngine.updatePreferences({
-      riskTolerance: preferences.riskTolerance || this.sessionState.preferences.riskTolerance
-    });
+    // TODO: Update execution preferences when execution engine is re-implemented
   }
 
   /**
@@ -567,6 +509,7 @@ You can also ask for more details about any specific task or phase.`;
     }
   }
 
+
   /**
    * Get system status
    */
@@ -578,7 +521,7 @@ You can also ask for more details about any specific task or phase.`;
   } {
     return {
       ready: true, // Simplified for now
-      activeExecutions: this.executionEngine.getActiveExecutions().size,
+      activeExecutions: 0, // TODO: Re-implement when execution engine is added back
       conversationId: this.sessionState.conversationId,
       executionHistory: this.sessionState.executionHistory.length
     };

@@ -10,16 +10,9 @@ import { logger } from '../utils/logger.js';
 import { isNonEmptyString } from '../utils/validation.js';
 import { parseCommandInput } from '../utils/command-parser.js';
 import { registerCommands } from './register.js';
-/**
- * Command argument types
- */
-export var ArgType;
-(function (ArgType) {
-    ArgType["STRING"] = "string";
-    ArgType["NUMBER"] = "number";
-    ArgType["BOOLEAN"] = "boolean";
-    ArgType["ARRAY"] = "array";
-})(ArgType || (ArgType = {}));
+import { ArgType } from './types.js';
+// Re-export types from types.ts to maintain compatibility
+export { ArgType } from './types.js';
 /**
  * Command registry
  */

@@ -309,7 +309,7 @@ export class TaskPlanner {
     }));
 
     // Documentation phase
-    if (intent.complexity === 'high' || intent.multiStep) {
+    if (intent.complexity === 'complex' || intent.complexity === 'expert' || intent.multiStep) {
       tasks.push(await this.createTask({
         title: 'Update documentation',
         description: `Update documentation for: ${intent.action}`,
@@ -679,14 +679,14 @@ export class TaskPlanner {
    * Helper methods for task planning
    */
   private determineScope(intent: UserIntent): 'local' | 'module' | 'global' {
-    if (intent.multiStep || intent.complexity === 'high') return 'global';
+    if (intent.multiStep || intent.complexity === 'complex' || intent.complexity === 'expert') return 'global';
     if (intent.entities.files && intent.entities.files.length > 3) return 'module';
     return 'local';
   }
 
   private determineImpact(intent: UserIntent): 'minimal' | 'moderate' | 'significant' {
     if (intent.riskLevel === 'high') return 'significant';
-    if (intent.complexity === 'high' || intent.multiStep) return 'moderate';
+    if (intent.complexity === 'complex' || intent.complexity === 'expert' || intent.multiStep) return 'moderate';
     return 'minimal';
   }
 

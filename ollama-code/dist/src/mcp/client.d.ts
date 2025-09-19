@@ -4,7 +4,6 @@
  * Connects to external MCP servers to use their tools and resources
  * as part of the ollama-code workflow
  */
-import { ConfigType } from '../config/schema.js';
 export interface MCPTool {
     name: string;
     description: string;
@@ -57,7 +56,7 @@ export interface MCPResourceResult {
 export declare class MCPClient {
     private connections;
     private config;
-    constructor(config: ConfigType['mcp']['client']);
+    constructor(config: any);
     /**
      * Initialize all configured MCP connections
      */
@@ -107,4 +106,4 @@ export declare class MCPClient {
 /**
  * Create MCP client from configuration
  */
-export declare function createMCPClient(config: ConfigType['mcp']['client']): MCPClient;
+export declare function createMCPClient(config: any): MCPClient;

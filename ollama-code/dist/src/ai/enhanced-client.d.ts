@@ -8,14 +8,18 @@
 import { ProjectContext } from './context.js';
 import { UserIntent } from './intent-analyzer.js';
 import { TaskPlan } from './task-planner.js';
-import { ExecutionResult } from '../execution/execution-engine.js';
 export interface EnhancedClientConfig {
     model: string;
-    baseUrl: string;
-    contextWindow: number;
+    baseUrl?: string;
+    contextWindow?: number;
+    temperature?: number;
     enableTaskPlanning: boolean;
-    enableAutonomousModification: boolean;
-    executionPreferences: {
+    enableConversationHistory: boolean;
+    enableContextAwareness: boolean;
+    maxConversationHistory: number;
+    autoSaveConversations: boolean;
+    enableAutonomousModification?: boolean;
+    executionPreferences?: {
         parallelism: number;
         riskTolerance: 'conservative' | 'balanced' | 'aggressive';
         autoExecute: boolean;
@@ -26,7 +30,6 @@ export interface ProcessingResult {
     intent: UserIntent;
     response: string;
     executionPlan?: TaskPlan;
-    executionResults?: Map<string, ExecutionResult>;
     conversationId: string;
     processingTime: number;
     error?: string;
@@ -58,12 +61,13 @@ export declare class EnhancedClient {
     private intentAnalyzer;
     private conversationManager;
     private taskPlanner;
-    private executionEngine;
     private autonomousModifier;
     private nlRouter;
     private config;
     private sessionState;
-    constructor(config: EnhancedClientConfig, projectContext: ProjectContext);
+    private sessionMetrics;
+    private responseCache;
+    constructor(ollamaClient: any, projectContext?: ProjectContext, config?: Partial<EnhancedClientConfig>);
     /**
      * Initialize all components
      */
@@ -88,14 +92,6 @@ export declare class EnhancedClient {
      * Generate plan proposal for user approval
      */
     private generatePlanProposal;
-    /**
-     * Generate response after execution completion
-     */
-    private generateExecutionResponse;
-    /**
-     * Record execution in session history
-     */
-    private recordExecution;
     /**
      * Execute pending plan (when user approves)
      */

@@ -9,7 +9,7 @@ import { logger } from '../utils/logger.js';
 import { Task, TaskStatus, ExecutionPlan, ExecutionPhase } from '../planning/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
-import { OllamaClient } from '../ai/client.js';
+import { OllamaClient } from '../ai/ollama-client.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ExecutionStrategy {

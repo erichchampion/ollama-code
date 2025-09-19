@@ -110,7 +110,7 @@ export const CommandRequirements = {
   BASIC: ['help', 'version', 'commands', 'config-show', 'config-set', 'config-get', 'list-models'],
 
   // Commands that need AI but not project context
-  AI_ONLY: [],
+  AI_ONLY: [] as string[],
 
   // Commands that need project context
   PROJECT_AWARE: ['ask', 'explain', 'generate', 'fix', 'git-status', 'git-commit', 'search', 'refactor-analyze'],

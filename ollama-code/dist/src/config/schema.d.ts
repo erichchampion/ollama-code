@@ -186,7 +186,7 @@ declare const MCPClientConnectionSchema: z.ZodObject<{
     enabled: z.ZodDefault<z.ZodBoolean>;
     command: z.ZodString;
     args: z.ZodDefault<z.ZodArray<z.ZodString>>;
-    env: z.ZodDefault<z.ZodRecord<z.ZodString, z.core.SomeType>>;
+    env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
     cwd: z.ZodOptional<z.ZodString>;
     timeout: z.ZodDefault<z.ZodNumber>;
     retryCount: z.ZodDefault<z.ZodNumber>;
@@ -199,7 +199,7 @@ declare const MCPClientConfigSchema: z.ZodObject<{
         enabled: z.ZodDefault<z.ZodBoolean>;
         command: z.ZodString;
         args: z.ZodDefault<z.ZodArray<z.ZodString>>;
-        env: z.ZodDefault<z.ZodRecord<z.ZodString, z.core.SomeType>>;
+        env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
         cwd: z.ZodOptional<z.ZodString>;
         timeout: z.ZodDefault<z.ZodNumber>;
         retryCount: z.ZodDefault<z.ZodNumber>;
@@ -260,7 +260,7 @@ declare const MCPConfigSchema: z.ZodObject<{
             enabled: z.ZodDefault<z.ZodBoolean>;
             command: z.ZodString;
             args: z.ZodDefault<z.ZodArray<z.ZodString>>;
-            env: z.ZodDefault<z.ZodRecord<z.ZodString, z.core.SomeType>>;
+            env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
             cwd: z.ZodOptional<z.ZodString>;
             timeout: z.ZodDefault<z.ZodNumber>;
             retryCount: z.ZodDefault<z.ZodNumber>;
@@ -391,7 +391,7 @@ export declare const extendedConfigSchema: z.ZodObject<{
                 enabled: z.ZodDefault<z.ZodBoolean>;
                 command: z.ZodString;
                 args: z.ZodDefault<z.ZodArray<z.ZodString>>;
-                env: z.ZodDefault<z.ZodRecord<z.ZodString, z.core.SomeType>>;
+                env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
                 cwd: z.ZodOptional<z.ZodString>;
                 timeout: z.ZodDefault<z.ZodNumber>;
                 retryCount: z.ZodDefault<z.ZodNumber>;

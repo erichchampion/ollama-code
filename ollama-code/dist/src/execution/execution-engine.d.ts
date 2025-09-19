@@ -7,7 +7,7 @@
 import { Task, ExecutionPlan, ExecutionPhase } from '../planning/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
-import { OllamaClient } from '../ai/client.js';
+import { OllamaClient } from '../ai/ollama-client.js';
 export interface ExecutionStrategy {
     name: string;
     description: string;
