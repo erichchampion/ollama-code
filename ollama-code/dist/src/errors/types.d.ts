@@ -41,6 +41,10 @@ export declare enum ErrorCategory {
      */
     APPLICATION = 0,
     /**
+     * System-related errors
+     */
+    SYSTEM = 1,
+    /**
      * Network-related errors
      */
     NETWORK = 2,
@@ -179,6 +183,10 @@ export interface UserErrorOptions {
      */
     details?: Record<string, unknown>;
     /**
+     * Error context
+     */
+    context?: Record<string, any>;
+    /**
      * Error code
      */
     code?: string;
@@ -217,6 +225,10 @@ export declare class UserError extends Error {
      * Additional details about the error
      */
     details: Record<string, unknown>;
+    /**
+     * Error context
+     */
+    context?: Record<string, any>;
     /**
      * Error code
      */

@@ -47,8 +47,12 @@ export enum ErrorCategory {
    * Application-level errors
    */
   APPLICATION = 0,
-  
-  
+
+  /**
+   * System-related errors
+   */
+  SYSTEM = 1,
+
   /**
    * Network-related errors
    */
@@ -219,7 +223,12 @@ export interface UserErrorOptions {
    * Additional details about the error
    */
   details?: Record<string, unknown>;
-  
+
+  /**
+   * Error context
+   */
+  context?: Record<string, any>;
+
   /**
    * Error code
    */
@@ -265,7 +274,12 @@ export class UserError extends Error {
    * Additional details about the error
    */
   details: Record<string, unknown>;
-  
+
+  /**
+   * Error context
+   */
+  context?: Record<string, any>;
+
   /**
    * Error code
    */
@@ -283,6 +297,7 @@ export class UserError extends Error {
     this.level = options.level || ErrorLevel.ERROR;
     this.resolution = options.resolution;
     this.details = options.details || {};
+    this.context = options.context;
     this.code = options.code;
     
     // Capture stack trace

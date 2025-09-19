@@ -19,6 +19,12 @@ import { initTerminal } from './terminal/index.js';
 import { parseCommandInput } from './utils/command-parser.js';
 import { initializeToolSystem } from './tools/index.js';
 import {
+  initializeLazyLoading,
+  executeCommandOptimized,
+  preloadCommonComponents
+} from './optimization/startup-optimizer.js';
+import { registerServices, disposeServices } from './core/services.js';
+import {
   HELP_OUTPUT_WIDTH,
   INTERACTIVE_MODE_HELP,
   HELP_COMMAND_SUGGESTION,
@@ -32,10 +38,11 @@ const version = pkg.version;
 /**
  * Global cleanup function
  */
-function cleanup(): void {
+async function cleanup(): Promise<void> {
   logger.debug('Performing global cleanup');
   try {
     cleanupAI();
+    await disposeServices();
   } catch (error) {
     logger.error('Error during cleanup:', error);
   }
@@ -47,34 +54,35 @@ function cleanup(): void {
 function setupExitHandlers(): void {
   // Handle normal process exit
   process.on('exit', () => {
-    cleanup();
+    // Note: Can't use await in exit handler, cleanup should already be done
+    logger.debug('Process exiting');
   });
 
   // Handle SIGINT (Ctrl+C)
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     logger.debug('Received SIGINT signal');
-    cleanup();
+    await cleanup();
     process.exit(0);
   });
 
   // Handle SIGTERM
-  process.on('SIGTERM', () => {
+  process.on('SIGTERM', async () => {
     logger.debug('Received SIGTERM signal');
-    cleanup();
+    await cleanup();
     process.exit(0);
   });
 
   // Handle uncaught exceptions
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', async (error) => {
     logger.error('Uncaught exception:', error);
-    cleanup();
+    await cleanup();
     process.exit(1);
   });
 
   // Handle unhandled promise rejections
-  process.on('unhandledRejection', (reason) => {
+  process.on('unhandledRejection', async (reason) => {
     logger.error('Unhandled promise rejection:', reason);
-    cleanup();
+    await cleanup();
     process.exit(1);
   });
 }
@@ -346,9 +354,40 @@ async function runSimpleMode(commandName: string, args: string[]): Promise<void>
 }
 
 /**
- * Run advanced mode (full command registry)
+ * Run advanced mode (full command registry) with optimized startup
  */
 async function runAdvancedMode(commandName: string, args: string[]): Promise<void> {
+  // Register all services with dependency injection container
+  await registerServices();
+
+  // Initialize lazy loading system
+  await initializeLazyLoading();
+
+  // Start background preloading of common components
+  preloadCommonComponents();
+
+  try {
+    // Use optimized execution that only loads what's needed
+    if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
+      // Fallback to original method for tests
+      logger.info('Using legacy execution mode for testing');
+      await runAdvancedModeLegacy(commandName, args);
+    } else {
+      await executeCommandOptimized(commandName, args);
+    }
+  } finally {
+    // Cleanup resources after standalone command execution
+    await cleanup();
+  }
+}
+
+/**
+ * Legacy advanced mode for backward compatibility (tests)
+ */
+async function runAdvancedModeLegacy(commandName: string, args: string[]): Promise<void> {
+  // Register all services with dependency injection container
+  await registerServices();
+
   // Initialize tool system
   initializeToolSystem();
 
@@ -368,19 +407,12 @@ async function runAdvancedMode(commandName: string, args: string[]): Promise<voi
   logger.info('Ensuring Ollama server is running...');
   await ensureOllamaServerRunning();
 
-  // Initialize enhanced AI capabilities (skip in test environment)
-  if (!process.env.OLLAMA_SKIP_ENHANCED_INIT) {
-    logger.info('Initializing enhanced AI capabilities...');
-    await initAI();
-  } else {
-    logger.info('Skipping enhanced AI initialization (test mode)');
-  }
+  // Initialize basic AI client for commands that need it
+  logger.info('Initializing basic AI client (test mode)');
+  await initAI();
 
   // Execute the command
   await executeCommand(commandName, args);
-
-  // Cleanup resources after standalone command execution
-  cleanup();
 }
 
 /**
@@ -477,7 +509,7 @@ async function initCLI(): Promise<void> {
 
     // Parse command-line arguments
     const { mode, commandName, args } = parseCommandLineArgs();
-    
+
     // Route to appropriate mode
     switch (mode) {
       case 'simple':
@@ -493,6 +525,9 @@ async function initCLI(): Promise<void> {
         console.error(`Unknown mode: ${mode}`);
         process.exit(1);
     }
+
+    // Explicitly exit after successful command execution
+    process.exit(0);
   } catch (error) {
     handleError(error);
   }

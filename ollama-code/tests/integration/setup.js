@@ -172,7 +172,8 @@ const testEnv = {
   OLLAMA_API_URL: 'http://localhost:11434',
   OLLAMA_TELEMETRY: '0',
   NODE_ENV: 'test',
-  CI: 'true'
+  CI: 'true',
+  OLLAMA_SKIP_ENHANCED_INIT: 'true'
 };
 
 // Export all functions and constants

@@ -43,6 +43,10 @@ export var ErrorCategory;
      */
     ErrorCategory[ErrorCategory["APPLICATION"] = 0] = "APPLICATION";
     /**
+     * System-related errors
+     */
+    ErrorCategory[ErrorCategory["SYSTEM"] = 1] = "SYSTEM";
+    /**
      * Network-related errors
      */
     ErrorCategory[ErrorCategory["NETWORK"] = 2] = "NETWORK";
@@ -152,6 +156,10 @@ export class UserError extends Error {
      */
     details;
     /**
+     * Error context
+     */
+    context;
+    /**
      * Error code
      */
     code;
@@ -166,6 +174,7 @@ export class UserError extends Error {
         this.level = options.level || ErrorLevel.ERROR;
         this.resolution = options.resolution;
         this.details = options.details || {};
+        this.context = options.context;
         this.code = options.code;
         // Capture stack trace
         Error.captureStackTrace?.(this, UserError);
