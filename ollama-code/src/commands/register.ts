@@ -141,7 +141,7 @@ function registerAskCommand(): void {
 
             spinner.succeed('Response ready');
 
-            const responseText = aiResponse.content;
+            const responseText = aiResponse.message?.content;
             console.log(responseText);
 
             if (responseText) {
@@ -261,7 +261,7 @@ function registerExplainCommand(): void {
               useProjectContext: true,
               enableToolUse: false
             });
-            responseText = aiResponse.content;
+            responseText = aiResponse.message?.content;
           } else {
             // Fall back to basic client
             const aiClient = getAIClient();
@@ -345,7 +345,7 @@ function registerRefactorCommand(): void {
             useProjectContext: true,
             enableToolUse: true  // Enable tools for refactoring
           });
-          responseText = aiResponse.content;
+          responseText = aiResponse.message?.content;
         } else {
           // Fall back to basic client
           const aiClient = getAIClient();
@@ -428,7 +428,7 @@ function registerFixCommand(): void {
             useProjectContext: true,
             enableToolUse: true  // Enable tools for fixing
           });
-          responseText = aiResponse.content;
+          responseText = aiResponse.message?.content;
         } else {
           // Fall back to basic client
           const aiClient = getAIClient();
@@ -507,7 +507,7 @@ function registerGenerateCommand(): void {
               useProjectContext: true,
               enableToolUse: true  // Enable tools for generation planning
             });
-            responseText = aiResponse.content;
+            responseText = aiResponse.message?.content;
           } else {
             // Fall back to basic client
             const aiClient = getAIClient();
