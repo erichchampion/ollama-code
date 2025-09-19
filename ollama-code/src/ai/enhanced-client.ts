@@ -549,6 +549,13 @@ You can also ask for more details about any specific task or phase.`;
   }
 
   /**
+   * Complete text using the underlying AI client
+   */
+  async complete(prompt: string, options: any = {}): Promise<any> {
+    return await this.ollamaClient.complete(prompt, options);
+  }
+
+  /**
    * Check if client is ready
    */
   async isReady(): Promise<boolean> {

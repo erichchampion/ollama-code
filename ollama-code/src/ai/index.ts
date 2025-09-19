@@ -51,7 +51,19 @@ export async function initAI(config: any = {}): Promise<{
     await projectContext.initialize();
 
     // Initialize enhanced AI client
-    enhancedClient = new EnhancedClient(aiClient, projectContext);
+    const enhancedConfig = {
+      model: 'llama3.2:latest',
+      baseUrl: 'http://127.0.0.1:11434',
+      contextWindow: 4096,
+      enableTaskPlanning: true,
+      enableAutonomousModification: true,
+      executionPreferences: {
+        parallelism: 2,
+        riskTolerance: 'balanced' as const,
+        autoExecute: false
+      }
+    };
+    enhancedClient = new EnhancedClient(enhancedConfig, projectContext);
 
     // Initialize task planner
     taskPlanner = new TaskPlanner(enhancedClient, projectContext);

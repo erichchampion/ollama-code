@@ -129,6 +129,10 @@ export declare class EnhancedClient {
      */
     private getDefaultPreferences;
     /**
+     * Complete text using the underlying AI client
+     */
+    complete(prompt: string, options?: any): Promise<any>;
+    /**
      * Check if client is ready
      */
     isReady(): Promise<boolean>;
