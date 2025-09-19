@@ -436,5 +436,16 @@ Total Files: ${this.structure.files.size}
         this.fileWatchers.clear();
         logger.debug('Project context cleanup completed');
     }
+    // Getter methods for accessing private properties
+    get root() {
+        return this.projectRoot;
+    }
+    get allFiles() {
+        return Array.from(this.structure.files.values());
+    }
+    get projectLanguages() {
+        const files = Array.from(this.structure.files.values());
+        return [...new Set(files.map(f => f.language).filter(Boolean))];
+    }
 }
 //# sourceMappingURL=context.js.map

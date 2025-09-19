@@ -198,4 +198,7 @@ export declare class ProjectContext {
      * Cleanup resources
      */
     cleanup(): void;
+    get root(): string;
+    get allFiles(): FileInfo[];
+    get projectLanguages(): string[];
 }

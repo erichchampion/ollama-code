@@ -141,6 +141,114 @@ export const configSchema = z.object({
         tabWidth: 2,
         insertSpaces: true,
         formatOnSave: true
+    })
+});
+// MCP configuration schema
+const MCPServerConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    port: z.number().int().positive().default(3001),
+    autoStart: z.boolean().default(false),
+    tools: z.object({
+        enabled: z.boolean().default(true),
+        allowedTools: z.array(z.string()).default(['*']),
+        maxConcurrent: z.number().int().positive().default(5)
+    }).default({
+        enabled: true,
+        allowedTools: ['*'],
+        maxConcurrent: 5
+    }),
+    resources: z.object({
+        enabled: z.boolean().default(true),
+        allowedResources: z.array(z.string()).default(['*']),
+        cacheTTL: z.number().int().positive().default(300000) // 5 minutes
+    }).default({
+        enabled: true,
+        allowedResources: ['*'],
+        cacheTTL: 300000
+    }),
+    security: z.object({
+        requireAuth: z.boolean().default(false),
+        allowedHosts: z.array(z.string()).default(['*']),
+        maxRequestSize: z.number().int().positive().default(10485760) // 10MB
+    }).default({
+        requireAuth: false,
+        allowedHosts: ['*'],
+        maxRequestSize: 10485760
+    }),
+    logging: z.object({
+        enabled: z.boolean().default(false),
+        level: LogLevel.default('info'),
+        logFile: z.string().default('mcp-server.log')
+    }).default({
+        enabled: false,
+        level: 'info',
+        logFile: 'mcp-server.log'
+    })
+});
+const MCPClientConnectionSchema = z.object({
+    name: z.string(),
+    enabled: z.boolean().default(true),
+    command: z.string(),
+    args: z.array(z.string()).default([]),
+    env: z.record(z.string()).default({}),
+    cwd: z.string().optional(),
+    timeout: z.number().int().positive().default(30000), // 30 seconds
+    retryCount: z.number().int().min(0).default(3),
+    retryDelay: z.number().int().positive().default(1000) // 1 second
+});
+const MCPClientConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    connections: z.array(MCPClientConnectionSchema).default([]),
+    globalTimeout: z.number().int().positive().default(60000), // 1 minute
+    maxConcurrentConnections: z.number().int().positive().default(3),
+    logging: z.object({
+        enabled: z.boolean().default(false),
+        level: LogLevel.default('info'),
+        logFile: z.string().default('mcp-client.log')
+    }).default({
+        enabled: false,
+        level: 'info',
+        logFile: 'mcp-client.log'
+    })
+});
+const MCPConfigSchema = z.object({
+    server: MCPServerConfigSchema.default({
+        enabled: false,
+        port: 3001,
+        autoStart: false,
+        tools: { enabled: true, allowedTools: ['*'], maxConcurrent: 5 },
+        resources: { enabled: true, allowedResources: ['*'], cacheTTL: 300000 },
+        security: { requireAuth: false, allowedHosts: ['*'], maxRequestSize: 10485760 },
+        logging: { enabled: false, level: 'info', logFile: 'mcp-server.log' }
+    }),
+    client: MCPClientConfigSchema.default({
+        enabled: false,
+        connections: [],
+        globalTimeout: 60000,
+        maxConcurrentConnections: 3,
+        logging: { enabled: false, level: 'info', logFile: 'mcp-client.log' }
+    })
+});
+// Extended configuration schema with MCP and other features
+export const extendedConfigSchema = configSchema.extend({
+    // MCP configuration
+    mcp: MCPConfigSchema.default({
+        server: {
+            enabled: false,
+            port: 3001,
+            autoStart: false,
+            tools: { enabled: true, allowedTools: ['*'], maxConcurrent: 5 },
+            resources: { enabled: true, allowedResources: ['*'], cacheTTL: 300000 },
+            security: { requireAuth: false, allowedHosts: ['*'], maxRequestSize: 10485760 },
+            logging: { enabled: false, level: 'info', logFile: 'mcp-server.log' }
+        },
+        client: {
+            enabled: false,
+            connections: [],
+            globalTimeout: 60000,
+            maxConcurrentConnections: 3,
+            logging: { enabled: false, level: 'info', logFile: 'mcp-client.log' }
+        }
     }),
     // Runtime configuration
     paths: PathsConfigSchema.optional(),
@@ -149,5 +257,5 @@ export const configSchema = z.object({
     recentWorkspaces: z.array(z.string()).default([])
 });
 // Export sub-schemas for modular validation
-export { LogLevel, ApiConfigSchema, OllamaConfigSchema, AiConfigSchema, TelemetryConfigSchema, TerminalConfigSchema, CodeAnalysisConfigSchema, GitConfigSchema, EditorConfigSchema, PathsConfigSchema };
+export { LogLevel, ApiConfigSchema, OllamaConfigSchema, AiConfigSchema, TelemetryConfigSchema, TerminalConfigSchema, CodeAnalysisConfigSchema, GitConfigSchema, EditorConfigSchema, PathsConfigSchema, MCPConfigSchema, MCPServerConfigSchema, MCPClientConfigSchema, MCPClientConnectionSchema };
 //# sourceMappingURL=schema.js.map

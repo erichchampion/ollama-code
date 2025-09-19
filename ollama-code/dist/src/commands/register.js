@@ -23,6 +23,7 @@ import { registerCompletionCommands } from './completion-commands.js';
 import { registerAnalyticsCommands } from './analytics-commands.js';
 import { registerTutorialCommands } from './tutorial-commands.js';
 import { registerMCPCommands } from './mcp-commands.js';
+import { registerMCPClientCommands } from './mcp-client-commands.js';
 /**
  * Register all commands
  */
@@ -73,6 +74,8 @@ export function registerCommands() {
     registerTutorialCommands();
     // Register MCP server commands
     registerMCPCommands();
+    // Register MCP client commands
+    registerMCPClientCommands();
     // Register tool system command - temporarily disabled due to import issues
     // commandRegistry.register(toolCommand);
     // Mark registry as initialized

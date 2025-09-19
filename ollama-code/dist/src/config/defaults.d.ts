@@ -71,14 +71,5 @@ export declare const defaultConfig: {
         formatOnSave: boolean;
         preferredLauncher?: string | undefined;
     };
-    recentWorkspaces: string[];
     workspace?: string | undefined;
-    paths?: {
-        home?: string | undefined;
-        app?: string | undefined;
-        cache?: string | undefined;
-        logs?: string | undefined;
-        workspace?: string | undefined;
-    } | undefined;
-    lastUpdateCheck?: number | undefined;
 };

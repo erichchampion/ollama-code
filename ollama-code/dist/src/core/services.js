@@ -59,6 +59,15 @@ export async function registerServices() {
         const { MCPServer } = await import('../mcp/server.js');
         return new MCPServer();
     });
+    // Register MCP client
+    globalContainer.singleton('mcpClient', async () => {
+        const { createMCPClient } = await import('../mcp/client.js');
+        const { loadConfig } = await import('../config/loader.js');
+        const config = await loadConfig();
+        const client = createMCPClient(config.mcp.client);
+        await client.initialize();
+        return client;
+    });
     // Register AI client
     globalContainer.singleton('aiClient', async () => {
         const { OllamaClient } = await import('../ai/ollama-client.js');
@@ -112,6 +121,9 @@ export async function getLazyLoader() {
 export async function getMCPServer() {
     return globalContainer.resolve('mcpServer');
 }
+export async function getMCPClient() {
+    return globalContainer.resolve('mcpClient');
+}
 export async function getAIClient() {
     return globalContainer.resolve('aiClient');
 }
@@ -144,7 +156,10 @@ export async function initializeServicesForOperation(operation) {
             ]);
             break;
         case 'mcp':
-            await globalContainer.resolve('mcpServer');
+            await Promise.all([
+                globalContainer.resolve('mcpServer'),
+                globalContainer.resolve('mcpClient')
+            ]);
             break;
         case 'all':
             await Promise.all([
@@ -157,7 +172,8 @@ export async function initializeServicesForOperation(operation) {
                 globalContainer.resolve('progressManager'),
                 globalContainer.resolve('errorRecoveryManager'),
                 globalContainer.resolve('configValidator'),
-                globalContainer.resolve('mcpServer')
+                globalContainer.resolve('mcpServer'),
+                globalContainer.resolve('mcpClient')
             ]);
             break;
     }

@@ -1,602 +1,536 @@
 /**
  * Enhanced AI Client
  *
- * Provides advanced AI capabilities including multi-turn conversations,
- * context-aware prompting, tool use planning, and response quality validation.
+ * Integrates all phases into a comprehensive AI-powered development assistant
+ * with natural language understanding, autonomous code modification, and
+ * intelligent task planning and execution.
  */
 
-import { OllamaClient, OllamaMessage, OllamaCompletionOptions } from './ollama-client.js';
-import { ProjectContext, ConversationTurn, ProjectState } from './context.js';
-import { ToolOrchestrator, OrchestrationPlan } from '../tools/orchestrator.js';
-import { toolRegistry } from '../tools/index.js';
 import { logger } from '../utils/logger.js';
-import { generateSystemPrompt, generateToolPlanningPrompt } from './prompts.js';
-import {
-  MAX_RELEVANT_FILES,
-  MAX_AI_CONVERSATION_HISTORY
-} from '../constants.js';
+import { OllamaClient } from './client.js';
+import { ProjectContext } from './context.js';
+import { IntentAnalyzer, UserIntent } from './intent-analyzer.js';
+import { ConversationManager } from './conversation-manager.js';
+import { TaskPlanner, ExecutionPlan } from '../planning/task-planner.js';
+import { ExecutionEngine, ExecutionResult } from '../execution/execution-engine.js';
+import { AutonomousModifier } from '../core/autonomous-modifier.js';
+import { NaturalLanguageRouter } from '../routing/nl-router.js';
 
-export interface ToolResult {
-  toolName: string;
-  result: any;
-  data?: any; // For backward compatibility with existing tool system
-  executionTime: number;
+export interface EnhancedClientConfig {
+  model: string;
+  baseUrl: string;
+  contextWindow: number;
+  enableTaskPlanning: boolean;
+  enableAutonomousModification: boolean;
+  executionPreferences: {
+    parallelism: number;
+    riskTolerance: 'conservative' | 'balanced' | 'aggressive';
+    autoExecute: boolean;
+  };
+}
+
+export interface ProcessingResult {
   success: boolean;
+  intent: UserIntent;
+  response: string;
+  executionPlan?: ExecutionPlan;
+  executionResults?: Map<string, ExecutionResult>;
+  conversationId: string;
+  processingTime: number;
   error?: string;
 }
 
-export interface EnhancedCompletionOptions extends OllamaCompletionOptions {
-  useProjectContext?: boolean;
-  enableToolUse?: boolean;
-  conversationId?: string;
-  maxContextTokens?: number;
-  responseQuality?: 'fast' | 'balanced' | 'high';
+export interface SessionState {
+  conversationId: string;
+  activeExecutionPlan?: ExecutionPlan;
+  pendingTasks: string[];
+  executionHistory: ExecutionSummary[];
+  preferences: UserPreferences;
 }
 
-export interface AIResponse {
-  content: string;
-  confidence: number;
-  toolsUsed: string[];
-  filesReferenced: string[];
-  metadata: {
-    tokensUsed: number;
-    executionTime: number;
-    contextSize: number;
-    qualityScore: number;
-  };
-  followUpSuggestions: string[];
+export interface ExecutionSummary {
+  planId: string;
+  title: string;
+  completedAt: Date;
+  totalTasks: number;
+  successfulTasks: number;
+  duration: number;
 }
 
-export interface ToolUsePlan {
-  tools: Array<{
-    name: string;
-    parameters: Record<string, any>;
-    rationale: string;
-    dependencies: string[];
-  }>;
-  executionOrder: string[];
-  estimatedTime: number;
-  confidence: number;
+export interface UserPreferences {
+  verbosity: 'minimal' | 'standard' | 'detailed';
+  autoConfirm: boolean;
+  riskTolerance: 'conservative' | 'balanced' | 'aggressive';
+  preferredExecutionMode: 'manual' | 'assisted' | 'autonomous';
 }
 
-export interface ResponseValidation {
-  isValid: boolean;
-  confidence: number;
-  issues: string[];
-}
+export class EnhancedClient {
+  private ollamaClient: OllamaClient;
+  private projectContext: ProjectContext;
+  private intentAnalyzer: IntentAnalyzer;
+  private conversationManager: ConversationManager;
+  private taskPlanner: TaskPlanner;
+  private executionEngine: ExecutionEngine;
+  private autonomousModifier: AutonomousModifier;
+  private nlRouter: NaturalLanguageRouter;
+  private config: EnhancedClientConfig;
+  private sessionState: SessionState;
 
-export class EnhancedAIClient {
-  private baseClient: OllamaClient;
-  private projectContext: ProjectContext | null = null;
-  private toolOrchestrator: ToolOrchestrator;
-  private conversations = new Map<string, ConversationTurn[]>();
-  private defaultOptions: EnhancedCompletionOptions;
+  constructor(
+    config: EnhancedClientConfig,
+    projectContext: ProjectContext
+  ) {
+    this.config = config;
+    this.projectContext = projectContext;
 
-  constructor(baseClient: OllamaClient, projectContext?: ProjectContext, options: Partial<EnhancedCompletionOptions> = {}) {
-    this.baseClient = baseClient;
-    this.projectContext = projectContext || null;
-    this.toolOrchestrator = new ToolOrchestrator();
-    this.defaultOptions = {
-      useProjectContext: true,
-      enableToolUse: true,
-      maxContextTokens: 32000,
-      responseQuality: 'balanced',
-      ...options
+    // Initialize core components
+    this.ollamaClient = new OllamaClient(config.baseUrl, config.model);
+    this.intentAnalyzer = new IntentAnalyzer(this.ollamaClient, projectContext);
+    this.conversationManager = new ConversationManager();
+    this.autonomousModifier = new AutonomousModifier();
+    this.taskPlanner = new TaskPlanner(projectContext);
+    this.executionEngine = new ExecutionEngine(
+      projectContext,
+      this.autonomousModifier,
+      this.ollamaClient
+    );
+    this.nlRouter = new NaturalLanguageRouter();
+
+    // Initialize session state
+    this.sessionState = {
+      conversationId: this.conversationManager.startNewConversation(),
+      pendingTasks: [],
+      executionHistory: [],
+      preferences: this.getDefaultPreferences()
     };
   }
 
   /**
-   * Initialize with project context
+   * Initialize all components
    */
-  async initializeWithProject(projectRoot: string): Promise<void> {
-    this.projectContext = new ProjectContext(projectRoot);
-    await this.projectContext.initialize();
-    logger.info('Enhanced AI client initialized with project context');
-  }
-
-  /**
-   * Enhanced completion with context awareness and tool use
-   */
-  async complete(
-    prompt: string,
-    options: EnhancedCompletionOptions = {}
-  ): Promise<AIResponse> {
-    const startTime = Date.now();
-    const mergedOptions = { ...this.defaultOptions, ...options };
-    const conversationId = mergedOptions.conversationId || 'default';
-
+  async initialize(): Promise<void> {
     try {
-      // Build context-aware prompt
-      const enhancedPrompt = await this.buildContextAwarePrompt(prompt, mergedOptions);
+      logger.info('Initializing Enhanced AI Client');
 
-      // Check if tool use is needed
-      let toolResults: ToolResult[] | null = null;
-      if (mergedOptions.enableToolUse) {
-        const toolPlan = await this.planToolUse(prompt, mergedOptions);
-        if (toolPlan.tools.length > 0) {
-          toolResults = await this.executeToolPlan(toolPlan);
-        }
-      }
+      await Promise.all([
+        this.ollamaClient.initialize(),
+        this.autonomousModifier.initialize(),
+        this.projectContext.initialize()
+      ]);
 
-      // Generate AI response
-      const response = await this.generateResponse(enhancedPrompt, toolResults, mergedOptions);
-
-      // Validate response quality
-      const qualityScore = this.validateResponseQuality(response.content, prompt);
-
-      // Create conversation turn
-      const turn: ConversationTurn = {
-        id: `${conversationId}_${Date.now()}`,
-        timestamp: new Date(),
-        userMessage: prompt,
-        assistantResponse: response.content,
-        context: {
-          filesReferenced: response.filesReferenced,
-          toolsUsed: response.toolsUsed,
-          projectState: this.createProjectStateFromSummary(this.projectContext?.getProjectSummary())
-        },
-        metadata: {
-          tokensUsed: response.metadata.tokensUsed,
-          executionTime: Date.now() - startTime,
-          confidence: response.confidence
-        }
-      };
-
-      // Store conversation turn
-      this.addConversationTurn(conversationId, turn);
-
-      // Add to project context if available
-      if (this.projectContext) {
-        this.projectContext.addConversationTurn(turn);
-      }
-
-      return {
-        ...response,
-        metadata: {
-          ...response.metadata,
-          executionTime: Date.now() - startTime,
-          qualityScore
-        }
-      };
-
+      logger.info('Enhanced AI Client initialized successfully');
     } catch (error) {
-      logger.error('Enhanced completion failed:', error);
+      logger.error('Failed to initialize Enhanced AI Client:', error);
       throw error;
     }
   }
 
   /**
-   * Stream completion with enhanced capabilities
+   * Process a user message with full enhanced capabilities
    */
-  async completeStream(
-    prompt: string,
-    options: EnhancedCompletionOptions = {},
-    onChunk: (chunk: { content: string; partial: AIResponse }) => void,
-    abortSignal?: AbortSignal
-  ): Promise<AIResponse> {
-    const mergedOptions = { ...this.defaultOptions, ...options };
-
-    // Build enhanced prompt
-    const enhancedPrompt = await this.buildContextAwarePrompt(prompt, mergedOptions);
-
-    let fullContent = '';
-    const metadata = {
-      tokensUsed: 0,
-      executionTime: 0,
-      contextSize: 0,
-      qualityScore: 0
-    };
-
-    // Use base client streaming with enhanced prompt
-    const response = await this.baseClient.completeStream(
-      enhancedPrompt.content,
-      {
-        ...mergedOptions,
-        system: enhancedPrompt.systemPrompt
-      },
-      (event) => {
-        if (event.message?.content) {
-          fullContent += event.message.content;
-
-          const partialResponse: AIResponse = {
-            content: fullContent,
-            confidence: 0.5, // Partial confidence
-            toolsUsed: enhancedPrompt.toolsUsed,
-            filesReferenced: enhancedPrompt.filesReferenced,
-            metadata,
-            followUpSuggestions: []
-          };
-
-          onChunk({
-            content: event.message.content,
-            partial: partialResponse
-          });
-        }
-      },
-      abortSignal
-    );
-
-    // Build final response
-    const finalResponse: AIResponse = {
-      content: fullContent,
-      confidence: this.calculateConfidence(fullContent, prompt),
-      toolsUsed: enhancedPrompt.toolsUsed,
-      filesReferenced: enhancedPrompt.filesReferenced,
-      metadata: {
-        tokensUsed: this.estimateTokens(fullContent),
-        executionTime: metadata.executionTime,
-        contextSize: enhancedPrompt.contextSize,
-        qualityScore: this.validateResponseQuality(fullContent, prompt)
-      },
-      followUpSuggestions: this.generateFollowUpSuggestions(fullContent, prompt)
-    };
-
-    return finalResponse;
-  }
-
-  /**
-   * Build context-aware prompt with project information
-   */
-  private async buildContextAwarePrompt(
-    userPrompt: string,
-    options: EnhancedCompletionOptions
-  ): Promise<{
-    content: string;
-    systemPrompt: string;
-    contextSize: number;
-    filesReferenced: string[];
-    toolsUsed: string[];
-  }> {
-    let contextInfo = '';
-    let filesReferenced: string[] = [];
-    let toolsUsed: string[] = [];
-    let contextSize = 0;
-
-    // Add project context if available and enabled
-    if (options.useProjectContext && this.projectContext) {
-      const relevantContext = await this.projectContext.getRelevantContext(
-        userPrompt,
-        options.maxContextTokens
-      );
-
-      // Add file context
-      if (relevantContext.files.length > 0) {
-        contextInfo += '\n## Relevant Project Files:\n';
-        for (const file of relevantContext.files.slice(0, MAX_RELEVANT_FILES)) {
-          contextInfo += `- ${file.relativePath} (${file.language || 'unknown'})\n`;
-          filesReferenced.push(file.relativePath);
-        }
-      }
-
-      // Add project structure
-      const summary = this.projectContext.getProjectSummary();
-      contextInfo += `\n## Project Overview:\n`;
-      contextInfo += `Languages: ${summary.languages.join(', ')}\n`;
-      contextInfo += `Entry Points: ${summary.entryPoints.join(', ')}\n`;
-      contextInfo += `Structure: ${summary.structure}\n`;
-
-      contextSize = relevantContext.totalTokens;
-    }
-
-    // Add available tools context
-    if (options.enableToolUse) {
-      const availableTools = toolRegistry.list();
-      contextInfo += '\n## Available Tools:\n';
-      for (const tool of availableTools) {
-        contextInfo += `- ${tool.name}: ${tool.description}\n`;
-        toolsUsed.push(tool.name);
-      }
-    }
-
-    // Generate system prompt
-    const systemPrompt = generateSystemPrompt({
-      hasProjectContext: !!this.projectContext,
-      hasToolAccess: options.enableToolUse || false,
-      responseQuality: options.responseQuality || 'balanced'
-    });
-
-    // Combine user prompt with context
-    const enhancedPrompt = contextInfo ?
-      `${contextInfo}\n\n## User Request:\n${userPrompt}` :
-      userPrompt;
-
-    return {
-      content: enhancedPrompt,
-      systemPrompt,
-      contextSize,
-      filesReferenced,
-      toolsUsed
-    };
-  }
-
-  /**
-   * Plan tool use based on user request
-   */
-  private async planToolUse(
-    prompt: string,
-    options: EnhancedCompletionOptions
-  ): Promise<ToolUsePlan> {
-    const availableTools = toolRegistry.list().map(tool => tool.name);
-
-    // Use AI to plan tool usage
-    const planningPrompt = generateToolPlanningPrompt(prompt, availableTools);
+  async processMessage(message: string): Promise<ProcessingResult> {
+    const startTime = Date.now();
 
     try {
-      const response = await this.baseClient.complete([{
-        role: 'user',
-        content: planningPrompt
-      }], {
-        ...options,
-        temperature: 0.1, // Lower temperature for planning
-        format: 'json'
+      logger.info('Processing user message', { message: message.substring(0, 100) });
+
+      // Add to conversation
+      this.conversationManager.addUserMessage(this.sessionState.conversationId, message);
+
+      // Analyze intent
+      const intent = await this.intentAnalyzer.analyzeIntent(message);
+
+      logger.debug('Intent analyzed', {
+        type: intent.type,
+        action: intent.action,
+        complexity: intent.complexity,
+        riskLevel: intent.riskLevel
       });
 
-      const planData = JSON.parse(response.message?.content || '{"tools": []}');
+      // Route to appropriate handler
+      const routingResult = await this.nlRouter.route(intent, this.projectContext);
+
+      let response: string;
+      let executionPlan: ExecutionPlan | undefined;
+      let executionResults: Map<string, ExecutionResult> | undefined;
+
+      if (routingResult.requiresExecution && this.config.enableTaskPlanning) {
+        // Create and potentially execute plan
+        const planResult = await this.createAndExecutePlan(intent);
+        response = planResult.response;
+        executionPlan = planResult.executionPlan;
+        executionResults = planResult.executionResults;
+      } else {
+        // Handle as conversation or simple command
+        response = await this.generateResponse(intent, routingResult);
+      }
+
+      // Add response to conversation
+      this.conversationManager.addAssistantMessage(
+        this.sessionState.conversationId,
+        response
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      logger.info('Message processing completed', {
+        processingTime,
+        intentType: intent.type,
+        hasExecutionPlan: !!executionPlan
+      });
 
       return {
-        tools: planData.tools || [],
-        executionOrder: planData.executionOrder || [],
-        estimatedTime: planData.estimatedTime || 0,
-        confidence: planData.confidence || 0.5
+        success: true,
+        intent,
+        response,
+        executionPlan,
+        executionResults,
+        conversationId: this.sessionState.conversationId,
+        processingTime
       };
+
     } catch (error) {
-      logger.debug('Tool planning failed, proceeding without tools:', error);
+      logger.error('Message processing failed:', error);
+
+      const errorResponse = `I encountered an error while processing your request: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`;
+
       return {
-        tools: [],
-        executionOrder: [],
-        estimatedTime: 0,
-        confidence: 0
+        success: false,
+        intent: {
+          type: 'unknown',
+          action: message,
+          entities: { files: [], technologies: [], concepts: [] },
+          confidence: 0,
+          complexity: 'low',
+          multiStep: false,
+          riskLevel: 'low'
+        },
+        response: errorResponse,
+        conversationId: this.sessionState.conversationId,
+        processingTime: Date.now() - startTime,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
 
   /**
-   * Execute planned tools
+   * Create and potentially execute a plan for the intent
    */
-  private async executeToolPlan(plan: ToolUsePlan): Promise<any> {
-    if (plan.tools.length === 0) return null;
+  private async createAndExecutePlan(intent: UserIntent): Promise<{
+    response: string;
+    executionPlan?: ExecutionPlan;
+    executionResults?: Map<string, ExecutionResult>;
+  }> {
+    try {
+      // Create execution plan
+      const executionPlan = await this.taskPlanner.createExecutionPlan(intent);
+
+      // Store as active plan
+      this.sessionState.activeExecutionPlan = executionPlan;
+
+      // Determine if we should auto-execute
+      const shouldAutoExecute = this.shouldAutoExecute(executionPlan, intent);
+
+      if (shouldAutoExecute) {
+        // Execute the plan
+        const executionResults = await this.executionEngine.executePlan(executionPlan);
+
+        // Record execution in history
+        this.recordExecution(executionPlan, executionResults);
+
+        const response = this.generateExecutionResponse(executionPlan, executionResults);
+
+        return {
+          response,
+          executionPlan,
+          executionResults
+        };
+      } else {
+        // Return plan for user approval
+        const response = this.generatePlanProposal(executionPlan);
+
+        return {
+          response,
+          executionPlan
+        };
+      }
+
+    } catch (error) {
+      logger.error('Plan creation/execution failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a response based on intent and routing result
+   */
+  private async generateResponse(intent: UserIntent, routingResult: any): Promise<string> {
+    const context = this.conversationManager.generateContextualPrompt(
+      this.sessionState.conversationId,
+      intent
+    );
+
+    // Use the conversation context to generate an appropriate response
+    const response = await this.ollamaClient.generateResponse(
+      `Based on the user's intent (${intent.type}: ${intent.action}), please provide a helpful response.
+
+      Context: ${context}
+
+      User's message: ${intent.action}`,
+      {
+        contextWindow: this.config.contextWindow
+      }
+    );
+
+    return response;
+  }
+
+  /**
+   * Determine if plan should be auto-executed
+   */
+  private shouldAutoExecute(plan: ExecutionPlan, intent: UserIntent): boolean {
+    if (!this.config.executionPreferences.autoExecute) {
+      return false;
+    }
+
+    // Auto-execute only low-risk plans in aggressive mode
+    if (this.sessionState.preferences.riskTolerance === 'aggressive' &&
+        plan.riskAssessment.overallRisk === 'low') {
+      return true;
+    }
+
+    // Auto-execute simple analysis tasks
+    if (intent.type === 'question' && intent.complexity === 'low') {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Generate plan proposal for user approval
+   */
+  private generatePlanProposal(plan: ExecutionPlan): string {
+    const taskSummary = plan.tasks.map(t => `- ${t.title}`).join('\n');
+    const estimatedDuration = Math.round(
+      plan.timeline.estimatedEnd.getTime() - plan.timeline.estimatedStart.getTime()
+    ) / 60000; // Convert to minutes
+
+    return `I've created an execution plan for your request:
+
+**${plan.title}**
+
+**Tasks (${plan.tasks.length}):**
+${taskSummary}
+
+**Estimated Duration:** ${estimatedDuration} minutes
+**Risk Level:** ${plan.riskAssessment.overallRisk}
+**Phases:** ${plan.phases.length}
+
+Would you like me to execute this plan? You can:
+- Say "yes" or "execute" to run the plan
+- Say "modify" to adjust the plan
+- Say "no" or "cancel" to abort
+
+You can also ask for more details about any specific task or phase.`;
+  }
+
+  /**
+   * Generate response after execution completion
+   */
+  private generateExecutionResponse(
+    plan: ExecutionPlan,
+    results: Map<string, ExecutionResult>
+  ): string {
+    const totalTasks = results.size;
+    const successfulTasks = Array.from(results.values()).filter(r => r.success).length;
+    const failedTasks = totalTasks - successfulTasks;
+
+    let response = `Execution completed for: ${plan.title}\n\n`;
+    response += `**Results:**\n`;
+    response += `- Total tasks: ${totalTasks}\n`;
+    response += `- Successful: ${successfulTasks}\n`;
+    response += `- Failed: ${failedTasks}\n\n`;
+
+    if (failedTasks > 0) {
+      response += `**Failed Tasks:**\n`;
+      for (const [taskId, result] of results) {
+        if (!result.success) {
+          const task = plan.tasks.find(t => t.id === taskId);
+          response += `- ${task?.title || taskId}: ${result.error}\n`;
+        }
+      }
+      response += '\n';
+    }
+
+    if (successfulTasks === totalTasks) {
+      response += '✅ All tasks completed successfully!';
+    } else if (successfulTasks > 0) {
+      response += '⚠️ Partial completion - some tasks need attention.';
+    } else {
+      response += '❌ Execution failed - please review the errors above.';
+    }
+
+    return response;
+  }
+
+  /**
+   * Record execution in session history
+   */
+  private recordExecution(
+    plan: ExecutionPlan,
+    results: Map<string, ExecutionResult>
+  ): void {
+    const successfulTasks = Array.from(results.values()).filter(r => r.success).length;
+    const totalDuration = Array.from(results.values()).reduce(
+      (sum, r) => sum + r.duration, 0
+    );
+
+    const summary: ExecutionSummary = {
+      planId: plan.id,
+      title: plan.title,
+      completedAt: new Date(),
+      totalTasks: results.size,
+      successfulTasks,
+      duration: totalDuration
+    };
+
+    this.sessionState.executionHistory.push(summary);
+
+    // Clear active plan
+    this.sessionState.activeExecutionPlan = undefined;
+  }
+
+  /**
+   * Execute pending plan (when user approves)
+   */
+  async executePendingPlan(): Promise<ProcessingResult> {
+    if (!this.sessionState.activeExecutionPlan) {
+      throw new Error('No pending execution plan');
+    }
+
+    const startTime = Date.now();
+    const plan = this.sessionState.activeExecutionPlan;
 
     try {
-      // Convert plan to orchestration format
-      const executions = plan.tools.map(tool => ({
-        toolName: tool.name,
-        parameters: tool.parameters,
-        dependencies: tool.dependencies
-      }));
+      const executionResults = await this.executionEngine.executePlan(plan);
+      this.recordExecution(plan, executionResults);
 
-      const orchestrationPlan = this.toolOrchestrator.createPlan(executions);
+      const response = this.generateExecutionResponse(plan, executionResults);
 
-      const context = {
-        projectRoot: this.projectContext?.getProjectSummary().structure || process.cwd(),
-        workingDirectory: process.cwd(),
-        environment: process.env as Record<string, string>,
-        timeout: 30000
+      return {
+        success: true,
+        intent: {
+          type: 'command',
+          action: 'execute plan',
+          entities: { files: [], technologies: [], concepts: [] },
+          confidence: 1.0,
+          complexity: 'medium',
+          multiStep: true,
+          riskLevel: plan.riskAssessment.overallRisk
+        },
+        response,
+        executionPlan: plan,
+        executionResults,
+        conversationId: this.sessionState.conversationId,
+        processingTime: Date.now() - startTime
       };
 
-      const results = await this.toolOrchestrator.executeOrchestration(orchestrationPlan, context);
-
-      return Array.from(results.values());
     } catch (error) {
-      logger.error('Tool execution failed:', error);
-      return null;
+      logger.error('Plan execution failed:', error);
+      throw error;
     }
   }
 
   /**
-   * Generate AI response with tool results
+   * Get current session state
    */
-  private async generateResponse(
-    prompt: { content: string; systemPrompt: string },
-    toolResults: ToolResult[] | null,
-    options: EnhancedCompletionOptions
-  ): Promise<AIResponse> {
-    let enhancedPrompt = prompt.content;
+  getSessionState(): SessionState {
+    return { ...this.sessionState };
+  }
 
-    // Add tool results to prompt if available
-    if (toolResults && toolResults.length > 0) {
-      enhancedPrompt += '\n\n## Tool Execution Results:\n';
-      for (let i = 0; i < toolResults.length; i++) {
-        const result = toolResults[i];
-        enhancedPrompt += `Tool ${i + 1}: ${result.success ? 'Success' : 'Failed'}\n`;
-        if (result.data) {
-          enhancedPrompt += `Result: ${JSON.stringify(result.data, null, 2)}\n`;
-        }
-        if (result.error) {
-          enhancedPrompt += `Error: ${result.error}\n`;
-        }
-      }
-    }
+  /**
+   * Update user preferences
+   */
+  updatePreferences(preferences: Partial<UserPreferences>): void {
+    Object.assign(this.sessionState.preferences, preferences);
 
-    const response = await this.baseClient.complete([{
-      role: 'user',
-      content: enhancedPrompt
-    }], {
-      ...options,
-      system: prompt.systemPrompt
+    // Update execution engine preferences based on user preferences
+    this.executionEngine.updatePreferences({
+      riskTolerance: preferences.riskTolerance || this.sessionState.preferences.riskTolerance
     });
-
-    const content = response.message?.content || '';
-
-    return {
-      content,
-      confidence: this.calculateConfidence(content, prompt.content),
-      toolsUsed: toolResults ? toolResults.map((result: ToolResult) => result.toolName) : [],
-      filesReferenced: [], // Will be populated by context
-      followUpSuggestions: this.generateFollowUpSuggestions(content, prompt.content),
-      metadata: {
-        tokensUsed: 0,
-        executionTime: 0,
-        contextSize: 0,
-        qualityScore: 0
-      }
-    };
-  }
-
-  /**
-   * Calculate response confidence score
-   */
-  private calculateConfidence(response: string, prompt: string): number {
-    let confidence = 0.5; // Base confidence
-
-    // Length and completeness
-    if (response.length > 100) confidence += 0.1;
-    if (response.length > 500) confidence += 0.1;
-
-    // Contains code blocks
-    if (response.includes('```')) confidence += 0.1;
-
-    // Contains specific answers
-    if (response.includes('function') || response.includes('class') || response.includes('const')) {
-      confidence += 0.1;
-    }
-
-    // Addresses the question directly
-    const promptWords = prompt.toLowerCase().split(/\s+/);
-    const responseWords = response.toLowerCase().split(/\s+/);
-    const overlap = promptWords.filter(word => responseWords.includes(word)).length;
-    confidence += Math.min(0.2, overlap / promptWords.length);
-
-    return Math.min(1.0, confidence);
-  }
-
-  /**
-   * Validate response quality
-   */
-  private validateResponseQuality(response: string, prompt: string): number {
-    let score = 0.5; // Base score
-
-    // Check for common quality indicators
-    if (response.length > 50) score += 0.1;
-    if (response.includes('\n')) score += 0.1; // Multi-line responses
-    if (/[.!?]/.test(response)) score += 0.1; // Proper punctuation
-    if (response.toLowerCase().includes('error') && prompt.toLowerCase().includes('fix')) {
-      score += 0.2; // Relevant to fixing
-    }
-
-    // Penalize low-quality responses
-    if (response.length < 20) score -= 0.3;
-    if (response.includes('I cannot') || response.includes("I can't")) score -= 0.1;
-
-    return Math.max(0, Math.min(1, score));
-  }
-
-  /**
-   * Generate follow-up suggestions
-   */
-  private generateFollowUpSuggestions(response: string, prompt: string): string[] {
-    const suggestions: string[] = [];
-
-    // Based on response content
-    if (response.includes('function')) {
-      suggestions.push('Would you like me to add tests for this function?');
-      suggestions.push('Should I add error handling to this code?');
-    }
-
-    if (response.includes('class')) {
-      suggestions.push('Would you like me to add documentation for this class?');
-      suggestions.push('Should I create an interface for this class?');
-    }
-
-    if (response.includes('TODO') || response.includes('FIXME')) {
-      suggestions.push('Would you like me to help implement the TODO items?');
-    }
-
-    // Based on prompt content
-    if (prompt.toLowerCase().includes('explain')) {
-      suggestions.push('Would you like me to refactor this code?');
-      suggestions.push('Should I show you how to test this code?');
-    }
-
-    return suggestions.slice(0, 3); // Limit suggestions
-  }
-
-  /**
-   * Estimate token count (simplified)
-   */
-  private estimateTokens(text: string): number {
-    return Math.ceil(text.length / 4);
-  }
-
-  /**
-   * Add conversation turn to history
-   */
-  private addConversationTurn(conversationId: string, turn: ConversationTurn): void {
-    if (!this.conversations.has(conversationId)) {
-      this.conversations.set(conversationId, []);
-    }
-
-    const conversation = this.conversations.get(conversationId)!;
-    conversation.push(turn);
-
-    // Keep only recent turns
-    if (conversation.length > MAX_AI_CONVERSATION_HISTORY) {
-      conversation.splice(0, conversation.length - MAX_AI_CONVERSATION_HISTORY);
-    }
   }
 
   /**
    * Get conversation history
    */
-  getConversationHistory(conversationId: string = 'default'): ConversationTurn[] {
-    return this.conversations.get(conversationId) || [];
+  getConversationHistory(): any[] {
+    return this.conversationManager.getConversationHistory(this.sessionState.conversationId);
   }
 
   /**
-   * Clear conversation history
+   * Get execution history
    */
-  clearConversationHistory(conversationId?: string): void {
-    if (conversationId) {
-      this.conversations.delete(conversationId);
-    } else {
-      this.conversations.clear();
-    }
+  getExecutionHistory(): ExecutionSummary[] {
+    return [...this.sessionState.executionHistory];
+  }
+
+  /**
+   * Start new conversation
+   */
+  startNewConversation(): string {
+    this.sessionState.conversationId = this.conversationManager.startNewConversation();
+    this.sessionState.activeExecutionPlan = undefined;
+    return this.sessionState.conversationId;
   }
 
   /**
    * Get project context
    */
-  getProjectContext(): ProjectContext | null {
+  getProjectContext(): ProjectContext {
     return this.projectContext;
   }
 
   /**
-   * Convert project summary to ProjectState format
+   * Get default user preferences
    */
-  private createProjectStateFromSummary(summary?: {
-    fileCount: number;
-    languages: string[];
-    structure: string;
-    entryPoints: string[];
-    recentActivity: string[];
-  }): ProjectState {
-    if (!summary) {
-      return {
-        currentFiles: [],
-        activeFeatures: [],
-        buildStatus: 'unknown',
-        testStatus: 'unknown',
-        lastModified: new Date(),
-        dependencies: {}
-      };
-    }
-
+  private getDefaultPreferences(): UserPreferences {
     return {
-      currentFiles: summary.entryPoints,
-      activeFeatures: summary.languages,
-      buildStatus: 'unknown', // Would need build system integration
-      testStatus: 'unknown',  // Would need test runner integration
-      lastModified: new Date(),
-      dependencies: {} // Would need to parse package.json or similar
+      verbosity: 'standard',
+      autoConfirm: false,
+      riskTolerance: 'balanced',
+      preferredExecutionMode: 'assisted'
     };
   }
 
   /**
-   * Cleanup resources
+   * Check if client is ready
    */
-  cleanup(): void {
-    if (this.projectContext) {
-      this.projectContext.cleanup();
+  async isReady(): Promise<boolean> {
+    try {
+      await this.ollamaClient.generateResponse('test', { maxTokens: 1 });
+      return true;
+    } catch {
+      return false;
     }
-    this.conversations.clear();
+  }
+
+  /**
+   * Get system status
+   */
+  getSystemStatus(): {
+    ready: boolean;
+    activeExecutions: number;
+    conversationId: string;
+    executionHistory: number;
+  } {
+    return {
+      ready: true, // Simplified for now
+      activeExecutions: this.executionEngine.getActiveExecutions().size,
+      conversationId: this.sessionState.conversationId,
+      executionHistory: this.sessionState.executionHistory.length
+    };
   }
 }
