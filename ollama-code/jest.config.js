@@ -12,7 +12,7 @@ export default {
   projects: [
     {
       displayName: 'unit',
-      testMatch: ['**/tests/*.test.js', '**/tests/unit/**/*.test.js'],
+      testMatch: ['**/tests/*.test.js', '**/tests/unit/**/*.test.js', '**/tests/unit/**/*.test.cjs'],
       testEnvironment: 'node',
       transform: {
         '^.+\\.js$': 'babel-jest'

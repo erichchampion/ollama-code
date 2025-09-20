@@ -56,6 +56,15 @@ export const CODE_ANALYSIS_TIMEOUT = 30000;
 /** Default timeout for file operations (10 seconds) */
 export const FILE_OPERATION_TIMEOUT = 10000;
 
+/** Default timeout for server health checks (5 seconds) */
+export const SERVER_HEALTH_TIMEOUT = 5000;
+
+/** Default server startup timeout (30 seconds) */
+export const SERVER_STARTUP_TIMEOUT = 30000;
+
+/** Default health check interval (2 seconds) */
+export const HEALTH_CHECK_INTERVAL = 2000;
+
 // =============================================================================
 // RETRY CONFIGURATION
 // =============================================================================

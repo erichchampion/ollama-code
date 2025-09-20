@@ -8,6 +8,7 @@ import { spawn, exec } from 'child_process';
 import { logger } from './logger.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
+import { SERVER_HEALTH_TIMEOUT, SERVER_STARTUP_TIMEOUT, HEALTH_CHECK_INTERVAL } from '../constants.js';
 
 /**
  * Check if Ollama server is running
@@ -19,7 +20,7 @@ export async function isOllamaServerRunning(baseUrl: string = 'http://localhost:
       headers: {
         'Content-Type': 'application/json'
       },
-      signal: AbortSignal.timeout(5000) // 5 second timeout
+      signal: AbortSignal.timeout(SERVER_HEALTH_TIMEOUT)
     });
     
     return response.ok;
@@ -57,8 +58,8 @@ export async function startOllamaServer(config: OllamaServerStartupConfig = {}):
 
   // Apply configuration defaults
   const {
-    healthCheckInterval = 2000,
-    startupTimeout = 30000,
+    healthCheckInterval = HEALTH_CHECK_INTERVAL,
+    startupTimeout = SERVER_STARTUP_TIMEOUT,
     maxHealthCheckRetries = 15
   } = config;
 

@@ -30,6 +30,7 @@ import {
   HELP_COMMAND_SUGGESTION,
   EXIT_COMMANDS
 } from './constants.js';
+import { EnhancedInteractiveMode } from './interactive/enhanced-mode.js';
 import pkg from '../package.json' with { type: 'json' };
 
 // Get version from package.json
@@ -415,89 +416,8 @@ async function runAdvancedModeLegacy(commandName: string, args: string[]): Promi
   await executeCommand(commandName, args);
 }
 
-/**
- * Run interactive mode (command loop)
- */
-async function runInteractiveMode(): Promise<void> {
-  // Initialize tool system
-  initializeToolSystem();
-
-  // Register commands
-  registerCommands();
-
-  // Initialize terminal
-  const terminal = await initTerminal({});
-
-  console.log(`Ollama Code CLI v${version} - Interactive Mode`);
-  console.log(`${INTERACTIVE_MODE_HELP}\n`);
-  
-  let running = true;
-  
-  // Command loop
-  while (running) {
-    try {
-      // Get command input from user
-      const input = await terminal.prompt<{ command: string }>({
-        type: 'input',
-        name: 'command',
-        message: 'ollama-code>',
-      });
-      
-      if (!input.command || input.command.trim() === '') {
-        continue;
-      }
-      
-      // Handle special exit commands
-      if (EXIT_COMMANDS.includes(input.command.toLowerCase() as any)) {
-        running = false;
-        continue;
-      }
-      
-      // Parse input into command and args, respecting quoted strings
-      const parts = parseCommandInput(input.command.trim());
-      const commandName = parts[0];
-      const commandArgs = parts.slice(1);
-      
-      // Check if command exists
-      if (!commandRegistry.exists(commandName)) {
-        terminal.error(`Unknown command: ${commandName}`);
-        terminal.info(INTERACTIVE_MODE_HELP);
-        continue;
-      }
-      
-      // Get the command
-      const command = commandRegistry.get(commandName);
-      
-      if (!command) {
-        terminal.error(`Command not found: ${commandName}`);
-        continue;
-      }
-      
-      // Ensure Ollama server is running before initializing AI
-      terminal.info('Ensuring Ollama server is running...');
-      await ensureOllamaServerRunning();
-
-      // Initialize enhanced AI capabilities
-      terminal.info('Initializing enhanced AI capabilities...');
-      await initAI();
-      
-      // Execute the command
-      await executeCommand(commandName, commandArgs);
-      
-    } catch (error) {
-      const formattedError = formatErrorForDisplay(error);
-      terminal.error(formattedError);
-    }
-  }
-
-  console.log('Goodbye!');
-
-  // Cleanup resources when interactive mode exits
-  cleanup();
-
-  // Exit the process
-  process.exit(0);
-}
+// Note: The old runInteractiveMode function has been replaced with EnhancedInteractiveMode
+// which provides better task plan handling and natural language processing
 
 /**
  * Initialize the CLI
@@ -519,7 +439,8 @@ async function initCLI(): Promise<void> {
         await runAdvancedMode(commandName, args);
         break;
       case 'interactive':
-        await runInteractiveMode();
+        const enhancedMode = new EnhancedInteractiveMode();
+        await enhancedMode.start();
         break;
       default:
         console.error(`Unknown mode: ${mode}`);

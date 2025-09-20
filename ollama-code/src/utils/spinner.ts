@@ -2,6 +2,8 @@
  * Simple spinner utility for showing progress during long operations
  */
 
+import { STREAMING_DEFAULTS } from '../constants/streaming.js';
+
 export class Spinner {
   private frames = ['-', '\\', '|', '/', '-', '\\', '|', '/'];
   private currentFrame = 0;
@@ -34,7 +36,7 @@ export class Spinner {
     this.interval = setInterval(() => {
       this.render();
       this.currentFrame = (this.currentFrame + 1) % this.frames.length;
-    }, 100); // Update every 100ms
+    }, STREAMING_DEFAULTS.SPINNER_UPDATE_INTERVAL);
 
     // Initial render
     this.render();

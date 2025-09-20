@@ -30,6 +30,12 @@ export declare const API_REQUEST_TIMEOUT = 60000;
 export declare const CODE_ANALYSIS_TIMEOUT = 30000;
 /** Default timeout for file operations (10 seconds) */
 export declare const FILE_OPERATION_TIMEOUT = 10000;
+/** Default timeout for server health checks (5 seconds) */
+export declare const SERVER_HEALTH_TIMEOUT = 5000;
+/** Default server startup timeout (30 seconds) */
+export declare const SERVER_STARTUP_TIMEOUT = 30000;
+/** Default health check interval (2 seconds) */
+export declare const HEALTH_CHECK_INTERVAL = 2000;
 /** Default maximum number of retries for failed requests */
 export declare const DEFAULT_MAX_RETRIES = 3;
 /** Default initial delay between retries (1 second) */

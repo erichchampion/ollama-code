@@ -8,7 +8,7 @@
 import { logger } from '../utils/logger.js';
 import { initTerminal } from '../terminal/index.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
-import { IntentAnalyzer } from '../ai/intent-analyzer.js';
+import { EnhancedIntentAnalyzer } from '../ai/enhanced-intent-analyzer.js';
 import { ConversationManager } from '../ai/conversation-manager.js';
 import { NaturalLanguageRouter, RoutingContext, ClarificationRequest } from '../routing/nl-router.js';
 import { ProjectContext } from '../ai/context.js';
@@ -28,7 +28,7 @@ export interface EnhancedModeOptions {
 }
 
 export class EnhancedInteractiveMode {
-  private intentAnalyzer!: IntentAnalyzer;
+  private intentAnalyzer!: EnhancedIntentAnalyzer;
   private conversationManager!: ConversationManager;
   private nlRouter!: NaturalLanguageRouter;
   private taskPlanner?: TaskPlanner;
@@ -36,6 +36,8 @@ export class EnhancedInteractiveMode {
   private terminal: any;
   private running = false;
   private options: Required<EnhancedModeOptions>;
+  private pendingTaskPlan?: any;
+  private pendingRoutingResult?: any;
 
   constructor(options: EnhancedModeOptions = {}) {
     this.options = {
@@ -84,7 +86,7 @@ export class EnhancedInteractiveMode {
 
     // Initialize components
     const aiClient = getAIClient();
-    this.intentAnalyzer = new IntentAnalyzer(aiClient);
+    this.intentAnalyzer = new EnhancedIntentAnalyzer(aiClient);
     this.conversationManager = new ConversationManager();
 
     // Initialize project context if in a project directory
@@ -132,6 +134,12 @@ export class EnhancedInteractiveMode {
 
         // Handle special commands
         if (this.handleSpecialCommands(userInput)) {
+          continue;
+        }
+
+        // Check if we have a pending task plan that needs user response
+        if (this.pendingTaskPlan && this.pendingRoutingResult) {
+          await this.handlePendingTaskPlanResponse(userInput);
           continue;
         }
 
@@ -200,6 +208,69 @@ export class EnhancedInteractiveMode {
 
       default:
         this.terminal.warn('Unknown routing result type');
+    }
+  }
+
+  /**
+   * Handle user response to pending task plan
+   */
+  private async handlePendingTaskPlanResponse(userInput: string): Promise<void> {
+    const response = userInput.toLowerCase().trim();
+
+    if (response === 'yes' || response === 'execute' || response === 'run') {
+      // Execute the pending plan
+      try {
+        this.terminal.info('Executing task plan...');
+        await this.taskPlanner!.executePlan(this.pendingTaskPlan.id);
+
+        // Get the completed plan and display results
+        const completedPlan = this.taskPlanner!.getPlan(this.pendingTaskPlan.id);
+        logger.debug(`Retrieved plan for results display:`, {
+          planExists: !!completedPlan,
+          planId: this.pendingTaskPlan.id,
+          taskCount: completedPlan?.tasks?.length
+        });
+
+        if (completedPlan) {
+          this.displayPlanResults(completedPlan);
+        } else {
+          logger.warn('No completed plan found for results display');
+          this.terminal.error('❌ Could not retrieve completed plan for results display');
+        }
+
+        this.terminal.success('Task plan completed successfully!');
+        await this.updateConversationOutcome('success');
+      } catch (error) {
+        this.terminal.error(`Task execution failed: ${formatErrorForDisplay(error)}`);
+        await this.updateConversationOutcome('failure');
+      }
+
+      // Clear pending state
+      this.pendingTaskPlan = undefined;
+      this.pendingRoutingResult = undefined;
+
+    } else if (response === 'no' || response === 'cancel' || response === 'abort') {
+      // Cancel the plan
+      this.terminal.info('Task plan cancelled.');
+
+      // Clear pending state
+      this.pendingTaskPlan = undefined;
+      this.pendingRoutingResult = undefined;
+
+    } else if (response === 'modify' || response === 'change' || response === 'edit') {
+      // Handle plan modification (for now, just ask them to make a new request)
+      this.terminal.info('Plan modification is not yet implemented. Please make a new request with your specific requirements.');
+
+      // Clear pending state
+      this.pendingTaskPlan = undefined;
+      this.pendingRoutingResult = undefined;
+
+    } else {
+      // Unknown response, ask again
+      this.terminal.warn('I didn\'t understand that response. Please respond with:');
+      this.terminal.info('- "yes" or "execute" to run the plan');
+      this.terminal.info('- "modify" to adjust the plan');
+      this.terminal.info('- "no" or "cancel" to abort');
     }
   }
 
@@ -322,19 +393,19 @@ export class EnhancedInteractiveMode {
       this.displayTaskPlan(plan);
 
       if (routingResult.requiresConfirmation) {
-        const confirmed = await this.confirmAction(
-          'Execute this task plan',
-          routingResult.estimatedTime,
-          routingResult.riskLevel
-        );
+        // Store the pending task plan for user response
+        this.pendingTaskPlan = plan;
+        this.pendingRoutingResult = routingResult;
 
-        if (!confirmed) {
-          this.terminal.info('Task plan cancelled.');
-          return;
-        }
+        this.terminal.info('\nWould you like me to execute this plan? You can:');
+        this.terminal.info('- Say "yes" or "execute" to run the plan');
+        this.terminal.info('- Say "modify" to adjust the plan');
+        this.terminal.info('- Say "no" or "cancel" to abort');
+        this.terminal.info('\nYou can also ask for more details about any specific task or phase.');
+        return;
       }
 
-      // Execute the plan
+      // Execute the plan immediately if no confirmation needed
       this.terminal.info('Executing task plan...');
       await this.taskPlanner.executePlan(plan.id);
 
@@ -598,6 +669,55 @@ ${plan.tasks.map((task: any, index: number) =>
         await this.handleConversation(routingResult);
         break;
     }
+  }
+
+  /**
+   * Display task plan results to user
+   */
+  private displayPlanResults(plan: any): void {
+    logger.debug('displayPlanResults called with plan:', {
+      hasTitle: !!plan.title,
+      taskCount: plan.tasks?.length,
+      completedCount: plan.tasks?.filter((t: any) => t.status === 'completed').length,
+      sampleTaskResults: plan.tasks?.slice(0, 2).map((t: any) => ({
+        title: t.title,
+        status: t.status,
+        hasResult: !!t.result,
+        resultLength: t.result?.length
+      }))
+    });
+
+    this.terminal.info('\n📊 Task Plan Results:\n');
+
+    const completedTasks = plan.tasks.filter((t: any) => t.status === 'completed');
+    const failedTasks = plan.tasks.filter((t: any) => t.status === 'failed');
+
+    if (completedTasks.length > 0) {
+      this.terminal.success(`✅ Completed ${completedTasks.length}/${plan.tasks.length} tasks:\n`);
+
+      for (const task of completedTasks) {
+        this.terminal.info(`📋 **${task.title}**`);
+        if (task.result) {
+          // Format and display the task result
+          const result = typeof task.result === 'string' ? task.result : JSON.stringify(task.result, null, 2);
+          this.terminal.info(`${result}\n`);
+        }
+      }
+    }
+
+    if (failedTasks.length > 0) {
+      this.terminal.error(`❌ Failed ${failedTasks.length} tasks:\n`);
+      for (const task of failedTasks) {
+        this.terminal.error(`- ${task.title}: ${task.error || 'Unknown error'}`);
+      }
+    }
+
+    // Show execution summary
+    const duration = plan.completed ?
+      ((new Date(plan.completed).getTime() - new Date(plan.started).getTime()) / (1000 * 60)).toFixed(1) :
+      'N/A';
+
+    this.terminal.info(`\n⏱️  Execution completed in ${duration} minutes`);
   }
 
   private async cleanup(): Promise<void> {

@@ -7,11 +7,13 @@
 
 import { logger } from '../utils/logger.js';
 import { UserIntent, IntentAnalyzer, AnalysisContext } from '../ai/intent-analyzer.js';
+import { EnhancedIntentAnalyzer } from '../ai/enhanced-intent-analyzer.js';
 import { ConversationManager, ConversationTurn } from '../ai/conversation-manager.js';
 import { commandRegistry, executeCommand } from '../commands/index.js';
 import { TaskPlanner, Task } from '../ai/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
 import { EnhancedFastPathRouter, FastPathResult } from './enhanced-fast-path-router.js';
+import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
 
 export interface RoutingResult {
   type: 'command' | 'task_plan' | 'conversation' | 'clarification';
@@ -56,7 +58,7 @@ export interface ClarificationRequest {
 }
 
 export class NaturalLanguageRouter {
-  private intentAnalyzer: IntentAnalyzer;
+  private intentAnalyzer: IntentAnalyzer | EnhancedIntentAnalyzer;
   private taskPlanner?: TaskPlanner;
   private commandConfidenceThreshold: number;
   private taskConfidenceThreshold: number;
@@ -65,7 +67,7 @@ export class NaturalLanguageRouter {
   private enhancedFastPathRouter: EnhancedFastPathRouter;
 
   constructor(
-    intentAnalyzer: IntentAnalyzer,
+    intentAnalyzer: IntentAnalyzer | EnhancedIntentAnalyzer,
     taskPlanner?: TaskPlanner,
     config: NLRouterConfig = {}
   ) {
@@ -80,11 +82,8 @@ export class NaturalLanguageRouter {
 
     // Initialize enhanced fast-path router
     this.enhancedFastPathRouter = new EnhancedFastPathRouter({
-      enableFuzzyMatching: true,
-      fuzzyThreshold: 0.8,
-      enableAliases: true,
-      enablePatternExpansion: true,
-      maxProcessingTime: 50 // 50ms budget for fast-path
+      ...FAST_PATH_CONFIG_DEFAULTS,
+      fuzzyThreshold: 0.8
     });
   }
 

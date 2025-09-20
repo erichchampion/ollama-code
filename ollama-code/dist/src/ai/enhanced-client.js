@@ -7,12 +7,15 @@
  */
 import { logger } from '../utils/logger.js';
 import { ProjectContext } from './context.js';
-import { IntentAnalyzer } from './intent-analyzer.js';
+import { EnhancedIntentAnalyzer } from './enhanced-intent-analyzer.js';
 import { ConversationManager } from './conversation-manager.js';
 import { TaskPlanner } from './task-planner.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
 import { NaturalLanguageRouter } from '../routing/nl-router.js';
 import { StreamingProcessor } from '../streaming/streaming-processor.js';
+import { STREAMING_CONFIG_DEFAULTS } from '../constants/streaming.js';
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../constants/messages.js';
+import { API_REQUEST_TIMEOUT } from '../constants.js';
 export class EnhancedClient {
     ollamaClient;
     projectContext;
@@ -41,10 +44,10 @@ export class EnhancedClient {
         };
         // Initialize core components
         // Use the provided ollamaClient
-        this.intentAnalyzer = new IntentAnalyzer(this.ollamaClient);
+        this.intentAnalyzer = new EnhancedIntentAnalyzer(this.ollamaClient);
         this.conversationManager = new ConversationManager();
         this.autonomousModifier = new AutonomousModifier();
-        this.taskPlanner = new TaskPlanner(this, this.projectContext);
+        this.taskPlanner = new TaskPlanner(this.ollamaClient, this.projectContext);
         // Configure NL Router with optimized settings for fast command detection
         const nlRouterConfig = {
             commandConfidenceThreshold: 0.7, // Slightly lower threshold for better detection
@@ -52,13 +55,8 @@ export class EnhancedClient {
             healthCheckInterval: 2000
         };
         this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner, nlRouterConfig);
-        // Initialize streaming processor with optimized settings
-        this.streamingProcessor = new StreamingProcessor({
-            enableStreaming: true,
-            progressInterval: 500,
-            maxUpdatesPerSecond: 4,
-            includeThinkingSteps: true
-        });
+        // Initialize streaming processor with default settings
+        this.streamingProcessor = new StreamingProcessor(STREAMING_CONFIG_DEFAULTS);
         // Initialize session state
         this.sessionState = {
             conversationId: this.conversationManager.getConversationContext().sessionId,
@@ -111,7 +109,7 @@ export class EnhancedClient {
             logger.info('Processing user message', { message: message.substring(0, 100) });
             // Add to conversation
             // User message is handled when adding turn
-            // Analyze intent
+            // Analyze intent with built-in timeout protection
             const intent = await this.intentAnalyzer.analyze(message, {
                 projectContext: this.projectContext,
                 conversationHistory: this.conversationManager.getRecentHistory(5).map(turn => turn.userInput),
@@ -283,7 +281,7 @@ export class EnhancedClient {
             }, {
                 includeStderr: true,
                 maxOutputSize: 512 * 1024, // 512KB limit for command output
-                timeout: 60000 // 60 second timeout for command execution
+                timeout: API_REQUEST_TIMEOUT
             });
             // Combine stdout and stderr if there's error output
             let fullOutput = output;
@@ -295,14 +293,14 @@ export class EnhancedClient {
                 return fullOutput;
             }
             else {
-                return `✅ ${result}`;
+                return `${SUCCESS_MESSAGES.COMMAND_SUCCESS_PREFIX}${result}`;
             }
         }
         catch (error) {
             logger.error('Command execution failed:', error);
             // Check if this is a captured error with output
             if (error.output || error.errorOutput) {
-                let errorMessage = `❌ Command execution failed`;
+                let errorMessage = ERROR_MESSAGES.COMMAND_EXECUTION_FAILED;
                 if (error.output) {
                     errorMessage += `\n\nOutput:\n${error.output}`;
                 }
@@ -314,7 +312,7 @@ export class EnhancedClient {
                 }
                 return errorMessage;
             }
-            return `❌ Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            return `❌ Failed to execute command: ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`;
         }
     }
     /**

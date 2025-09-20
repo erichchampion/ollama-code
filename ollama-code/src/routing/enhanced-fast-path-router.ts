@@ -7,6 +7,7 @@
 
 import { logger } from '../utils/logger.js';
 import { commandRegistry } from '../commands/index.js';
+import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
 
 export interface FastPathResult {
   commandName: string;
@@ -41,11 +42,7 @@ export class EnhancedFastPathRouter {
 
   constructor(config: Partial<FastPathConfig> = {}) {
     this.config = {
-      enableFuzzyMatching: true,
-      fuzzyThreshold: 0.7, // Lower threshold for better fuzzy matching
-      enableAliases: true,
-      enablePatternExpansion: true,
-      maxProcessingTime: 50, // 50ms max for fast-path
+      ...FAST_PATH_CONFIG_DEFAULTS,
       ...config
     };
 

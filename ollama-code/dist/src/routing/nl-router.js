@@ -7,6 +7,7 @@
 import { logger } from '../utils/logger.js';
 import { commandRegistry } from '../commands/index.js';
 import { EnhancedFastPathRouter } from './enhanced-fast-path-router.js';
+import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
 export class NaturalLanguageRouter {
     intentAnalyzer;
     taskPlanner;
@@ -25,11 +26,8 @@ export class NaturalLanguageRouter {
         this.healthCheckInterval = config.healthCheckInterval ?? 2000;
         // Initialize enhanced fast-path router
         this.enhancedFastPathRouter = new EnhancedFastPathRouter({
-            enableFuzzyMatching: true,
-            fuzzyThreshold: 0.8,
-            enableAliases: true,
-            enablePatternExpansion: true,
-            maxProcessingTime: 50 // 50ms budget for fast-path
+            ...FAST_PATH_CONFIG_DEFAULTS,
+            fuzzyThreshold: 0.8
         });
     }
     /**

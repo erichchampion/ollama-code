@@ -19,6 +19,8 @@ export declare class EnhancedInteractiveMode {
     private terminal;
     private running;
     private options;
+    private pendingTaskPlan?;
+    private pendingRoutingResult?;
     constructor(options?: EnhancedModeOptions);
     /**
      * Start the enhanced interactive mode
@@ -36,6 +38,10 @@ export declare class EnhancedInteractiveMode {
      * Process user input through natural language routing
      */
     private processUserInput;
+    /**
+     * Handle user response to pending task plan
+     */
+    private handlePendingTaskPlanResponse;
     /**
      * Handle clarification requests
      */
@@ -67,5 +73,9 @@ export declare class EnhancedInteractiveMode {
     private displayResponse;
     private updateConversationOutcome;
     private processRoutingResult;
+    /**
+     * Display task plan results to user
+     */
+    private displayPlanResults;
     private cleanup;
 }

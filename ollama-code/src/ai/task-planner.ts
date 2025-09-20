@@ -70,11 +70,11 @@ export type TaskStatus = Task['status'];
 export type PlanningResult = TaskPlan;
 
 export class TaskPlanner {
-  private aiClient: EnhancedClient;
-  private projectContext: ProjectContext;
+  private aiClient: any;
+  private projectContext?: ProjectContext;
   private activePlans = new Map<string, TaskPlan>();
 
-  constructor(aiClient: EnhancedClient, projectContext: ProjectContext) {
+  constructor(aiClient: any, projectContext?: ProjectContext) {
     this.aiClient = aiClient;
     this.projectContext = projectContext;
   }
@@ -246,9 +246,25 @@ export class TaskPlanner {
       enableToolUse: false // Don't use tools for planning
     });
 
+    // Extract content from response structure
+    const responseContent = response.message?.content || response.content || '';
+
+    // INVESTIGATION: Log full response for analysis
+    logger.debug('Raw AI planning response:', {
+      request: request.substring(0, 200),
+      complexity,
+      response: responseContent,
+      responseLength: responseContent.length,
+      hasJson: responseContent.includes('{'),
+      hasCodeBlock: responseContent.includes('```'),
+      jsonBlockCount: (responseContent.match(/```[\s\S]*?```/g) || []).length,
+      firstJsonChar: responseContent.indexOf('{'),
+      lastJsonChar: responseContent.lastIndexOf('}')
+    });
+
     try {
       // Extract structured plan from AI response
-      const planData = this.parsePlanFromResponse(response.content);
+      const planData = this.parsePlanFromResponse(responseContent);
 
       // Generate tasks with IDs and details
       const tasks: Task[] = planData.tasks.map((taskData: any, index: number) => ({
@@ -270,11 +286,17 @@ export class TaskPlanner {
         title: planData.title || 'Generated Task Plan',
         description: planData.description || request,
         tasks,
-        confidence: response.confidence
+        confidence: response.confidence || 0.8
       };
 
     } catch (error) {
-      logger.warn('Failed to parse AI plan, creating fallback plan');
+      // Enhanced error logging for investigation
+      this.debugParsingFailure(responseContent, error as Error, request, complexity);
+      logger.warn('Failed to parse AI plan, creating fallback plan', {
+        error: error instanceof Error ? error.message : String(error),
+        requestPreview: request.substring(0, 100),
+        complexity
+      });
       return this.createFallbackPlan(request, context);
     }
   }
@@ -289,8 +311,7 @@ export class TaskPlanner {
   ): string {
     const availableTools = toolRegistry.list().map(tool => tool.name).join(', ');
 
-    return `
-You are an expert software development project planner. Create a detailed task plan for the following request.
+    return `You are an expert software development project planner. Your task is to create a detailed task plan for the following request.
 
 ## Request:
 ${request}
@@ -309,55 +330,375 @@ ${request}
 - Specify required tools and files for each task
 - Include acceptance criteria for quality validation
 
-## Response Format:
-Provide your response as a structured plan with the following JSON format:
+## CRITICAL: Response Format Requirements
+You MUST respond ONLY with valid JSON. Do not include any text before or after the JSON.
+The JSON must be wrapped in markdown code blocks with "json" language identifier.
+Follow this exact format:
 
 \`\`\`json
 {
-  "title": "Plan Title",
-  "description": "Overall plan description",
+  "title": "Plan Title Here",
+  "description": "Overall plan description here",
   "tasks": [
     {
-      "title": "Task Title",
-      "description": "Detailed task description",
-      "type": "analysis|implementation|testing|documentation|refactoring",
-      "priority": "low|medium|high|critical",
-      "dependencies": ["task_ids"],
+      "title": "Task Title Here",
+      "description": "Detailed task description here",
+      "type": "analysis",
+      "priority": "medium",
+      "dependencies": [],
       "estimatedDuration": 30,
-      "toolsRequired": ["tool_names"],
-      "filesInvolved": ["file_paths"],
-      "acceptance_criteria": ["criteria_list"]
+      "toolsRequired": ["filesystem"],
+      "filesInvolved": [],
+      "acceptance_criteria": ["Task completed successfully"]
     }
   ]
 }
 \`\`\`
 
-Create a comprehensive plan that addresses all aspects of the request.
-`;
+## Validation Rules:
+- "type" must be one of: "analysis", "implementation", "testing", "documentation", "refactoring"
+- "priority" must be one of: "low", "medium", "high", "critical"
+- "estimatedDuration" must be a number between 5 and 120
+- "tasks" array must contain at least 1 task
+- All string fields must use double quotes, not single quotes
+- Do not use trailing commas
+
+Create a comprehensive plan that addresses all aspects of the request. Respond ONLY with the JSON, no other text.`;
   }
 
   /**
-   * Parse plan from AI response
+   * Parse plan from AI response with multiple strategies
    */
   private parsePlanFromResponse(response: string): any {
-    // Extract JSON from markdown code blocks
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
+    const strategies = [
+      () => this.parseJsonCodeBlock(response),
+      () => this.parseGenericCodeBlock(response),
+      () => this.parseRawJson(response),
+      () => this.parseWithJsonCleaning(response),
+      () => this.parsePartialInformation(response)
+    ];
+
+    let lastError: Error | null = null;
+
+    for (const strategy of strategies) {
+      try {
+        const result = strategy();
+        if (result && this.validatePlanStructure(result)) {
+          logger.debug('Successfully parsed plan using strategy', {
+            strategyName: strategy.name,
+            taskCount: result.tasks?.length || 0
+          });
+          return result;
+        }
+      } catch (error) {
+        lastError = error as Error;
+        logger.debug('Parsing strategy failed', {
+          strategyName: strategy.name,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        continue;
+      }
     }
 
-    // Try to find JSON object directly
-    const jsonStart = response.indexOf('{');
-    const jsonEnd = response.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1) {
-      return JSON.parse(response.substring(jsonStart, jsonEnd + 1));
-    }
-
-    throw new Error('No valid JSON plan found in response');
+    throw new Error(`All parsing strategies failed. Last error: ${lastError?.message || 'Unknown error'}`);
   }
 
   /**
-   * Create fallback plan when AI planning fails
+   * Strategy 1: Parse JSON from markdown code blocks
+   */
+  private parseJsonCodeBlock(response: string): any {
+    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!jsonMatch) {
+      throw new Error('No JSON code block found');
+    }
+    return JSON.parse(jsonMatch[1]);
+  }
+
+  /**
+   * Strategy 2: Parse from generic code blocks
+   */
+  private parseGenericCodeBlock(response: string): any {
+    const codeBlockMatch = response.match(/```\s*([\s\S]*?)\s*```/);
+    if (!codeBlockMatch) {
+      throw new Error('No code block found');
+    }
+
+    const content = codeBlockMatch[1].trim();
+    if (content.startsWith('{') || content.startsWith('[')) {
+      return JSON.parse(content);
+    }
+
+    throw new Error('Code block does not contain JSON');
+  }
+
+  /**
+   * Strategy 3: Parse raw JSON from response
+   */
+  private parseRawJson(response: string): any {
+    const jsonStart = response.indexOf('{');
+    const jsonEnd = response.lastIndexOf('}');
+
+    if (jsonStart === -1 || jsonEnd === -1 || jsonStart >= jsonEnd) {
+      throw new Error('No valid JSON object boundaries found');
+    }
+
+    const jsonStr = response.substring(jsonStart, jsonEnd + 1);
+    return JSON.parse(jsonStr);
+  }
+
+  /**
+   * Strategy 4: Clean and fix common JSON issues before parsing
+   */
+  private parseWithJsonCleaning(response: string): any {
+    const jsonStart = response.indexOf('{');
+    const jsonEnd = response.lastIndexOf('}');
+
+    if (jsonStart === -1 || jsonEnd === -1) {
+      throw new Error('No JSON boundaries for cleaning');
+    }
+
+    let jsonStr = response.substring(jsonStart, jsonEnd + 1);
+    jsonStr = this.cleanAndFixJson(jsonStr);
+
+    return JSON.parse(jsonStr);
+  }
+
+  /**
+   * Strategy 5: Extract partial information from natural language
+   */
+  private parsePartialInformation(response: string): any {
+    logger.debug('Attempting partial information extraction from natural language');
+
+    const partialPlan: any = {
+      title: this.extractTitle(response) || 'Extracted Plan',
+      description: this.extractDescription(response) || 'Plan extracted from AI response',
+      tasks: this.extractTasksFromText(response)
+    };
+
+    if (!partialPlan.tasks || partialPlan.tasks.length === 0) {
+      throw new Error('No tasks could be extracted from response');
+    }
+
+    return partialPlan;
+  }
+
+  /**
+   * Clean and fix common JSON formatting issues
+   */
+  private cleanAndFixJson(jsonStr: string): string {
+    return jsonStr
+      // Remove trailing commas before closing brackets/braces
+      .replace(/,\s*([}\]])/g, '$1')
+      // Quote unquoted object keys
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":')
+      // Convert single quotes to double quotes for strings
+      .replace(/:\s*'([^']*)'/g, ': "$1"')
+      // Fix common spacing issues
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Validate plan structure has required fields
+   */
+  private validatePlanStructure(planData: any): boolean {
+    if (!planData || typeof planData !== 'object') {
+      return false;
+    }
+
+    // Must have tasks array
+    if (!planData.tasks || !Array.isArray(planData.tasks)) {
+      return false;
+    }
+
+    // Must have at least one task
+    if (planData.tasks.length === 0) {
+      return false;
+    }
+
+    // Each task must have minimum required fields
+    for (const task of planData.tasks) {
+      if (!task.title || typeof task.title !== 'string') {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Extract title from natural language response
+   */
+  private extractTitle(response: string): string | null {
+    const patterns = [
+      /title["\s]*:[\s"]*([^"`,\n]+)/i,
+      /plan[:\s]+([^\n]+)/i,
+      /^#{1,3}\s*(.+)$/m,
+      /\*\*(.+?)\*\*/
+    ];
+
+    for (const pattern of patterns) {
+      const match = response.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim().replace(/["`]/g, '');
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract description from natural language response
+   */
+  private extractDescription(response: string): string | null {
+    const patterns = [
+      /description["\s]*:[\s"]*([^"`,\n]+)/i,
+      /(?:here's|this is|i'll create)\s+(.+?)(?:\n|$)/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = response.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim().replace(/["`]/g, '');
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract tasks from natural language text
+   */
+  private extractTasksFromText(response: string): any[] {
+    const tasks: any[] = [];
+
+    // Pattern 1: Numbered lists (1. Task name)
+    const numberedMatches = response.match(/^\d+\.\s*(.+)$/gm);
+    if (numberedMatches) {
+      tasks.push(...numberedMatches.map((match, index) => this.convertTextToTask(match, index)));
+    }
+
+    // Pattern 2: Bullet points (- Task name or * Task name)
+    const bulletMatches = response.match(/^[-*]\s*(.+)$/gm);
+    if (bulletMatches && tasks.length === 0) {
+      tasks.push(...bulletMatches.map((match, index) => this.convertTextToTask(match, index)));
+    }
+
+    // Pattern 3: Lines starting with action verbs
+    if (tasks.length === 0) {
+      const actionVerbs = ['analyze', 'create', 'implement', 'test', 'review', 'update', 'fix', 'add', 'remove', 'refactor'];
+      const lines = response.split('\n');
+
+      for (const line of lines) {
+        const trimmed = line.trim().toLowerCase();
+        if (actionVerbs.some(verb => trimmed.startsWith(verb)) && trimmed.length > 10) {
+          tasks.push(this.convertTextToTask(line.trim(), tasks.length));
+        }
+      }
+    }
+
+    return tasks;
+  }
+
+  /**
+   * Convert text description to task object
+   */
+  private convertTextToTask(text: string, index: number): any {
+    // Clean up the text
+    const cleanText = text.replace(/^\d+\.\s*/, '').replace(/^[-*]\s*/, '').trim();
+
+    // Determine task type based on keywords
+    const lowerText = cleanText.toLowerCase();
+    let type = 'implementation';
+
+    if (lowerText.includes('analyz') || lowerText.includes('review') || lowerText.includes('examine')) {
+      type = 'analysis';
+    } else if (lowerText.includes('test') || lowerText.includes('verify')) {
+      type = 'testing';
+    } else if (lowerText.includes('document') || lowerText.includes('readme')) {
+      type = 'documentation';
+    } else if (lowerText.includes('refactor') || lowerText.includes('clean') || lowerText.includes('improve')) {
+      type = 'refactoring';
+    }
+
+    // Estimate duration based on complexity keywords
+    let estimatedDuration = 30;
+    if (lowerText.includes('complex') || lowerText.includes('comprehensive') || lowerText.includes('full')) {
+      estimatedDuration = 60;
+    } else if (lowerText.includes('simple') || lowerText.includes('quick') || lowerText.includes('basic')) {
+      estimatedDuration = 15;
+    }
+
+    return {
+      title: cleanText.length > 50 ? cleanText.substring(0, 47) + '...' : cleanText,
+      description: cleanText,
+      type,
+      priority: 'medium',
+      estimatedDuration,
+      dependencies: [],
+      toolsRequired: this.inferToolsFromText(lowerText),
+      filesInvolved: [],
+      acceptance_criteria: [`${cleanText} completed successfully`]
+    };
+  }
+
+  /**
+   * Infer required tools from task text
+   */
+  private inferToolsFromText(text: string): string[] {
+    const tools: string[] = [];
+
+    if (text.includes('file') || text.includes('code') || text.includes('read')) {
+      tools.push('filesystem');
+    }
+    if (text.includes('test') || text.includes('spec')) {
+      tools.push('testing');
+    }
+    if (text.includes('git') || text.includes('commit') || text.includes('branch')) {
+      tools.push('git');
+    }
+    if (text.includes('build') || text.includes('compile') || text.includes('package')) {
+      tools.push('build');
+    }
+
+    return tools.length > 0 ? tools : ['filesystem'];
+  }
+
+  /**
+   * Debug parsing failure with detailed analysis
+   */
+  private debugParsingFailure(response: string, error: Error, request: string, complexity: string): void {
+    // Ensure response is a string
+    const responseStr = response || '';
+
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      request: request.substring(0, 200),
+      complexity,
+      error: error.message,
+      responseLength: responseStr.length,
+      responsePreview: responseStr.substring(0, 500),
+      responseEnd: responseStr.length > 200 ? responseStr.substring(responseStr.length - 200) : responseStr,
+      hasJson: responseStr.includes('{'),
+      hasCodeBlock: responseStr.includes('```'),
+      jsonBlocks: (responseStr.match(/```[\s\S]*?```/g) || []).length,
+      jsonBlockContent: responseStr.match(/```[\s\S]*?```/g) || [],
+      firstJsonChar: responseStr.indexOf('{'),
+      lastJsonChar: responseStr.lastIndexOf('}'),
+      potentialJsonContent: responseStr.indexOf('{') !== -1 && responseStr.lastIndexOf('}') !== -1
+        ? responseStr.substring(responseStr.indexOf('{'), responseStr.lastIndexOf('}') + 1)
+        : null,
+      lineCount: responseStr.split('\n').length,
+      hasTitle: responseStr.toLowerCase().includes('title'),
+      hasTasks: responseStr.toLowerCase().includes('task'),
+      hasDescription: responseStr.toLowerCase().includes('description')
+    };
+
+    logger.error('Detailed parsing failure analysis', debugInfo);
+  }
+
+  /**
+   * Create intelligent fallback plan when AI planning fails
    */
   private createFallbackPlan(request: string, context: PlanningContext): {
     title: string;
@@ -365,26 +706,429 @@ Create a comprehensive plan that addresses all aspects of the request.
     tasks: Task[];
     confidence: number;
   } {
-    const baseTask: Task = {
-      id: `task_${Date.now()}_fallback`,
+    logger.info('Creating intelligent fallback plan', { request: request.substring(0, 100) });
+
+    // Progressive fallback strategies
+    try {
+      // Strategy 1: Template-based plan
+      const templatePlan = this.createTemplateBasedPlan(request, context);
+      if (templatePlan.tasks.length > 1) {
+        logger.debug('Using template-based fallback plan');
+        return { ...templatePlan, confidence: 0.7 };
+      }
+    } catch (error) {
+      logger.debug('Template-based fallback failed', { error: error instanceof Error ? error.message : String(error) });
+    }
+
+    try {
+      // Strategy 2: Pattern-based plan
+      const patternPlan = this.createPatternBasedPlan(request, context);
+      if (patternPlan.tasks.length > 0) {
+        logger.debug('Using pattern-based fallback plan');
+        return { ...patternPlan, confidence: 0.6 };
+      }
+    } catch (error) {
+      logger.debug('Pattern-based fallback failed', { error: error instanceof Error ? error.message : String(error) });
+    }
+
+    // Strategy 3: Simple generic fallback (last resort)
+    logger.debug('Using simple generic fallback plan');
+    return this.createSimpleFallbackPlan(request, context);
+  }
+
+  /**
+   * Create template-based plan based on request type
+   */
+  private createTemplateBasedPlan(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const requestType = this.classifyRequest(request);
+
+    switch (requestType) {
+      case 'codebase_analysis':
+        return this.createAnalysisTemplate(request, context);
+      case 'feature_implementation':
+        return this.createImplementationTemplate(request, context);
+      case 'bug_fix':
+        return this.createBugFixTemplate(request, context);
+      case 'refactoring':
+        return this.createRefactoringTemplate(request, context);
+      case 'testing':
+        return this.createTestingTemplate(request, context);
+      default:
+        return this.createGenericTemplate(request, context);
+    }
+  }
+
+  /**
+   * Classify the request type based on keywords
+   */
+  private classifyRequest(request: string): string {
+    const lowerRequest = request.toLowerCase();
+
+    if (lowerRequest.includes('analyz') || lowerRequest.includes('review') || lowerRequest.includes('understand') || lowerRequest.includes('examine')) {
+      return 'codebase_analysis';
+    }
+    if (lowerRequest.includes('implement') || lowerRequest.includes('add') || lowerRequest.includes('create') || lowerRequest.includes('build')) {
+      return 'feature_implementation';
+    }
+    if (lowerRequest.includes('fix') || lowerRequest.includes('bug') || lowerRequest.includes('error') || lowerRequest.includes('issue')) {
+      return 'bug_fix';
+    }
+    if (lowerRequest.includes('refactor') || lowerRequest.includes('improve') || lowerRequest.includes('clean') || lowerRequest.includes('optimize')) {
+      return 'refactoring';
+    }
+    if (lowerRequest.includes('test') || lowerRequest.includes('spec') || lowerRequest.includes('verify')) {
+      return 'testing';
+    }
+
+    return 'generic';
+  }
+
+  /**
+   * Create analysis template
+   */
+  private createAnalysisTemplate(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const tasks: Task[] = [
+      this.createTaskFromTemplate({
+        title: 'Project Structure Analysis',
+        description: 'Analyze the overall project structure and organization',
+        type: 'analysis',
+        estimatedDuration: 15,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Project structure documented', 'Key directories identified']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Code Architecture Review',
+        description: 'Review the codebase architecture and design patterns',
+        type: 'analysis',
+        estimatedDuration: 30,
+        toolsRequired: ['filesystem', 'code-analysis'],
+        acceptance_criteria: ['Architecture patterns identified', 'Dependencies mapped']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Technology Stack Assessment',
+        description: 'Assess the technology stack and dependencies',
+        type: 'analysis',
+        estimatedDuration: 20,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Technology stack documented', 'Dependencies analyzed']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Code Quality Evaluation',
+        description: 'Evaluate code quality and identify improvement areas',
+        type: 'analysis',
+        estimatedDuration: 25,
+        toolsRequired: ['filesystem', 'code-analysis'],
+        acceptance_criteria: ['Code quality metrics gathered', 'Improvement areas identified']
+      })
+    ];
+
+    return {
+      title: 'Codebase Analysis Plan',
+      description: 'Comprehensive analysis of the codebase structure, architecture, and quality',
+      tasks
+    };
+  }
+
+  /**
+   * Create implementation template
+   */
+  private createImplementationTemplate(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const tasks: Task[] = [
+      this.createTaskFromTemplate({
+        title: 'Requirements Analysis',
+        description: 'Analyze and document the implementation requirements',
+        type: 'analysis',
+        estimatedDuration: 20,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Requirements documented', 'Scope defined']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Design Planning',
+        description: 'Design the implementation approach and architecture',
+        type: 'analysis',
+        estimatedDuration: 30,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Design approach documented', 'Architecture planned']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Core Implementation',
+        description: 'Implement the core functionality',
+        type: 'implementation',
+        estimatedDuration: 60,
+        toolsRequired: ['filesystem', 'code-editor'],
+        acceptance_criteria: ['Core functionality implemented', 'Code follows standards']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Testing and Validation',
+        description: 'Test the implementation and validate functionality',
+        type: 'testing',
+        estimatedDuration: 30,
+        toolsRequired: ['testing', 'filesystem'],
+        acceptance_criteria: ['Tests pass', 'Functionality validated']
+      })
+    ];
+
+    return {
+      title: 'Feature Implementation Plan',
+      description: 'Complete plan for implementing new functionality',
+      tasks
+    };
+  }
+
+  /**
+   * Create bug fix template
+   */
+  private createBugFixTemplate(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const tasks: Task[] = [
+      this.createTaskFromTemplate({
+        title: 'Issue Investigation',
+        description: 'Investigate and reproduce the bug',
+        type: 'analysis',
+        estimatedDuration: 20,
+        toolsRequired: ['filesystem', 'debugging'],
+        acceptance_criteria: ['Bug reproduced', 'Root cause identified']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Fix Implementation',
+        description: 'Implement the bug fix',
+        type: 'implementation',
+        estimatedDuration: 30,
+        toolsRequired: ['filesystem', 'code-editor'],
+        acceptance_criteria: ['Fix implemented', 'Code compiles']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Testing and Verification',
+        description: 'Test the fix and verify it resolves the issue',
+        type: 'testing',
+        estimatedDuration: 20,
+        toolsRequired: ['testing', 'filesystem'],
+        acceptance_criteria: ['Fix verified', 'No regressions introduced']
+      })
+    ];
+
+    return {
+      title: 'Bug Fix Plan',
+      description: 'Plan to investigate, fix, and verify bug resolution',
+      tasks
+    };
+  }
+
+  /**
+   * Create refactoring template
+   */
+  private createRefactoringTemplate(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const tasks: Task[] = [
+      this.createTaskFromTemplate({
+        title: 'Code Analysis',
+        description: 'Analyze current code to identify refactoring opportunities',
+        type: 'analysis',
+        estimatedDuration: 25,
+        toolsRequired: ['filesystem', 'code-analysis'],
+        acceptance_criteria: ['Refactoring targets identified', 'Impact assessed']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Refactoring Implementation',
+        description: 'Implement the code refactoring',
+        type: 'refactoring',
+        estimatedDuration: 45,
+        toolsRequired: ['filesystem', 'code-editor'],
+        acceptance_criteria: ['Code refactored', 'Functionality preserved']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Validation and Testing',
+        description: 'Validate refactoring and ensure no functionality is broken',
+        type: 'testing',
+        estimatedDuration: 20,
+        toolsRequired: ['testing', 'filesystem'],
+        acceptance_criteria: ['Tests pass', 'Refactoring validated']
+      })
+    ];
+
+    return {
+      title: 'Code Refactoring Plan',
+      description: 'Plan to refactor and improve code quality',
+      tasks
+    };
+  }
+
+  /**
+   * Create testing template
+   */
+  private createTestingTemplate(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const tasks: Task[] = [
+      this.createTaskFromTemplate({
+        title: 'Test Strategy Planning',
+        description: 'Plan the testing strategy and approach',
+        type: 'analysis',
+        estimatedDuration: 15,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Test strategy defined', 'Test cases planned']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Test Implementation',
+        description: 'Implement the test cases',
+        type: 'testing',
+        estimatedDuration: 40,
+        toolsRequired: ['testing', 'filesystem'],
+        acceptance_criteria: ['Test cases implemented', 'Tests executable']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Test Execution and Validation',
+        description: 'Execute tests and validate results',
+        type: 'testing',
+        estimatedDuration: 20,
+        toolsRequired: ['testing'],
+        acceptance_criteria: ['Tests executed', 'Results analyzed']
+      })
+    ];
+
+    return {
+      title: 'Testing Plan',
+      description: 'Comprehensive testing plan and implementation',
+      tasks
+    };
+  }
+
+  /**
+   * Create generic template for unclassified requests
+   */
+  private createGenericTemplate(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const tasks: Task[] = [
+      this.createTaskFromTemplate({
+        title: 'Requirement Analysis',
+        description: 'Analyze and understand the request requirements',
+        type: 'analysis',
+        estimatedDuration: 20,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Requirements understood', 'Approach planned']
+      }),
+      this.createTaskFromTemplate({
+        title: 'Implementation',
+        description: request.length > 50 ? request.substring(0, 50) + '...' : request,
+        type: 'implementation',
+        estimatedDuration: 40,
+        toolsRequired: ['filesystem'],
+        acceptance_criteria: ['Request implemented', 'Solution working']
+      })
+    ];
+
+    return {
+      title: 'Generic Task Plan',
+      description: request,
+      tasks
+    };
+  }
+
+  /**
+   * Create pattern-based plan by extracting actions from request
+   */
+  private createPatternBasedPlan(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+  } {
+    const extractedTasks = this.extractTasksFromText(request);
+
+    if (extractedTasks.length === 0) {
+      throw new Error('No tasks could be extracted from request');
+    }
+
+    const tasks: Task[] = extractedTasks.map((taskData, index) =>
+      this.createTaskFromTemplate({
+        title: taskData.title,
+        description: taskData.description,
+        type: taskData.type,
+        estimatedDuration: taskData.estimatedDuration,
+        toolsRequired: taskData.toolsRequired,
+        acceptance_criteria: taskData.acceptance_criteria
+      }, index)
+    );
+
+    return {
+      title: 'Pattern-Based Plan',
+      description: `Plan extracted from request: ${request.substring(0, 100)}`,
+      tasks
+    };
+  }
+
+  /**
+   * Create simple fallback plan (last resort)
+   */
+  private createSimpleFallbackPlan(request: string, context: PlanningContext): {
+    title: string;
+    description: string;
+    tasks: Task[];
+    confidence: number;
+  } {
+    const task = this.createTaskFromTemplate({
       title: 'Complete Request',
       description: request,
       type: 'implementation',
+      estimatedDuration: 60,
+      toolsRequired: ['filesystem'],
+      acceptance_criteria: ['Request completed successfully']
+    });
+
+    return {
+      title: 'Simple Fallback Plan',
+      description: request,
+      tasks: [task],
+      confidence: 0.3
+    };
+  }
+
+  /**
+   * Helper to create task from template data
+   */
+  private createTaskFromTemplate(template: {
+    title: string;
+    description: string;
+    type: string;
+    estimatedDuration: number;
+    toolsRequired: string[];
+    acceptance_criteria: string[];
+  }, index: number = 0): Task {
+    return {
+      id: `task_${Date.now()}_${index}`,
+      title: template.title,
+      description: template.description,
+      type: template.type as any,
       priority: 'medium',
       status: 'pending',
       dependencies: [],
-      estimatedDuration: 60,
-      toolsRequired: ['filesystem'],
+      estimatedDuration: template.estimatedDuration,
+      toolsRequired: template.toolsRequired,
       filesInvolved: [],
-      acceptance_criteria: ['Request completed successfully'],
+      acceptance_criteria: template.acceptance_criteria,
       created: new Date()
-    };
-
-    return {
-      title: 'Fallback Plan',
-      description: request,
-      tasks: [baseTask],
-      confidence: 0.3
     };
   }
 
@@ -431,15 +1175,29 @@ Create a comprehensive plan that addresses all aspects of the request.
       }
     }
 
-    // Validate dependency references
+    // Validate and fix dependency references
     const taskIds = new Set(plan.tasks.map(t => t.id));
+    const taskNameToId = new Map(plan.tasks.map(t => [t.title, t.id]));
+
     for (const task of plan.tasks) {
+      const validDependencies: string[] = [];
+
       for (const dep of task.dependencies) {
-        if (!taskIds.has(dep)) {
+        if (taskIds.has(dep)) {
+          // Dependency is already a valid task ID
+          validDependencies.push(dep);
+        } else if (taskNameToId.has(dep)) {
+          // Dependency is a task name, convert to task ID
+          const depId = taskNameToId.get(dep)!;
+          validDependencies.push(depId);
+          logger.debug(`Mapped dependency name "${dep}" to ID "${depId}" for task ${task.id}`);
+        } else {
+          // Invalid dependency, log warning but don't include it
           logger.warn(`Invalid dependency reference: ${dep} in task ${task.id}`);
-          task.dependencies = task.dependencies.filter(d => d !== dep);
         }
       }
+
+      task.dependencies = validDependencies;
     }
   }
 
@@ -505,7 +1263,18 @@ Create a comprehensive plan that addresses all aspects of the request.
         responseQuality: 'high'
       });
 
-      task.result = response.content;
+      // Handle different AI response structures
+      if (response?.content) {
+        task.result = response.content;
+      } else if (response?.message?.content) {
+        task.result = response.message.content;
+      } else if (typeof response === 'string') {
+        task.result = response;
+      } else {
+        task.result = JSON.stringify(response);
+        logger.warn('Unexpected AI response structure, storing as JSON string');
+      }
+
       task.status = 'completed';
       task.completed = new Date();
       task.actualDuration = (task.completed.getTime() - task.started!.getTime()) / (1000 * 60);
@@ -526,6 +1295,55 @@ Create a comprehensive plan that addresses all aspects of the request.
    */
   private buildTaskExecutionPrompt(task: Task, plan: TaskPlan): string {
     let prompt = `## Task: ${task.title}\n\n${task.description}\n\n`;
+
+    // Add PROJECT CONTEXT - This is critical for accurate analysis!
+    if (this.projectContext) {
+      prompt += '## Project Context:\n';
+      prompt += `**Project Directory:** ${this.projectContext.root}\n`;
+      prompt += `**Working Directory:** ${process.cwd()}\n\n`;
+
+      // Add file structure
+      if (this.projectContext.allFiles && this.projectContext.allFiles.length > 0) {
+        prompt += '### Actual Project Files:\n';
+        const sortedFiles = this.projectContext.allFiles
+          .slice(0, 50) // Limit to first 50 files to avoid overwhelming the prompt
+          .sort((a, b) => a.path.localeCompare(b.path));
+
+        for (const file of sortedFiles) {
+          prompt += `- ${file.path} (${file.type})\n`;
+        }
+
+        if (this.projectContext.allFiles.length > 50) {
+          prompt += `... and ${this.projectContext.allFiles.length - 50} more files\n`;
+        }
+        prompt += '\n';
+      }
+
+      // Add package.json info if available
+      const packageJsonFile = this.projectContext.allFiles?.find(f => f.path.includes('package.json'));
+      if (packageJsonFile) {
+        prompt += '### Project Type: Node.js/TypeScript project (has package.json)\n';
+      }
+
+      // Add key directories
+      const directories = new Set<string>();
+      this.projectContext.allFiles?.forEach(file => {
+        const dir = file.path.split('/')[0];
+        if (dir && dir !== file.path) {
+          directories.add(dir);
+        }
+      });
+
+      if (directories.size > 0) {
+        prompt += '### Key Directories:\n';
+        Array.from(directories).sort().forEach(dir => {
+          prompt += `- ${dir}/\n`;
+        });
+        prompt += '\n';
+      }
+    } else {
+      prompt += '## ⚠️ WARNING: No project context available - analysis may be generic\n\n';
+    }
 
     // Add context from completed tasks
     const completedTasks = plan.tasks.filter(t => t.status === 'completed');
@@ -548,7 +1366,7 @@ Create a comprehensive plan that addresses all aspects of the request.
       prompt += '\n';
     }
 
-    prompt += 'Please complete this task according to the requirements and acceptance criteria.';
+    prompt += '**IMPORTANT:** Base your analysis ONLY on the actual project files and context provided above. Do not make assumptions or use generic examples.';
 
     return prompt;
   }

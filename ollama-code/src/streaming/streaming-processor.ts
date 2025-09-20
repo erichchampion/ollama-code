@@ -7,6 +7,10 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../utils/logger.js';
+import { delay } from '../utils/async.js';
+import { generateOperationId } from '../utils/id-generator.js';
+import { STREAMING_DEFAULTS, STREAMING_CONFIG_DEFAULTS } from '../constants/streaming.js';
+import { PROGRESS_MESSAGES, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants/messages.js';
 
 export interface ProcessingUpdate {
   type: 'started' | 'progress' | 'thinking' | 'executing' | 'completed' | 'error';
@@ -34,10 +38,7 @@ export class StreamingProcessor extends EventEmitter {
   constructor(config: Partial<StreamingConfig> = {}) {
     super();
     this.config = {
-      enableStreaming: true,
-      progressInterval: 500, // Update every 500ms
-      maxUpdatesPerSecond: 4, // Max 4 updates per second
-      includeThinkingSteps: true,
+      ...STREAMING_CONFIG_DEFAULTS,
       ...config
     };
   }
@@ -47,7 +48,7 @@ export class StreamingProcessor extends EventEmitter {
    */
   async *processWithStreaming<T>(
     operation: () => Promise<T>,
-    operationId: string = this.generateId()
+    operationId: string = generateOperationId()
   ): AsyncIterableIterator<ProcessingUpdate> {
     if (!this.config.enableStreaming) {
       // If streaming is disabled, just execute and return final result
@@ -55,14 +56,14 @@ export class StreamingProcessor extends EventEmitter {
         const result = await operation();
         yield {
           type: 'completed',
-          message: 'Operation completed',
+          message: PROGRESS_MESSAGES.COMPLETED_GENERIC,
           data: result,
           timestamp: Date.now()
         };
       } catch (error) {
         yield {
           type: 'error',
-          message: error instanceof Error ? error.message : 'Operation failed',
+          message: error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
           timestamp: Date.now()
         };
       }
@@ -82,8 +83,8 @@ export class StreamingProcessor extends EventEmitter {
       // Initial update
       yield {
         type: 'started',
-        message: '🔍 Starting operation...',
-        progress: 0,
+        message: PROGRESS_MESSAGES.STARTED,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.STARTED,
         timestamp: Date.now()
       };
 
@@ -105,12 +106,12 @@ export class StreamingProcessor extends EventEmitter {
 
       // Final completion update
       streamState.phase = 'completed';
-      streamState.progress = 100;
+      streamState.progress = STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.COMPLETED;
 
       yield {
         type: 'completed',
-        message: '✅ Operation completed successfully',
-        progress: 100,
+        message: PROGRESS_MESSAGES.COMPLETED_SUCCESS,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.COMPLETED,
         data: result,
         timestamp: Date.now()
       };
@@ -120,7 +121,7 @@ export class StreamingProcessor extends EventEmitter {
 
       yield {
         type: 'error',
-        message: `❌ ${error instanceof Error ? error.message : 'Operation failed'}`,
+        message: `❌ ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`,
         timestamp: Date.now()
       };
     } finally {
@@ -137,21 +138,21 @@ export class StreamingProcessor extends EventEmitter {
     args: string[],
     executor: (cmd: string, args: string[]) => Promise<string>
   ): AsyncIterableIterator<ProcessingUpdate> {
-    const operationId = this.generateId();
+    const operationId = generateOperationId();
 
     yield {
       type: 'started',
-      message: `🚀 Executing command: ${commandName}`,
-      progress: 0,
+      message: `${PROGRESS_MESSAGES.COMMAND_STARTED}: ${commandName}`,
+      progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.STARTED,
       timestamp: Date.now()
     };
 
     // Simulate preparation phase
-    await this.delay(100);
+    await delay(STREAMING_DEFAULTS.COMMAND_PREP_DELAY);
     yield {
       type: 'progress',
-      message: '⚙️ Preparing command execution...',
-      progress: 20,
+      message: PROGRESS_MESSAGES.COMMAND_PREPARING,
+      progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.PREPARATION,
       timestamp: Date.now()
     };
 
@@ -159,8 +160,8 @@ export class StreamingProcessor extends EventEmitter {
       // Execute command with progress tracking
       yield {
         type: 'executing',
-        message: '⚡ Running command...',
-        progress: 50,
+        message: PROGRESS_MESSAGES.COMMAND_RUNNING,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.EXECUTION,
         timestamp: Date.now()
       };
 
@@ -168,17 +169,17 @@ export class StreamingProcessor extends EventEmitter {
 
       yield {
         type: 'progress',
-        message: '✨ Processing results...',
-        progress: 90,
+        message: PROGRESS_MESSAGES.COMMAND_PROCESSING,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.PROCESSING,
         timestamp: Date.now()
       };
 
-      await this.delay(50); // Brief pause for user experience
+      await delay(STREAMING_DEFAULTS.BRIEF_PAUSE_DELAY); // Brief pause for user experience
 
       yield {
         type: 'completed',
-        message: '✅ Command completed',
-        progress: 100,
+        message: PROGRESS_MESSAGES.COMMAND_COMPLETED,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.COMPLETED,
         data: result,
         timestamp: Date.now()
       };
@@ -186,7 +187,7 @@ export class StreamingProcessor extends EventEmitter {
     } catch (error) {
       yield {
         type: 'error',
-        message: `❌ Command failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: `${PROGRESS_MESSAGES.COMMAND_FAILED}: ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`,
         timestamp: Date.now()
       };
     }
@@ -201,27 +202,27 @@ export class StreamingProcessor extends EventEmitter {
   ): AsyncIterableIterator<ProcessingUpdate> {
     yield {
       type: 'started',
-      message: '🤔 Analyzing your request...',
-      progress: 0,
+      message: PROGRESS_MESSAGES.AI_ANALYZING,
+      progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.STARTED,
       timestamp: Date.now()
     };
 
     if (this.config.includeThinkingSteps) {
       // Simulate thinking process with realistic steps
       const thinkingSteps = [
-        '🔍 Understanding the context...',
-        '🧠 Processing natural language...',
-        '📚 Accessing knowledge base...',
-        '⚡ Generating response...'
+        PROGRESS_MESSAGES.THINKING_UNDERSTANDING,
+        PROGRESS_MESSAGES.THINKING_PROCESSING,
+        PROGRESS_MESSAGES.THINKING_KNOWLEDGE,
+        PROGRESS_MESSAGES.THINKING_GENERATING
       ];
 
       for (let i = 0; i < thinkingSteps.length; i++) {
-        await this.delay(200 + Math.random() * 300); // Variable delay for realism
+        await delay(STREAMING_DEFAULTS.THINKING_STEP_BASE_DELAY + Math.random() * STREAMING_DEFAULTS.THINKING_STEP_MAX_DELAY);
 
         yield {
           type: 'thinking',
           message: thinkingSteps[i],
-          progress: 20 + (i * 20),
+          progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.PREPARATION + (i * STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.PREPARATION),
           timestamp: Date.now()
         };
       }
@@ -230,8 +231,8 @@ export class StreamingProcessor extends EventEmitter {
     try {
       yield {
         type: 'executing',
-        message: '🎯 Finalizing analysis...',
-        progress: 90,
+        message: PROGRESS_MESSAGES.AI_FINALIZING,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.PROCESSING,
         timestamp: Date.now()
       };
 
@@ -239,8 +240,8 @@ export class StreamingProcessor extends EventEmitter {
 
       yield {
         type: 'completed',
-        message: '✅ Analysis complete',
-        progress: 100,
+        message: PROGRESS_MESSAGES.AI_COMPLETED,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.COMPLETED,
         data: result,
         timestamp: Date.now()
       };
@@ -248,7 +249,7 @@ export class StreamingProcessor extends EventEmitter {
     } catch (error) {
       yield {
         type: 'error',
-        message: `❌ Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: `${PROGRESS_MESSAGES.AI_FAILED}: ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`,
         timestamp: Date.now()
       };
     }
@@ -263,7 +264,7 @@ export class StreamingProcessor extends EventEmitter {
   ): Promise<T> {
     const streamState = this.activeStreams.get(operationId);
     if (!streamState) {
-      throw new Error('Stream state not found');
+      throw new Error(ERROR_MESSAGES.STREAM_STATE_NOT_FOUND);
     }
 
     // Update progress periodically during execution
@@ -274,18 +275,21 @@ export class StreamingProcessor extends EventEmitter {
 
   /**
    * Start progress simulation for long-running operations
+   * FIXED: Properly clear interval to prevent memory leaks
    */
   private startProgressSimulation(operationId: string): NodeJS.Timeout {
-    return setInterval(() => {
+    const intervalId = setInterval(() => {
       const streamState = this.activeStreams.get(operationId);
       if (!streamState || streamState.phase === 'completed') {
+        clearInterval(intervalId); // FIX: Clear interval to prevent memory leak
+        this.updateThrottle.delete(operationId); // FIX: Clean up throttle map
         return;
       }
 
       // Simulate gradual progress
       const elapsed = Date.now() - streamState.startTime;
-      const estimatedDuration = 5000; // 5 seconds estimated
-      const naturalProgress = Math.min(95, (elapsed / estimatedDuration) * 100);
+      const estimatedDuration = STREAMING_DEFAULTS.ESTIMATED_DURATION;
+      const naturalProgress = Math.min(STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.FINALIZATION, (elapsed / estimatedDuration) * 100);
 
       // Add some randomness for realistic feel
       const jitter = (Math.random() - 0.5) * 5;
@@ -306,6 +310,8 @@ export class StreamingProcessor extends EventEmitter {
         });
       }
     }, this.config.progressInterval);
+
+    return intervalId;
   }
 
   /**
@@ -315,11 +321,11 @@ export class StreamingProcessor extends EventEmitter {
     // This would emit any updates that were queued during execution
     // For now, we'll just yield if there were any important intermediate steps
     const streamState = this.activeStreams.get(operationId);
-    if (streamState && streamState.progress < 100) {
+    if (streamState && streamState.progress < STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.COMPLETED) {
       yield {
         type: 'progress',
-        message: '🔄 Finalizing...',
-        progress: 95,
+        message: PROGRESS_MESSAGES.FINALIZING,
+        progress: STREAMING_DEFAULTS.PROGRESS_THRESHOLDS.FINALIZATION,
         timestamp: Date.now()
       };
     }
@@ -329,26 +335,14 @@ export class StreamingProcessor extends EventEmitter {
    * Get progress message based on completion percentage
    */
   private getProgressMessage(progress: number): string {
-    if (progress < 25) return '🚀 Getting started...';
-    if (progress < 50) return '⚙️ Processing...';
-    if (progress < 75) return '🔄 Making progress...';
-    if (progress < 95) return '✨ Almost done...';
-    return '🎯 Finishing up...';
+    if (progress < STREAMING_DEFAULTS.PROGRESS_BOUNDARIES.GETTING_STARTED) return PROGRESS_MESSAGES.GETTING_STARTED;
+    if (progress < STREAMING_DEFAULTS.PROGRESS_BOUNDARIES.PROCESSING) return PROGRESS_MESSAGES.PROCESSING;
+    if (progress < STREAMING_DEFAULTS.PROGRESS_BOUNDARIES.MAKING_PROGRESS) return PROGRESS_MESSAGES.MAKING_PROGRESS;
+    if (progress < STREAMING_DEFAULTS.PROGRESS_BOUNDARIES.ALMOST_DONE) return PROGRESS_MESSAGES.ALMOST_DONE;
+    return PROGRESS_MESSAGES.FINISHING_UP;
   }
 
-  /**
-   * Generate unique operation ID
-   */
-  private generateId(): string {
-    return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * Utility delay function
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
+  // NOTE: generateId() and delay() functions removed - using shared utilities instead
 
   /**
    * Get active stream count

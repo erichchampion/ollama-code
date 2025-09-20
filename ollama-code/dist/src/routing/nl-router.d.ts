@@ -5,6 +5,7 @@
  * based on intent analysis and context.
  */
 import { UserIntent, IntentAnalyzer } from '../ai/intent-analyzer.js';
+import { EnhancedIntentAnalyzer } from '../ai/enhanced-intent-analyzer.js';
 import { ConversationManager } from '../ai/conversation-manager.js';
 import { TaskPlanner } from '../ai/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
@@ -54,7 +55,7 @@ export declare class NaturalLanguageRouter {
     private healthCheckInterval;
     private config;
     private enhancedFastPathRouter;
-    constructor(intentAnalyzer: IntentAnalyzer, taskPlanner?: TaskPlanner, config?: NLRouterConfig);
+    constructor(intentAnalyzer: IntentAnalyzer | EnhancedIntentAnalyzer, taskPlanner?: TaskPlanner, config?: NLRouterConfig);
     /**
      * Route user input to appropriate handler
      */

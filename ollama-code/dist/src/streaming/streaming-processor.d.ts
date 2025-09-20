@@ -44,6 +44,7 @@ export declare class StreamingProcessor extends EventEmitter {
     private executeWithProgress;
     /**
      * Start progress simulation for long-running operations
+     * FIXED: Properly clear interval to prevent memory leaks
      */
     private startProgressSimulation;
     /**
@@ -54,14 +55,6 @@ export declare class StreamingProcessor extends EventEmitter {
      * Get progress message based on completion percentage
      */
     private getProgressMessage;
-    /**
-     * Generate unique operation ID
-     */
-    private generateId;
-    /**
-     * Utility delay function
-     */
-    private delay;
     /**
      * Get active stream count
      */
