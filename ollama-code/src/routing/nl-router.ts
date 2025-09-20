@@ -11,6 +11,7 @@ import { ConversationManager, ConversationTurn } from '../ai/conversation-manage
 import { commandRegistry, executeCommand } from '../commands/index.js';
 import { TaskPlanner, Task } from '../ai/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
+import { EnhancedFastPathRouter, FastPathResult } from './enhanced-fast-path-router.js';
 
 export interface RoutingResult {
   type: 'command' | 'task_plan' | 'conversation' | 'clarification';
@@ -61,6 +62,7 @@ export class NaturalLanguageRouter {
   private taskConfidenceThreshold: number;
   private healthCheckInterval: number;
   private config: NLRouterConfig;
+  private enhancedFastPathRouter: EnhancedFastPathRouter;
 
   constructor(
     intentAnalyzer: IntentAnalyzer,
@@ -75,6 +77,15 @@ export class NaturalLanguageRouter {
     this.commandConfidenceThreshold = config.commandConfidenceThreshold ?? 0.8;
     this.taskConfidenceThreshold = config.taskConfidenceThreshold ?? 0.6;
     this.healthCheckInterval = config.healthCheckInterval ?? 2000;
+
+    // Initialize enhanced fast-path router
+    this.enhancedFastPathRouter = new EnhancedFastPathRouter({
+      enableFuzzyMatching: true,
+      fuzzyThreshold: 0.8,
+      enableAliases: true,
+      enablePatternExpansion: true,
+      maxProcessingTime: 50 // 50ms budget for fast-path
+    });
   }
 
   /**
@@ -86,18 +97,41 @@ export class NaturalLanguageRouter {
     try {
       logger.debug('Routing user input', { input: input.substring(0, 100) });
 
-      // Fast-path: Check for obvious pattern-based commands first to avoid slow AI analysis
+      // Enhanced fast-path: Use comprehensive pattern matching first
+      const enhancedFastPathResult = await this.enhancedFastPathRouter.checkFastPath(input);
+      if (enhancedFastPathResult) {
+        logger.info('Enhanced fast-path match found - bypassing AI analysis', {
+          command: enhancedFastPathResult.commandName,
+          method: enhancedFastPathResult.method,
+          confidence: enhancedFastPathResult.confidence
+        });
+
+        return {
+          type: 'command',
+          action: enhancedFastPathResult.commandName,
+          data: {
+            commandName: enhancedFastPathResult.commandName,
+            args: enhancedFastPathResult.args,
+            intent: this.createSimpleIntent(input, enhancedFastPathResult.commandName, enhancedFastPathResult.confidence)
+          },
+          requiresConfirmation: false,
+          estimatedTime: 2, // Very fast execution
+          riskLevel: 'low'
+        };
+      }
+
+      // Fallback to original fast-path for backward compatibility
       const fastCommandCheck = this.checkFastCommandMapping(input);
-      logger.debug('Fast command check result:', { input: input.substring(0, 50), fastCommandCheck });
+      logger.debug('Fallback fast command check result:', { input: input.substring(0, 50), fastCommandCheck });
       if (fastCommandCheck) {
-        logger.info('Fast command mapping found - bypassing AI analysis', { command: fastCommandCheck.commandName });
+        logger.info('Fallback fast command mapping found', { command: fastCommandCheck.commandName });
         return {
           type: 'command',
           action: fastCommandCheck.commandName,
           data: {
             commandName: fastCommandCheck.commandName,
             args: fastCommandCheck.args,
-            intent: this.createSimpleIntent(input, fastCommandCheck.commandName)
+            intent: this.createSimpleIntent(input, fastCommandCheck.commandName, 0.8)
           },
           requiresConfirmation: false,
           estimatedTime: 5,
@@ -480,7 +514,7 @@ export class NaturalLanguageRouter {
   /**
    * Create a simple intent object for fast-path commands
    */
-  private createSimpleIntent(input: string, commandName: string): UserIntent {
+  private createSimpleIntent(input: string, commandName: string, confidence: number = 1.0): UserIntent {
     return {
       type: 'command',
       action: input,
@@ -493,13 +527,13 @@ export class NaturalLanguageRouter {
         concepts: [],
         variables: []
       },
-      confidence: 1.0, // High confidence for pattern-matched commands
+      confidence, // Use provided confidence score
       complexity: 'simple',
       multiStep: false,
       riskLevel: 'low',
       requiresClarification: false,
       suggestedClarifications: [],
-      estimatedDuration: 5,
+      estimatedDuration: confidence > 0.9 ? 2 : 5, // Higher confidence = faster execution
       context: {
         projectAware: false,
         fileSpecific: false,

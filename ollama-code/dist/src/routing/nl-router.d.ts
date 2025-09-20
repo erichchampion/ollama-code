@@ -53,6 +53,7 @@ export declare class NaturalLanguageRouter {
     private taskConfidenceThreshold;
     private healthCheckInterval;
     private config;
+    private enhancedFastPathRouter;
     constructor(intentAnalyzer: IntentAnalyzer, taskPlanner?: TaskPlanner, config?: NLRouterConfig);
     /**
      * Route user input to appropriate handler
