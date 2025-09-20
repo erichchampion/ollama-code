@@ -17,7 +17,7 @@ export class EnhancedFastPathRouter {
     constructor(config = {}) {
         this.config = {
             enableFuzzyMatching: true,
-            fuzzyThreshold: 0.8,
+            fuzzyThreshold: 0.7, // Lower threshold for better fuzzy matching
             enableAliases: true,
             enablePatternExpansion: true,
             maxProcessingTime: 50, // 50ms max for fast-path
@@ -52,7 +52,7 @@ export class EnhancedFastPathRouter {
             ];
             for (const strategy of strategies) {
                 const result = strategy();
-                if (result && result.confidence > 0.7) {
+                if (result && result.confidence > 0.6) {
                     // Cache successful matches
                     this.commandCache.set(normalizedInput, result);
                     const duration = performance.now() - startTime;
@@ -125,7 +125,7 @@ export class EnhancedFastPathRouter {
             for (const rule of rules) {
                 for (const pattern of rule.patterns) {
                     const score = this.calculatePatternScore(trimmed, pattern);
-                    if (score > bestScore && score > 0.7) {
+                    if (score > bestScore && score > 0.6) {
                         bestScore = score;
                         bestMatch = {
                             commandName: rule.command,
@@ -293,8 +293,10 @@ export class EnhancedFastPathRouter {
      * Initialize command aliases
      */
     initializeAliases() {
-        if (!this.config.enableAliases)
+        if (!this.config.enableAliases) {
+            this.aliasMap.clear();
             return;
+        }
         const aliases = {
             // Common shortcuts
             'status': 'git-status',
@@ -345,7 +347,11 @@ export class EnhancedFastPathRouter {
             }
         }
         const wordScore = matchedWords / Math.max(inputWords.length, patternWords.length);
-        return wordScore > 0.5 ? wordScore * 0.7 : 0;
+        // Lower the threshold for better matching
+        if (wordScore > 0.3) {
+            return Math.max(wordScore * 0.8, 0.7); // Ensure minimum score of 0.7 for partial matches
+        }
+        return 0;
     }
     /**
      * Calculate fuzzy matching score using Levenshtein distance
@@ -353,11 +359,20 @@ export class EnhancedFastPathRouter {
     calculateFuzzyScore(input, target) {
         if (input === target)
             return 1.0;
+        // Handle exact prefix matches with high scores
+        if (target.startsWith(input) || input.startsWith(target)) {
+            return 0.85;
+        }
         const distance = this.levenshteinDistance(input, target);
         const maxLength = Math.max(input.length, target.length);
         if (maxLength === 0)
             return 1.0;
-        return 1 - (distance / maxLength);
+        const score = 1 - (distance / maxLength);
+        // Boost score for close matches
+        if (distance <= 2 && maxLength >= 4) {
+            return Math.min(score + 0.1, 1.0);
+        }
+        return score;
     }
     /**
      * Levenshtein distance calculation

@@ -15,6 +15,7 @@ import { TaskPlanner } from './task-planner.js';
 import { TaskPlan } from './task-planner.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
 import { NaturalLanguageRouter, NLRouterConfig } from '../routing/nl-router.js';
+import { StreamingProcessor, ProcessingUpdate } from '../streaming/streaming-processor.js';
 
 export interface EnhancedClientConfig {
   model: string;
@@ -42,6 +43,7 @@ export interface ProcessingResult {
   conversationId: string;
   processingTime: number;
   error?: string;
+  streamingUpdates?: ProcessingUpdate[];
 }
 
 export interface SessionState {
@@ -76,6 +78,7 @@ export class EnhancedClient {
   private taskPlanner: TaskPlanner;
   private autonomousModifier: AutonomousModifier;
   private nlRouter: NaturalLanguageRouter;
+  private streamingProcessor: StreamingProcessor;
   private config: EnhancedClientConfig;
   private sessionState: SessionState;
   private sessionMetrics: Map<string, number> = new Map();
@@ -114,6 +117,14 @@ export class EnhancedClient {
     };
     this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner, nlRouterConfig);
 
+    // Initialize streaming processor with optimized settings
+    this.streamingProcessor = new StreamingProcessor({
+      enableStreaming: true,
+      progressInterval: 500,
+      maxUpdatesPerSecond: 4,
+      includeThinkingSteps: true
+    });
+
     // Initialize session state
     this.sessionState = {
       conversationId: this.conversationManager.getConversationContext().sessionId,
@@ -142,6 +153,28 @@ export class EnhancedClient {
     } catch (error) {
       logger.error('Failed to initialize Enhanced AI Client:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Process a user message with streaming updates
+   */
+  async *processMessageStreaming(message: string): AsyncIterableIterator<ProcessingUpdate> {
+    const streamingUpdates: ProcessingUpdate[] = [];
+
+    // Create streaming operation that wraps the entire processing
+    const streamingIterator = this.streamingProcessor.processWithStreaming(
+      async () => {
+        const result = await this.processMessage(message);
+        return result;
+      },
+      `process_${Date.now()}`
+    );
+
+    // Yield updates and collect them for final result
+    for await (const update of streamingIterator) {
+      streamingUpdates.push(update);
+      yield update;
     }
   }
 
@@ -318,12 +351,38 @@ export class EnhancedClient {
   }
 
   /**
+   * Execute a command with streaming updates
+   */
+  async *executeCommandStreaming(routingResult: any): AsyncIterableIterator<ProcessingUpdate> {
+    const { commandName, args } = routingResult.data;
+
+    // Use streaming processor for command execution
+    const streamingIterator = this.streamingProcessor.processCommand(
+      commandName,
+      args,
+      async (cmd: string, cmdArgs: string[]) => {
+        return await this.executeCommandInternal(cmd, cmdArgs);
+      }
+    );
+
+    for await (const update of streamingIterator) {
+      yield update;
+    }
+  }
+
+  /**
    * Execute a command directly
    */
   private async executeCommand(routingResult: any): Promise<string> {
-    try {
-      const { commandName, args } = routingResult.data;
+    const { commandName, args } = routingResult.data;
+    return await this.executeCommandInternal(commandName, args);
+  }
 
+  /**
+   * Internal command execution logic
+   */
+  private async executeCommandInternal(commandName: string, args: string[]): Promise<string> {
+    try {
       // Import the executeCommand function and console capture utility
       const { executeCommand } = await import('../commands/index.js');
       const { captureConsoleOutput } = await import('../utils/console-capture.js');
@@ -377,9 +436,33 @@ export class EnhancedClient {
   }
 
   /**
+   * Generate a response with streaming updates
+   */
+  async *generateResponseStreaming(intent: UserIntent, routingResult: any): AsyncIterableIterator<ProcessingUpdate> {
+    // Use streaming processor for AI analysis
+    const streamingIterator = this.streamingProcessor.processAIAnalysis(
+      intent.action,
+      async (message: string) => {
+        return await this.generateResponseInternal(intent, routingResult);
+      }
+    );
+
+    for await (const update of streamingIterator) {
+      yield update;
+    }
+  }
+
+  /**
    * Generate a response based on intent and routing result
    */
   private async generateResponse(intent: UserIntent, routingResult: any): Promise<string> {
+    return await this.generateResponseInternal(intent, routingResult);
+  }
+
+  /**
+   * Internal response generation logic
+   */
+  private async generateResponseInternal(intent: UserIntent, routingResult: any): Promise<string> {
     const context = this.conversationManager.generateContextualPrompt(
       this.sessionState.conversationId,
       intent
@@ -580,6 +663,22 @@ You can also ask for more details about any specific task or phase.`;
 
 
   /**
+   * Get streaming processor status
+   */
+  getStreamingStatus(): {
+    activeStreams: number;
+    averageProgress: number;
+    oldestStreamAge: number;
+  } {
+    const stats = this.streamingProcessor.getStreamStats();
+    return {
+      activeStreams: stats.activeCount,
+      averageProgress: stats.averageProgress,
+      oldestStreamAge: stats.oldestStreamAge
+    };
+  }
+
+  /**
    * Get system status
    */
   getSystemStatus(): {
@@ -587,12 +686,21 @@ You can also ask for more details about any specific task or phase.`;
     activeExecutions: number;
     conversationId: string;
     executionHistory: number;
+    streaming: {
+      activeStreams: number;
+      averageProgress: number;
+    };
   } {
+    const streamingStats = this.getStreamingStatus();
     return {
       ready: true, // Simplified for now
       activeExecutions: 0, // TODO: Re-implement when execution engine is added back
       conversationId: this.sessionState.conversationId,
-      executionHistory: this.sessionState.executionHistory.length
+      executionHistory: this.sessionState.executionHistory.length,
+      streaming: {
+        activeStreams: streamingStats.activeStreams,
+        averageProgress: streamingStats.averageProgress
+      }
     };
   }
 }

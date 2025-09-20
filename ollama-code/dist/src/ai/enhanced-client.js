@@ -12,6 +12,7 @@ import { ConversationManager } from './conversation-manager.js';
 import { TaskPlanner } from './task-planner.js';
 import { AutonomousModifier } from '../core/autonomous-modifier.js';
 import { NaturalLanguageRouter } from '../routing/nl-router.js';
+import { StreamingProcessor } from '../streaming/streaming-processor.js';
 export class EnhancedClient {
     ollamaClient;
     projectContext;
@@ -20,6 +21,7 @@ export class EnhancedClient {
     taskPlanner;
     autonomousModifier;
     nlRouter;
+    streamingProcessor;
     config;
     sessionState;
     sessionMetrics = new Map();
@@ -50,6 +52,13 @@ export class EnhancedClient {
             healthCheckInterval: 2000
         };
         this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner, nlRouterConfig);
+        // Initialize streaming processor with optimized settings
+        this.streamingProcessor = new StreamingProcessor({
+            enableStreaming: true,
+            progressInterval: 500,
+            maxUpdatesPerSecond: 4,
+            includeThinkingSteps: true
+        });
         // Initialize session state
         this.sessionState = {
             conversationId: this.conversationManager.getConversationContext().sessionId,
@@ -75,6 +84,22 @@ export class EnhancedClient {
         catch (error) {
             logger.error('Failed to initialize Enhanced AI Client:', error);
             throw error;
+        }
+    }
+    /**
+     * Process a user message with streaming updates
+     */
+    async *processMessageStreaming(message) {
+        const streamingUpdates = [];
+        // Create streaming operation that wraps the entire processing
+        const streamingIterator = this.streamingProcessor.processWithStreaming(async () => {
+            const result = await this.processMessage(message);
+            return result;
+        }, `process_${Date.now()}`);
+        // Yield updates and collect them for final result
+        for await (const update of streamingIterator) {
+            streamingUpdates.push(update);
+            yield update;
         }
     }
     /**
@@ -224,11 +249,30 @@ export class EnhancedClient {
         }
     }
     /**
+     * Execute a command with streaming updates
+     */
+    async *executeCommandStreaming(routingResult) {
+        const { commandName, args } = routingResult.data;
+        // Use streaming processor for command execution
+        const streamingIterator = this.streamingProcessor.processCommand(commandName, args, async (cmd, cmdArgs) => {
+            return await this.executeCommandInternal(cmd, cmdArgs);
+        });
+        for await (const update of streamingIterator) {
+            yield update;
+        }
+    }
+    /**
      * Execute a command directly
      */
     async executeCommand(routingResult) {
+        const { commandName, args } = routingResult.data;
+        return await this.executeCommandInternal(commandName, args);
+    }
+    /**
+     * Internal command execution logic
+     */
+    async executeCommandInternal(commandName, args) {
         try {
-            const { commandName, args } = routingResult.data;
             // Import the executeCommand function and console capture utility
             const { executeCommand } = await import('../commands/index.js');
             const { captureConsoleOutput } = await import('../utils/console-capture.js');
@@ -274,9 +318,27 @@ export class EnhancedClient {
         }
     }
     /**
+     * Generate a response with streaming updates
+     */
+    async *generateResponseStreaming(intent, routingResult) {
+        // Use streaming processor for AI analysis
+        const streamingIterator = this.streamingProcessor.processAIAnalysis(intent.action, async (message) => {
+            return await this.generateResponseInternal(intent, routingResult);
+        });
+        for await (const update of streamingIterator) {
+            yield update;
+        }
+    }
+    /**
      * Generate a response based on intent and routing result
      */
     async generateResponse(intent, routingResult) {
+        return await this.generateResponseInternal(intent, routingResult);
+    }
+    /**
+     * Internal response generation logic
+     */
+    async generateResponseInternal(intent, routingResult) {
         const context = this.conversationManager.generateContextualPrompt(this.sessionState.conversationId, intent);
         // Use the conversation context to generate an appropriate response
         const response = await this.ollamaClient.complete(`Based on the user's intent (${intent.type}: ${intent.action}), please provide a helpful response.
@@ -446,14 +508,30 @@ You can also ask for more details about any specific task or phase.`;
         }
     }
     /**
+     * Get streaming processor status
+     */
+    getStreamingStatus() {
+        const stats = this.streamingProcessor.getStreamStats();
+        return {
+            activeStreams: stats.activeCount,
+            averageProgress: stats.averageProgress,
+            oldestStreamAge: stats.oldestStreamAge
+        };
+    }
+    /**
      * Get system status
      */
     getSystemStatus() {
+        const streamingStats = this.getStreamingStatus();
         return {
             ready: true, // Simplified for now
             activeExecutions: 0, // TODO: Re-implement when execution engine is added back
             conversationId: this.sessionState.conversationId,
-            executionHistory: this.sessionState.executionHistory.length
+            executionHistory: this.sessionState.executionHistory.length,
+            streaming: {
+                activeStreams: streamingStats.activeStreams,
+                averageProgress: streamingStats.averageProgress
+            }
         };
     }
 }

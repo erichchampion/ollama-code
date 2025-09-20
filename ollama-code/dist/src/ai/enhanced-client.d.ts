@@ -8,6 +8,7 @@
 import { ProjectContext } from './context.js';
 import { UserIntent } from './intent-analyzer.js';
 import { TaskPlan } from './task-planner.js';
+import { ProcessingUpdate } from '../streaming/streaming-processor.js';
 export interface EnhancedClientConfig {
     model: string;
     baseUrl?: string;
@@ -33,6 +34,7 @@ export interface ProcessingResult {
     conversationId: string;
     processingTime: number;
     error?: string;
+    streamingUpdates?: ProcessingUpdate[];
 }
 export interface SessionState {
     conversationId: string;
@@ -63,6 +65,7 @@ export declare class EnhancedClient {
     private taskPlanner;
     private autonomousModifier;
     private nlRouter;
+    private streamingProcessor;
     private config;
     private sessionState;
     private sessionMetrics;
@@ -73,6 +76,10 @@ export declare class EnhancedClient {
      */
     initialize(): Promise<void>;
     /**
+     * Process a user message with streaming updates
+     */
+    processMessageStreaming(message: string): AsyncIterableIterator<ProcessingUpdate>;
+    /**
      * Process a user message with full enhanced capabilities
      */
     processMessage(message: string): Promise<ProcessingResult>;
@@ -81,13 +88,29 @@ export declare class EnhancedClient {
      */
     private createAndExecutePlan;
     /**
+     * Execute a command with streaming updates
+     */
+    executeCommandStreaming(routingResult: any): AsyncIterableIterator<ProcessingUpdate>;
+    /**
      * Execute a command directly
      */
     private executeCommand;
     /**
+     * Internal command execution logic
+     */
+    private executeCommandInternal;
+    /**
+     * Generate a response with streaming updates
+     */
+    generateResponseStreaming(intent: UserIntent, routingResult: any): AsyncIterableIterator<ProcessingUpdate>;
+    /**
      * Generate a response based on intent and routing result
      */
     private generateResponse;
+    /**
+     * Internal response generation logic
+     */
+    private generateResponseInternal;
     /**
      * Determine if plan should be auto-executed
      */
@@ -137,6 +160,14 @@ export declare class EnhancedClient {
      */
     isReady(): Promise<boolean>;
     /**
+     * Get streaming processor status
+     */
+    getStreamingStatus(): {
+        activeStreams: number;
+        averageProgress: number;
+        oldestStreamAge: number;
+    };
+    /**
      * Get system status
      */
     getSystemStatus(): {
@@ -144,5 +175,9 @@ export declare class EnhancedClient {
         activeExecutions: number;
         conversationId: string;
         executionHistory: number;
+        streaming: {
+            activeStreams: number;
+            averageProgress: number;
+        };
     };
 }
