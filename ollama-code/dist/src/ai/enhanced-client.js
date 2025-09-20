@@ -43,7 +43,13 @@ export class EnhancedClient {
         this.conversationManager = new ConversationManager();
         this.autonomousModifier = new AutonomousModifier();
         this.taskPlanner = new TaskPlanner(this, this.projectContext);
-        this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner);
+        // Configure NL Router with optimized settings for fast command detection
+        const nlRouterConfig = {
+            commandConfidenceThreshold: 0.7, // Slightly lower threshold for better detection
+            taskConfidenceThreshold: 0.6,
+            healthCheckInterval: 2000
+        };
+        this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner, nlRouterConfig);
         // Initialize session state
         this.sessionState = {
             conversationId: this.conversationManager.getConversationContext().sessionId,
@@ -223,24 +229,47 @@ export class EnhancedClient {
     async executeCommand(routingResult) {
         try {
             const { commandName, args } = routingResult.data;
-            // Import the executeCommand function
+            // Import the executeCommand function and console capture utility
             const { executeCommand } = await import('../commands/index.js');
-            // Execute the command and capture output
-            let output = '';
-            const originalConsoleLog = console.log;
-            console.log = (...args) => {
-                output += args.join(' ') + '\n';
-            };
-            try {
+            const { captureConsoleOutput } = await import('../utils/console-capture.js');
+            // Execute the command with console output capture
+            const { result, output, errorOutput, duration } = await captureConsoleOutput(async () => {
                 await executeCommand(commandName, args);
-                return output || `✅ Command '${commandName}' executed successfully.`;
+                return `Command '${commandName}' executed successfully`;
+            }, {
+                includeStderr: true,
+                maxOutputSize: 512 * 1024, // 512KB limit for command output
+                timeout: 60000 // 60 second timeout for command execution
+            });
+            // Combine stdout and stderr if there's error output
+            let fullOutput = output;
+            if (errorOutput.trim()) {
+                fullOutput += '\n' + errorOutput;
             }
-            finally {
-                console.log = originalConsoleLog;
+            // Return captured output or success message
+            if (fullOutput.trim()) {
+                return fullOutput;
+            }
+            else {
+                return `✅ ${result}`;
             }
         }
         catch (error) {
             logger.error('Command execution failed:', error);
+            // Check if this is a captured error with output
+            if (error.output || error.errorOutput) {
+                let errorMessage = `❌ Command execution failed`;
+                if (error.output) {
+                    errorMessage += `\n\nOutput:\n${error.output}`;
+                }
+                if (error.errorOutput) {
+                    errorMessage += `\n\nErrors:\n${error.errorOutput}`;
+                }
+                if (error.error instanceof Error) {
+                    errorMessage += `\n\nError: ${error.error.message}`;
+                }
+                return errorMessage;
+            }
             return `❌ Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`;
         }
     }

@@ -26,6 +26,16 @@ export interface RoutingContext {
         preferredApproach: 'conservative' | 'balanced' | 'aggressive';
     };
 }
+export interface NLRouterConfig {
+    commandConfidenceThreshold?: number;
+    taskConfidenceThreshold?: number;
+    healthCheckInterval?: number;
+    patterns?: {
+        gitStatus?: string[];
+        gitCommit?: string[];
+        gitBranch?: string[];
+    };
+}
 export interface ClarificationRequest {
     questions: string[];
     options?: Array<{
@@ -41,7 +51,9 @@ export declare class NaturalLanguageRouter {
     private taskPlanner?;
     private commandConfidenceThreshold;
     private taskConfidenceThreshold;
-    constructor(intentAnalyzer: IntentAnalyzer, taskPlanner?: TaskPlanner);
+    private healthCheckInterval;
+    private config;
+    constructor(intentAnalyzer: IntentAnalyzer, taskPlanner?: TaskPlanner, config?: NLRouterConfig);
     /**
      * Route user input to appropriate handler
      */

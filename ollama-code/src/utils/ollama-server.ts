@@ -41,10 +41,26 @@ export async function isOllamaInstalled(): Promise<boolean> {
 }
 
 /**
+ * Configuration options for Ollama server startup
+ */
+export interface OllamaServerStartupConfig {
+  healthCheckInterval?: number;
+  startupTimeout?: number;
+  maxHealthCheckRetries?: number;
+}
+
+/**
  * Start Ollama server in the background
  */
-export async function startOllamaServer(): Promise<void> {
+export async function startOllamaServer(config: OllamaServerStartupConfig = {}): Promise<void> {
   logger.info('Starting Ollama server in the background...');
+
+  // Apply configuration defaults
+  const {
+    healthCheckInterval = 2000,
+    startupTimeout = 30000,
+    maxHealthCheckRetries = 15
+  } = config;
 
   return new Promise((resolve, reject) => {
     const ollamaProcess = spawn('ollama', ['serve'], {
@@ -52,36 +68,80 @@ export async function startOllamaServer(): Promise<void> {
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
-    let serverStarted = false;
-    let startupTimeout: NodeJS.Timeout;
+    let resolved = false;
+    let startupTimeoutHandle: NodeJS.Timeout | null = null;
+    let healthCheckIntervalHandle: NodeJS.Timeout | null = null;
+    let healthCheckRetries = 0;
+
+    // Cleanup function to prevent memory leaks and race conditions
+    const cleanup = () => {
+      if (startupTimeoutHandle) {
+        clearTimeout(startupTimeoutHandle);
+        startupTimeoutHandle = null;
+      }
+      if (healthCheckIntervalHandle) {
+        clearInterval(healthCheckIntervalHandle);
+        healthCheckIntervalHandle = null;
+      }
+    };
+
+    // Safe resolve function that can only be called once
+    const resolveOnce = (message: string) => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        logger.info(message);
+        resolve();
+      }
+    };
+
+    // Safe reject function that can only be called once
+    const rejectOnce = (error: any) => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        ollamaProcess.kill();
+        reject(error);
+      }
+    };
 
     // Set up timeout for server startup
-    startupTimeout = setTimeout(() => {
-      if (!serverStarted) {
-        ollamaProcess.kill();
-        reject(createUserError('Ollama server failed to start within 30 seconds', {
-          category: ErrorCategory.SERVER,
-          resolution: 'Please start Ollama manually with "ollama serve" and try again.'
-        }));
-      }
-    }, 30000); // 30 second timeout
+    startupTimeoutHandle = setTimeout(() => {
+      rejectOnce(createUserError(`Ollama server failed to start within ${startupTimeout / 1000} seconds`, {
+        category: ErrorCategory.SERVER,
+        resolution: 'Please start Ollama manually with "ollama serve" and try again.'
+      }));
+    }, startupTimeout);
 
     // Start periodic health checks instead of relying on output parsing
-    const healthCheckInterval = setInterval(async () => {
-      if (serverStarted) {
-        clearInterval(healthCheckInterval);
+    healthCheckIntervalHandle = setInterval(async () => {
+      if (resolved) {
         return;
       }
 
-      const isRunning = await isOllamaServerRunning();
-      if (isRunning) {
-        serverStarted = true;
-        clearTimeout(startupTimeout);
-        clearInterval(healthCheckInterval);
-        logger.info('Ollama server started successfully');
-        resolve();
+      healthCheckRetries++;
+      logger.debug(`Health check attempt ${healthCheckRetries}/${maxHealthCheckRetries}`);
+
+      try {
+        const isRunning = await isOllamaServerRunning();
+        if (isRunning) {
+          resolveOnce('Ollama server started successfully (health check)');
+        } else if (healthCheckRetries >= maxHealthCheckRetries) {
+          rejectOnce(createUserError(`Ollama server failed to respond after ${maxHealthCheckRetries} health checks`, {
+            category: ErrorCategory.SERVER,
+            resolution: 'Please check if Ollama is properly installed and try starting it manually.'
+          }));
+        }
+      } catch (error) {
+        logger.debug(`Health check ${healthCheckRetries} failed:`, error);
+        if (healthCheckRetries >= maxHealthCheckRetries) {
+          rejectOnce(createUserError(`Ollama server health checks failed after ${maxHealthCheckRetries} attempts`, {
+            category: ErrorCategory.SERVER,
+            resolution: 'Please check your network connection and Ollama installation.'
+          }));
+        }
       }
-    }, 2000); // Check every 2 seconds
+    }, healthCheckInterval);
 
     // Monitor server output for startup confirmation (fallback)
     ollamaProcess.stdout?.on('data', (data) => {
@@ -90,13 +150,7 @@ export async function startOllamaServer(): Promise<void> {
 
       // Look for server startup indicators
       if (output.includes('Listening on') || output.includes('server started') || output.includes('127.0.0.1:11434')) {
-        if (!serverStarted) {
-          serverStarted = true;
-          clearTimeout(startupTimeout);
-          clearInterval(healthCheckInterval);
-          logger.info('Ollama server started successfully');
-          resolve();
-        }
+        resolveOnce('Ollama server started successfully (output detection)');
       }
     });
 
@@ -106,20 +160,12 @@ export async function startOllamaServer(): Promise<void> {
 
       // Some errors are not fatal (like port already in use)
       if (error.includes('address already in use') || error.includes('port 11434')) {
-        if (!serverStarted) {
-          serverStarted = true;
-          clearTimeout(startupTimeout);
-          clearInterval(healthCheckInterval);
-          logger.info('Ollama server already running');
-          resolve();
-        }
+        resolveOnce('Ollama server already running');
       }
     });
 
     ollamaProcess.on('error', (error) => {
-      clearTimeout(startupTimeout);
-      clearInterval(healthCheckInterval);
-      reject(createUserError(`Failed to start Ollama server: ${error.message}`, {
+      rejectOnce(createUserError(`Failed to start Ollama server: ${error.message}`, {
         cause: error,
         category: ErrorCategory.SERVER,
         resolution: 'Make sure Ollama is installed and try running "ollama serve" manually.'
@@ -127,10 +173,8 @@ export async function startOllamaServer(): Promise<void> {
     });
 
     ollamaProcess.on('exit', (code) => {
-      clearTimeout(startupTimeout);
-      clearInterval(healthCheckInterval);
-      if (!serverStarted) {
-        reject(createUserError(`Ollama server exited with code ${code}`, {
+      if (!resolved) {
+        rejectOnce(createUserError(`Ollama server exited with code ${code}`, {
           category: ErrorCategory.SERVER,
           resolution: 'Check Ollama installation and try running "ollama serve" manually.'
         }));

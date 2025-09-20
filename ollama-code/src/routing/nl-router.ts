@@ -32,6 +32,17 @@ export interface RoutingContext {
   };
 }
 
+export interface NLRouterConfig {
+  commandConfidenceThreshold?: number;
+  taskConfidenceThreshold?: number;
+  healthCheckInterval?: number;
+  patterns?: {
+    gitStatus?: string[];
+    gitCommit?: string[];
+    gitBranch?: string[];
+  };
+}
+
 export interface ClarificationRequest {
   questions: string[];
   options?: Array<{
@@ -46,12 +57,24 @@ export interface ClarificationRequest {
 export class NaturalLanguageRouter {
   private intentAnalyzer: IntentAnalyzer;
   private taskPlanner?: TaskPlanner;
-  private commandConfidenceThreshold = 0.8;
-  private taskConfidenceThreshold = 0.6;
+  private commandConfidenceThreshold: number;
+  private taskConfidenceThreshold: number;
+  private healthCheckInterval: number;
+  private config: NLRouterConfig;
 
-  constructor(intentAnalyzer: IntentAnalyzer, taskPlanner?: TaskPlanner) {
+  constructor(
+    intentAnalyzer: IntentAnalyzer,
+    taskPlanner?: TaskPlanner,
+    config: NLRouterConfig = {}
+  ) {
     this.intentAnalyzer = intentAnalyzer;
     this.taskPlanner = taskPlanner;
+    this.config = config;
+
+    // Set configurable thresholds with defaults
+    this.commandConfidenceThreshold = config.commandConfidenceThreshold ?? 0.8;
+    this.taskConfidenceThreshold = config.taskConfidenceThreshold ?? 0.6;
+    this.healthCheckInterval = config.healthCheckInterval ?? 2000;
   }
 
   /**
@@ -65,8 +88,9 @@ export class NaturalLanguageRouter {
 
       // Fast-path: Check for obvious pattern-based commands first to avoid slow AI analysis
       const fastCommandCheck = this.checkFastCommandMapping(input);
+      logger.debug('Fast command check result:', { input: input.substring(0, 50), fastCommandCheck });
       if (fastCommandCheck) {
-        logger.debug('Fast command mapping found', { command: fastCommandCheck.commandName });
+        logger.info('Fast command mapping found - bypassing AI analysis', { command: fastCommandCheck.commandName });
         return {
           type: 'command',
           action: fastCommandCheck.commandName,
@@ -345,7 +369,7 @@ export class NaturalLanguageRouter {
    * Check if the action is a git status request
    */
   private isGitStatusRequest(action: string): boolean {
-    const statusPatterns = [
+    const defaultStatusPatterns = [
       'check status',
       'check the status',
       'git status',
@@ -373,6 +397,7 @@ export class NaturalLanguageRouter {
       'current git status'
     ];
 
+    const statusPatterns = this.config.patterns?.gitStatus ?? defaultStatusPatterns;
     return statusPatterns.some(pattern => action.includes(pattern));
   }
 
@@ -380,7 +405,7 @@ export class NaturalLanguageRouter {
    * Check if the action is a git commit request
    */
   private isGitCommitRequest(action: string): boolean {
-    const commitPatterns = [
+    const defaultCommitPatterns = [
       'git commit',
       'create commit',
       'make commit',
@@ -388,6 +413,7 @@ export class NaturalLanguageRouter {
       'commit the changes'
     ];
 
+    const commitPatterns = this.config.patterns?.gitCommit ?? defaultCommitPatterns;
     return commitPatterns.some(pattern => action.includes(pattern));
   }
 
@@ -395,7 +421,7 @@ export class NaturalLanguageRouter {
    * Check if the action is a git branch request
    */
   private isGitBranchRequest(action: string): boolean {
-    const branchPatterns = [
+    const defaultBranchPatterns = [
       'git branch',
       'list branch',
       'show branch',
@@ -403,6 +429,7 @@ export class NaturalLanguageRouter {
       'current branch'
     ];
 
+    const branchPatterns = this.config.patterns?.gitBranch ?? defaultBranchPatterns;
     return branchPatterns.some(pattern => action.includes(pattern));
   }
 

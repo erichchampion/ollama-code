@@ -9,11 +9,18 @@ import { commandRegistry } from '../commands/index.js';
 export class NaturalLanguageRouter {
     intentAnalyzer;
     taskPlanner;
-    commandConfidenceThreshold = 0.8;
-    taskConfidenceThreshold = 0.6;
-    constructor(intentAnalyzer, taskPlanner) {
+    commandConfidenceThreshold;
+    taskConfidenceThreshold;
+    healthCheckInterval;
+    config;
+    constructor(intentAnalyzer, taskPlanner, config = {}) {
         this.intentAnalyzer = intentAnalyzer;
         this.taskPlanner = taskPlanner;
+        this.config = config;
+        // Set configurable thresholds with defaults
+        this.commandConfidenceThreshold = config.commandConfidenceThreshold ?? 0.8;
+        this.taskConfidenceThreshold = config.taskConfidenceThreshold ?? 0.6;
+        this.healthCheckInterval = config.healthCheckInterval ?? 2000;
     }
     /**
      * Route user input to appropriate handler
@@ -24,8 +31,9 @@ export class NaturalLanguageRouter {
             logger.debug('Routing user input', { input: input.substring(0, 100) });
             // Fast-path: Check for obvious pattern-based commands first to avoid slow AI analysis
             const fastCommandCheck = this.checkFastCommandMapping(input);
+            logger.debug('Fast command check result:', { input: input.substring(0, 50), fastCommandCheck });
             if (fastCommandCheck) {
-                logger.debug('Fast command mapping found', { command: fastCommandCheck.commandName });
+                logger.info('Fast command mapping found - bypassing AI analysis', { command: fastCommandCheck.commandName });
                 return {
                     type: 'command',
                     action: fastCommandCheck.commandName,
@@ -245,7 +253,7 @@ export class NaturalLanguageRouter {
      * Check if the action is a git status request
      */
     isGitStatusRequest(action) {
-        const statusPatterns = [
+        const defaultStatusPatterns = [
             'check status',
             'check the status',
             'git status',
@@ -272,32 +280,35 @@ export class NaturalLanguageRouter {
             'current status',
             'current git status'
         ];
+        const statusPatterns = this.config.patterns?.gitStatus ?? defaultStatusPatterns;
         return statusPatterns.some(pattern => action.includes(pattern));
     }
     /**
      * Check if the action is a git commit request
      */
     isGitCommitRequest(action) {
-        const commitPatterns = [
+        const defaultCommitPatterns = [
             'git commit',
             'create commit',
             'make commit',
             'commit changes',
             'commit the changes'
         ];
+        const commitPatterns = this.config.patterns?.gitCommit ?? defaultCommitPatterns;
         return commitPatterns.some(pattern => action.includes(pattern));
     }
     /**
      * Check if the action is a git branch request
      */
     isGitBranchRequest(action) {
-        const branchPatterns = [
+        const defaultBranchPatterns = [
             'git branch',
             'list branch',
             'show branch',
             'branch info',
             'current branch'
         ];
+        const branchPatterns = this.config.patterns?.gitBranch ?? defaultBranchPatterns;
         return branchPatterns.some(pattern => action.includes(pattern));
     }
     /**
