@@ -12,17 +12,20 @@ import { ConversationManager } from '../ai/conversation-manager.js';
 import { NaturalLanguageRouter } from '../routing/nl-router.js';
 import { ProjectContext } from '../ai/context.js';
 import { TaskPlanner } from '../ai/task-planner.js';
+import { MultiStepQueryProcessor } from '../ai/multi-step-query-processor.js';
 import { executeCommand } from '../commands/index.js';
 import { getAIClient, getEnhancedClient, initAI } from '../ai/index.js';
 import { ensureOllamaServerRunning } from '../utils/ollama-server.js';
 import { initializeToolSystem } from '../tools/index.js';
 import { registerCommands } from '../commands/register.js';
 import { EXIT_COMMANDS } from '../constants.js';
+import { createSpinner } from '../utils/spinner.js';
 export class EnhancedInteractiveMode {
     intentAnalyzer;
     conversationManager;
     nlRouter;
     taskPlanner;
+    queryProcessor;
     projectContext;
     terminal;
     running = false;
@@ -64,11 +67,15 @@ export class EnhancedInteractiveMode {
         initializeToolSystem();
         registerCommands();
         // Ensure Ollama server is running
-        this.terminal.info('Ensuring Ollama server is running...');
+        const serverSpinner = createSpinner('Ensuring Ollama server is running...');
+        serverSpinner.start();
         await ensureOllamaServerRunning();
+        serverSpinner.succeed('Ollama server is ready');
         // Initialize AI capabilities
-        this.terminal.info('Initializing AI capabilities...');
+        const aiSpinner = createSpinner('Initializing AI capabilities...');
+        aiSpinner.start();
         await initAI();
+        aiSpinner.succeed('AI capabilities initialized');
         // Initialize components
         const aiClient = getAIClient();
         this.intentAnalyzer = new EnhancedIntentAnalyzer(aiClient);
@@ -90,6 +97,14 @@ export class EnhancedInteractiveMode {
         }
         catch (error) {
             logger.debug('Task planner not available:', error);
+        }
+        // Initialize multi-step query processor
+        try {
+            this.queryProcessor = new MultiStepQueryProcessor(aiClient, this.projectContext);
+            this.terminal.success('Multi-step query processing enabled');
+        }
+        catch (error) {
+            logger.debug('Query processor not available:', error);
         }
         // Initialize natural language router
         this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner);
@@ -143,7 +158,8 @@ export class EnhancedInteractiveMode {
      * Process user input through natural language routing
      */
     async processUserInput(userInput) {
-        this.terminal.info('Processing your request...');
+        const processSpinner = createSpinner('Processing your request...');
+        processSpinner.start();
         // Create routing context
         const routingContext = {
             projectContext: this.projectContext,
@@ -155,24 +171,32 @@ export class EnhancedInteractiveMode {
                 preferredApproach: this.options.preferredApproach
             }
         };
-        // Route the request
-        const routingResult = await this.nlRouter.route(userInput, routingContext);
-        // Handle the routing result
-        switch (routingResult.type) {
-            case 'clarification':
-                await this.handleClarificationRequest(userInput, routingResult.data, routingContext);
-                break;
-            case 'command':
-                await this.handleCommandExecution(routingResult);
-                break;
-            case 'task_plan':
-                await this.handleTaskPlanning(routingResult);
-                break;
-            case 'conversation':
-                await this.handleConversation(routingResult);
-                break;
-            default:
-                this.terminal.warn('Unknown routing result type');
+        try {
+            // Route the request
+            processSpinner.setText('Analyzing request...');
+            const routingResult = await this.nlRouter.route(userInput, routingContext);
+            processSpinner.succeed('Request processed');
+            // Handle the routing result
+            switch (routingResult.type) {
+                case 'clarification':
+                    await this.handleClarificationRequest(userInput, routingResult.data, routingContext);
+                    break;
+                case 'command':
+                    await this.handleCommandExecution(routingResult);
+                    break;
+                case 'task_plan':
+                    await this.handleTaskPlanning(routingResult);
+                    break;
+                case 'conversation':
+                    await this.handleConversation(routingResult);
+                    break;
+                default:
+                    this.terminal.warn('Unknown routing result type');
+            }
+        }
+        catch (error) {
+            processSpinner.fail('Failed to process request');
+            this.terminal.error(`Error processing request: ${formatErrorForDisplay(error)}`);
         }
     }
     /**
@@ -182,9 +206,11 @@ export class EnhancedInteractiveMode {
         const response = userInput.toLowerCase().trim();
         if (response === 'yes' || response === 'execute' || response === 'run') {
             // Execute the pending plan
+            const executeSpinner = createSpinner('Executing task plan...');
             try {
-                this.terminal.info('Executing task plan...');
+                executeSpinner.start();
                 await this.taskPlanner.executePlan(this.pendingTaskPlan.id);
+                executeSpinner.succeed('Task plan completed');
                 // Get the completed plan and display results
                 const completedPlan = this.taskPlanner.getPlan(this.pendingTaskPlan.id);
                 logger.debug(`Retrieved plan for results display:`, {
@@ -203,6 +229,7 @@ export class EnhancedInteractiveMode {
                 await this.updateConversationOutcome('success');
             }
             catch (error) {
+                executeSpinner.fail('Task execution failed');
                 this.terminal.error(`Task execution failed: ${formatErrorForDisplay(error)}`);
                 await this.updateConversationOutcome('failure');
             }
@@ -306,7 +333,8 @@ export class EnhancedInteractiveMode {
             return;
         }
         const { intent, context } = routingResult.data;
-        this.terminal.info('Creating a task plan for your request...');
+        const planSpinner = createSpinner('Creating a task plan for your request...');
+        planSpinner.start();
         try {
             // Create task plan
             const plan = await this.taskPlanner.createPlan(intent.action, {
@@ -323,6 +351,7 @@ export class EnhancedInteractiveMode {
                 // Store the pending task plan for user response
                 this.pendingTaskPlan = plan;
                 this.pendingRoutingResult = routingResult;
+                planSpinner.succeed('Task plan created');
                 this.terminal.info('\nWould you like me to execute this plan? You can:');
                 this.terminal.info('- Say "yes" or "execute" to run the plan');
                 this.terminal.info('- Say "modify" to adjust the plan');
@@ -331,12 +360,13 @@ export class EnhancedInteractiveMode {
                 return;
             }
             // Execute the plan immediately if no confirmation needed
-            this.terminal.info('Executing task plan...');
+            planSpinner.setText('Executing task plan...');
             await this.taskPlanner.executePlan(plan.id);
-            this.terminal.success('Task plan completed successfully!');
+            planSpinner.succeed('Task plan completed successfully!');
             await this.updateConversationOutcome('success');
         }
         catch (error) {
+            planSpinner.fail('Task planning failed');
             this.terminal.error(`Task planning failed: ${formatErrorForDisplay(error)}`);
             await this.updateConversationOutcome('failure');
         }
@@ -346,21 +376,85 @@ export class EnhancedInteractiveMode {
      */
     async handleConversation(routingResult) {
         const { intent, contextualPrompt } = routingResult.data;
+        const spinner = createSpinner('Thinking...');
         try {
-            this.terminal.info('Thinking...');
+            spinner.start();
+            // Check if multi-step query processing is available and needed
+            if (this.queryProcessor && this.shouldUseMultiStepProcessing(intent)) {
+                spinner.setText('Processing multi-step query...');
+                await this.handleMultiStepQuery(intent, contextualPrompt);
+                spinner.succeed();
+                return;
+            }
             // Get AI response using contextual prompt
             const aiClient = getAIClient();
             const response = await aiClient.complete(contextualPrompt, {
                 temperature: 0.7
             });
             const responseText = response.message?.content || 'I apologize, but I couldn\'t generate a response.';
+            spinner.succeed();
             // Display the response with appropriate formatting
             this.displayResponse(responseText, intent.type);
             // Update conversation
             await this.updateConversationOutcome('success', responseText);
         }
         catch (error) {
+            spinner.fail();
             this.terminal.error(`Failed to generate response: ${formatErrorForDisplay(error)}`);
+            await this.updateConversationOutcome('failure');
+        }
+    }
+    /**
+     * Multi-step query processing methods
+     */
+    shouldUseMultiStepProcessing(intent) {
+        // Use multi-step processing for complex queries, follow-ups, or analysis requests
+        const complexQueries = ['analyze', 'review', 'explain', 'understand', 'explore', 'investigate'];
+        const queryText = intent.originalQuery?.toLowerCase() || '';
+        // Check if this is a follow-up query
+        if (this.queryProcessor?.getQuerySession() && this.queryProcessor.isFollowUpQuery(queryText)) {
+            return true;
+        }
+        // Check if this is a complex analysis query
+        return complexQueries.some(keyword => queryText.includes(keyword));
+    }
+    async handleMultiStepQuery(intent, contextualPrompt) {
+        const queryText = intent.originalQuery || intent.query || '';
+        try {
+            // Check if we have an active session, or start a new one
+            let session = this.queryProcessor.getQuerySession();
+            if (!session) {
+                session = await this.queryProcessor.startQuerySession(queryText, {
+                    userPreferences: {
+                        verbosity: this.options.verbosity === 'detailed' ? 'detailed' : this.options.verbosity === 'concise' ? 'minimal' : 'standard',
+                        autoSuggest: true,
+                        maxSuggestions: 3
+                    },
+                    projectContext: this.projectContext,
+                    workingDirectory: process.cwd()
+                });
+                this.terminal.success('Started multi-step query session');
+            }
+            // Process the query within the session
+            const result = await this.queryProcessor.processQuery(queryText);
+            // Display the response
+            this.displayResponse(result.content, intent.type);
+            // Show suggestions if available
+            if (result.suggestions && result.suggestions.length > 0) {
+                this.terminal.info('\n💡 Suggestions:');
+                result.suggestions.forEach((suggestion, index) => {
+                    this.terminal.text(`   ${index + 1}. ${suggestion}`);
+                });
+            }
+            // If this query needs follow-up, hint to the user
+            if (result.needsFollowUp) {
+                this.terminal.text('\n💬 Feel free to ask follow-up questions to dive deeper!');
+            }
+            // Update conversation
+            await this.updateConversationOutcome('success', result.content);
+        }
+        catch (error) {
+            this.terminal.error(`Multi-step query processing failed: ${formatErrorForDisplay(error)}`);
             await this.updateConversationOutcome('failure');
         }
     }
@@ -399,6 +493,12 @@ export class EnhancedInteractiveMode {
                 return true;
             case '/summary':
                 this.displaySummary();
+                return true;
+            case '/session':
+                this.displayQuerySession();
+                return true;
+            case '/end-session':
+                this.endQuerySession();
                 return true;
             default:
                 return false;
@@ -460,6 +560,16 @@ The AI will automatically determine whether to:
 • Create and execute a task plan
 • Provide information or explanation
 • Ask for clarification
+
+Special Commands:
+• /help - Show this help
+• /status - Show current status
+• /history - Show conversation history
+• /summary - Show conversation summary
+• /session - Show current query session
+• /end-session - End current query session
+• /clear - Clear screen
+• exit, quit, bye - Exit interactive mode
 `);
     }
     displayStatus() {
@@ -516,6 +626,50 @@ ${summary.topTopics.slice(0, 5).map(topic => `• ${topic.topic} (${topic.count}
 Common patterns:
 ${summary.commonPatterns.slice(0, 3).map(pattern => `• ${pattern}`).join('\n')}
 `);
+    }
+    displayQuerySession() {
+        if (!this.queryProcessor) {
+            this.terminal.info('Multi-step query processing is not available');
+            return;
+        }
+        const session = this.queryProcessor.getQuerySession();
+        if (!session) {
+            this.terminal.info('No active query session');
+            return;
+        }
+        console.log(`
+🔍 Active Query Session
+
+Session ID: ${session.id}
+Initial Query: "${session.initialQuery}"
+Current Step: ${session.currentStep}
+Start Time: ${session.startTime.toLocaleString()}
+Status: ${session.isComplete ? 'Completed' : 'Active'}
+
+Queries Processed (${session.queries.length}):
+${session.queries.map((query, index) => `  ${index + 1}. ${query.isFollowUp ? '↳' : '●'} "${query.text}" (${query.timestamp.toLocaleTimeString()})`).join('\n')}
+
+Results:
+${session.results.map((result, index) => `  ${index + 1}. ${result.content.substring(0, 80)}${result.content.length > 80 ? '...' : ''}`).join('\n')}
+`);
+    }
+    endQuerySession() {
+        if (!this.queryProcessor) {
+            this.terminal.info('Multi-step query processing is not available');
+            return;
+        }
+        const session = this.queryProcessor.getQuerySession();
+        if (!session) {
+            this.terminal.info('No active query session to end');
+            return;
+        }
+        const endedSession = this.queryProcessor.endQuerySession();
+        if (endedSession) {
+            this.terminal.success(`Query session ended. Processed ${endedSession.queries.length} queries in ${endedSession.currentStep} steps.`);
+        }
+        else {
+            this.terminal.info('Query session ended.');
+        }
     }
     displayTaskPlan(plan) {
         console.log(`

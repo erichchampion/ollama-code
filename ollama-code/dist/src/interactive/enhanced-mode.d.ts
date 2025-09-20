@@ -15,6 +15,7 @@ export declare class EnhancedInteractiveMode {
     private conversationManager;
     private nlRouter;
     private taskPlanner?;
+    private queryProcessor?;
     private projectContext?;
     private terminal;
     private running;
@@ -59,6 +60,11 @@ export declare class EnhancedInteractiveMode {
      */
     private handleConversation;
     /**
+     * Multi-step query processing methods
+     */
+    private shouldUseMultiStepProcessing;
+    private handleMultiStepQuery;
+    /**
      * Utility methods
      */
     private getUserInput;
@@ -69,6 +75,8 @@ export declare class EnhancedInteractiveMode {
     private displayStatus;
     private displayHistory;
     private displaySummary;
+    private displayQuerySession;
+    private endQuerySession;
     private displayTaskPlan;
     private displayResponse;
     private updateConversationOutcome;

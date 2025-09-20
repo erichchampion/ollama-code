@@ -2,12 +2,14 @@
 *Comprehensive Testing for Three-Phase AI-Powered Development Assistant*
 
 ## Overview
-This manual test plan validates the complete three-phase architecture implementation:
-- **Phase 1:** Natural Language Understanding & Intent Recognition
-- **Phase 2:** Autonomous Code Modification System
-- **Phase 3:** Enhanced Task Planning & Execution Engine
+This manual test plan validates the enhanced query processing architecture implementation:
+- **Phase 1:** Enhanced Intent Analysis with Timeout Protection ✅
+- **Phase 2:** Multi-Step Query Processing with Context Management ✅
+- **Phase 3:** Advanced Context Management (Planned)
+- **Phase 4:** Query Decomposition Engine (Planned)
+- **Phase 5:** Knowledge Graph Integration (Planned)
 
-The system transforms user requests into intelligent task plans, executes them autonomously with safety guarantees, and provides comprehensive AI-powered development assistance.
+The system provides intelligent query processing with session management, follow-up detection, context awareness, and progressive disclosure for complex interactions.
 
 ## Prerequisites
 - Node.js 18+ installed
@@ -41,6 +43,39 @@ git init
 echo "console.log('Hello World');" > index.js
 echo "export function add(a, b) { return a + b; }" > math.js
 git add . && git commit -m "Initial commit"
+```
+
+## Quick Reference: Phase 2 Testing Commands
+
+### Interactive Mode Session Testing
+```bash
+# Start interactive mode
+./dist/src/cli-selector.js interactive
+
+# Test multi-step query processing (in interactive mode)
+analyze this codebase structure
+what about the test files?
+explain more about the structure
+
+# Session management commands
+/session          # View current session details
+/end-session      # End current session
+/help             # View updated help with session commands
+```
+
+### Follow-Up Detection Test Patterns
+```bash
+# Follow-up patterns that should be detected:
+"what about..."
+"can you also..."
+"explain more..."
+"tell me more..."
+"show me the..."
+
+# Independent queries (should not be follow-ups):
+"create a component"
+"run the tests"
+"list files"
 ```
 
 ---
@@ -136,7 +171,270 @@ git add . && git commit -m "Initial commit"
 
 ---
 
-## Phase 2: Autonomous Code Modification System Tests
+## Phase 2: Multi-Step Query Processing System Tests
+
+### Test Group 2.1: Query Session Management
+**Priority: Critical**
+
+#### Test 2.1.1: Query Session Creation
+**Test Method:** Interactive Mode
+1. Start interactive mode: `./dist/src/cli-selector.js interactive`
+2. Enter: `analyze this codebase structure`
+3. Check session creation with: `/session`
+
+**Expected Results:**
+- New query session automatically created for complex queries
+- Session ID generated and displayed
+- Initial query recorded correctly
+- Session shows as "Active" status
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.1.2: Session State Tracking
+**Test Sequence:**
+1. In interactive mode, ask: `analyze this codebase`
+2. Then ask: `what about the test files?` (follow-up)
+3. Then ask: `explain more about the structure` (follow-up)
+4. Check session: `/session`
+
+**Expected:**
+- All queries recorded in session
+- Follow-up queries properly detected and marked
+- Query timestamps preserved
+- Current step counter incremented
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.1.3: Session Termination
+**Test Commands:**
+1. Create active session with complex query
+2. Use: `/end-session`
+3. Verify session ended: `/session`
+
+**Expected:**
+- Session marked as completed
+- End time recorded
+- Query statistics displayed
+- No active session remains
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 2.2: Follow-Up Query Detection
+**Priority: High**
+
+#### Test 2.2.1: Follow-Up Pattern Recognition
+**Test Queries in sequence:**
+1. `analyze the code structure`
+2. `what about the dependencies?`
+3. `can you also show me the test coverage?`
+4. `explain more about the architecture`
+5. `tell me more about performance`
+
+**Expected:**
+- First query: not detected as follow-up
+- Subsequent queries: correctly detected as follow-ups
+- Follow-up indicators shown in session display
+- Context from previous queries maintained
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.2.2: Non-Follow-Up Detection
+**Test Queries:**
+1. `analyze this codebase`
+2. `create a new component` (independent request)
+3. `run the tests` (independent command)
+
+**Expected:**
+- Independent requests not marked as follow-ups
+- New context started for non-follow-up queries
+- Session continues but context shifts appropriately
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 2.3: Context-Aware Processing
+**Priority: High**
+
+#### Test 2.3.1: Context Building Across Queries
+**Test Sequence:**
+1. `explain the main application file`
+2. `how can we improve its performance?`
+3. `what about error handling in that file?`
+
+**Expected:**
+- Second query references context from first
+- Third query maintains accumulated context
+- Responses show awareness of previous discussion
+- Context includes file references and topics
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.3.2: Project Context Integration
+**Setup:** In a project directory with multiple files
+**Test:** Ask: `analyze the project structure and dependencies`
+
+**Expected:**
+- Response references actual project files
+- Project context integrated into session
+- Working directory information available
+- File structure understanding demonstrated
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 2.4: Progressive Disclosure and Suggestions
+**Priority: High**
+
+#### Test 2.4.1: Suggestion Generation
+**Test Query:** `analyze this codebase`
+
+**Expected:**
+- Relevant suggestions provided after response
+- Suggestions numbered and clearly formatted
+- Context-appropriate suggestions for analysis queries
+- Follow-up encouragement provided if needed
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.4.2: Different Query Type Suggestions
+**Test Queries:**
+1. `show me the main file` (file-focused)
+2. `help me with something` (generic)
+3. `analyze the performance` (analysis-focused)
+
+**Expected:**
+- File queries: suggest content viewing, analysis
+- Generic queries: offer elaboration options
+- Analysis queries: suggest patterns, issues, coverage
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 2.5: Query Chaining and Refinement
+**Priority: High**
+
+#### Test 2.5.1: Query Chaining Capability
+**Test:** Complex analysis with refinement
+1. Start with: `analyze the code`
+2. System should support chaining to: `focus on performance`
+3. Check combined processing
+
+**Expected:**
+- Chained queries processed as single refined request
+- Context from both parts maintained
+- Result addresses combined intent
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.5.2: Query Refinement
+**Test:** Refinement with additional context
+1. Base query: `find issues`
+2. Refinement: `specifically security vulnerabilities`
+
+**Expected:**
+- Refined query processed with additional specificity
+- Original intent preserved but narrowed
+- More targeted and relevant results
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 2.6: Session Commands and Management
+**Priority: Medium**
+
+#### Test 2.6.1: Session Display Command
+**Test:** In interactive mode with active session
+1. Use command: `/session`
+
+**Expected:**
+- Session details clearly displayed
+- Query history with timestamps
+- Results summary shown
+- Session metadata visible
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.6.2: Help System Integration
+**Test:** Check updated help
+1. Use command: `/help`
+
+**Expected:**
+- New session commands listed
+- `/session` command documented
+- `/end-session` command documented
+- Clear descriptions provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.6.3: Multiple Session Workflow
+**Test:** Session lifecycle
+1. Create session with complex query
+2. Process several follow-ups
+3. End session: `/end-session`
+4. Start new session with different query
+
+**Expected:**
+- Clean session transitions
+- No context bleeding between sessions
+- Proper session isolation
+- Statistics accurately reported
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 2.7: Integration with Enhanced Interactive Mode
+**Priority: Critical**
+
+#### Test 2.7.1: Automatic Multi-Step Detection
+**Test Queries:**
+1. `list files` (simple, no multi-step)
+2. `analyze the codebase architecture` (complex, triggers multi-step)
+
+**Expected:**
+- Simple queries use standard processing
+- Complex queries automatically use multi-step
+- Smooth transition between modes
+- No user intervention required
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.7.2: Session Persistence in Interactive Mode
+**Test:** Long interactive session
+1. Process multiple complex queries
+2. Mix follow-ups with independent queries
+3. Use session commands throughout
+
+**Expected:**
+- Session state maintained throughout
+- Interactive mode remains responsive
+- Session commands work consistently
+- No memory leaks or performance degradation
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 2.7.3: Animated Thinking Indicators
+**Test:** Visual feedback during processing
+1. Start interactive mode
+2. Ask complex questions that require AI processing
+3. Observe animated thinking indicators during waits
+
+**Expected:**
+- Animated spinner shows during AI processing (- \ | /)
+- Different spinner messages for different operations:
+  - "Thinking..." for conversation processing
+  - "Processing multi-step query..." for complex queries
+  - "Creating a task plan..." for task planning
+  - "Executing task plan..." for task execution
+- Spinner stops with success/failure indicators
+- Clean terminal output without artifacts
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 3: Advanced Context Management Tests (Planned)
+
+### Test Group 3.1: Enhanced Task Planning (Legacy Tests)
+**Note:** These tests are from the previous architecture and will be updated when Phase 3 is implemented.
+
+---
+
+## Phase 4: Autonomous Code Modification System Tests (Legacy)
 
 ### Test Group 2.1: Safe Code Editor
 **Priority: Critical**
@@ -526,22 +824,26 @@ git add . && git commit -m "Initial commit"
 - **Notes:** _____________
 
 #### Test 5.1.2: Request Processing Speed
-**Test:** Simple vs complex requests
+**Test:** Simple vs complex requests and multi-step sessions
 
 **Targets:**
 - Simple questions: <30 seconds
-- Complex task plans: <120 seconds
-- **Actual Times:** Simple: ___ Complex: ___ seconds
+- Complex analysis queries: <60 seconds
+- Multi-step follow-up queries: <15 seconds (cached context)
+- Session creation overhead: <5 seconds
+- **Actual Times:** Simple: ___ Complex: ___ Follow-up: ___ Session: ___ seconds
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
 #### Test 5.1.3: Memory Usage
-**Test:** Monitor memory during typical usage
+**Test:** Monitor memory during typical usage and multi-step sessions
 
 **Targets:**
 - Base memory usage: <500MB
 - Peak usage during processing: <2GB
-- **Actual Usage:** Base: ___ Peak: ___ MB
+- Session memory overhead: <50MB per active session
+- Memory cleanup after session end: >90% released
+- **Actual Usage:** Base: ___ Peak: ___ Session: ___ Cleanup: ___% MB
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -711,17 +1013,17 @@ git add . && git commit -m "Initial commit"
 ## Test Execution Summary
 
 ### Overall Test Results
-- **Total Tests:** 65
-- **Tests Passed:** _____ / 65
-- **Tests Failed:** _____ / 65
-- **Tests Skipped:** _____ / 65
+- **Total Tests:** 58 (Updated for current architecture + animated indicators)
+- **Tests Passed:** _____ / 58
+- **Tests Failed:** _____ / 58
+- **Tests Skipped:** _____ / 58
 - **Pass Rate:** _____%
 
 ### Test Results by Phase
-- **Phase 1 - Natural Language Understanding:** _____ / 9 tests passed
-- **Phase 2 - Autonomous Code Modification:** _____ / 12 tests passed
-- **Phase 3 - Task Planning & Execution:** _____ / 12 tests passed
-- **Phase 4 - Integration & System-Wide:** _____ / 9 tests passed
+- **Phase 1 - Enhanced Intent Analysis:** _____ / 9 tests passed
+- **Phase 2 - Multi-Step Query Processing:** _____ / 17 tests passed
+- **Phase 3 - Advanced Context Management:** _____ / 0 tests (Not implemented)
+- **Phase 4 - Legacy Code Modification:** _____ / 12 tests passed (Legacy)
 - **Phase 5 - Performance & Quality:** _____ / 9 tests passed
 - **Phase 6 - Edge Cases & Error Handling:** _____ / 9 tests passed
 - **Phase 7 - Compatibility & Platform:** _____ / 5 tests passed
@@ -737,16 +1039,16 @@ git add . && git commit -m "Initial commit"
 3. _____________________________________
 
 ### Feature Completeness Assessment
-- **Natural Language Understanding:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Intent Analysis & Routing:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Conversation Management:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Safe Code Editing:** [ ] Complete [ ] Partial [ ] Major Issues
-- **AST Manipulation:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Backup & Recovery:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Task Planning:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Execution Strategies:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Risk Management:** [ ] Complete [ ] Partial [ ] Major Issues
-- **Session Management:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Enhanced Intent Analysis (Phase 1):** [ ] Complete [ ] Partial [ ] Major Issues
+- **Timeout Protection & Fallback:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Multi-Step Query Processing (Phase 2):** [ ] Complete [ ] Partial [ ] Major Issues
+- **Query Session Management:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Follow-Up Detection:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Context-Aware Processing:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Progressive Disclosure:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Query Chaining & Refinement:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Interactive Mode Integration:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Session Commands:** [ ] Complete [ ] Partial [ ] Major Issues
 
 ### Production Readiness Assessment
 **Overall System:** [ ] Ready for Production [ ] Needs Minor Fixes [ ] Needs Major Fixes [ ] Not Ready
@@ -817,11 +1119,11 @@ git add . && git commit -m "Initial commit"
 
 ---
 
-**Test Plan Version:** 3.0 (Three-Phase Architecture)
+**Test Plan Version:** 4.0 (Enhanced Query Processing Architecture)
 **Created:** September 19, 2025
-**Last Updated:** September 19, 2025
-**Covers:** Complete AI-powered development assistant with autonomous capabilities
+**Last Updated:** September 20, 2025 (Phase 2 Complete)
+**Covers:** Enhanced query processing with multi-step session management and context awareness
 **Tested By:** ________________
 **Date Executed:** ________________
 **Environment:** ________________
-**Notes:** This test plan covers the comprehensive three-phase implementation including natural language understanding, autonomous code modification, and intelligent task planning and execution.
+**Notes:** This test plan covers Phases 1-2 implementation including enhanced intent analysis with timeout protection and multi-step query processing with session management, follow-up detection, and progressive disclosure. Legacy autonomous code modification tests preserved for reference.
