@@ -297,22 +297,22 @@ class LRUCache<K, V> {
  * Main class providing comprehensive graph-based code analysis capabilities
  */
 export class CodeKnowledgeGraph {
-  private aiClient: any;
-  private projectContext: ProjectContext;
-  private config: GraphConfig;
-  private initialized = false;
+  protected aiClient: any;
+  protected projectContext: ProjectContext;
+  protected config: GraphConfig;
+  protected initialized = false;
 
   // Core graph data structures
-  private nodeIndex = new Map<string, GraphNode>();
-  private edgeIndex = new Map<string, GraphEdge>();
-  private patternIndex = new Map<string, CodePattern>();
-  private bestPracticeIndex = new Map<string, BestPractice>();
-  private dataFlowIndex = new Map<string, DataFlowPath>();
+  protected nodeIndex = new Map<string, GraphNode>();
+  protected edgeIndex = new Map<string, GraphEdge>();
+  protected patternIndex = new Map<string, CodePattern>();
+  protected bestPracticeIndex = new Map<string, BestPractice>();
+  protected dataFlowIndex = new Map<string, DataFlowPath>();
 
   // Performance optimization
-  private queryCache: LRUCache<string, GraphQueryResult>;
-  private relatedCodeCache: LRUCache<string, RelatedCodeResult>;
-  private patternCache: LRUCache<string, CodePattern[]>;
+  protected queryCache: LRUCache<string, GraphQueryResult>;
+  protected relatedCodeCache: LRUCache<string, RelatedCodeResult>;
+  protected patternCache: LRUCache<string, CodePattern[]>;
 
   // Graph schema and metadata
   private schema: GraphSchema;
@@ -541,7 +541,7 @@ export class CodeKnowledgeGraph {
   /**
    * Filter files to exclude irrelevant directories and files
    */
-  private filterRelevantFiles(files: any[]): any[] {
+  protected filterRelevantFiles(files: any[]): any[] {
     const excludedDirectories = [
       '.git', '.svn', '.hg', '.bzr',           // Version control
       '.vscode', '.idea', '.vs',               // IDE folders
@@ -1828,7 +1828,7 @@ export class CodeKnowledgeGraph {
     return content.substring(0, index).split('\n').length;
   }
 
-  private resolveImportPath(importPath: string, currentFile: string): string | null {
+  protected resolveImportPath(importPath: string, currentFile: string): string | null {
     // Simple resolution logic - can be enhanced
     if (importPath.startsWith('./') || importPath.startsWith('../')) {
       const currentDir = path.dirname(currentFile);
@@ -1895,7 +1895,7 @@ export class CodeKnowledgeGraph {
     return (directConfidence + indirectConfidence) / totalRelations;
   }
 
-  private calculateCacheHitRate(): number {
+  protected calculateCacheHitRate(): number {
     // Simple approximation based on cache sizes
     const totalCacheAccess = this.statistics.usage.totalQueries;
     if (totalCacheAccess === 0) return 0;

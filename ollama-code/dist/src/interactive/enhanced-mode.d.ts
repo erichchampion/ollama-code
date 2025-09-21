@@ -84,6 +84,10 @@ export declare class EnhancedInteractiveMode {
      */
     private handleKnowledgeGraphQuery;
     /**
+     * Display knowledge graph statistics and overview
+     */
+    private displayKnowledgeGraphStatistics;
+    /**
      * Display knowledge graph query results
      */
     private displayKnowledgeGraphResults;

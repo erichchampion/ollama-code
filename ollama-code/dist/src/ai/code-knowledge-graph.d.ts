@@ -206,24 +206,38 @@ export interface GraphStatistics {
         commonPatterns: string[];
     };
 }
+declare class LRUCache<K, V> {
+    private capacity;
+    private cache;
+    private accessOrder;
+    private accessCounter;
+    constructor(capacity: number);
+    get(key: K): V | undefined;
+    set(key: K, value: V): void;
+    has(key: K): boolean;
+    delete(key: K): boolean;
+    clear(): void;
+    get size(): number;
+    private evictLeastRecentlyUsed;
+}
 /**
  * Code Knowledge Graph Implementation
  *
  * Main class providing comprehensive graph-based code analysis capabilities
  */
 export declare class CodeKnowledgeGraph {
-    private aiClient;
-    private projectContext;
-    private config;
-    private initialized;
-    private nodeIndex;
-    private edgeIndex;
-    private patternIndex;
-    private bestPracticeIndex;
-    private dataFlowIndex;
-    private queryCache;
-    private relatedCodeCache;
-    private patternCache;
+    protected aiClient: any;
+    protected projectContext: ProjectContext;
+    protected config: GraphConfig;
+    protected initialized: boolean;
+    protected nodeIndex: Map<string, GraphNode>;
+    protected edgeIndex: Map<string, GraphEdge>;
+    protected patternIndex: Map<string, CodePattern>;
+    protected bestPracticeIndex: Map<string, BestPractice>;
+    protected dataFlowIndex: Map<string, DataFlowPath>;
+    protected queryCache: LRUCache<string, GraphQueryResult>;
+    protected relatedCodeCache: LRUCache<string, RelatedCodeResult>;
+    protected patternCache: LRUCache<string, CodePattern[]>;
     private schema;
     private statistics;
     private lastOptimization;
@@ -246,7 +260,7 @@ export declare class CodeKnowledgeGraph {
     /**
      * Filter files to exclude irrelevant directories and files
      */
-    private filterRelevantFiles;
+    protected filterRelevantFiles(files: any[]): any[];
     /**
      * Index code elements from project files
      */
@@ -357,12 +371,12 @@ export declare class CodeKnowledgeGraph {
      */
     private generateId;
     private getLineNumber;
-    private resolveImportPath;
+    protected resolveImportPath(importPath: string, currentFile: string): string | null;
     private calculatePatternConfidence;
     private assessPatternComplexity;
     private calculateQueryConfidence;
     private calculateRelationshipConfidence;
-    private calculateCacheHitRate;
+    protected calculateCacheHitRate(): number;
     private estimateMemoryUsage;
     /**
      * Public API methods
@@ -370,3 +384,4 @@ export declare class CodeKnowledgeGraph {
     clear(): void;
     isReady(): boolean;
 }
+export {};

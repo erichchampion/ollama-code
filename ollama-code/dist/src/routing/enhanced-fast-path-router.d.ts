@@ -87,4 +87,8 @@ export declare class EnhancedFastPathRouter {
         size: number;
         hitRate: number;
     };
+    /**
+     * Check if the input is a knowledge graph query that should bypass fast-path routing
+     */
+    private isKnowledgeGraphQuery;
 }
