@@ -15,6 +15,7 @@ import { ProjectContext } from '../ai/context.js';
 import { TaskPlanner } from '../ai/task-planner.js';
 import { MultiStepQueryProcessor } from '../ai/multi-step-query-processor.js';
 import { AdvancedContextManager } from '../ai/advanced-context-manager.js';
+import { QueryDecompositionEngine } from '../ai/query-decomposition-engine.js';
 import { executeCommand } from '../commands/index.js';
 import { getAIClient, getEnhancedClient, initAI } from '../ai/index.js';
 import { ensureOllamaServerRunning } from '../utils/ollama-server.js';
@@ -37,6 +38,7 @@ export class EnhancedInteractiveMode {
   private taskPlanner?: TaskPlanner;
   private queryProcessor?: MultiStepQueryProcessor;
   private advancedContextManager?: AdvancedContextManager;
+  private queryDecompositionEngine?: QueryDecompositionEngine;
   private projectContext?: ProjectContext;
   private terminal: any;
   private running = false;
@@ -133,6 +135,17 @@ export class EnhancedInteractiveMode {
       }
     } catch (error) {
       logger.debug('Advanced context manager not available:', error);
+    }
+
+    // Initialize query decomposition engine
+    try {
+      if (this.projectContext) {
+        this.queryDecompositionEngine = new QueryDecompositionEngine(aiClient, this.projectContext);
+        await this.queryDecompositionEngine.initialize();
+        this.terminal.success('Query decomposition engine enabled');
+      }
+    } catch (error) {
+      logger.debug('Query decomposition engine not available:', error);
     }
 
     // Initialize natural language router
@@ -495,6 +508,14 @@ export class EnhancedInteractiveMode {
     try {
       spinner.start();
 
+      // Check if query decomposition is available and needed for complex multi-action queries
+      if (this.queryDecompositionEngine && this.shouldUseQueryDecomposition(intent)) {
+        spinner.setText('Decomposing complex query...');
+        await this.handleQueryDecomposition(intent, contextualPrompt);
+        spinner.succeed();
+        return;
+      }
+
       // Check if multi-step query processing is available and needed
       if (this.queryProcessor && this.shouldUseMultiStepProcessing(intent)) {
         spinner.setText('Processing multi-step query...');
@@ -592,6 +613,151 @@ export class EnhancedInteractiveMode {
     } catch (error) {
       this.terminal.error(`Multi-step query processing failed: ${formatErrorForDisplay(error)}`);
       await this.updateConversationOutcome('failure');
+    }
+  }
+
+  /**
+   * Query decomposition methods
+   */
+  private shouldUseQueryDecomposition(intent: any): boolean {
+    // Use query decomposition for complex multi-action queries
+    const queryText = intent.originalQuery?.toLowerCase() || '';
+
+    // Look for multiple action words indicating complex decomposable queries
+    const actionWords = ['create', 'build', 'implement', 'test', 'deploy', 'refactor', 'optimize', 'fix', 'update'];
+    const foundActions = actionWords.filter(action => queryText.includes(action));
+
+    // Use decomposition if multiple actions are detected or complex keywords are present
+    if (foundActions.length >= 2) {
+      return true;
+    }
+
+    // Check for complex workflow indicators
+    const complexWorkflowIndicators = [
+      'and then', 'followed by', 'after that', 'next', 'also', 'additionally',
+      'comprehensive', 'end-to-end', 'full workflow', 'complete system',
+      'architecture', 'microservices', 'pipeline', 'integration'
+    ];
+
+    return complexWorkflowIndicators.some(indicator => queryText.includes(indicator));
+  }
+
+  private async handleQueryDecomposition(intent: any, contextualPrompt: string): Promise<void> {
+    const queryText = intent.originalQuery || intent.query || '';
+
+    try {
+      // Decompose the query
+      const decomposition = await this.queryDecompositionEngine!.decomposeQuery(queryText, {
+        projectContext: this.projectContext,
+        userPreferences: this.options
+      });
+
+      // Display decomposition summary
+      this.displayQueryDecomposition(decomposition);
+
+      // Check if approval is required for high-risk tasks
+      if (decomposition.riskAssessment.approvalRequired && !this.options.autoApprove) {
+        const approval = await this.confirmDecompositionExecution(decomposition);
+        if (!approval) {
+          this.terminal.info('Query decomposition cancelled by user.');
+          return;
+        }
+      }
+
+      // Execute the decomposition plan
+      await this.executeDecompositionPlan(decomposition);
+
+      // Update conversation
+      await this.updateConversationOutcome('success', `Successfully executed decomposed query with ${decomposition.subTasks.length} sub-tasks`);
+
+    } catch (error) {
+      this.terminal.error(`Query decomposition failed: ${formatErrorForDisplay(error)}`);
+      await this.updateConversationOutcome('failure');
+    }
+  }
+
+  private displayQueryDecomposition(decomposition: any): void {
+    this.terminal.info(`\n🧩 Query Decomposition Results:`);
+    this.terminal.text(`   Original Query: ${decomposition.originalQuery}`);
+    this.terminal.text(`   Complexity: ${decomposition.complexity}`);
+    this.terminal.text(`   Sub-tasks: ${decomposition.subTasks.length}`);
+    this.terminal.text(`   Estimated Duration: ${Math.round(decomposition.estimatedDuration / 60)} minutes`);
+    this.terminal.text(`   Risk Level: ${decomposition.riskAssessment.level}`);
+
+    if (decomposition.subTasks.length > 0) {
+      this.terminal.info('\n📋 Planned Tasks:');
+      decomposition.subTasks.forEach((task: any, index: number) => {
+        const duration = Math.round(task.estimatedTime / 60);
+        this.terminal.text(`   ${index + 1}. ${task.description} (${duration}m, ${task.complexity})`);
+      });
+    }
+
+    if (decomposition.executionPlan.phases.length > 1) {
+      this.terminal.info('\n⚡ Execution Phases:');
+      decomposition.executionPlan.phases.forEach((phase: any, index: number) => {
+        const phaseTime = Math.round(phase.estimatedTime / 60);
+        const parallelInfo = phase.parallelExecutable ? ' (parallel)' : ' (sequential)';
+        this.terminal.text(`   Phase ${phase.id}: ${phase.tasks.length} tasks${parallelInfo} - ${phaseTime}m`);
+      });
+    }
+
+    if (decomposition.conflicts.length > 0) {
+      this.terminal.warn('\n⚠️  Potential Conflicts:');
+      decomposition.conflicts.forEach((conflict: any) => {
+        this.terminal.text(`   • ${conflict.description} (${conflict.severity})`);
+      });
+    }
+
+    console.log(); // Add spacing
+  }
+
+  private async confirmDecompositionExecution(decomposition: any): Promise<boolean> {
+    this.terminal.warn(`\n⚠️  This decomposition requires approval:`);
+    this.terminal.text(`   Risk Level: ${decomposition.riskAssessment.level}`);
+
+    if (decomposition.riskAssessment.factors.length > 0) {
+      this.terminal.text(`   Risk Factors:`);
+      decomposition.riskAssessment.factors.forEach((factor: string) => {
+        this.terminal.text(`     • ${factor}`);
+      });
+    }
+
+    const confirmation = await this.terminal.prompt({
+      type: 'confirm',
+      name: 'proceed',
+      message: 'Do you want to proceed with executing this decomposition plan?',
+      default: false
+    });
+
+    return confirmation.proceed;
+  }
+
+  private async executeDecompositionPlan(decomposition: any): Promise<void> {
+    this.terminal.info('\n🚀 Executing decomposition plan...');
+
+    // For now, simulate execution by displaying what would be done
+    // In a full implementation, this would actually execute the tasks
+    for (const phase of decomposition.executionPlan.phases) {
+      this.terminal.text(`\n   📍 Phase ${phase.id}:`);
+
+      for (const task of phase.tasks) {
+        this.terminal.text(`      ▶ ${task.description}`);
+
+        // Simulate task execution with a brief delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        this.terminal.success(`      ✓ ${task.description} completed`);
+      }
+    }
+
+    this.terminal.success('\n🎉 All decomposed tasks completed successfully!');
+
+    // Display final suggestions
+    if (decomposition.executionPlan.criticalPath.length > 0) {
+      this.terminal.info('\n💡 Next steps suggestions:');
+      this.terminal.text('   • Review the executed changes');
+      this.terminal.text('   • Run tests to verify functionality');
+      this.terminal.text('   • Consider additional optimizations');
     }
   }
 

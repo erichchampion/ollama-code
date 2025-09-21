@@ -17,6 +17,7 @@ export declare class EnhancedInteractiveMode {
     private taskPlanner?;
     private queryProcessor?;
     private advancedContextManager?;
+    private queryDecompositionEngine?;
     private projectContext?;
     private terminal;
     private running;
@@ -65,6 +66,14 @@ export declare class EnhancedInteractiveMode {
      */
     private shouldUseMultiStepProcessing;
     private handleMultiStepQuery;
+    /**
+     * Query decomposition methods
+     */
+    private shouldUseQueryDecomposition;
+    private handleQueryDecomposition;
+    private displayQueryDecomposition;
+    private confirmDecompositionExecution;
+    private executeDecompositionPlan;
     /**
      * Utility methods
      */
