@@ -539,6 +539,92 @@ export class CodeKnowledgeGraph {
   }
 
   /**
+   * Filter files to exclude irrelevant directories and files
+   */
+  private filterRelevantFiles(files: any[]): any[] {
+    const excludedDirectories = [
+      '.git', '.svn', '.hg', '.bzr',           // Version control
+      '.vscode', '.idea', '.vs',               // IDE folders
+      '.cursor', '.claude',                    // AI tool folders
+      '.github', '.gitlab',                    // CI/CD folders
+      '.specfy',                              // Spec tool folders
+      'node_modules', '.npm', '.yarn',         // Package manager
+      'dist', 'build', 'out', '.next',        // Build outputs
+      '.cache', '.tmp', '.temp',               // Cache folders
+      'coverage', '.nyc_output',               // Test coverage
+      '.DS_Store', 'Thumbs.db'                // OS files
+    ];
+
+    const excludedExtensions = [
+      '.log', '.lock', '.pid',                 // Log and lock files
+      '.exe', '.dll', '.so', '.dylib',         // Binaries
+      '.jar', '.war', '.ear',                  // Java archives
+      '.zip', '.tar', '.gz', '.7z',            // Archives
+      '.png', '.jpg', '.jpeg', '.gif',         // Images
+      '.pdf', '.doc', '.docx',                 // Documents
+      '.mp3', '.mp4', '.avi',                  // Media files
+    ];
+
+    return files.filter(fileInfo => {
+      const relativePath = fileInfo.relativePath;
+      const fileName = path.basename(relativePath);
+      const extension = path.extname(fileName).toLowerCase();
+
+      // Skip if file is in excluded directory
+      const pathParts = relativePath.split('/');
+      const hasExcludedDir = pathParts.some((part: string) =>
+        excludedDirectories.includes(part) || part.startsWith('.')
+      );
+
+      if (hasExcludedDir) {
+        return false;
+      }
+
+      // Skip if file has excluded extension
+      if (excludedExtensions.includes(extension)) {
+        return false;
+      }
+
+      // Skip hidden files (starting with .)
+      if (fileName.startsWith('.') && fileName !== '.env') {
+        return false;
+      }
+
+      // Only include code files for analysis
+      const codeExtensions = [
+        '.js', '.jsx', '.ts', '.tsx',           // JavaScript/TypeScript
+        '.py', '.pyw',                          // Python
+        '.java', '.kt',                         // Java/Kotlin
+        '.cs',                                  // C#
+        '.cpp', '.cc', '.cxx', '.c', '.h',      // C/C++
+        '.rs',                                  // Rust
+        '.go',                                  // Go
+        '.php',                                 // PHP
+        '.rb',                                  // Ruby
+        '.swift',                               // Swift
+        '.dart',                                // Dart
+        '.scala',                               // Scala
+        '.clj', '.cljs',                        // Clojure
+        '.hs',                                  // Haskell
+        '.elm',                                 // Elm
+        '.vue',                                 // Vue
+        '.svelte',                              // Svelte
+        '.json', '.yaml', '.yml',               // Config files
+        '.md', '.txt',                          // Documentation
+        '.html', '.htm', '.css', '.scss',       // Web files
+        '.sql',                                 // Database
+        '.sh', '.bash', '.zsh',                 // Shell scripts
+        '.ps1',                                 // PowerShell
+        '.dockerfile', '.makefile'              // Build files
+      ];
+
+      return fileInfo.type === 'file' &&
+             (codeExtensions.includes(extension) ||
+              codeExtensions.some(ext => fileName.toLowerCase().includes(ext.slice(1))));
+    });
+  }
+
+  /**
    * Index code elements from project files
    */
   async indexCodeElements(): Promise<GraphNode[]> {
@@ -546,7 +632,9 @@ export class CodeKnowledgeGraph {
 
     try {
       const allFiles = this.projectContext.allFiles;
-      for (const fileInfo of allFiles) {
+      const filteredFiles = this.filterRelevantFiles(allFiles);
+
+      for (const fileInfo of filteredFiles) {
         if (nodes.length >= this.config.maxNodes) break;
 
         const fileNode = await this.indexFile(fileInfo.relativePath);
@@ -834,7 +922,9 @@ export class CodeKnowledgeGraph {
     const edges: GraphEdge[] = [];
 
     const allFiles = this.projectContext.allFiles;
-    for (const fileInfo of allFiles) {
+    const filteredFiles = this.filterRelevantFiles(allFiles);
+
+    for (const fileInfo of filteredFiles) {
       try {
         const fullPath = path.join(this.projectContext.root, fileInfo.relativePath);
         const content = fs.readFileSync(fullPath, 'utf8');

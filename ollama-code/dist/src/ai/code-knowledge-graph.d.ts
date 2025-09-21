@@ -244,6 +244,10 @@ export declare class CodeKnowledgeGraph {
      */
     buildGraphSchema(): Promise<GraphSchema>;
     /**
+     * Filter files to exclude irrelevant directories and files
+     */
+    private filterRelevantFiles;
+    /**
      * Index code elements from project files
      */
     indexCodeElements(): Promise<GraphNode[]>;
