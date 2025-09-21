@@ -1094,7 +1094,505 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-## Phase 5: Autonomous Code Modification System Tests (Legacy)
+## Phase 5: Code Knowledge Graph Integration Tests
+
+### Test Group 5.1: Knowledge Graph Initialization and Schema
+**Priority: Critical**
+
+#### Test 5.1.1: Graph Initialization and Project Analysis
+**Test Command:** `./dist/src/cli-selector.js interactive`
+Then ask: `"analyze the codebase structure using knowledge graph"`
+
+**Expected Results:**
+- System initializes knowledge graph successfully
+- Project files indexed with semantic analysis
+- Graph schema built with node and edge types
+- "Code knowledge graph enabled" message displayed
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.2: Code Element Indexing
+**Setup:** Create test project with various code elements
+```bash
+mkdir -p test-knowledge-graph && cd test-knowledge-graph
+cat > UserService.ts << 'EOF'
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export class UserService {
+  async createUser(userData: User): Promise<User> {
+    return userData;
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    return null;
+  }
+}
+EOF
+
+cat > AuthController.ts << 'EOF'
+import { User, UserService } from './UserService.js';
+
+export class AuthController {
+  constructor(private userService: UserService) {}
+
+  async login(email: string): Promise<User | null> {
+    return this.userService.getUserById(email);
+  }
+}
+EOF
+```
+
+**Test Query:** `"show me what code elements are indexed in the knowledge graph"`
+
+**Expected:**
+- Files indexed as nodes (UserService.ts, AuthController.ts)
+- Classes indexed (User, UserService, AuthController)
+- Functions indexed (createUser, getUserById, login)
+- Interfaces indexed (User)
+- Node metadata includes file paths and line numbers
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.1.3: Relationship Mapping
+**Test Query:** `"what relationships exist between code elements?"`
+
+**Expected:**
+- Import relationships detected (AuthController imports from UserService)
+- Containment relationships (files contain classes, classes contain methods)
+- Interface implementation relationships identified
+- Dependency relationships mapped correctly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.2: Architectural Pattern Detection
+**Priority: High**
+
+#### Test 5.2.1: Service Layer Pattern Detection
+**Setup:** Project with service classes
+**Test Query:** `"what architectural patterns are detected in this code?"`
+
+**Expected:**
+- Service layer pattern identified with confidence score
+- Pattern nodes include service classes
+- Pattern description provided
+- Confidence score >70% for clear service patterns
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.2.2: CRUD Operations Pattern Detection
+**Setup:** Code with create, read, update, delete operations
+**Test Query:** `"find CRUD patterns in the codebase"`
+
+**Expected:**
+- CRUD operations pattern detected
+- Functions with create/read/update/delete operations identified
+- Pattern confidence scoring applied
+- Related functions grouped in pattern
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.2.3: Repository Pattern Detection
+**Setup:** Code with repository-like classes
+**Test Query:** `"identify repository patterns"`
+
+**Expected:**
+- Repository pattern detected when applicable
+- Data access abstraction patterns identified
+- Pattern validation working correctly
+- Appropriate confidence scores assigned
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.3: Knowledge Graph Querying
+**Priority: Critical**
+
+#### Test 5.3.1: Basic Graph Queries
+**Test Queries:**
+1. `"find all classes in the project"`
+2. `"show me functions that handle users"`
+3. `"what interfaces are defined?"`
+
+**Expected:**
+- Relevant nodes returned for each query type
+- Query confidence scores >50%
+- Processing time <5 seconds
+- Results include node metadata (file, line number)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.3.2: Relationship Queries
+**Test Queries:**
+1. `"what depends on UserService?"`
+2. `"show me what UserService uses"`
+3. `"find related code to AuthController"`
+
+**Expected:**
+- Direct relationships identified correctly
+- Indirect relationships discovered (with distance)
+- Relationship types clearly displayed (imports, extends, calls)
+- Confidence scores provided for relationships
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.3.3: Complex Graph Queries
+**Test Queries:**
+1. `"find all authentication-related code"`
+2. `"show me the data flow from user input to database"`
+3. `"what code patterns are used for error handling?"`
+
+**Expected:**
+- Complex queries processed successfully
+- Multiple node types returned
+- Pattern matching applied to queries
+- Comprehensive results with explanations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.4: Related Code Discovery
+**Priority: High**
+
+#### Test 5.4.1: Direct Code Relationships
+**Test Query:** `"what code is directly related to UserService?"`
+
+**Expected:**
+- Direct imports/exports listed
+- Classes that extend or implement shown
+- Functions that call UserService methods
+- Distance = 1 for all direct relationships
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.4.2: Indirect Code Relationships
+**Test Query:** `"find all code indirectly connected to User interface"`
+
+**Expected:**
+- Multi-hop relationships discovered
+- Path distances calculated correctly (2, 3, etc.)
+- Relationship paths shown
+- Indirect dependencies identified
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.4.3: Code Similarity and Patterns
+**Test Query:** `"find code similar to UserService class"`
+
+**Expected:**
+- Similar classes identified by pattern
+- Service-like classes grouped together
+- Similarity confidence scores provided
+- Common patterns highlighted
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.5: Best Practices Integration
+**Priority: High**
+
+#### Test 5.5.1: Pattern-Based Best Practices
+**Test Query:** `"what best practices apply to this service layer?"`
+
+**Expected:**
+- Best practices linked to detected patterns
+- Dependency injection recommendations
+- Single responsibility principle suggestions
+- Error handling best practices
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.5.2: Security Best Practices
+**Test Query:** `"what security best practices should I consider?"`
+
+**Expected:**
+- Input validation recommendations
+- Authentication security practices
+- Data protection guidelines
+- Security pattern suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.5.3: Code Quality Recommendations
+**Test Query:** `"suggest improvements for code quality"`
+
+**Expected:**
+- Interface extraction suggestions
+- Code organization recommendations
+- Maintainability improvements
+- Testing strategy suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.6: Improvement Suggestions
+**Priority: High**
+
+#### Test 5.6.1: Architecture Improvement Suggestions
+**Test Query:** `"suggest architectural improvements"`
+
+**Expected:**
+- Repository pattern implementation suggested
+- Service layer organization recommendations
+- Dependency injection improvements
+- Architecture modernization suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.6.2: Performance Improvement Suggestions
+**Test Query:** `"what performance improvements can be made?"`
+
+**Expected:**
+- Caching layer suggestions
+- Query optimization recommendations
+- Performance monitoring suggestions
+- Resource utilization improvements
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.6.3: Maintainability Suggestions
+**Test Query:** `"how can I improve code maintainability?"`
+
+**Expected:**
+- Error handling improvements
+- Documentation suggestions
+- Code organization recommendations
+- Testing coverage improvements
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.7: Data Flow Analysis
+**Priority: Medium**
+
+#### Test 5.7.1: Simple Data Flow Tracking
+**Test Query:** `"trace data flow from login function to user retrieval"`
+
+**Expected:**
+- Data flow path identified
+- Flow type classified (data_dependency, control_flow)
+- Path complexity assessed (low/medium/high)
+- Flow confidence score provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.7.2: Complex Data Flow Analysis
+**Test Query:** `"analyze data flow through the entire user management system"`
+
+**Expected:**
+- Multi-step data flows mapped
+- Complex flow patterns identified
+- Flow bottlenecks highlighted
+- End-to-end flow visualization
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.7.3: Dependency Flow Validation
+**Test Query:** `"validate data dependencies in authentication flow"`
+
+**Expected:**
+- Dependency chain validated
+- Missing dependencies identified
+- Circular dependencies detected
+- Flow consistency verified
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.8: Performance and Caching
+**Priority: Medium**
+
+#### Test 5.8.1: Query Performance
+**Test:** Execute multiple graph queries and measure performance
+
+**Performance Targets:**
+- Graph initialization: <10 seconds
+- Simple queries: <2 seconds
+- Complex queries: <5 seconds
+- Related code discovery: <3 seconds
+- **Actual Performance:** Init: ___ Simple: ___ Complex: ___ Related: ___
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.8.2: Cache Effectiveness
+**Test:** Repeat identical queries multiple times
+
+**Expected:**
+- Second query faster than first (cache hit)
+- Cache hit rate >50% for repeated queries
+- Cache expiration working (5-minute TTL)
+- Memory usage stable with caching
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.8.3: Memory Usage and Limits
+**Test:** Large codebase with many files
+
+**Expected:**
+- Memory usage <200MB for typical projects
+- Node/edge limits respected
+- Graceful handling of memory constraints
+- Performance degradation minimal with size
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.9: Visual Display and User Experience
+**Priority: High**
+
+#### Test 5.9.1: Graph Results Display
+**Test Query:** `"show me the project structure in the knowledge graph"`
+
+**Expected:**
+- Clear visual hierarchy of results
+- Node types clearly identified (🕸️ knowledge graph icon)
+- Confidence percentages displayed
+- Processing time shown
+- File paths and line numbers included
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.9.2: Relationship Display
+**Test Query:** `"what are the relationships between classes?"`
+
+**Expected:**
+- Relationship arrows clearly shown (--[type]-->)
+- Source and target nodes identified
+- Relationship types labeled (imports, extends, contains)
+- Multiple relationships grouped logically
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.9.3: Improvement Suggestions Display
+**Test Query:** `"suggest code improvements"`
+
+**Expected:**
+- Suggestions numbered and organized (🚀 icon)
+- Impact and effort levels shown
+- Priority scores displayed
+- Rationale provided for each suggestion
+- Actionable recommendations given
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.10: Integration with Enhanced Interactive Mode
+**Priority: Critical**
+
+#### Test 5.10.1: Automatic Knowledge Graph Routing
+**Test Queries:**
+1. `"list files"` (should not use knowledge graph)
+2. `"find relationships between classes"` (should use knowledge graph)
+3. `"what patterns exist in the code?"` (should use knowledge graph)
+
+**Expected:**
+- Simple queries bypass knowledge graph
+- Relationship queries automatically route to knowledge graph
+- Pattern queries trigger graph analysis
+- Smooth transition between modes
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.10.2: Knowledge Graph Query Detection
+**Test Queries:**
+1. `"show me code dependencies"`
+2. `"find similar functions"`
+3. `"what architecture patterns are used?"`
+4. `"explore code relationships"`
+
+**Expected:**
+- All queries correctly identified as knowledge graph queries
+- "Searching knowledge graph..." spinner shown
+- Appropriate routing decisions made
+- No manual mode switching required
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.10.3: Session Integration
+**Test:** Knowledge graph queries within active sessions
+
+**Expected:**
+- Graph results integrated with session context
+- Session history includes graph queries
+- Multi-step graph exploration supported
+- Session statistics include graph operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.11: Error Handling and Edge Cases
+**Priority: Medium**
+
+#### Test 5.11.1: Malformed Graph Queries
+**Test Queries:**
+1. `"find nothing specific"`
+2. `"show me the things"`
+3. Empty or very short queries
+
+**Expected:**
+- Graceful handling of ambiguous queries
+- Helpful error messages or suggestions
+- No system crashes or failures
+- Fallback to general analysis when appropriate
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.11.2: Large Codebase Handling
+**Setup:** Project with 50+ files and 500+ code elements
+**Test:** Various knowledge graph operations
+
+**Expected:**
+- Initialization completes successfully
+- Query performance remains acceptable
+- Memory usage within reasonable limits
+- Results appropriately filtered and limited
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.11.3: Graph Consistency and Validation
+**Test:** Add/remove code elements and re-analyze
+
+**Expected:**
+- Graph updates reflect code changes
+- Relationships remain consistent
+- No orphaned nodes or edges
+- Pattern detection adapts to changes
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 5.12: Graph Statistics and Monitoring
+**Priority: Low**
+
+#### Test 5.12.1: Comprehensive Graph Statistics
+**Test Query:** `"show me knowledge graph statistics"`
+
+**Expected:**
+- Node and edge counts displayed
+- Pattern coverage percentages
+- Relationship accuracy metrics
+- Performance statistics available
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.12.2: Quality Metrics Tracking
+**Test:** Multiple graph operations over time
+
+**Expected:**
+- Average confidence scores tracked
+- Pattern coverage calculated
+- Relationship accuracy monitored
+- Quality trends visible
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 5.12.3: Cache and Performance Monitoring
+**Test:** Monitor cache performance during session
+
+**Expected:**
+- Cache hit rates calculated
+- Memory usage tracked
+- Query performance trends visible
+- Cache effectiveness measured
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 6: Autonomous Code Modification System Tests (Legacy)
 
 ### Test Group 2.1: Safe Code Editor
 **Priority: Critical**
@@ -1244,7 +1742,7 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-## Phase 6: Enhanced Task Planning & Execution Engine Tests
+## Phase 7: Enhanced Task Planning & Execution Engine Tests
 
 ### Test Group 3.1: Task Decomposition
 **Priority: Critical**
@@ -1392,7 +1890,7 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-## Phase 7: Integration and System-Wide Tests
+## Phase 8: Integration and System-Wide Tests
 
 ### Test Group 4.1: Cross-Phase Integration
 **Priority: Critical**
@@ -1468,7 +1966,7 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-## Phase 8: Performance and Quality Tests
+## Phase 9: Performance and Quality Tests
 
 ### Test Group 5.1: Performance Benchmarks
 **Priority: Medium**
@@ -1546,7 +2044,7 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-## Phase 9: Edge Cases and Error Handling
+## Phase 10: Edge Cases and Error Handling
 
 ### Test Group 6.1: System Limits
 **Priority: Medium**
@@ -1624,7 +2122,7 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-## Phase 10: Compatibility and Platform Tests
+## Phase 11: Compatibility and Platform Tests
 
 ### Test Group 7.1: Operating System Compatibility
 **Priority: Medium**
@@ -1673,10 +2171,10 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 ## Test Execution Summary
 
 ### Overall Test Results
-- **Total Tests:** 106 (Updated for Phase 4 Query Decomposition Engine)
-- **Tests Passed:** _____ / 106
-- **Tests Failed:** _____ / 106
-- **Tests Skipped:** _____ / 106
+- **Total Tests:** 142 (Updated for Phase 5 Code Knowledge Graph Integration)
+- **Tests Passed:** _____ / 142
+- **Tests Failed:** _____ / 142
+- **Tests Skipped:** _____ / 142
 - **Pass Rate:** _____%
 
 ### Test Results by Phase
@@ -1684,10 +2182,11 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 - **Phase 2 - Multi-Step Query Processing:** _____ / 17 tests passed
 - **Phase 3 - Advanced Context Management:** _____ / 27 tests passed
 - **Phase 4 - Query Decomposition Engine:** _____ / 21 tests passed
-- **Phase 5 - Legacy Code Modification:** _____ / 12 tests passed (Legacy)
-- **Phase 6 - Performance & Quality:** _____ / 9 tests passed
-- **Phase 7 - Edge Cases & Error Handling:** _____ / 9 tests passed
-- **Phase 8 - Compatibility & Platform:** _____ / 5 tests passed
+- **Phase 5 - Code Knowledge Graph Integration:** _____ / 36 tests passed
+- **Phase 6 - Legacy Code Modification:** _____ / 12 tests passed (Legacy)
+- **Phase 7 - Performance & Quality:** _____ / 9 tests passed
+- **Phase 8 - Edge Cases & Error Handling:** _____ / 9 tests passed
+- **Phase 9 - Compatibility & Platform:** _____ / 5 tests passed
 
 ### Critical Issues Found
 1. _____________________________________
@@ -1723,6 +2222,14 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 - **Execution Planning:** [ ] Complete [ ] Partial [ ] Major Issues
 - **Conflict Detection:** [ ] Complete [ ] Partial [ ] Major Issues
 - **Risk Assessment:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Code Knowledge Graph Integration (Phase 5):** [ ] Complete [ ] Partial [ ] Major Issues
+- **Semantic Code Indexing:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Architectural Pattern Detection:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Relationship Mapping:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Best Practices Integration:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Data Flow Analysis:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Improvement Suggestions:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Graph Query Performance:** [ ] Complete [ ] Partial [ ] Major Issues
 
 ### Production Readiness Assessment
 **Overall System:** [ ] Ready for Production [ ] Needs Minor Fixes [ ] Needs Major Fixes [ ] Not Ready
@@ -1793,11 +2300,11 @@ Then ask: `"Create a user management system with authentication, add comprehensi
 
 ---
 
-**Test Plan Version:** 6.0 (Enhanced Query Processing + Query Decomposition Engine)
+**Test Plan Version:** 7.0 (Enhanced Query Processing + Code Knowledge Graph Integration)
 **Created:** September 19, 2025
-**Last Updated:** September 20, 2025 (Phase 4 Complete)
-**Covers:** Enhanced query processing with advanced context management, semantic analysis, intelligent suggestions, and query decomposition engine with multi-intent parsing, dependency analysis, resource calculation, execution planning, conflict detection, and risk assessment
+**Last Updated:** September 20, 2025 (Phase 5 Complete)
+**Covers:** Enhanced query processing with advanced context management, semantic analysis, intelligent suggestions, query decomposition engine, and comprehensive code knowledge graph integration with relationship mapping, architectural pattern detection, best practices integration, data flow analysis, and contextual improvement recommendations
 **Tested By:** ________________
 **Date Executed:** ________________
 **Environment:** ________________
-**Notes:** This test plan covers Phases 1-4 implementation including enhanced intent analysis with timeout protection, multi-step query processing with session management, advanced context management with semantic code analysis, and query decomposition engine with multi-intent parsing, dependency analysis, resource calculation, execution planning, conflict detection, and risk assessment. Legacy autonomous code modification tests preserved for reference.
+**Notes:** This test plan covers Phases 1-5 implementation including enhanced intent analysis with timeout protection, multi-step query processing with session management, advanced context management with semantic code analysis, query decomposition engine with multi-intent parsing, and comprehensive code knowledge graph integration with semantic code indexing, architectural pattern detection, relationship mapping, best practices integration, data flow analysis, and contextual improvement recommendations. Legacy autonomous code modification tests preserved for reference.
