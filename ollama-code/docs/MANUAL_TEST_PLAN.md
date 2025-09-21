@@ -6,7 +6,7 @@ This manual test plan validates the enhanced query processing architecture imple
 - **Phase 1:** Enhanced Intent Analysis with Timeout Protection ✅
 - **Phase 2:** Multi-Step Query Processing with Context Management ✅
 - **Phase 3:** Advanced Context Management ✅
-- **Phase 4:** Query Decomposition Engine (Planned)
+- **Phase 4:** Query Decomposition Engine ✅
 - **Phase 5:** Knowledge Graph Integration (Planned)
 
 The system provides intelligent query processing with session management, follow-up detection, context awareness, and progressive disclosure for complex interactions.
@@ -815,7 +815,286 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-## Phase 4: Autonomous Code Modification System Tests (Legacy)
+## Phase 4: Query Decomposition Engine Tests
+
+### Test Group 4.1: Query Decomposition and Multi-Intent Analysis
+**Priority: Critical**
+
+#### Test 4.1.1: Complex Multi-Action Query Decomposition
+**Test Command:** `./dist/src/cli-selector.js interactive`
+Then ask: `"Create a user management system with authentication, add comprehensive tests, and deploy to production"`
+
+**Expected Results:**
+- Query automatically recognized as complex multi-action request
+- System triggers query decomposition process
+- Multiple intents identified: implementation, testing, deployment
+- Sub-tasks generated with proper dependencies
+- Execution plan created with phases
+- Risk assessment performed (should be high due to deployment)
+- User approval required for high-risk operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.1.2: Intent Recognition and Classification
+**Test Queries in sequence:**
+1. `"analyze the codebase and refactor for performance"`
+2. `"implement unit tests and integration tests"`
+3. `"optimize database queries and add caching"`
+
+**Expected:**
+- Each query correctly classified by intent type (analysis/implementation, testing, optimization)
+- Appropriate confidence scores assigned (>0.7 for clear intents)
+- Entity extraction works (files, technologies, concepts)
+- Priority scheduling applied correctly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.1.3: Dependency Analysis and Resolution
+**Test Query:** `"create API endpoints, add database models, implement authentication, and write tests"`
+
+**Expected:**
+- Dependencies correctly identified (models → endpoints → auth → tests)
+- Topological sorting produces correct execution order
+- Circular dependencies detected if present
+- Critical path identified and highlighted
+- Execution phases created with parallelizable tasks
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.2: Execution Planning and Resource Calculation
+**Priority: High**
+
+#### Test 4.2.1: Resource Requirements Calculation
+**Test Query:** `"refactor the entire application to use TypeScript and add full test coverage"`
+
+**Expected:**
+- CPU, memory, network, disk requirements calculated
+- Estimated duration provided (should be high for large refactor)
+- Concurrent task limits respected
+- Resource conflicts detected and resolved
+- Execution phases optimized for resource usage
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.2.2: Execution Phase Management
+**Test:** Complex query with mixed task types
+
+**Expected:**
+- Sequential phases created for dependent tasks
+- Parallel execution enabled for independent tasks
+- Phase transitions handled smoothly
+- Resource requirements aggregated per phase
+- Phase duration estimates provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.2.3: Priority Scheduling and Optimization
+**Test Query:** Mix of high and low priority requests
+
+**Expected:**
+- Tasks ordered by priority and dependencies
+- Critical path optimization applied
+- Resource allocation favors high-priority tasks
+- Schedule optimization balances time vs resources
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.3: Conflict Detection and Risk Assessment
+**Priority: High**
+
+#### Test 4.3.1: Task Conflict Detection
+**Test Query:** `"modify config.js and update config.js with new settings"`
+
+**Expected:**
+- File modification conflicts detected
+- Resource conflicts identified
+- Timing conflicts recognized
+- Conflict resolution strategies suggested
+- User warned about potential conflicts
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.3.2: Risk Assessment and Mitigation
+**Test Queries:**
+1. `"delete old files and restructure project"` (high risk)
+2. `"add comments to functions"` (low risk)
+3. `"deploy to production with database migration"` (critical risk)
+
+**Expected:**
+- Risk levels correctly assessed (low/medium/high/critical)
+- Risk factors identified (data loss, system impact, etc.)
+- Mitigation strategies suggested
+- Approval requirements based on risk level
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.3.3: Approval Workflow
+**Test:** High-risk query requiring approval
+
+**Expected:**
+- Approval prompt displayed with risk details
+- User can approve, reject, or modify plan
+- Risk mitigations clearly communicated
+- Plan execution waits for approval
+- Rejection stops execution cleanly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.4: Query Decomposition Display and Interaction
+**Priority: High**
+
+#### Test 4.4.1: Decomposition Results Display
+**Test:** Complex query with decomposition
+
+**Expected:**
+- Clear decomposition summary displayed
+- Sub-tasks listed with descriptions and estimates
+- Dependencies visualized or described
+- Execution plan phases shown
+- Risk assessment clearly communicated
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.4.2: Interactive Plan Modification
+**Test:** Request to modify decomposition plan
+
+**Expected:**
+- User can request plan modifications
+- Plan updates correctly with new requirements
+- Dependencies recalculated automatically
+- Risk assessment updated
+- New execution order generated
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.4.3: Progress Tracking During Execution
+**Test:** Monitor decomposition plan execution
+
+**Expected:**
+- Real-time progress updates shown
+- Current task and phase clearly indicated
+- Completion status tracked per task
+- Time estimates updated based on actual progress
+- Cancellation option available
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.5: Performance and Caching
+**Priority: Medium**
+
+#### Test 4.5.1: Decomposition Performance
+**Test:** Large complex query with many sub-tasks
+
+**Targets:**
+- Decomposition analysis: <10 seconds
+- Cache hit for similar queries: <2 seconds
+- Memory usage during decomposition: <100MB
+- **Actual Performance:** Analysis: ___ Cache: ___ Memory: ___
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.5.2: Cache Effectiveness
+**Test:** Repeated similar queries
+
+**Expected:**
+- Similar queries use cached decomposition results
+- Cache key generation works correctly
+- LRU eviction prevents memory bloat
+- Cache expiration (5 minutes) working
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.5.3: Statistics and Monitoring
+**Test:** Check decomposition statistics
+
+**Expected:**
+- Decomposition statistics available and accurate
+- Cache hit rate tracking working
+- Performance metrics collected
+- Success rate monitoring functional
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.6: Integration with Enhanced Interactive Mode
+**Priority: Critical**
+
+#### Test 4.6.1: Automatic Query Routing
+**Test Queries:**
+1. `"list files"` (simple, no decomposition)
+2. `"create a web app with authentication and tests"` (complex, triggers decomposition)
+
+**Expected:**
+- Simple queries bypass decomposition
+- Complex queries automatically trigger decomposition
+- Smooth transition between modes
+- No user intervention required for routing
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.6.2: Decomposition Integration
+**Test:** Interactive mode with complex queries
+
+**Expected:**
+- Decomposition engine initialized properly
+- Context passed correctly to decomposition
+- Results integrated seamlessly with interactive mode
+- Visual indicators for decomposition processing
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.6.3: Session Management Integration
+**Test:** Decomposition within query sessions
+
+**Expected:**
+- Decomposition results tracked in session
+- Session context available to decomposition engine
+- Multiple decompositions per session supported
+- Session statistics include decomposition metrics
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 4.7: Error Handling and Edge Cases
+**Priority: Medium**
+
+#### Test 4.7.1: Malformed Query Handling
+**Test Queries:**
+1. `"do something"`
+2. `"fix it"`
+3. Empty or very short queries
+
+**Expected:**
+- Graceful handling of ambiguous queries
+- Clarification requests generated
+- No system crashes or errors
+- Helpful error messages provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.7.2: AI Service Failures
+**Test:** Simulate AI service unavailability
+
+**Expected:**
+- Graceful fallback to pattern-based analysis
+- Clear error messages about AI unavailability
+- Basic decomposition still functional
+- System continues operating
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 4.7.3: Resource Constraint Handling
+**Test:** Queries requiring excessive resources
+
+**Expected:**
+- Resource limit detection working
+- Alternative execution strategies suggested
+- User warned about resource requirements
+- Graceful degradation when resources limited
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## Phase 5: Autonomous Code Modification System Tests (Legacy)
 
 ### Test Group 2.1: Safe Code Editor
 **Priority: Critical**
@@ -965,7 +1244,7 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-## Phase 3: Enhanced Task Planning & Execution Engine Tests
+## Phase 6: Enhanced Task Planning & Execution Engine Tests
 
 ### Test Group 3.1: Task Decomposition
 **Priority: Critical**
@@ -1113,7 +1392,7 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-## Phase 4: Integration and System-Wide Tests
+## Phase 7: Integration and System-Wide Tests
 
 ### Test Group 4.1: Cross-Phase Integration
 **Priority: Critical**
@@ -1189,7 +1468,7 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-## Phase 5: Performance and Quality Tests
+## Phase 8: Performance and Quality Tests
 
 ### Test Group 5.1: Performance Benchmarks
 **Priority: Medium**
@@ -1267,7 +1546,7 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-## Phase 6: Edge Cases and Error Handling
+## Phase 9: Edge Cases and Error Handling
 
 ### Test Group 6.1: System Limits
 **Priority: Medium**
@@ -1345,7 +1624,7 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-## Phase 7: Compatibility and Platform Tests
+## Phase 10: Compatibility and Platform Tests
 
 ### Test Group 7.1: Operating System Compatibility
 **Priority: Medium**
@@ -1394,20 +1673,21 @@ Then ask: `"analyze the code structure and explain the user management system"`
 ## Test Execution Summary
 
 ### Overall Test Results
-- **Total Tests:** 85 (Updated for Phase 3 Advanced Context Management)
-- **Tests Passed:** _____ / 85
-- **Tests Failed:** _____ / 85
-- **Tests Skipped:** _____ / 85
+- **Total Tests:** 106 (Updated for Phase 4 Query Decomposition Engine)
+- **Tests Passed:** _____ / 106
+- **Tests Failed:** _____ / 106
+- **Tests Skipped:** _____ / 106
 - **Pass Rate:** _____%
 
 ### Test Results by Phase
 - **Phase 1 - Enhanced Intent Analysis:** _____ / 9 tests passed
 - **Phase 2 - Multi-Step Query Processing:** _____ / 17 tests passed
 - **Phase 3 - Advanced Context Management:** _____ / 27 tests passed
-- **Phase 4 - Legacy Code Modification:** _____ / 12 tests passed (Legacy)
-- **Phase 5 - Performance & Quality:** _____ / 9 tests passed
-- **Phase 6 - Edge Cases & Error Handling:** _____ / 9 tests passed
-- **Phase 7 - Compatibility & Platform:** _____ / 5 tests passed
+- **Phase 4 - Query Decomposition Engine:** _____ / 21 tests passed
+- **Phase 5 - Legacy Code Modification:** _____ / 12 tests passed (Legacy)
+- **Phase 6 - Performance & Quality:** _____ / 9 tests passed
+- **Phase 7 - Edge Cases & Error Handling:** _____ / 9 tests passed
+- **Phase 8 - Compatibility & Platform:** _____ / 5 tests passed
 
 ### Critical Issues Found
 1. _____________________________________
@@ -1436,6 +1716,13 @@ Then ask: `"analyze the code structure and explain the user management system"`
 - **Domain Knowledge Integration:** [ ] Complete [ ] Partial [ ] Major Issues
 - **Enhanced Context Suggestions:** [ ] Complete [ ] Partial [ ] Major Issues
 - **Historical Context Tracking:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Query Decomposition Engine (Phase 4):** [ ] Complete [ ] Partial [ ] Major Issues
+- **Multi-Intent Parsing:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Dependency Analysis:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Resource Calculation:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Execution Planning:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Conflict Detection:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Risk Assessment:** [ ] Complete [ ] Partial [ ] Major Issues
 
 ### Production Readiness Assessment
 **Overall System:** [ ] Ready for Production [ ] Needs Minor Fixes [ ] Needs Major Fixes [ ] Not Ready
@@ -1506,11 +1793,11 @@ Then ask: `"analyze the code structure and explain the user management system"`
 
 ---
 
-**Test Plan Version:** 5.0 (Enhanced Query Processing + Advanced Context Management)
+**Test Plan Version:** 6.0 (Enhanced Query Processing + Query Decomposition Engine)
 **Created:** September 19, 2025
-**Last Updated:** September 20, 2025 (Phase 3 Complete)
-**Covers:** Enhanced query processing with advanced context management, semantic analysis, and intelligent suggestions
+**Last Updated:** September 20, 2025 (Phase 4 Complete)
+**Covers:** Enhanced query processing with advanced context management, semantic analysis, intelligent suggestions, and query decomposition engine with multi-intent parsing, dependency analysis, resource calculation, execution planning, conflict detection, and risk assessment
 **Tested By:** ________________
 **Date Executed:** ________________
 **Environment:** ________________
-**Notes:** This test plan covers Phases 1-3 implementation including enhanced intent analysis with timeout protection, multi-step query processing with session management, and advanced context management with semantic code analysis, domain knowledge integration, and enhanced suggestions. Legacy autonomous code modification tests preserved for reference.
+**Notes:** This test plan covers Phases 1-4 implementation including enhanced intent analysis with timeout protection, multi-step query processing with session management, advanced context management with semantic code analysis, and query decomposition engine with multi-intent parsing, dependency analysis, resource calculation, execution planning, conflict detection, and risk assessment. Legacy autonomous code modification tests preserved for reference.
