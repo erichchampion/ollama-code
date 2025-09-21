@@ -18,6 +18,7 @@ export declare class EnhancedInteractiveMode {
     private queryProcessor?;
     private advancedContextManager?;
     private queryDecompositionEngine?;
+    private codeKnowledgeGraph?;
     private projectContext?;
     private terminal;
     private running;
@@ -70,10 +71,26 @@ export declare class EnhancedInteractiveMode {
      * Query decomposition methods
      */
     private shouldUseQueryDecomposition;
+    /**
+     * Determine if knowledge graph processing should be used
+     */
+    private shouldUseKnowledgeGraph;
     private handleQueryDecomposition;
     private displayQueryDecomposition;
     private confirmDecompositionExecution;
     private executeDecompositionPlan;
+    /**
+     * Handle knowledge graph queries
+     */
+    private handleKnowledgeGraphQuery;
+    /**
+     * Display knowledge graph query results
+     */
+    private displayKnowledgeGraphResults;
+    /**
+     * Display improvement suggestions from knowledge graph
+     */
+    private displayImprovementSuggestions;
     /**
      * Utility methods
      */

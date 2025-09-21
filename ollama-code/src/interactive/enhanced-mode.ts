@@ -16,6 +16,7 @@ import { TaskPlanner } from '../ai/task-planner.js';
 import { MultiStepQueryProcessor } from '../ai/multi-step-query-processor.js';
 import { AdvancedContextManager } from '../ai/advanced-context-manager.js';
 import { QueryDecompositionEngine } from '../ai/query-decomposition-engine.js';
+import { CodeKnowledgeGraph } from '../ai/code-knowledge-graph.js';
 import { executeCommand } from '../commands/index.js';
 import { getAIClient, getEnhancedClient, initAI } from '../ai/index.js';
 import { ensureOllamaServerRunning } from '../utils/ollama-server.js';
@@ -39,6 +40,7 @@ export class EnhancedInteractiveMode {
   private queryProcessor?: MultiStepQueryProcessor;
   private advancedContextManager?: AdvancedContextManager;
   private queryDecompositionEngine?: QueryDecompositionEngine;
+  private codeKnowledgeGraph?: CodeKnowledgeGraph;
   private projectContext?: ProjectContext;
   private terminal: any;
   private running = false;
@@ -146,6 +148,17 @@ export class EnhancedInteractiveMode {
       }
     } catch (error) {
       logger.debug('Query decomposition engine not available:', error);
+    }
+
+    // Initialize code knowledge graph
+    try {
+      if (this.projectContext) {
+        this.codeKnowledgeGraph = new CodeKnowledgeGraph(aiClient, this.projectContext);
+        await this.codeKnowledgeGraph.initialize();
+        this.terminal.success('Code knowledge graph enabled');
+      }
+    } catch (error) {
+      logger.debug('Code knowledge graph not available:', error);
     }
 
     // Initialize natural language router
@@ -524,6 +537,14 @@ export class EnhancedInteractiveMode {
         return;
       }
 
+      // Check if knowledge graph query processing is available and needed
+      if (this.codeKnowledgeGraph && this.shouldUseKnowledgeGraph(intent)) {
+        spinner.setText('Searching knowledge graph...');
+        await this.handleKnowledgeGraphQuery(intent, contextualPrompt);
+        spinner.succeed();
+        return;
+      }
+
       // Get AI response using contextual prompt
       const aiClient = getAIClient();
       const response = await aiClient.complete(contextualPrompt, {
@@ -640,6 +661,44 @@ export class EnhancedInteractiveMode {
     ];
 
     return complexWorkflowIndicators.some(indicator => queryText.includes(indicator));
+  }
+
+  /**
+   * Determine if knowledge graph processing should be used
+   */
+  private shouldUseKnowledgeGraph(intent: any): boolean {
+    // Use knowledge graph for code exploration, relationship queries, and architectural analysis
+    const queryText = intent.originalQuery?.toLowerCase() || '';
+
+    // Keywords that indicate knowledge graph queries
+    const knowledgeGraphKeywords = [
+      'relationship', 'related', 'depends', 'dependency', 'dependencies',
+      'connects', 'connected', 'links', 'pattern', 'patterns',
+      'architecture', 'structure', 'flow', 'design',
+      'similar', 'like', 'compare', 'comparison',
+      'where', 'how', 'what', 'which', 'who',
+      'find', 'search', 'discover', 'explore',
+      'uses', 'using', 'used by', 'calls', 'calling',
+      'extends', 'implements', 'inherits', 'inheritance',
+      'graph', 'network', 'map', 'diagram'
+    ];
+
+    // Check for knowledge graph keywords
+    if (knowledgeGraphKeywords.some(keyword => queryText.includes(keyword))) {
+      return true;
+    }
+
+    // Check for specific code relationship queries
+    const relationshipPatterns = [
+      /what.*(?:uses|calls|depends)/,
+      /(?:find|show|list).*(?:related|similar)/,
+      /how.*(?:connected|linked|related)/,
+      /where.*(?:used|called|implemented)/,
+      /(?:class|function|file).*(?:relationship|connection)/,
+      /(?:pattern|architecture).*(?:analysis|overview)/
+    ];
+
+    return relationshipPatterns.some(pattern => pattern.test(queryText));
   }
 
   private async handleQueryDecomposition(intent: any, contextualPrompt: string): Promise<void> {
@@ -759,6 +818,136 @@ export class EnhancedInteractiveMode {
       this.terminal.text('   • Run tests to verify functionality');
       this.terminal.text('   • Consider additional optimizations');
     }
+  }
+
+  /**
+   * Handle knowledge graph queries
+   */
+  private async handleKnowledgeGraphQuery(intent: any, contextualPrompt: string): Promise<void> {
+    const queryText = intent.originalQuery || intent.query || '';
+
+    try {
+      // Query the knowledge graph
+      const graphResult = await this.codeKnowledgeGraph!.queryGraph(queryText, {
+        limit: 20,
+        includePatterns: true,
+        includeBestPractices: true
+      });
+
+      // Display graph query results
+      this.displayKnowledgeGraphResults(graphResult, queryText);
+
+      // Generate improvement suggestions if applicable
+      if (graphResult.nodes.length > 0) {
+        const suggestions = await this.codeKnowledgeGraph!.suggestImprovements({
+          nodeIds: graphResult.nodes.map(n => n.id)
+        });
+
+        if (suggestions.length > 0) {
+          this.displayImprovementSuggestions(suggestions);
+        }
+      }
+
+      // Update conversation
+      await this.updateConversationOutcome('success', `Found ${graphResult.nodes.length} nodes and ${graphResult.patterns.length} patterns in knowledge graph`);
+
+    } catch (error) {
+      this.terminal.error(`Knowledge graph query failed: ${formatErrorForDisplay(error)}`);
+      await this.updateConversationOutcome('failure');
+    }
+  }
+
+  /**
+   * Display knowledge graph query results
+   */
+  private displayKnowledgeGraphResults(result: any, query: string): void {
+    this.terminal.info(`\n🕸️  Knowledge Graph Results for: "${query}"`);
+    this.terminal.text(`   Confidence: ${Math.round(result.confidence * 100)}%`);
+    this.terminal.text(`   Processing Time: ${result.executionTime}ms`);
+
+    if (result.nodes.length > 0) {
+      this.terminal.info('\n📊 Code Elements Found:');
+      result.nodes.slice(0, 10).forEach((node: any, index: number) => {
+        const metadata = node.metadata ? ` (confidence: ${Math.round(node.metadata.confidence * 100)}%)` : '';
+        this.terminal.text(`   ${index + 1}. ${node.type}: ${node.name}${metadata}`);
+
+        if (node.properties.file) {
+          this.terminal.text(`      └─ File: ${node.properties.file}`);
+        }
+        if (node.properties.lineNumber) {
+          this.terminal.text(`      └─ Line: ${node.properties.lineNumber}`);
+        }
+      });
+
+      if (result.nodes.length > 10) {
+        this.terminal.text(`   ... and ${result.nodes.length - 10} more nodes`);
+      }
+    }
+
+    if (result.edges.length > 0) {
+      this.terminal.info('\n🔗 Relationships Found:');
+      result.edges.slice(0, 5).forEach((edge: any, index: number) => {
+        const sourceNode = result.nodes.find((n: any) => n.id === edge.source);
+        const targetNode = result.nodes.find((n: any) => n.id === edge.target);
+        const sourceName = sourceNode?.name || edge.source;
+        const targetName = targetNode?.name || edge.target;
+        this.terminal.text(`   ${index + 1}. ${sourceName} --[${edge.type}]--> ${targetName}`);
+      });
+
+      if (result.edges.length > 5) {
+        this.terminal.text(`   ... and ${result.edges.length - 5} more relationships`);
+      }
+    }
+
+    if (result.patterns.length > 0) {
+      this.terminal.info('\n🎯 Architectural Patterns Detected:');
+      result.patterns.forEach((pattern: any, index: number) => {
+        const confidence = Math.round(pattern.confidence * 100);
+        this.terminal.text(`   ${index + 1}. ${pattern.name} (${confidence}% confidence)`);
+        if (pattern.description) {
+          this.terminal.text(`      └─ ${pattern.description}`);
+        }
+      });
+    }
+
+    if (result.bestPractices.length > 0) {
+      this.terminal.info('\n💡 Related Best Practices:');
+      result.bestPractices.slice(0, 3).forEach((practice: any, index: number) => {
+        this.terminal.text(`   ${index + 1}. ${practice.name} (${practice.category})`);
+        this.terminal.text(`      └─ ${practice.description}`);
+      });
+    }
+
+    console.log(); // Add spacing
+  }
+
+  /**
+   * Display improvement suggestions from knowledge graph
+   */
+  private displayImprovementSuggestions(suggestions: any[]): void {
+    if (suggestions.length === 0) return;
+
+    this.terminal.info('\n🚀 Improvement Suggestions:');
+
+    suggestions.slice(0, 5).forEach((suggestion: any, index: number) => {
+      const priority = suggestion.priority || 0;
+      const impact = suggestion.impact || 'unknown';
+      const effort = suggestion.effort || 'unknown';
+
+      this.terminal.text(`   ${index + 1}. ${suggestion.title}`);
+      this.terminal.text(`      └─ ${suggestion.suggestion}`);
+      this.terminal.text(`      └─ Impact: ${impact}, Effort: ${effort}, Priority: ${priority}`);
+
+      if (suggestion.rationale) {
+        this.terminal.text(`      └─ Why: ${suggestion.rationale}`);
+      }
+    });
+
+    if (suggestions.length > 5) {
+      this.terminal.text(`   ... and ${suggestions.length - 5} more suggestions`);
+    }
+
+    console.log(); // Add spacing
   }
 
   /**
