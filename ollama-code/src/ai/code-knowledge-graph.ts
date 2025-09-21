@@ -701,7 +701,7 @@ export class CodeKnowledgeGraph {
 
     try {
       const fullPath = path.join(this.projectContext.root, filePath);
-      const content = fs.readFileSync(fullPath, 'utf8');
+      const content = await fs.promises.readFile(fullPath, 'utf8');
 
       // Extract classes
       const classes = this.extractClasses(content, filePath);
@@ -927,7 +927,7 @@ export class CodeKnowledgeGraph {
     for (const fileInfo of filteredFiles) {
       try {
         const fullPath = path.join(this.projectContext.root, fileInfo.relativePath);
-        const content = fs.readFileSync(fullPath, 'utf8');
+        const content = await fs.promises.readFile(fullPath, 'utf8');
         const fileNode = Array.from(this.nodeIndex.values()).find(n =>
           n.type === 'file' && n.properties.path === fileInfo.relativePath
         );
