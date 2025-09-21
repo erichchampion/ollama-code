@@ -194,6 +194,13 @@ class Terminal implements TerminalInterface {
   }
 
   /**
+   * Display plain text without special formatting
+   */
+  text(message: string): void {
+    console.log(message);
+  }
+
+  /**
    * Create a clickable link in the terminal if supported
    */
   link(text: string, url: string): string {

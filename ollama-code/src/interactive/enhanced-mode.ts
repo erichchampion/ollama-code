@@ -680,7 +680,9 @@ export class EnhancedInteractiveMode {
       'find', 'search', 'discover', 'explore',
       'uses', 'using', 'used by', 'calls', 'calling',
       'extends', 'implements', 'inherits', 'inheritance',
-      'graph', 'network', 'map', 'diagram'
+      'graph', 'network', 'map', 'diagram',
+      'indexed', 'elements', 'nodes', 'edges', 'knowledge graph',
+      'code elements', 'codebase analysis'
     ];
 
     // Check for knowledge graph keywords
@@ -695,7 +697,11 @@ export class EnhancedInteractiveMode {
       /how.*(?:connected|linked|related)/,
       /where.*(?:used|called|implemented)/,
       /(?:class|function|file).*(?:relationship|connection)/,
-      /(?:pattern|architecture).*(?:analysis|overview)/
+      /(?:pattern|architecture).*(?:analysis|overview)/,
+      /(?:show|list|display).*(?:code elements|elements|indexed)/,
+      /what.*(?:indexed|elements|graph)/,
+      /knowledge.*graph/,
+      /graph.*(?:contains|has|statistics|overview|elements)/
     ];
 
     return relationshipPatterns.some(pattern => pattern.test(queryText));
@@ -827,12 +833,33 @@ export class EnhancedInteractiveMode {
     const queryText = intent.originalQuery || intent.query || '';
 
     try {
-      // Query the knowledge graph
-      const graphResult = await this.codeKnowledgeGraph!.queryGraph(queryText, {
-        limit: 20,
-        includePatterns: true,
-        includeBestPractices: true
-      });
+      // Check if this is a query asking for all indexed elements
+      const isIndexedElementsQuery = /(?:show|list|display|what).*(?:indexed|elements|code elements)/.test(queryText.toLowerCase());
+
+      let graphResult;
+      if (isIndexedElementsQuery) {
+        // For indexed elements queries, get a broader view with higher limit and statistics
+        this.terminal.info('🔍 Analyzing indexed code elements in the knowledge graph...');
+
+        // First show statistics
+        const stats = this.codeKnowledgeGraph!.getStatistics();
+        this.displayKnowledgeGraphStatistics(stats);
+
+        // Then query for all types of elements
+        graphResult = await this.codeKnowledgeGraph!.queryGraph('*', {
+          limit: 50,
+          includePatterns: true,
+          includeBestPractices: false,
+          nodeTypes: ['file', 'class', 'function', 'variable', 'interface', 'module']
+        });
+      } else {
+        // Regular query
+        graphResult = await this.codeKnowledgeGraph!.queryGraph(queryText, {
+          limit: 20,
+          includePatterns: true,
+          includeBestPractices: true
+        });
+      }
 
       // Display graph query results
       this.displayKnowledgeGraphResults(graphResult, queryText);
@@ -854,6 +881,26 @@ export class EnhancedInteractiveMode {
     } catch (error) {
       this.terminal.error(`Knowledge graph query failed: ${formatErrorForDisplay(error)}`);
       await this.updateConversationOutcome('failure');
+    }
+  }
+
+  /**
+   * Display knowledge graph statistics and overview
+   */
+  private displayKnowledgeGraphStatistics(stats: any): void {
+    this.terminal.info('\n📊 Knowledge Graph Statistics:');
+    this.terminal.text(`   Total Nodes: ${stats.graph.nodeCount}`);
+    this.terminal.text(`   Total Edges: ${stats.graph.edgeCount}`);
+    this.terminal.text(`   Node Types: ${stats.graph.nodeTypes}`);
+    this.terminal.text(`   Edge Types: ${stats.graph.edgeTypes}`);
+
+    if (stats.indexing) {
+      this.terminal.text(`   Files Indexed: ${stats.indexing.filesProcessed}`);
+      this.terminal.text(`   Last Updated: ${new Date(stats.indexing.lastUpdate).toLocaleString()}`);
+    }
+
+    if (stats.performance) {
+      this.terminal.text(`   Query Performance: ${stats.performance.averageQueryTime}ms avg`);
     }
   }
 
@@ -1225,11 +1272,11 @@ ${plan.tasks.map((task: any, index: number) =>
     if (enhancedContext.suggestions && enhancedContext.suggestions.length > 0) {
       this.terminal.info('\n🔍 Related suggestions:');
       enhancedContext.suggestions.forEach((suggestion: string, index: number) => {
-        this.terminal.dim(`  ${index + 1}. ${suggestion}`);
+        this.terminal.text(`  ${index + 1}. ${suggestion}`);
       });
 
       if (enhancedContext.confidence && enhancedContext.confidence > 0.7) {
-        this.terminal.dim(`  (Confidence: ${Math.round(enhancedContext.confidence * 100)}%)`);
+        this.terminal.text(`  (Confidence: ${Math.round(enhancedContext.confidence * 100)}%)`);
       }
       console.log();
     }

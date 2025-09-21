@@ -228,7 +228,12 @@ export interface TerminalInterface {
    * Display an error message
    */
   error(message: string): void;
-  
+
+  /**
+   * Display plain text without special formatting
+   */
+  text(message: string): void;
+
   /**
    * Create a clickable link in the terminal if supported
    */

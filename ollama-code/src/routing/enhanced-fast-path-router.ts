@@ -64,6 +64,12 @@ export class EnhancedFastPathRouter {
       // Normalize input
       const normalizedInput = this.normalizeInput(input);
 
+      // Early exit for knowledge graph queries - let them go through full AI processing
+      if (this.isKnowledgeGraphQuery(normalizedInput)) {
+        logger.debug('Knowledge graph query detected - bypassing fast-path routing');
+        return null;
+      }
+
       // Check cache first
       const cached = this.commandCache.get(normalizedInput);
       if (cached) {
@@ -493,5 +499,41 @@ export class EnhancedFastPathRouter {
       size: this.commandCache.size,
       hitRate: 0 // Would track hits vs misses
     };
+  }
+
+  /**
+   * Check if the input is a knowledge graph query that should bypass fast-path routing
+   */
+  private isKnowledgeGraphQuery(input: string): boolean {
+    // Keywords that indicate knowledge graph queries
+    const knowledgeGraphKeywords = [
+      'knowledge graph', 'graph', 'indexed', 'elements', 'nodes', 'edges',
+      'code elements', 'relationships', 'patterns', 'architecture',
+      'dependencies', 'structure', 'analysis', 'codebase analysis'
+    ];
+
+    // Patterns that specifically indicate knowledge graph queries
+    const knowledgeGraphPatterns = [
+      /knowledge.*graph/,
+      /graph.*(?:show|contains|has|statistics|overview|elements)/,
+      /(?:show|list|display).*(?:code elements|elements|nodes|indexed)/,
+      /(?:what|which).*(?:indexed|in.*knowledge|in.*graph)/,
+      /(?:graph|codebase).*(?:statistics|overview|summary|elements)/,
+      /indexed.*(?:in|knowledge|graph|elements)/,
+      /code.*elements.*(?:indexed|graph|knowledge)/,
+      /(?:analyze|analysis).*(?:codebase|architecture|structure)/
+    ];
+
+    // Check for direct keyword matches
+    const hasKnowledgeGraphKeywords = knowledgeGraphKeywords.some(keyword =>
+      input.includes(keyword)
+    );
+
+    // Check for pattern matches
+    const hasKnowledgeGraphPatterns = knowledgeGraphPatterns.some(pattern =>
+      pattern.test(input)
+    );
+
+    return hasKnowledgeGraphKeywords || hasKnowledgeGraphPatterns;
   }
 }
