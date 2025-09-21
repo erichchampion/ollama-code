@@ -16,6 +16,7 @@ export interface RoutingResult {
     requiresConfirmation: boolean;
     estimatedTime: number;
     riskLevel: 'low' | 'medium' | 'high';
+    enhancedContext?: any;
 }
 export interface RoutingContext {
     projectContext?: ProjectContext;
@@ -26,6 +27,7 @@ export interface RoutingContext {
         confirmHighRisk: boolean;
         preferredApproach: 'conservative' | 'balanced' | 'aggressive';
     };
+    enhancedContext?: any;
 }
 export interface NLRouterConfig {
     commandConfidenceThreshold?: number;

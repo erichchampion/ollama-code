@@ -16,6 +16,7 @@ export declare class EnhancedInteractiveMode {
     private nlRouter;
     private taskPlanner?;
     private queryProcessor?;
+    private advancedContextManager?;
     private projectContext?;
     private terminal;
     private running;
@@ -79,6 +80,7 @@ export declare class EnhancedInteractiveMode {
     private endQuerySession;
     private displayTaskPlan;
     private displayResponse;
+    private displayEnhancedContextSuggestions;
     private updateConversationOutcome;
     private processRoutingResult;
     /**

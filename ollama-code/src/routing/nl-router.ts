@@ -22,6 +22,7 @@ export interface RoutingResult {
   requiresConfirmation: boolean;
   estimatedTime: number;
   riskLevel: 'low' | 'medium' | 'high';
+  enhancedContext?: any; // Enhanced context from AdvancedContextManager
 }
 
 export interface RoutingContext {
@@ -33,6 +34,7 @@ export interface RoutingContext {
     confirmHighRisk: boolean;
     preferredApproach: 'conservative' | 'balanced' | 'aggressive';
   };
+  enhancedContext?: any; // Enhanced context from AdvancedContextManager
 }
 
 export interface NLRouterConfig {

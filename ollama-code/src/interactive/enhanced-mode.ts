@@ -14,6 +14,7 @@ import { NaturalLanguageRouter, RoutingContext, ClarificationRequest } from '../
 import { ProjectContext } from '../ai/context.js';
 import { TaskPlanner } from '../ai/task-planner.js';
 import { MultiStepQueryProcessor } from '../ai/multi-step-query-processor.js';
+import { AdvancedContextManager } from '../ai/advanced-context-manager.js';
 import { executeCommand } from '../commands/index.js';
 import { getAIClient, getEnhancedClient, initAI } from '../ai/index.js';
 import { ensureOllamaServerRunning } from '../utils/ollama-server.js';
@@ -35,6 +36,7 @@ export class EnhancedInteractiveMode {
   private nlRouter!: NaturalLanguageRouter;
   private taskPlanner?: TaskPlanner;
   private queryProcessor?: MultiStepQueryProcessor;
+  private advancedContextManager?: AdvancedContextManager;
   private projectContext?: ProjectContext;
   private terminal: any;
   private running = false;
@@ -122,6 +124,17 @@ export class EnhancedInteractiveMode {
       logger.debug('Query processor not available:', error);
     }
 
+    // Initialize advanced context manager
+    try {
+      if (this.projectContext) {
+        this.advancedContextManager = new AdvancedContextManager(aiClient, this.projectContext);
+        await this.advancedContextManager.initialize();
+        this.terminal.success('Advanced context management enabled');
+      }
+    } catch (error) {
+      logger.debug('Advanced context manager not available:', error);
+    }
+
     // Initialize natural language router
     this.nlRouter = new NaturalLanguageRouter(this.intentAnalyzer, this.taskPlanner);
 
@@ -189,6 +202,23 @@ export class EnhancedInteractiveMode {
     const processSpinner = createSpinner('Processing your request...');
     processSpinner.start();
 
+    // Get enhanced context if available
+    let enhancedContext;
+    if (this.advancedContextManager) {
+      try {
+        processSpinner.setText('Gathering enhanced context...');
+        enhancedContext = await this.advancedContextManager.getEnhancedContext(userInput);
+        logger.debug('Enhanced context retrieved:', {
+          semanticMatches: enhancedContext.semanticMatches.length,
+          relatedCode: enhancedContext.relatedCode.length,
+          domainContext: enhancedContext.domainContext.length,
+          confidence: enhancedContext.confidence
+        });
+      } catch (error) {
+        logger.debug('Failed to get enhanced context:', error);
+      }
+    }
+
     // Create routing context
     const routingContext: RoutingContext = {
       projectContext: this.projectContext,
@@ -198,7 +228,8 @@ export class EnhancedInteractiveMode {
         autoApprove: this.options.autoApprove,
         confirmHighRisk: this.options.confirmHighRisk,
         preferredApproach: this.options.preferredApproach
-      }
+      },
+      enhancedContext // Add enhanced context to routing context
     };
 
     try {
@@ -207,6 +238,11 @@ export class EnhancedInteractiveMode {
       const routingResult = await this.nlRouter.route(userInput, routingContext);
 
       processSpinner.succeed('Request processed');
+
+      // Add enhanced context to routing result for handlers
+      if (enhancedContext) {
+        routingResult.enhancedContext = enhancedContext;
+      }
 
       // Handle the routing result
       switch (routingResult.type) {
@@ -479,6 +515,11 @@ export class EnhancedInteractiveMode {
 
       // Display the response with appropriate formatting
       this.displayResponse(responseText, intent.type);
+
+      // Display enhanced context suggestions if available
+      if (routingResult.enhancedContext && routingResult.enhancedContext.suggestions.length > 0) {
+        this.displayEnhancedContextSuggestions(routingResult.enhancedContext);
+      }
 
       // Update conversation
       await this.updateConversationOutcome('success', responseText);
@@ -823,6 +864,20 @@ ${plan.tasks.map((task: any, index: number) =>
                  intentType === 'task_request' ? '🚀' : '💬';
 
     console.log(`\n${icon} ${response}\n`);
+  }
+
+  private displayEnhancedContextSuggestions(enhancedContext: any): void {
+    if (enhancedContext.suggestions && enhancedContext.suggestions.length > 0) {
+      this.terminal.info('\n🔍 Related suggestions:');
+      enhancedContext.suggestions.forEach((suggestion: string, index: number) => {
+        this.terminal.dim(`  ${index + 1}. ${suggestion}`);
+      });
+
+      if (enhancedContext.confidence && enhancedContext.confidence > 0.7) {
+        this.terminal.dim(`  (Confidence: ${Math.round(enhancedContext.confidence * 100)}%)`);
+      }
+      console.log();
+    }
   }
 
   private async updateConversationOutcome(outcome: string, response?: string): Promise<void> {

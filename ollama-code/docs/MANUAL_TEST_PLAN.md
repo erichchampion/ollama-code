@@ -5,7 +5,7 @@
 This manual test plan validates the enhanced query processing architecture implementation:
 - **Phase 1:** Enhanced Intent Analysis with Timeout Protection ✅
 - **Phase 2:** Multi-Step Query Processing with Context Management ✅
-- **Phase 3:** Advanced Context Management (Planned)
+- **Phase 3:** Advanced Context Management ✅
 - **Phase 4:** Query Decomposition Engine (Planned)
 - **Phase 5:** Knowledge Graph Integration (Planned)
 
@@ -427,10 +427,391 @@ explain more about the structure
 
 ---
 
-## Phase 3: Advanced Context Management Tests (Planned)
+## Phase 3: Advanced Context Management Tests
 
-### Test Group 3.1: Enhanced Task Planning (Legacy Tests)
-**Note:** These tests are from the previous architecture and will be updated when Phase 3 is implemented.
+### Test Group 3.1: Semantic Code Analysis
+**Priority: Critical**
+
+#### Test 3.1.1: Symbol Extraction and Indexing
+**Setup:** Create test files with various code patterns
+```bash
+# Create test files
+mkdir -p test-context && cd test-context
+cat > user.ts << 'EOF'
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export class UserService {
+  async createUser(userData: User): Promise<User> {
+    return userData;
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    return null;
+  }
+}
+EOF
+
+cat > auth.ts << 'EOF'
+import { User } from './user.js';
+
+export function validateUser(user: User): boolean {
+  return user.email.includes('@');
+}
+
+export async function authenticateUser(email: string): Promise<User | null> {
+  return null;
+}
+EOF
+```
+
+**Test Command:** `./dist/src/cli-selector.js interactive`
+Then ask: `"analyze the code structure and explain the user management system"`
+
+**Expected Results:**
+- System extracts symbols: interfaces (User), classes (UserService), functions (validateUser, authenticateUser)
+- Identifies code concepts: user management, authentication patterns
+- Detects relationships between files through imports
+- Calculates code complexity metrics
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.1.2: Code Pattern Recognition
+**Test Queries:**
+1. `"show me the authentication patterns in this code"`
+2. `"what data management approaches are used?"`
+3. `"identify the architectural patterns"`
+
+**Expected:**
+- Domain patterns detected (authentication, data-management, user-management)
+- Architectural patterns identified (service layer, interface segregation)
+- Pattern confidence scores provided
+- Relevant code examples highlighted
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.1.3: Complexity Analysis
+**Test Query:** `"analyze the code complexity and potential issues"`
+
+**Expected:**
+- Cyclomatic complexity calculated for functions/methods
+- Code quality metrics provided
+- Potential issues identified (missing error handling, etc.)
+- Complexity scoring (low/medium/high) assigned
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.2: Code Relationship Mapping
+**Priority: High**
+
+#### Test 3.2.1: Dependency Resolution
+**Test Setup:** Files with import/export relationships
+**Test Query:** `"show me how these files depend on each other"`
+
+**Expected:**
+- Import dependencies correctly mapped
+- Export usage tracked
+- Dependency graph visualization or description
+- Circular dependency detection (if any)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.2.2: Related Code Discovery
+**Test Query:** `"find code related to user authentication"`
+
+**Expected:**
+- Related files identified based on imports/exports
+- Semantic relationships discovered
+- Code similarity scoring applied
+- Related symbols and concepts highlighted
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.2.3: Cross-File Context
+**Test Sequence:**
+1. `"explain the User interface"`
+2. `"where is this interface used?"`
+
+**Expected:**
+- First query provides interface details
+- Second query shows usage across multiple files
+- Relationship context maintained between queries
+- Usage examples from related files provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.3: Domain Knowledge Integration
+**Priority: High**
+
+#### Test 3.3.1: Domain Context Matching
+**Test Queries:**
+1. `"help me with web API security"`
+2. `"optimize database performance"`
+3. `"improve test coverage"`
+4. `"enhance error handling"`
+
+**Expected:**
+- Queries matched to appropriate domain knowledge (security, performance, testing)
+- Domain-specific patterns and practices suggested
+- Confidence scores for domain matches provided
+- Relevant domain context included in responses
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.3.2: Cross-Domain Integration
+**Test Query:** `"create a secure user registration system with proper testing"`
+
+**Expected:**
+- Multiple domains integrated (security, web-development, testing)
+- Domain knowledge combined effectively
+- Security best practices mentioned
+- Testing strategies included
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.3.3: Domain Knowledge Accuracy
+**Test:** Verify domain knowledge patterns against established best practices
+
+**Expected:**
+- Security patterns include authentication, authorization, input validation
+- Performance patterns include caching, optimization, monitoring
+- Testing patterns include unit tests, integration tests, mocking
+- Web development patterns include REST APIs, MVC, middleware
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.4: Enhanced Context Suggestions
+**Priority: High**
+
+#### Test 3.4.1: Contextual Suggestion Generation
+**Test Query:** `"analyze this authentication system"`
+
+**Expected:**
+- Relevant suggestions provided after response
+- Suggestions numbered and clearly formatted (1. 2. 3.)
+- Context-appropriate suggestions (e.g., "Explore auth.ts for validateUser implementation")
+- Related file exploration suggested
+- Confidence indicator shown (if >70%)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.4.2: Dependency-Based Suggestions
+**Test Query:** `"explain the UserService class"`
+
+**Expected:**
+- Suggestions include checking dependencies and dependents
+- Import analysis suggestions provided
+- Related code exploration recommendations
+- Usage pattern analysis suggested
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.4.3: Domain-Specific Suggestions
+**Test Queries with different domains:**
+1. `"review security in authentication"`
+2. `"analyze performance bottlenecks"`
+3. `"improve testing strategy"`
+
+**Expected:**
+- Domain-specific suggestions for each query type
+- Security queries suggest vulnerability analysis, best practices
+- Performance queries suggest optimization areas, monitoring
+- Testing queries suggest test coverage, strategy improvements
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.5: Historical Context Tracking
+**Priority: Medium**
+
+#### Test 3.5.1: Context History Management
+**Test Sequence:**
+1. `"analyze user management code"`
+2. `"what about security aspects?"`
+3. `"suggest improvements"`
+
+**Expected:**
+- Historical context accumulated across queries
+- Previous analysis results referenced in follow-up queries
+- Context relevance scoring applied
+- History size limits respected (max 100 entries)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.5.2: Context Relevance Filtering
+**Test:** Mix relevant and irrelevant queries in session
+
+**Expected:**
+- Only relevant historical context included in responses
+- Irrelevant context filtered out based on topic similarity
+- Context aging applied (older context weighted less)
+- Performance maintained with large context history
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.5.3: Context Memory Management
+**Test:** Long session with many queries (20+ interactions)
+
+**Expected:**
+- Memory usage remains reasonable
+- LRU eviction working for cache
+- Context expiration (5-minute TTL) functioning
+- No memory leaks in historical context tracking
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.6: Integration with Enhanced Interactive Mode
+**Priority: Critical**
+
+#### Test 3.6.1: Seamless Context Integration
+**Test:** Start interactive mode and ask context-heavy questions
+
+**Expected:**
+- Context gathering happens automatically
+- "Gathering enhanced context..." spinner appears
+- Context processing time reasonable (<5 seconds)
+- Enhanced context seamlessly integrated into responses
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.6.2: Context-Enhanced Routing
+**Test Queries:**
+1. `"help with authentication"` (should trigger domain context)
+2. `"explain the UserService"` (should trigger semantic analysis)
+3. `"what files import user.ts?"` (should trigger relationship analysis)
+
+**Expected:**
+- Different query types trigger appropriate context analysis
+- Context type selection working correctly
+- Routing enhanced with contextual information
+- No performance degradation from context integration
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.6.3: Context Display and Suggestions
+**Test:** Interactive session with various query types
+
+**Expected:**
+- Enhanced context suggestions displayed with 🔍 icon
+- Suggestions formatted with numbering (1. 2. 3.)
+- Confidence percentages shown when >70%
+- Suggestions relevant to current context
+- Clean terminal output without artifacts
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.7: Performance and Scalability
+**Priority: High**
+
+#### Test 3.7.1: Context Processing Performance
+**Test:** Large codebase analysis (10+ files, 1000+ lines)
+
+**Targets:**
+- Context initialization: <10 seconds
+- Semantic analysis per file: <2 seconds
+- Context retrieval: <3 seconds
+- Memory usage: <200MB for context data
+- **Actual Performance:** Init: ___ Analysis: ___ Retrieval: ___ Memory: ___
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.7.2: Cache Effectiveness
+**Test:** Repeated queries with similar context needs
+
+**Expected:**
+- Context cache hits for repeated analysis
+- Cache expiration working (5-minute TTL)
+- Cache size limits respected
+- Significant performance improvement on cache hits
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.7.3: Concurrent Context Operations
+**Test:** Multiple context requests in parallel (if possible)
+
+**Expected:**
+- Thread-safe context operations
+- No race conditions in cache access
+- Consistent results across concurrent requests
+- Resource sharing working efficiently
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.8: Error Handling and Edge Cases
+**Priority: Medium**
+
+#### Test 3.8.1: Malformed Code Handling
+**Setup:** Create files with syntax errors or incomplete code
+**Test Query:** `"analyze this codebase"`
+
+**Expected:**
+- Graceful handling of syntax errors
+- Partial analysis where possible
+- Clear error reporting for problematic files
+- System continues functioning despite errors
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.8.2: Missing Dependencies
+**Setup:** Code files with missing import targets
+**Test Query:** `"show me the dependency relationships"`
+
+**Expected:**
+- Missing dependencies identified and reported
+- Partial relationship graph constructed
+- Clear warnings about unresolved dependencies
+- No system crashes or failures
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.8.3: Context Manager Initialization Failure
+**Test:** Simulate context manager initialization issues
+
+**Expected:**
+- Graceful fallback to basic context mode
+- Clear logging of initialization failure
+- System continues functioning without enhanced context
+- Error messages helpful for debugging
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group 3.9: Context Accuracy and Quality
+**Priority: High**
+
+#### Test 3.9.1: Symbol Extraction Accuracy
+**Test:** Verify extracted symbols match actual code structure
+
+**Expected:**
+- All classes, interfaces, functions correctly identified
+- Proper scope and signature extraction
+- Method parameter and return types captured
+- Export/import statements correctly parsed
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.9.2: Relationship Accuracy
+**Test:** Verify relationship mappings are correct
+
+**Expected:**
+- Import/export relationships accurately mapped
+- Dependency directions correct
+- No false positive relationships
+- Circular dependencies detected accurately
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test 3.9.3: Domain Knowledge Relevance
+**Test:** Query domain-specific patterns and verify accuracy
+
+**Expected:**
+- Security patterns relevant and up-to-date
+- Performance recommendations practical and effective
+- Testing strategies align with modern practices
+- Web development patterns follow current standards
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
 
 ---
 
@@ -1013,16 +1394,16 @@ explain more about the structure
 ## Test Execution Summary
 
 ### Overall Test Results
-- **Total Tests:** 58 (Updated for current architecture + animated indicators)
-- **Tests Passed:** _____ / 58
-- **Tests Failed:** _____ / 58
-- **Tests Skipped:** _____ / 58
+- **Total Tests:** 85 (Updated for Phase 3 Advanced Context Management)
+- **Tests Passed:** _____ / 85
+- **Tests Failed:** _____ / 85
+- **Tests Skipped:** _____ / 85
 - **Pass Rate:** _____%
 
 ### Test Results by Phase
 - **Phase 1 - Enhanced Intent Analysis:** _____ / 9 tests passed
 - **Phase 2 - Multi-Step Query Processing:** _____ / 17 tests passed
-- **Phase 3 - Advanced Context Management:** _____ / 0 tests (Not implemented)
+- **Phase 3 - Advanced Context Management:** _____ / 27 tests passed
 - **Phase 4 - Legacy Code Modification:** _____ / 12 tests passed (Legacy)
 - **Phase 5 - Performance & Quality:** _____ / 9 tests passed
 - **Phase 6 - Edge Cases & Error Handling:** _____ / 9 tests passed
@@ -1049,6 +1430,12 @@ explain more about the structure
 - **Query Chaining & Refinement:** [ ] Complete [ ] Partial [ ] Major Issues
 - **Interactive Mode Integration:** [ ] Complete [ ] Partial [ ] Major Issues
 - **Session Commands:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Advanced Context Management (Phase 3):** [ ] Complete [ ] Partial [ ] Major Issues
+- **Semantic Code Analysis:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Code Relationship Mapping:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Domain Knowledge Integration:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Enhanced Context Suggestions:** [ ] Complete [ ] Partial [ ] Major Issues
+- **Historical Context Tracking:** [ ] Complete [ ] Partial [ ] Major Issues
 
 ### Production Readiness Assessment
 **Overall System:** [ ] Ready for Production [ ] Needs Minor Fixes [ ] Needs Major Fixes [ ] Not Ready
@@ -1119,11 +1506,11 @@ explain more about the structure
 
 ---
 
-**Test Plan Version:** 4.0 (Enhanced Query Processing Architecture)
+**Test Plan Version:** 5.0 (Enhanced Query Processing + Advanced Context Management)
 **Created:** September 19, 2025
-**Last Updated:** September 20, 2025 (Phase 2 Complete)
-**Covers:** Enhanced query processing with multi-step session management and context awareness
+**Last Updated:** September 20, 2025 (Phase 3 Complete)
+**Covers:** Enhanced query processing with advanced context management, semantic analysis, and intelligent suggestions
 **Tested By:** ________________
 **Date Executed:** ________________
 **Environment:** ________________
-**Notes:** This test plan covers Phases 1-2 implementation including enhanced intent analysis with timeout protection and multi-step query processing with session management, follow-up detection, and progressive disclosure. Legacy autonomous code modification tests preserved for reference.
+**Notes:** This test plan covers Phases 1-3 implementation including enhanced intent analysis with timeout protection, multi-step query processing with session management, and advanced context management with semantic code analysis, domain knowledge integration, and enhanced suggestions. Legacy autonomous code modification tests preserved for reference.
