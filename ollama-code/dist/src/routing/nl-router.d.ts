@@ -10,7 +10,7 @@ import { ConversationManager } from '../ai/conversation-manager.js';
 import { TaskPlanner } from '../ai/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
 export interface RoutingResult {
-    type: 'command' | 'task_plan' | 'conversation' | 'clarification';
+    type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool';
     action: string;
     data: any;
     requiresConfirmation: boolean;

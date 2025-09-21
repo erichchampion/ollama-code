@@ -20,7 +20,7 @@ import { CodeKnowledgeGraph } from '../ai/code-knowledge-graph.js';
 import { executeCommand } from '../commands/index.js';
 import { getAIClient, getEnhancedClient, initAI } from '../ai/index.js';
 import { ensureOllamaServerRunning } from '../utils/ollama-server.js';
-import { initializeToolSystem } from '../tools/index.js';
+import { initializeToolSystem, toolRegistry } from '../tools/index.js';
 import { registerCommands } from '../commands/register.js';
 import { EXIT_COMMANDS } from '../constants.js';
 import { createSpinner } from '../utils/spinner.js';
@@ -284,6 +284,10 @@ export class EnhancedInteractiveMode {
           await this.handleTaskPlanning(routingResult);
           break;
 
+        case 'tool':
+          await this.handleToolExecution(routingResult);
+          break;
+
         case 'conversation':
           await this.handleConversation(routingResult);
           break;
@@ -508,6 +512,244 @@ export class EnhancedInteractiveMode {
       planSpinner.fail('Task planning failed');
       this.terminal.error(`Task planning failed: ${formatErrorForDisplay(error)}`);
       await this.updateConversationOutcome('failure');
+    }
+  }
+
+  /**
+   * Handle tool execution
+   */
+  private async handleToolExecution(routingResult: any): Promise<void> {
+    const { toolName, operation, parameters, intent } = routingResult.data;
+
+    // Show what we're about to do
+    this.terminal.info(`I'll execute: ${toolName} ${operation}`);
+
+    if (routingResult.requiresConfirmation) {
+      const confirmed = await this.confirmAction(
+        `Execute tool: ${toolName} - ${operation}`,
+        routingResult.estimatedTime,
+        routingResult.riskLevel
+      );
+
+      if (!confirmed) {
+        this.terminal.warn('Tool execution cancelled');
+        return;
+      }
+    }
+
+    const toolSpinner = createSpinner(`Executing ${toolName} tool...`);
+    toolSpinner.start();
+
+    try {
+      // Get the tool from the registry
+      const tool = toolRegistry.get(toolName);
+
+      if (!tool) {
+        toolSpinner.fail(`Tool '${toolName}' not found`);
+        this.terminal.error(`Available tools: ${toolRegistry.list().map(t => t.name).join(', ')}`);
+        return;
+      }
+
+      // Create execution context
+      const context = {
+        projectRoot: process.cwd(),
+        workingDirectory: process.cwd(),
+        environment: process.env as Record<string, string>,
+        timeout: 30000
+      };
+
+      // Prepare parameters for tool execution
+      const toolParameters = {
+        operation,
+        ...parameters
+      };
+
+      // Execute the tool
+      const result = await tool.execute(toolParameters, context);
+
+      if (result.success) {
+        toolSpinner.succeed(`${toolName} execution completed`);
+
+        // Display results based on tool type and operation
+        this.displayToolResults(toolName, operation, result.data);
+
+        // Update conversation context
+        await this.conversationManager.addTurn(
+          intent.description || `Execute ${toolName} - ${operation}`,
+          intent,
+          `Tool execution successful: ${JSON.stringify(result.data)}`,
+          []
+        );
+      } else {
+        toolSpinner.fail(`${toolName} execution failed`);
+        this.terminal.error(result.error || 'Unknown tool execution error');
+
+        // Update conversation context with error
+        await this.conversationManager.addTurn(
+          intent.description || `Execute ${toolName} - ${operation}`,
+          intent,
+          `Tool execution failed: ${result.error}`,
+          []
+        );
+      }
+    } catch (error) {
+      toolSpinner.fail('Tool execution error');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.terminal.error(`Tool execution failed: ${errorMessage}`);
+
+      // Update conversation context with error
+      await this.conversationManager.addTurn(
+        intent.description || `Execute ${toolName} - ${operation}`,
+        intent,
+        `Tool execution error: ${errorMessage}`,
+        []
+      );
+    }
+  }
+
+  /**
+   * Display tool execution results
+   */
+  private displayToolResults(toolName: string, operation: string, data: any): void {
+    this.terminal.success(`\n🔧 ${toolName} - ${operation} Results:`);
+
+    if (toolName === 'advanced-git') {
+      this.displayGitToolResults(operation, data);
+    } else if (toolName === 'advanced-code-analysis') {
+      this.displayCodeAnalysisResults(operation, data);
+    } else if (toolName === 'advanced-testing') {
+      this.displayTestingResults(operation, data);
+    } else {
+      // Generic result display
+      this.terminal.info(JSON.stringify(data, null, 2));
+    }
+  }
+
+  /**
+   * Display Git tool results
+   */
+  private displayGitToolResults(operation: string, data: any): void {
+    switch (operation) {
+      case 'analyze':
+        if (data.repository) {
+          const repo = data.repository;
+          this.terminal.info(`\n📊 Repository Analysis:`);
+          this.terminal.text(`  • Current Branch: ${repo.basic?.currentBranch}`);
+          this.terminal.text(`  • Total Files: ${repo.structure?.totalFiles}`);
+          this.terminal.text(`  • Total Commits: ${repo.statistics?.totalCommits}`);
+          this.terminal.text(`  • Contributors: ${repo.statistics?.totalContributors}`);
+          this.terminal.text(`  • Health Score: ${repo.health?.score}/100`);
+
+          if (repo.health?.issues?.length > 0) {
+            this.terminal.warn(`\n⚠️  Issues Found:`);
+            repo.health.issues.forEach((issue: string) => this.terminal.text(`  • ${issue}`));
+          }
+        }
+        break;
+      case 'history':
+        if (data.commits) {
+          this.terminal.info(`\n📈 Recent Commits (${data.statistics?.totalCommits} total):`);
+          data.commits.slice(0, 5).forEach((commit: any) => {
+            this.terminal.text(`  ${commit.hash} - ${commit.message} (${commit.author})`);
+          });
+        }
+        break;
+      case 'contributors':
+        if (data.contributors) {
+          this.terminal.info(`\n👥 Top Contributors:`);
+          data.contributors.forEach((contributor: any) => {
+            this.terminal.text(`  • ${contributor.name}: ${contributor.commits} commits`);
+          });
+        }
+        break;
+      default:
+        this.terminal.info(JSON.stringify(data, null, 2));
+    }
+  }
+
+  /**
+   * Display Code Analysis results
+   */
+  private displayCodeAnalysisResults(operation: string, data: any): void {
+    switch (operation) {
+      case 'analyze':
+        if (data.analysis) {
+          const analysis = data.analysis;
+          this.terminal.info(`\n🔍 Code Analysis Results:`);
+          this.terminal.text(`  • Target: ${analysis.target}`);
+          this.terminal.text(`  • Scope: ${analysis.scope}`);
+
+          if (analysis.metrics) {
+            this.terminal.text(`  • Complexity: ${analysis.metrics.complexity || 'N/A'}`);
+            this.terminal.text(`  • Maintainability: ${analysis.metrics.maintainability?.score || 'N/A'}/100`);
+          }
+
+          if (analysis.recommendations?.length > 0) {
+            this.terminal.info(`\n💡 Recommendations:`);
+            analysis.recommendations.slice(0, 3).forEach((rec: string) => {
+              this.terminal.text(`  • ${rec}`);
+            });
+          }
+        }
+        break;
+      case 'quality':
+        if (data.overall) {
+          this.terminal.info(`\n⭐ Quality Assessment: ${data.overall} (Score: ${data.score}/100)`);
+          if (data.areas) {
+            Object.entries(data.areas).forEach(([area, info]: [string, any]) => {
+              this.terminal.text(`  • ${area}: ${info.score || 'N/A'}`);
+            });
+          }
+        }
+        break;
+      case 'security':
+        this.terminal.info(`\n🔒 Security Analysis: Risk Level ${data.riskLevel}`);
+        this.terminal.text(`  • Checks: ${data.checksPassed}/${data.totalChecks} passed`);
+        if (data.vulnerabilities?.length > 0) {
+          this.terminal.warn(`  • Vulnerabilities found: ${data.vulnerabilities.length}`);
+        }
+        break;
+      default:
+        this.terminal.info(JSON.stringify(data, null, 2));
+    }
+  }
+
+  /**
+   * Display Testing tool results
+   */
+  private displayTestingResults(operation: string, data: any): void {
+    switch (operation) {
+      case 'generate':
+        this.terminal.info(`\n🧪 Test Generation Results:`);
+        this.terminal.text(`  • Test Cases: ${data.testCases}`);
+        this.terminal.text(`  • Framework: ${data.framework}`);
+        this.terminal.text(`  • Language: ${data.language}`);
+        this.terminal.text(`  • Expected Coverage: ${data.coverage?.expectedCoverage || 'N/A'}%`);
+
+        if (data.recommendations?.length > 0) {
+          this.terminal.info(`\n💡 Testing Recommendations:`);
+          data.recommendations.slice(0, 3).forEach((rec: string) => {
+            this.terminal.text(`  • ${rec}`);
+          });
+        }
+        break;
+      case 'strategy':
+        this.terminal.info(`\n📋 Testing Strategy:`);
+        this.terminal.text(`  • Recommended Framework: ${data.strategy?.recommended_framework}`);
+        this.terminal.text(`  • Current Tests: ${data.current_state?.existing_tests}`);
+        this.terminal.text(`  • Estimated Coverage: ${data.current_state?.coverage}%`);
+        break;
+      case 'analyze':
+        this.terminal.info(`\n📊 Testability Analysis: Score ${data.score}/100`);
+        if (data.improvements?.length > 0) {
+          this.terminal.info(`\n🔧 Suggested Improvements:`);
+          data.improvements.slice(0, 3).forEach((improvement: string) => {
+            this.terminal.text(`  • ${improvement}`);
+          });
+        }
+        break;
+      default:
+        this.terminal.info(JSON.stringify(data, null, 2));
     }
   }
 
@@ -1299,6 +1541,9 @@ ${plan.tasks.map((task: any, index: number) =>
         break;
       case 'task_plan':
         await this.handleTaskPlanning(routingResult);
+        break;
+      case 'tool':
+        await this.handleToolExecution(routingResult);
         break;
       case 'conversation':
         await this.handleConversation(routingResult);

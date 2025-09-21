@@ -59,6 +59,26 @@ export declare class EnhancedInteractiveMode {
      */
     private handleTaskPlanning;
     /**
+     * Handle tool execution
+     */
+    private handleToolExecution;
+    /**
+     * Display tool execution results
+     */
+    private displayToolResults;
+    /**
+     * Display Git tool results
+     */
+    private displayGitToolResults;
+    /**
+     * Display Code Analysis results
+     */
+    private displayCodeAnalysisResults;
+    /**
+     * Display Testing tool results
+     */
+    private displayTestingResults;
+    /**
      * Handle conversation responses
      */
     private handleConversation;

@@ -16,7 +16,7 @@ import { EnhancedFastPathRouter, FastPathResult } from './enhanced-fast-path-rou
 import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
 
 export interface RoutingResult {
-  type: 'command' | 'task_plan' | 'conversation' | 'clarification';
+  type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool';
   action: string;
   data: any;
   requiresConfirmation: boolean;

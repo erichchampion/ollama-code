@@ -1,0 +1,50 @@
+import { BaseTool, ToolResult, ToolExecutionContext, ToolMetadata } from './types.js';
+export interface CodeAnalysisOptions {
+    language?: 'typescript' | 'javascript' | 'python' | 'auto';
+    includeMetrics?: boolean;
+    includeSecurity?: boolean;
+    includePerformance?: boolean;
+    depth?: 'shallow' | 'deep';
+    scope?: 'file' | 'directory' | 'project';
+    format?: 'json' | 'text' | 'detailed';
+}
+export declare class AdvancedCodeAnalysisTool extends BaseTool {
+    metadata: ToolMetadata;
+    execute(parameters: Record<string, any>, context: ToolExecutionContext): Promise<ToolResult>;
+    private analyzeCode;
+    private getCodeOverview;
+    private analyzeDirectory;
+    private analyzeFile;
+    private getCodeMetrics;
+    private calculateComplexity;
+    private analyzeFileComplexity;
+    private calculateCyclomaticComplexity;
+    private categorizeComplexity;
+    private rateComplexity;
+    private calculateMaintainability;
+    private analyzeMaintainability;
+    private assessTestability;
+    private assessDocumentation;
+    private rateDocumentation;
+    private analyzeQuality;
+    private analyzeStructure;
+    private analyzeStyle;
+    private analyzePatterns;
+    private checkBestPractices;
+    private analyzeSecurity;
+    private scanFileForVulnerabilities;
+    private analyzePerformance;
+    private analyzeFilePerformance;
+    private suggestRefactoring;
+    private analyzeRefactoringOpportunities;
+    private findDuplicateLines;
+    private generateRecommendations;
+    private getAllFiles;
+    private getCodeFiles;
+    private getTestFiles;
+    private detectLanguage;
+    private detectTestingFramework;
+    private findCorrespondingTestFile;
+    private createSuccessResult;
+    private createErrorResult;
+}

@@ -10,6 +10,9 @@ export * from './orchestrator.js';
 export * from './filesystem.js';
 export * from './search.js';
 export * from './execution.js';
+export * from './advanced-git-tool.js';
+export * from './advanced-code-analysis-tool.js';
+export * from './advanced-testing-tool.js';
 /**
  * Initialize the tool system by registering all available tools
  */
