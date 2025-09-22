@@ -39,8 +39,8 @@ Implementation of advanced performance optimizations to scale ollama-code for en
 #### **Testing & Validation**
 - [x] Unit tests for incremental indexing (target: 20+ tests)
 - [ ] Integration tests with real codebases of varying sizes
-- [ ] Performance benchmarks comparing full vs incremental indexing
-- [ ] Memory usage profiling during incremental updates
+- [x] Performance benchmarks comparing full vs incremental indexing
+- [x] Memory usage profiling during incremental updates
 - [ ] Stress testing with rapid file changes
 
 ---
