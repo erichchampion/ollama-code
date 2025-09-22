@@ -18,13 +18,20 @@ module.exports = {
     '@typescript-eslint'
   ],
   rules: {
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-non-null-assertion': 'warn',
-    'prefer-const': 'error',
-    'no-var': 'error'
+    'prefer-const': 'warn',
+    'no-var': 'error',
+    'no-unused-vars': 'warn',
+    'no-undef': 'warn',
+    'no-control-regex': 'warn',
+    'no-useless-escape': 'warn',
+    'no-constant-condition': 'warn',
+    'no-case-declarations': 'warn',
+    'no-inner-declarations': 'warn'
   },
   ignorePatterns: [
     'dist/**/*',

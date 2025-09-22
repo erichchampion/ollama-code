@@ -29,6 +29,13 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Task planning and decomposition
 - Error handling and recovery
 
+### ⚡ **Performance & Scalability**
+- Enterprise-scale distributed processing for large codebases
+- Intelligent multi-tier caching with memory optimization
+- Real-time incremental updates with file watching
+- Partition-based querying for 10M+ line codebases
+- Performance monitoring and optimization recommendations
+
 ## Prerequisites
 
 - Node.js 18+ installed
@@ -231,7 +238,10 @@ git add . && git commit -m "Add project structure"
 **Priority: Critical**
 
 #### Test: Comprehensive Code Analysis
-**Command:** `"Analyze the code quality of this project"`
+**Commands:**
+1. `"Analyze the code quality of this project"`
+2. **NEW:** `"Analyze this large codebase using distributed processing"`
+3. **NEW:** `"Show me analysis performance metrics and cache status"`
 
 **Expected Results:**
 - Overall quality score and assessment
@@ -239,6 +249,8 @@ git add . && git commit -m "Add project structure"
 - Code structure evaluation with recommendations
 - File-level analysis for large projects
 - Actionable improvement suggestions
+- **NEW:** Distributed processing for enterprise-scale codebases
+- **NEW:** Performance metrics and caching optimization status
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -306,12 +318,16 @@ git add . && git commit -m "Add project structure"
 1. `"Show me what code elements are indexed in the knowledge graph"`
 2. `"What architectural patterns are used in this codebase?"`
 3. `"Show me the dependency relationships between modules"`
+4. **NEW:** `"Update the knowledge graph incrementally as I change files"`
+5. **NEW:** `"Show me knowledge graph performance metrics and optimization status"`
 
 **Expected Results:**
 - Knowledge graph statistics and indexed elements
 - Architectural pattern detection and analysis
 - Dependency mapping with relationship types
 - Visual representation of code structure
+- **NEW:** Real-time incremental updates without full rebuilds
+- **NEW:** Performance metrics showing optimization effectiveness
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -320,12 +336,16 @@ git add . && git commit -m "Add project structure"
 1. `"Find all functions that handle user input"`
 2. `"Show me potential security vulnerabilities in data flow"`
 3. `"Identify circular dependencies and coupling issues"`
+4. **NEW:** `"Partition this analysis by module for faster processing"`
+5. **NEW:** `"Cache this semantic analysis for future queries"`
 
 **Expected:**
-- Semantic search through codebase
+- Semantic search through codebase with partition-based optimization
 - Data flow analysis and security implications
 - Architectural anti-pattern detection
 - Actionable refactoring suggestions
+- **NEW:** Intelligent partitioning for large codebases
+- **NEW:** Cached results for repeated semantic queries
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -411,24 +431,227 @@ git add . && git commit -m "Add project structure"
 - **Notes:** _____________
 
 ### Test Group: Performance and Scalability
-**Priority: Medium**
+**Priority: Critical** *(Updated with new optimization features)*
 
 #### Test: Response Time and Resource Usage
 **Performance Benchmarks:**
-- Simple queries: < 2 seconds
-- Complex analysis: < 10 seconds
-- Large repository analysis: < 30 seconds
-- Memory usage: < 500MB for typical operations
+- Simple queries: < 1 second *(improved from 2s)*
+- Complex analysis: < 5 seconds *(improved from 10s)*
+- Large repository analysis: < 15 seconds *(improved from 30s)*
+- Enterprise codebases (>10M lines): < 60 seconds *(new benchmark)*
+- Memory usage: < 250MB for typical operations *(improved from 500MB)*
 
 **Test with various project sizes:**
 - Small project (< 100 files)
 - Medium project (100-1000 files)
-- Large project (> 1000 files)
+- Large project (1000-10K files) *(expanded range)*
+- Enterprise project (>10K files, >10M lines) *(new category)*
 
 **Expected:**
-- Responsive performance across project sizes
-- Reasonable resource consumption
+- Responsive performance across all project sizes
+- 50% reduced memory consumption through intelligent caching
+- Real-time updates without performance degradation
 - Progress indicators for long operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Distributed Processing Performance
+**Commands:**
+1. `"Analyze this large codebase with distributed processing"`
+2. `"Show me performance metrics for the last analysis"`
+3. `"Optimize the analysis for this enterprise codebase"`
+
+**Expected Results:**
+- Automatic detection of large codebases requiring distributed processing
+- Parallel analysis across multiple worker threads
+- Performance metrics showing 10x improvement for large codebases
+- Intelligent chunking with context-aware file grouping
+- Resource usage monitoring and optimization recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Memory Optimization and Caching
+**Commands:**
+1. `"Show me current memory usage and cache statistics"`
+2. `"Optimize memory usage for this analysis session"`
+3. `"Clear caches and show memory recovery"`
+
+**Expected Results:**
+- Multi-tier caching (memory → disk → network) working efficiently
+- Cache hit rates above 80% for repeated queries
+- Automatic memory pressure detection and cache eviction
+- Intelligent cache warming for predicted queries
+- Compression for large cached items
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Real-Time File Watching and Updates
+**Test Setup:**
+```bash
+# Start file watching in background
+./dist/src/cli-selector.js enhanced
+# In another terminal, make file changes
+echo "// New function" >> src/validation.js
+echo "export const newVar = 42;" >> math.js
+rm tests/math.test.js
+```
+
+**Commands:**
+1. `"Start watching for file changes in this project"`
+2. `"Show me what files have changed recently"`
+3. `"Update the knowledge graph with recent changes"`
+
+**Expected Results:**
+- Real-time detection of file changes (create, modify, delete)
+- Intelligent batching of changes with debouncing
+- Incremental knowledge graph updates without full rebuild
+- Conflict detection and resolution for concurrent changes
+- Background processing with minimal UI impact
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Enterprise-Scale Partition Querying
+**Commands:**
+1. `"Partition this codebase for optimal query performance"`
+2. `"Show me the current partition structure and statistics"`
+3. `"Query only the frontend components for React patterns"`
+4. `"Search across all service layer partitions for authentication"`
+
+**Expected Results:**
+- Automatic semantic partitioning by domain/layer/language
+- Partition statistics showing distribution and performance metrics
+- Targeted queries executing only on relevant partitions
+- Cross-partition relationship mapping and analysis
+- Intelligent load balancing across partition queries
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## ⚡ Performance Optimization & Enterprise Features
+
+### Test Group: Advanced Performance Features
+**Priority: Critical** *(New section for Phase 6 optimization features)*
+
+#### Test: Performance Monitoring and Benchmarking
+**Commands:**
+1. `"Show me performance statistics for recent queries"`
+2. `"Benchmark the analysis performance for this codebase"`
+3. `"What optimization recommendations do you have?"`
+4. `"Monitor query performance in real-time"`
+
+**Expected Results:**
+- Real-time query metrics tracking with timing breakdowns
+- Performance trend analysis showing improvements over time
+- Automatic benchmark detection and comparison
+- Optimization recommendations based on usage patterns
+- Alert generation for performance degradation
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Large Codebase Handling
+**Test Setup:**
+```bash
+# Create a large test project structure
+mkdir large-test-project && cd large-test-project
+git init
+# Simulate large codebase (script to create 1000+ files)
+for i in {1..1000}; do
+  mkdir -p "module$i/src" "module$i/tests"
+  echo "export class Component$i {}" > "module$i/src/index.ts"
+  echo "import { Component$i } from '../src'" > "module$i/tests/test.ts"
+done
+git add . && git commit -m "Large codebase simulation"
+```
+
+**Commands:**
+1. `"Analyze this large codebase efficiently"`
+2. `"Show me how the system partitioned this codebase"`
+3. `"Search for all classes across all modules"`
+4. `"Update analysis as I modify files"`
+
+**Expected Results:**
+- Automatic detection of large codebase requiring optimization
+- Efficient partitioning strategy applied (domain/layer/size-based)
+- Distributed processing across multiple worker threads
+- Query execution time under 60 seconds for 1000+ files
+- Memory usage remains under 500MB during analysis
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Cache Performance and Optimization
+**Commands:**
+1. `"Analyze code quality"` (first run - cache miss)
+2. `"Analyze code quality"` (second run - should hit cache)
+3. `"Show cache statistics and hit rates"`
+4. `"Clear specific cache entries and retry analysis"`
+5. `"Demonstrate predictive cache warming"`
+
+**Expected Results:**
+- First analysis takes full processing time
+- Second identical analysis completes in <500ms (cache hit)
+- Cache hit rates above 80% for repeated queries
+- Multi-tier caching visible (memory → disk → computation)
+- Intelligent cache eviction based on usage patterns
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Real-Time Update Performance
+**Test Scenario:**
+```bash
+# Start real-time monitoring
+./dist/src/cli-selector.js enhanced
+# Command: "Start real-time monitoring for this project"
+
+# In separate terminal, simulate development activity
+echo "// Added new feature" >> src/main.ts
+echo "export const NEW_FEATURE = true;" >> src/constants.ts
+rm src/deprecated.ts
+mkdir src/new-module && echo "export class NewModule {}" > src/new-module/index.ts
+```
+
+**Expected Results:**
+- File changes detected within 100ms of modification
+- Intelligent batching of rapid changes (debouncing)
+- Incremental updates without full re-analysis
+- Change impact analysis showing affected components
+- Conflict detection for concurrent modifications
+- Background processing doesn't block user interactions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Enterprise Scalability
+**Priority: High** *(Tests for enterprise-scale usage)*
+
+#### Test: Multi-Project Management
+**Commands:**
+1. `"Switch between multiple project contexts"`
+2. `"Compare architecture patterns across projects"`
+3. `"Analyze dependencies between related projects"`
+4. `"Show resource usage across all monitored projects"`
+
+**Expected Results:**
+- Efficient context switching between projects
+- Independent caching and optimization per project
+- Cross-project analysis capabilities
+- Resource isolation and management
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Concurrent User Simulation
+**Test Setup:**
+```bash
+# Simulate multiple concurrent sessions
+for i in {1..5}; do
+  ./dist/src/cli-selector.js enhanced &
+done
+```
+
+**Expected Results:**
+- Multiple sessions run without resource conflicts
+- Performance remains stable under concurrent load
+- Cache sharing optimizes resource usage
+- No memory leaks or performance degradation
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -491,6 +714,47 @@ git add . && git commit -m "Add project structure"
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario D: Enterprise Performance Validation
+**Goal:** Validate enterprise-scale performance optimization capabilities
+
+**Steps:**
+1. **Large Codebase Setup:** Create or use a large codebase (10K+ files, 1M+ lines)
+2. **Performance Baseline:** `"Analyze this codebase and show me performance metrics"`
+3. **Optimization Testing:** `"Enable all performance optimizations for this analysis"`
+4. **Real-Time Updates:** `"Start monitoring and make several file changes"`
+5. **Cache Validation:** `"Run the same analysis again and show cache performance"`
+6. **Resource Monitoring:** `"Show me memory usage and resource consumption"`
+
+**Success Criteria:**
+- Analysis completes within performance benchmarks (10x improvement target)
+- Memory usage stays within optimized limits (50% reduction target)
+- Real-time updates work without performance degradation
+- Cache hit rates achieve 80%+ for repeated queries
+- System remains responsive during intensive operations
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
+### Scenario E: Performance Stress Testing
+**Goal:** Test system stability and performance under stress conditions
+
+**Steps:**
+1. **Concurrent Load:** Run multiple analysis sessions simultaneously
+2. **Memory Pressure:** Analyze very large codebases to test memory limits
+3. **Cache Thrashing:** Perform many different queries to test cache efficiency
+4. **File Change Storm:** Make rapid file changes to test real-time processing
+5. **Recovery Testing:** Interrupt and resume operations to test stability
+
+**Success Criteria:**
+- System handles concurrent load without crashes
+- Memory usage stays within acceptable bounds under pressure
+- Performance degrades gracefully rather than failing catastrophically
+- Recovery mechanisms work properly after interruptions
+- No memory leaks or resource accumulation over time
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
@@ -502,6 +766,9 @@ git add . && git commit -m "Add project structure"
 - [ ] Test generation and strategy
 - [ ] Enhanced interactive mode
 - [ ] Error handling and recovery
+- [ ] **NEW:** Enterprise-scale performance optimization
+- [ ] **NEW:** Distributed processing for large codebases
+- [ ] **NEW:** Multi-tier intelligent caching system
 
 ### High Priority Features
 - [ ] Session management and context continuity
@@ -510,12 +777,18 @@ git add . && git commit -m "Add project structure"
 - [ ] Tool routing and integration
 - [ ] Security analysis
 - [ ] Performance analysis
+- [ ] **NEW:** Distributed processing performance
+- [ ] **NEW:** Memory optimization and caching
+- [ ] **NEW:** Real-time file watching and updates
+- [ ] **NEW:** Enterprise-scale partition querying
 
 ### Medium Priority Features
 - [ ] Best practices integration
 - [ ] Advanced semantic analysis
-- [ ] Performance optimization
-- [ ] Scalability testing
+- [ ] **ENHANCED:** Performance optimization (now includes enterprise features)
+- [ ] **ENHANCED:** Scalability testing (now includes enterprise stress testing)
+- [ ] **NEW:** Multi-project management and context switching
+- [ ] **NEW:** Concurrent user session handling
 
 ### Overall System Health
 - [ ] No critical bugs or crashes
@@ -525,11 +798,29 @@ git add . && git commit -m "Add project structure"
 
 ---
 
-**Test Plan Version:** 10.0 (Functional Capability Organization)
+**Test Plan Version:** 11.0 (Added Performance Optimization Features)
 **Created:** September 21, 2025
-**Last Updated:** September 21, 2025 (Reorganized by Functional Capabilities)
+**Last Updated:** September 21, 2025 (Added Phase 6 Performance Optimization Testing)
 **Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.1.0
-**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools, knowledge graph integration, and system integration features
+**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools, knowledge graph integration, system integration features, and enterprise-scale performance optimization
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios.
+
+**Latest Updates (v11.0):**
+- Added comprehensive enterprise-scale performance optimization testing
+- Enhanced existing test categories with new distributed processing capabilities
+- Added real-time file watching and incremental update testing
+- Included multi-tier intelligent caching validation tests
+- Added partition-based querying tests for large codebases (10M+ lines)
+- Enhanced performance benchmarks with 10x improvement targets
+- Added stress testing scenarios for enterprise scalability validation
+- Updated all priority levels to reflect new critical performance features
+
+**Key New Test Coverage:**
+- ⚡ Enterprise Performance Optimization (5 new test groups)
+- 🔄 Real-time incremental updates with file watching
+- 💾 Multi-tier intelligent caching system validation
+- 🗂️ Partition-based querying for massive codebases
+- 📊 Performance monitoring and benchmarking
+- 🏢 Enterprise scalability and concurrent user testing
