@@ -16,6 +16,7 @@
 
 import { CodeKnowledgeGraph, GraphNode, GraphEdge, GraphConfig } from './code-knowledge-graph.js';
 import { ProjectContext } from './context.js';
+import { GitChangeTracker, GitTrackingConfig } from './git-change-tracker.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -78,9 +79,11 @@ export interface IncrementalMetrics {
  */
 export class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
   private changeTracker: ChangeTracker;
+  private gitTracker: GitChangeTracker | null = null;
   private fileWatchers = new Map<string, fs.FSWatcher>();
   private incrementalConfig: {
     enableFileWatching: boolean;
+    enableGitIntegration: boolean;
     maxChangesBeforeFullRebuild: number;
     conflictResolutionStrategy: 'use_newer' | 'manual' | 'merge';
     enableBackgroundUpdates: boolean;
@@ -109,6 +112,7 @@ export class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
     // Incremental-specific configuration
     this.incrementalConfig = {
       enableFileWatching: true,
+      enableGitIntegration: true,
       maxChangesBeforeFullRebuild: 100,
       conflictResolutionStrategy: 'use_newer',
       enableBackgroundUpdates: true,
@@ -140,6 +144,11 @@ export class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
 
       // Establish baseline for incremental updates
       await this.establishBaseline();
+
+      // Set up git integration if enabled
+      if (this.incrementalConfig.enableGitIntegration) {
+        await this.setupGitIntegration();
+      }
 
       // Set up file system watchers if enabled
       if (this.incrementalConfig.enableFileWatching) {
@@ -1013,6 +1022,108 @@ export class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
     return content.substring(0, index).split('\n').length;
   }
 
+  /**
+   * Set up git integration for change tracking
+   */
+  private async setupGitIntegration(): Promise<void> {
+    try {
+      this.gitTracker = new GitChangeTracker({
+        repositoryPath: this.projectContext.root,
+        trackingMode: 'working_directory',
+        includeUntracked: true,
+        excludePatterns: [
+          'node_modules/**',
+          'dist/**',
+          'build/**',
+          '.git/**',
+          '**/*.log',
+          '**/*.tmp',
+          '**/.DS_Store'
+        ]
+      });
+
+      await this.gitTracker.initialize();
+      console.log('🔧 Git integration initialized for change tracking');
+    } catch (error) {
+      console.warn('Failed to initialize git integration:', error);
+      this.gitTracker = null;
+      // Continue without git integration
+    }
+  }
+
+  /**
+   * Get changes from git if available, fallback to file system scanning
+   */
+  async getChangesSinceLastUpdate(): Promise<FileChange[]> {
+    if (this.gitTracker) {
+      try {
+        const gitChanges = await this.gitTracker.getChangesSinceLastUpdate();
+        if (gitChanges.length > 0) {
+          console.log(`📊 Git detected ${gitChanges.length} changed files`);
+          return gitChanges;
+        }
+      } catch (error) {
+        console.warn('Git change detection failed, falling back to file system scan:', error);
+      }
+    }
+
+    // Fallback to file system scanning
+    return await this.detectChanges();
+  }
+
+  /**
+   * Enhanced change detection with git awareness
+   */
+  async performIncrementalUpdate(forceFullRebuild = false): Promise<IncrementalUpdateResult> {
+    const startTime = Date.now();
+
+    try {
+      // Use git-aware change detection
+      const changes = await this.getChangesSinceLastUpdate();
+
+      if (changes.length === 0 && !forceFullRebuild) {
+        console.log('📊 No changes detected, skipping update');
+        return {
+          nodesAdded: 0,
+          nodesUpdated: 0,
+          nodesRemoved: 0,
+          edgesAdded: 0,
+          edgesUpdated: 0,
+          edgesRemoved: 0,
+          updateTime: Date.now() - startTime,
+          cacheInvalidations: 0,
+          conflicts: []
+        };
+      }
+
+      // Process all changes
+      const result: IncrementalUpdateResult = {
+        nodesAdded: 0,
+        nodesUpdated: 0,
+        nodesRemoved: 0,
+        edgesAdded: 0,
+        edgesUpdated: 0,
+        edgesRemoved: 0,
+        updateTime: 0,
+        cacheInvalidations: 0,
+        conflicts: []
+      };
+
+      // Process each change using existing logic
+      for (const change of changes) {
+        await this.processFileChange(change, result);
+      }
+
+      result.updateTime = Date.now() - startTime;
+      this.changeTracker.lastIncrementalUpdate = new Date();
+      this.metrics.incrementalUpdates++;
+
+      return result;
+    } catch (error) {
+      console.error('Incremental update failed:', error);
+      throw error;
+    }
+  }
 
   /**
    * Clean up resources
