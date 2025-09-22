@@ -2,16 +2,18 @@ import { EventEmitter } from 'events';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { logger } from '../utils/logger.js';
+import { getPerformanceConfig, CacheConfig } from '../config/performance.js';
 
 /**
- * Memory Optimization System for Large Codebase Analysis
+ * Intelligent Cache System for Large Codebase Analysis
  *
- * Implements intelligent caching strategies:
+ * Implements intelligent caching strategies complementing the existing MemoryManager:
  * - Multi-tier caching (memory → disk → network)
  * - LRU eviction with usage patterns
- * - Memory pressure monitoring
  * - Cache warming and predictive loading
  * - Compression for disk storage
+ * - Integration with existing memory management
  */
 
 export interface CacheEntry<T = any> {
@@ -43,15 +45,8 @@ export interface MemoryStats {
   activeCaches: number;
 }
 
-export interface CacheConfig {
-  maxMemoryMB: number;
-  maxDiskMB: number;
-  defaultTTL: number;
-  compressionThreshold: number;
-  evictionRatio: number;
-  warmupEnabled: boolean;
-  diskCacheDir?: string;
-}
+// Re-export the centralized config type for backward compatibility
+export type { CacheConfig } from '../config/performance.js';
 
 export interface OptimizationRecommendation {
   type: 'memory' | 'cache' | 'compression' | 'eviction';
@@ -77,13 +72,9 @@ export class IntelligentCache<T = any> extends EventEmitter {
 
   constructor(config: Partial<CacheConfig> = {}) {
     super();
+    const defaultConfig = getPerformanceConfig().cache;
     this.config = {
-      maxMemoryMB: 256,
-      maxDiskMB: 2048,
-      defaultTTL: 3600000, // 1 hour
-      compressionThreshold: 1024, // 1KB
-      evictionRatio: 0.3,
-      warmupEnabled: true,
+      ...defaultConfig,
       ...config
     };
 
@@ -97,7 +88,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
       await fs.mkdir(this.diskCacheDir, { recursive: true });
       await this.loadDiskCacheIndex();
     } catch (error) {
-      console.warn('Failed to initialize disk cache:', error);
+      logger.warn('Failed to initialize disk cache:', error);
     }
   }
 
@@ -121,7 +112,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
       const index = Object.fromEntries(this.diskCacheIndex);
       await fs.writeFile(indexPath, JSON.stringify(index, null, 2));
     } catch (error) {
-      console.warn('Failed to save disk cache index:', error);
+      logger.warn('Failed to save disk cache index:', error);
     }
   }
 
@@ -163,7 +154,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
   } = {}): Promise<void> {
     const size = options.size || this.estimateSize(value);
     const priority = options.priority || CachePriority.NORMAL;
-    const ttl = options.ttl || this.config.defaultTTL;
+    const ttl = options.ttl || this.config.defaultTTLMs;
 
     const entry: CacheEntry<T> = {
       key,
@@ -192,8 +183,8 @@ export class IntelligentCache<T = any> extends EventEmitter {
 
     return (
       entry.priority >= CachePriority.HIGH ||
-      entry.size < this.config.compressionThreshold ||
-      projectedUsage < memoryLimit * 0.8
+      entry.size < this.config.compressionThresholdBytes ||
+      projectedUsage < memoryLimit * this.config.memoryPressureThreshold
     );
   }
 
@@ -225,7 +216,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
       });
 
       // Compress if above threshold
-      if (entry.size > this.config.compressionThreshold) {
+      if (entry.size > this.config.compressionThresholdBytes) {
         data = await this.compressData(data);
         entry.compressed = true;
       }
@@ -234,7 +225,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
       this.diskCacheIndex.set(key, filePath);
       await this.saveDiskCacheIndex();
     } catch (error) {
-      console.warn('Failed to write disk cache:', error);
+      logger.warn('Failed to write disk cache:', error);
     }
   }
 
@@ -260,7 +251,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
 
       return parsed.value;
     } catch (error) {
-      console.warn('Failed to read disk cache:', error);
+      logger.warn('Failed to read disk cache:', error);
       return undefined;
     }
   }
@@ -274,7 +265,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
         await this.saveDiskCacheIndex();
       }
     } catch (error) {
-      console.warn('Failed to delete disk cache:', error);
+      logger.warn('Failed to delete disk cache:', error);
     }
   }
 
@@ -451,7 +442,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
           const value = await fetcher(key);
           await this.set(key, value, { priority: CachePriority.NORMAL });
         } catch (error) {
-          console.warn(`Failed to warm up cache for key ${key}:`, error);
+          logger.warn(`Failed to warm up cache for key ${key}:`, error);
         }
       }
     });
@@ -475,7 +466,7 @@ export class IntelligentCache<T = any> extends EventEmitter {
       );
       this.diskCacheIndex.clear();
     } catch (error) {
-      console.warn('Failed to clear disk cache:', error);
+      logger.warn('Failed to clear disk cache:', error);
     }
 
     this.emit('cleared');
@@ -507,10 +498,10 @@ export class IntelligentCache<T = any> extends EventEmitter {
 }
 
 /**
- * Global memory optimizer singleton
+ * Advanced cache manager that integrates with existing MemoryManager
  */
-export class MemoryOptimizer {
-  private static instance: MemoryOptimizer;
+export class AdvancedCacheManager {
+  private static instance: AdvancedCacheManager;
   private caches = new Map<string, IntelligentCache>();
   private globalStats = {
     totalAllocated: 0,
@@ -518,11 +509,11 @@ export class MemoryOptimizer {
     totalMisses: 0
   };
 
-  static getInstance(): MemoryOptimizer {
-    if (!MemoryOptimizer.instance) {
-      MemoryOptimizer.instance = new MemoryOptimizer();
+  static getInstance(): AdvancedCacheManager {
+    if (!AdvancedCacheManager.instance) {
+      AdvancedCacheManager.instance = new AdvancedCacheManager();
     }
-    return MemoryOptimizer.instance;
+    return AdvancedCacheManager.instance;
   }
 
   /**

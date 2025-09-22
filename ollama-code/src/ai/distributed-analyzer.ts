@@ -13,11 +13,13 @@
  */
 
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
+import { EventEmitter } from 'events';
 import * as os from 'os';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { GraphNode, GraphEdge } from './code-knowledge-graph.js';
 import { ProjectContext } from './context.js';
+import { getPerformanceConfig, DistributedAnalysisConfig } from '../config/performance.js';
 
 // Interfaces for distributed processing
 export interface FileChunk {
@@ -92,20 +94,13 @@ export interface FileLocation {
   endColumn?: number;
 }
 
-export interface DistributedConfig {
-  maxWorkers: number;
-  chunkSizeTarget: number; // Target files per chunk
-  memoryLimitPerWorker: number; // MB
-  timeoutPerChunk: number; // seconds
-  retryAttempts: number;
-  enableAdaptiveChunking: boolean;
-  loadBalancingStrategy: 'round_robin' | 'priority' | 'adaptive';
-}
+// Re-export the centralized config type for backward compatibility
+export type DistributedConfig = DistributedAnalysisConfig;
 
 /**
  * Distributed Analyzer for parallel codebase processing
  */
-export class DistributedAnalyzer {
+export class DistributedAnalyzer extends EventEmitter {
   private config: DistributedConfig;
   private workers: Worker[] = [];
   private activeJobs = new Map<string, { worker: Worker; startTime: Date; chunk: FileChunk }>();
@@ -120,14 +115,11 @@ export class DistributedAnalyzer {
   };
 
   constructor(config: Partial<DistributedConfig> = {}) {
+    super();
+    const defaultConfig = getPerformanceConfig().distributedAnalysis;
     this.config = {
-      maxWorkers: config.maxWorkers || Math.min(os.cpus().length, 8),
-      chunkSizeTarget: config.chunkSizeTarget || 50,
-      memoryLimitPerWorker: config.memoryLimitPerWorker || 512,
-      timeoutPerChunk: config.timeoutPerChunk || 300,
-      retryAttempts: config.retryAttempts || 2,
-      enableAdaptiveChunking: config.enableAdaptiveChunking ?? true,
-      loadBalancingStrategy: config.loadBalancingStrategy || 'adaptive'
+      ...defaultConfig,
+      ...config
     };
 
     logger.info(`DistributedAnalyzer initialized with ${this.config.maxWorkers} workers`);
@@ -245,7 +237,7 @@ export class DistributedAnalyzer {
   /**
    * Create intelligent file chunks based on dependencies and complexity
    */
-  createIntelligentChunks(files: string[], projectContext: ProjectContext): FileChunk[] {
+  async createIntelligentChunks(files: string[], projectContext: ProjectContext): Promise<FileChunk[]> {
     logger.info(`Creating intelligent chunks for ${files.length} files`);
 
     const chunks: FileChunk[] = [];
@@ -255,7 +247,7 @@ export class DistributedAnalyzer {
     let chunkId = 0;
 
     while (processed.size < files.length) {
-      const chunk = this.createNextChunk(files, processed, dependencies, `chunk-${chunkId++}`);
+      const chunk = await this.createNextChunk(files, processed, dependencies, `chunk-${chunkId++}`);
       if (chunk.files.length > 0) {
         chunks.push(chunk);
       }
@@ -282,7 +274,9 @@ export class DistributedAnalyzer {
 
   private async createWorker(workerId: number): Promise<Worker> {
     return new Promise((resolve, reject) => {
-      const worker = new Worker(__filename, {
+      // Use the compiled JS file path for worker in production
+      const workerScript = __filename.replace(/\.ts$/, '.js');
+      const worker = new Worker(workerScript, {
         workerData: {
           workerId,
           config: this.config
@@ -404,6 +398,7 @@ export class DistributedAnalyzer {
     this.completedChunks.set(result.chunkId, result);
     this.activeJobs.delete(result.chunkId);
     logger.debug(`Chunk ${result.chunkId} completed in ${result.processingTime}ms`);
+    this.emit('chunkComplete', result);
   }
 
   private handleChunkError(chunkId: string, error: string): void {
@@ -422,6 +417,7 @@ export class DistributedAnalyzer {
       // Mark as permanently failed
       this.failedChunks.set(chunkId, failedChunk);
       logger.error(`Chunk ${chunkId} permanently failed after ${failedChunk.attempts} attempts: ${error}`);
+      this.emit('chunkError', chunkId, error);
     }
 
     this.activeJobs.delete(chunkId);
@@ -448,8 +444,9 @@ export class DistributedAnalyzer {
   }
 
   private setupMessageHandlers(onComplete: (result: AnalysisResult) => void, onError: (chunkId: string, error: string) => void): void {
-    // This would be implemented based on the specific worker message handling
-    // For now, it's a placeholder that would be completed with the actual message routing
+    // Set up global message handlers for completed chunks
+    this.on('chunkComplete', onComplete);
+    this.on('chunkError', onError);
   }
 
   private resolveNodeConflict(existing: GraphNode, incoming: GraphNode, chunkId: string): MergeConflict | null {
@@ -483,7 +480,7 @@ export class DistributedAnalyzer {
     return null;
   }
 
-  private createNextChunk(files: string[], processed: Set<string>, dependencies: Map<string, string[]>, chunkId: string): FileChunk {
+  private async createNextChunk(files: string[], processed: Set<string>, dependencies: Map<string, string[]>, chunkId: string): Promise<FileChunk> {
     const chunkFiles: string[] = [];
     const chunkDeps: string[] = [];
     let totalSize = 0;
@@ -515,11 +512,13 @@ export class DistributedAnalyzer {
 
       // Estimate complexity and size
       try {
-        const stats = require('fs').statSync(file);
+        const { statSync } = await import('fs');
+        const stats = statSync(file);
         totalSize += stats.size;
         estimatedComplexity += this.estimateFileComplexity(file, stats.size);
       } catch (error) {
         // File might not exist, skip
+        logger.debug(`Failed to stat file ${file}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -551,7 +550,7 @@ export class DistributedAnalyzer {
         f.includes(path.basename(file, path.extname(file)))
       );
 
-      deps.push(...relatedFiles.slice(0, 3)); // Limit to avoid massive chunks
+      deps.push(...relatedFiles.slice(0, this.config.dependencyLimit)); // Configurable limit
       dependencies.set(file, deps);
     }
 
@@ -559,43 +558,29 @@ export class DistributedAnalyzer {
   }
 
   private estimateFileComplexity(file: string, size: number): number {
-    // Simple complexity estimation based on file size and type
+    // Complexity estimation based on file size and type using configuration
     const ext = path.extname(file);
-    const baseComplexity = Math.log10(size / 1000); // Logarithmic complexity based on size
+    const config = getPerformanceConfig().fileComplexity;
+    const baseComplexity = Math.log10(size / 1000) * config.baseSizeWeight; // Configurable base complexity
 
-    const typeMultipliers: { [key: string]: number } = {
-      '.ts': 1.5,  // TypeScript is more complex
-      '.js': 1.0,  // JavaScript baseline
-      '.jsx': 1.2, // JSX slightly more complex
-      '.tsx': 1.7, // TypeScript + JSX
-      '.vue': 1.3, // Vue components
-      '.py': 1.1,  // Python
-      '.java': 1.4, // Java
-      '.cpp': 1.6, // C++
-      '.c': 1.3    // C
-    };
-
-    const multiplier = typeMultipliers[ext] || 1.0;
+    const multiplier = config.typeMultipliers[ext] || 1.0;
     return Math.max(1, baseComplexity * multiplier);
   }
 
   private determinePriority(files: string[], complexity: number): 'high' | 'medium' | 'low' {
-    // Prioritize based on file importance and complexity
+    // Prioritize based on file importance and complexity using configuration
+    const config = getPerformanceConfig().fileComplexity;
+
     const hasMainFiles = files.some(f =>
-      f.includes('index.') ||
-      f.includes('main.') ||
-      f.includes('app.') ||
-      f.includes('server.')
+      config.priorityPatterns.high.some(pattern => f.includes(pattern))
     );
 
     const hasConfigFiles = files.some(f =>
-      f.includes('config') ||
-      f.includes('package.json') ||
-      f.includes('tsconfig')
+      config.priorityPatterns.medium.some(pattern => f.includes(pattern))
     );
 
-    if (hasMainFiles || complexity > 10) return 'high';
-    if (hasConfigFiles || complexity > 5) return 'medium';
+    if (hasMainFiles || complexity > this.config.complexityThresholds.high) return 'high';
+    if (hasConfigFiles || complexity > this.config.complexityThresholds.medium) return 'medium';
     return 'low';
   }
 
@@ -689,7 +674,10 @@ async function analyzeChunkInWorker(chunk: FileChunk, config: DistributedConfig)
   for (const file of chunk.files) {
     try {
       // Simulate file analysis (this would be replaced with actual parsing)
-      await new Promise(resolve => setTimeout(resolve, 10)); // Simulate work
+      // Simulate processing (development only)
+      if (config.simulationDelayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, config.simulationDelayMs));
+      }
 
       // Create mock nodes and edges for demonstration
       nodes.push({
