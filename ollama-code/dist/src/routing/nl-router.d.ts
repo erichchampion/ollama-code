@@ -57,7 +57,9 @@ export declare class NaturalLanguageRouter {
     private healthCheckInterval;
     private config;
     private enhancedFastPathRouter;
+    private cacheManager;
     constructor(intentAnalyzer: IntentAnalyzer | EnhancedIntentAnalyzer, taskPlanner?: TaskPlanner, config?: NLRouterConfig);
+    private ensureCacheManager;
     /**
      * Route user input to appropriate handler
      */

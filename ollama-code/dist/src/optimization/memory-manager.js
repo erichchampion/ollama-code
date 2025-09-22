@@ -11,10 +11,16 @@ import { logger } from '../utils/logger.js';
 export class MemoryManager {
     cache = new Map();
     maxCacheSize = 100 * 1024 * 1024; // 100MB default
-    maxMemoryUsage = 0.8; // 80% of available memory
+    maxMemoryUsage = 0.9; // 90% of available memory (more reasonable)
     gcInterval = null;
-    constructor() {
-        this.startMemoryMonitoring();
+    lastWarningTime = 0;
+    warningCooldown = 300000; // 5 minutes between warnings
+    monitoringEnabled = true;
+    constructor(enableMonitoring = true) {
+        this.monitoringEnabled = enableMonitoring;
+        if (this.monitoringEnabled) {
+            this.startMemoryMonitoring();
+        }
     }
     /**
      * Store data in memory-optimized cache
@@ -94,7 +100,7 @@ export class MemoryManager {
                 const batch = files.slice(i, i + batchSize);
                 // Check memory before processing batch
                 if (this.isMemoryPressureHigh()) {
-                    logger.warn('High memory pressure, triggering cleanup');
+                    logger.debug('High memory pressure during batch processing, triggering cleanup');
                     await this.forceGarbageCollection();
                 }
                 await processor(batch);
@@ -145,9 +151,23 @@ export class MemoryManager {
         if (options.maxMemoryUsage) {
             this.maxMemoryUsage = options.maxMemoryUsage;
         }
+        if (options.warningCooldown) {
+            this.warningCooldown = options.warningCooldown;
+        }
+        if (options.enableMonitoring !== undefined) {
+            this.monitoringEnabled = options.enableMonitoring;
+            if (this.monitoringEnabled && !this.gcInterval) {
+                this.startMemoryMonitoring();
+            }
+            else if (!this.monitoringEnabled && this.gcInterval) {
+                this.stopMonitoring();
+            }
+        }
         logger.debug('Memory manager configured:', {
             maxCacheSize: this.formatBytes(this.maxCacheSize),
-            maxMemoryUsage: `${(this.maxMemoryUsage * 100).toFixed(1)}%`
+            maxMemoryUsage: `${(this.maxMemoryUsage * 100).toFixed(1)}%`,
+            warningCooldown: `${this.warningCooldown / 1000}s`,
+            monitoringEnabled: this.monitoringEnabled
         });
     }
     /**
@@ -157,10 +177,23 @@ export class MemoryManager {
         this.gcInterval = setInterval(() => {
             this.cleanupCache();
             if (this.isMemoryPressureHigh()) {
-                logger.warn('High memory pressure detected, cleaning up');
-                this.forceGarbageCollection();
+                this.handleMemoryPressure();
             }
-        }, 30000); // Check every 30 seconds
+        }, 60000); // Check every 60 seconds (less aggressive)
+    }
+    /**
+     * Handle memory pressure with debounced warnings
+     */
+    handleMemoryPressure() {
+        const now = Date.now();
+        const shouldWarn = (now - this.lastWarningTime) > this.warningCooldown;
+        if (shouldWarn) {
+            const stats = this.getMemoryStats();
+            const usagePercent = ((stats.used / stats.total) * 100).toFixed(1);
+            logger.warn(`High memory pressure detected (${usagePercent}% heap usage), cleaning up`);
+            this.lastWarningTime = now;
+        }
+        this.forceGarbageCollection();
     }
     /**
      * Stop memory monitoring

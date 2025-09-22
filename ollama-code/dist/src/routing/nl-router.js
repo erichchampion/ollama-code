@@ -8,6 +8,7 @@ import { logger } from '../utils/logger.js';
 import { commandRegistry } from '../commands/index.js';
 import { EnhancedFastPathRouter } from './enhanced-fast-path-router.js';
 import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
+import { globalContainer } from '../core/container.js';
 export class NaturalLanguageRouter {
     intentAnalyzer;
     taskPlanner;
@@ -16,6 +17,7 @@ export class NaturalLanguageRouter {
     healthCheckInterval;
     config;
     enhancedFastPathRouter;
+    cacheManager = null;
     constructor(intentAnalyzer, taskPlanner, config = {}) {
         this.intentAnalyzer = intentAnalyzer;
         this.taskPlanner = taskPlanner;
@@ -29,6 +31,27 @@ export class NaturalLanguageRouter {
             ...FAST_PATH_CONFIG_DEFAULTS,
             fuzzyThreshold: 0.8
         });
+        // Initialize cache manager lazily
+        this.cacheManager = null;
+    }
+    async ensureCacheManager() {
+        if (this.cacheManager !== null) {
+            return; // Already initialized or failed to initialize
+        }
+        try {
+            // Try to get cache manager from DI container
+            if (globalContainer.has('aiCacheManager')) {
+                this.cacheManager = await globalContainer.resolve('aiCacheManager');
+                logger.debug('AI cache manager initialized for router');
+            }
+            else {
+                this.cacheManager = false; // Mark as unavailable
+            }
+        }
+        catch (error) {
+            logger.debug('AI cache manager not available:', error);
+            this.cacheManager = false; // Mark as unavailable
+        }
     }
     /**
      * Route user input to appropriate handler
@@ -37,6 +60,30 @@ export class NaturalLanguageRouter {
         const startTime = performance.now();
         try {
             logger.debug('Routing user input', { input: input.substring(0, 100) });
+            // Ensure cache manager is initialized and check cache first for repeated queries
+            await this.ensureCacheManager();
+            if (this.cacheManager !== null && this.cacheManager !== false) {
+                const cacheContext = {
+                    workingDirectory: context.workingDirectory,
+                    projectPath: context.workingDirectory,
+                    hasEnhancedContext: !!context.enhancedContext
+                };
+                const cachedResponse = await this.cacheManager.getCachedResponse(input, cacheContext, 'router');
+                if (cachedResponse) {
+                    logger.info('Cache hit for routing query', { input: input.substring(0, 50) });
+                    try {
+                        const cachedResult = JSON.parse(cachedResponse);
+                        // Add enhanced context if available
+                        if (context.enhancedContext) {
+                            cachedResult.enhancedContext = context.enhancedContext;
+                        }
+                        return cachedResult;
+                    }
+                    catch (error) {
+                        logger.warn('Failed to parse cached routing result:', error);
+                    }
+                }
+            }
             // Enhanced fast-path: Use comprehensive pattern matching first
             const enhancedFastPathResult = await this.enhancedFastPathRouter.checkFastPath(input);
             if (enhancedFastPathResult) {
@@ -45,7 +92,7 @@ export class NaturalLanguageRouter {
                     method: enhancedFastPathResult.method,
                     confidence: enhancedFastPathResult.confidence
                 });
-                return {
+                const fastPathRoutingResult = {
                     type: 'command',
                     action: enhancedFastPathResult.commandName,
                     data: {
@@ -57,6 +104,16 @@ export class NaturalLanguageRouter {
                     estimatedTime: 2, // Very fast execution
                     riskLevel: 'low'
                 };
+                // Cache fast-path results too
+                if (this.cacheManager !== null && this.cacheManager !== false) {
+                    const cacheContext = {
+                        workingDirectory: context.workingDirectory,
+                        projectPath: context.workingDirectory,
+                        hasEnhancedContext: !!context.enhancedContext
+                    };
+                    await this.cacheManager.cacheResponse(input, JSON.stringify(fastPathRoutingResult), cacheContext, 'router');
+                }
+                return fastPathRoutingResult;
             }
             // Fallback to original fast-path for backward compatibility
             const fastCommandCheck = this.checkFastCommandMapping(input);
@@ -92,6 +149,19 @@ export class NaturalLanguageRouter {
             );
             // Route based on intent and confidence
             const routingResult = await this.determineRoute(intent, context, turn);
+            // Cache the routing result for repeated queries
+            if (this.cacheManager !== null && this.cacheManager !== false && routingResult.type !== 'clarification') {
+                const cacheContext = {
+                    workingDirectory: context.workingDirectory,
+                    projectPath: context.workingDirectory,
+                    hasEnhancedContext: !!context.enhancedContext
+                };
+                // Don't cache the enhanced context itself, just the routing result
+                const resultToCache = { ...routingResult };
+                delete resultToCache.enhancedContext;
+                await this.cacheManager.cacheResponse(input, JSON.stringify(resultToCache), cacheContext, 'router');
+                logger.debug('Cached routing result for query', { input: input.substring(0, 50) });
+            }
             const duration = performance.now() - startTime;
             logger.debug('Routing completed', {
                 duration: `${duration.toFixed(2)}ms`,

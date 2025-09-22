@@ -69,6 +69,10 @@ export class EnhancedInteractiveMode {
         logger.info('Initializing enhanced interactive mode...');
         // Initialize terminal
         this.terminal = await initTerminal({});
+        // Register services for dependency injection
+        const { registerServices } = await import('../core/services.js');
+        await registerServices();
+        logger.debug('Core services registered');
         // Initialize tool system and commands
         initializeToolSystem();
         registerCommands();
