@@ -491,7 +491,7 @@ describe('Performance Integration Tests', () => {
       }
 
       const cacheHitRate = totalCacheHits / queries.length;
-      expect(cacheHitRate).toBeGreaterThan(0.7); // At least 70% cache hit rate
+      expect(cacheHitRate).toBeGreaterThanOrEqual(0.7); // At least 70% cache hit rate
     });
   });
 

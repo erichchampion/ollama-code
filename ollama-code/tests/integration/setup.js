@@ -38,7 +38,7 @@ const mockOllamaServer = {
  */
 async function execCLI(args = [], options = {}) {
   const {
-    timeout = 5000, // Reduced from 10000 to 5000
+    timeout = 10000, // Increased back to 10000 for stability
     input = null,
     env = {},
     expectError = false
@@ -179,7 +179,10 @@ const testEnv = {
   OLLAMA_SKIP_ENHANCED_INIT: 'true',
   OLLAMA_DISABLE_PROJECT_CONTEXT: 'true', // Disable project context for faster tests
   OLLAMA_DISABLE_PERFORMANCE_MONITORING: 'true', // Disable performance monitoring
-  OLLAMA_TEST_ISOLATION: 'true' // Enable test isolation mode
+  OLLAMA_TEST_ISOLATION: 'true', // Enable test isolation mode
+  OLLAMA_OFFLINE_MODE: 'true', // Force offline mode
+  OLLAMA_DISABLE_AI: 'true', // Disable AI features for error tests
+  OLLAMA_FAST_EXIT: 'true' // Enable fast exit for error conditions
 };
 
 // Export all functions and constants

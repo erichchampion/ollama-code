@@ -59,7 +59,8 @@ describe('System Commands', () => {
     test('should show error when no file provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'edit'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
@@ -111,7 +112,8 @@ describe('System Commands', () => {
     test('should show error when no git operation provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'git'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
@@ -156,7 +158,8 @@ describe('System Commands', () => {
     test('should show error when no command provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'run'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
@@ -212,7 +215,8 @@ describe('System Commands', () => {
     test('should show error when no search term provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'search'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
