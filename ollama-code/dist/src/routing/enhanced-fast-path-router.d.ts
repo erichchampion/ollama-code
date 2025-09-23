@@ -53,6 +53,10 @@ export declare class EnhancedFastPathRouter {
      */
     private fuzzyMatch;
     /**
+     * Check if input looks like a natural language request rather than a command
+     */
+    private isNaturalLanguageRequest;
+    /**
      * Initialize comprehensive pattern rules
      */
     private initializePatternRules;

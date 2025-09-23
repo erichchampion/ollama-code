@@ -148,6 +148,10 @@ export class EnhancedFastPathRouter {
         const trimmed = input.trim().toLowerCase();
         const parts = trimmed.split(/\s+/);
         const potential = parts[0];
+        // Skip fuzzy matching for complex sentences (likely natural language requests)
+        if (parts.length > 4 || this.isNaturalLanguageRequest(trimmed)) {
+            return null;
+        }
         const commands = commandRegistry.list();
         let bestMatch = null;
         let bestScore = 0;
@@ -164,6 +168,21 @@ export class EnhancedFastPathRouter {
             }
         }
         return bestMatch;
+    }
+    /**
+     * Check if input looks like a natural language request rather than a command
+     */
+    isNaturalLanguageRequest(input) {
+        // Common indicators of natural language requests
+        const naturalLanguageIndicators = [
+            /\b(set up|setup)\s+.*\b(framework|system|environment|infrastructure|project)/i,
+            /\b(create|build|implement|develop|write)\s+.*\b(for|a|an|the)\b/i,
+            /\b(how to|how can|can you|please|help me)\b/i,
+            /\b(i want|i need|i would like)\b/i,
+            /\b(what is|what are|explain|describe)\b/i,
+            /\b(complete|comprehensive|full|entire)\b.*\b(testing|framework|system|solution)\b/i
+        ];
+        return naturalLanguageIndicators.some(pattern => pattern.test(input));
     }
     /**
      * Initialize comprehensive pattern rules

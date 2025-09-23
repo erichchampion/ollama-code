@@ -371,7 +371,7 @@ export class EnhancedIntentAnalyzer {
 
       // Testing
       {
-        pattern: /run\s+(tests?|testing)/,
+        pattern: /(run|execute|start)\s+(the\s+)?(tests?|testing|test\s+suite|testing\s+suite)/,
         type: 'command',
         action: 'execute tests',
         confidence: 0.9,
@@ -383,6 +383,66 @@ export class EnhancedIntentAnalyzer {
         action: 'create test cases',
         confidence: 0.8,
         complexity: 'moderate'
+      },
+      {
+        pattern: /(set\s*up|setup|create|build|implement)\s+(a\s+)?(complete\s+)?(testing\s+)?(framework|test\s+framework)/,
+        type: 'task_request',
+        action: 'setup testing framework',
+        confidence: 0.85,
+        complexity: 'moderate',
+        entities: {
+          technologies: ['testing', 'framework'],
+          concepts: ['testing']
+        }
+      },
+
+      // Complex application setup
+      {
+        pattern: /(set\s*up|setup|create|build|implement)\s+(a\s+)?(complete\s+)?(react|vue|angular)\s+(application|app|project)/,
+        type: 'task_request',
+        action: 'setup application project',
+        confidence: 0.85,
+        complexity: 'complex',
+        entities: {
+          technologies: ['react', 'application'],
+          concepts: ['development']
+        }
+      },
+
+      // Security analysis
+      {
+        pattern: /(check|scan|analyze|review)\s+((this\s+)?(codebase|code|project)\s+)?(for\s+)?(security\s+)?(vulnerabilities|issues|problems|flaws|risks)/,
+        type: 'task_request',
+        action: 'analyze security vulnerabilities',
+        confidence: 0.85,
+        complexity: 'moderate',
+        entities: {
+          concepts: ['security']
+        }
+      },
+
+      // File-specific test generation
+      {
+        pattern: /(generate|create|write)\s+(unit\s+)?(tests?)\s+(for\s+)?(the\s+)?([a-zA-Z0-9_-]+\.(js|ts|py|java|cpp|c))\s+(file)?/,
+        type: 'task_request',
+        action: 'generate file-specific tests',
+        confidence: 0.85,
+        complexity: 'moderate',
+        entities: {
+          concepts: ['testing']
+        }
+      },
+
+      // Testing strategy recommendations
+      {
+        pattern: /(recommend|suggest|propose)\s+(a\s+)?(testing\s+)?(strategy|plan|approach)\s+(for\s+)?(this\s+)?(project|codebase)/,
+        type: 'task_request',
+        action: 'recommend testing strategy',
+        confidence: 0.85,
+        complexity: 'moderate',
+        entities: {
+          concepts: ['testing']
+        }
       }
     ];
   }
@@ -418,11 +478,26 @@ export class EnhancedIntentAnalyzer {
     const techKeywords = [
       'react', 'vue', 'angular', 'node', 'express', 'typescript', 'javascript',
       'python', 'java', 'cpp', 'rust', 'go', 'docker', 'kubernetes', 'aws',
-      'mongodb', 'postgresql', 'mysql', 'redis', 'graphql', 'rest', 'api'
+      'mongodb', 'postgresql', 'mysql', 'redis', 'graphql', 'rest', 'api',
+      'testing', 'test', 'framework', 'jest', 'mocha', 'jasmine', 'pytest',
+      'junit', 'cypress', 'playwright', 'vitest'
     ];
 
     const lowerInput = input.toLowerCase();
-    return techKeywords.filter(tech => lowerInput.includes(tech));
+    const keywordMatches = techKeywords.filter(tech => lowerInput.includes(tech));
+
+    // Also check for testing framework patterns
+    const testingPatterns = [
+      /(?:testing|test).*(?:framework|suite|setup|environment)/gi,
+      /(?:framework|system|environment|infrastructure|project).*(?:testing|test)/gi
+    ];
+
+    const hasTestingPattern = testingPatterns.some(pattern => pattern.test(input));
+    if (hasTestingPattern && !keywordMatches.includes('testing')) {
+      keywordMatches.push('testing', 'framework');
+    }
+
+    return keywordMatches;
   }
 
   private extractConcepts(input: string): string[] {

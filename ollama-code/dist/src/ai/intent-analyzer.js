@@ -126,7 +126,10 @@ export class IntentAnalyzer {
         const techPatterns = [
             /(?:using|with|in)\s+(React|Vue|Angular|Express|FastAPI|Django|Spring|Laravel)/gi,
             /(JavaScript|TypeScript|Python|Java|C\+\+|Go|Rust|PHP|Ruby)/gi,
-            /(Node\.js|npm|yarn|pip|maven|gradle|cargo|composer)/gi
+            /(Node\.js|npm|yarn|pip|maven|gradle|cargo|composer)/gi,
+            /(testing|test|framework|jest|mocha|jasmine|pytest|junit|cypress|playwright|vitest)/gi,
+            /(?:testing|test).*(?:framework|suite|setup|environment)/gi,
+            /(?:framework|system|environment|infrastructure|project).*(?:testing|test)/gi
         ];
         // Apply patterns
         this.applyPatterns(filePatterns, input, entities.files);
@@ -372,9 +375,19 @@ Return ONLY the category name.`;
         if (hasVagueAction && entityResult.entities.files.length === 0) {
             suggestions.push('Which file or component would you like me to work on?');
         }
-        // Check for missing technology context
-        if (input.toLowerCase().includes('create') && entityResult.entities.technologies.length === 0) {
-            suggestions.push('What technology or framework should I use?');
+        // Check for missing technology context for create/setup requests
+        const setupKeywords = ['create', 'setup', 'set up', 'build', 'implement'];
+        const hasSetupKeyword = setupKeywords.some(keyword => input.toLowerCase().includes(keyword));
+        if (hasSetupKeyword && entityResult.entities.technologies.length === 0) {
+            // Only ask for clarification if the request is genuinely vague
+            const hasSpecificContext = input.toLowerCase().includes('testing') ||
+                input.toLowerCase().includes('framework') ||
+                input.toLowerCase().includes('for this project') ||
+                input.toLowerCase().includes('complete') ||
+                entityResult.entities.concepts.length > 0;
+            if (!hasSpecificContext) {
+                suggestions.push('What technology or framework should I use?');
+            }
         }
         // Check for scope clarity
         if (input.length < 20 && !context.lastIntent) {
