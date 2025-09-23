@@ -27,8 +27,8 @@ export class PartitionQueryEngine extends EventEmitter {
         this.queryCache = new IntelligentCache({
             maxMemoryMB: 512,
             maxDiskMB: 4096,
-            defaultTTL: 7200000, // 2 hours
-            compressionThreshold: 2048
+            defaultTTLMs: 7200000, // 2 hours
+            compressionThresholdBytes: 2048
         });
         this.performanceMonitor = new QueryPerformanceMonitor();
         this.resourceMonitor = new ResourceMonitor();

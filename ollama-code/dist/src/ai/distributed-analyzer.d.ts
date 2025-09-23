@@ -11,8 +11,10 @@
  * - Performance monitoring and adaptive load balancing
  * - Error handling and retry mechanisms for failed chunks
  */
+import { EventEmitter } from 'events';
 import { GraphNode, GraphEdge } from './code-knowledge-graph.js';
 import { ProjectContext } from './context.js';
+import { DistributedAnalysisConfig } from '../config/performance.js';
 export interface FileChunk {
     id: string;
     files: string[];
@@ -77,19 +79,11 @@ export interface FileLocation {
     startColumn?: number;
     endColumn?: number;
 }
-export interface DistributedConfig {
-    maxWorkers: number;
-    chunkSizeTarget: number;
-    memoryLimitPerWorker: number;
-    timeoutPerChunk: number;
-    retryAttempts: number;
-    enableAdaptiveChunking: boolean;
-    loadBalancingStrategy: 'round_robin' | 'priority' | 'adaptive';
-}
+export type DistributedConfig = DistributedAnalysisConfig;
 /**
  * Distributed Analyzer for parallel codebase processing
  */
-export declare class DistributedAnalyzer {
+export declare class DistributedAnalyzer extends EventEmitter {
     private config;
     private workers;
     private activeJobs;
@@ -108,7 +102,7 @@ export declare class DistributedAnalyzer {
     /**
      * Create intelligent file chunks based on dependencies and complexity
      */
-    createIntelligentChunks(files: string[], projectContext: ProjectContext): FileChunk[];
+    createIntelligentChunks(files: string[], projectContext: ProjectContext): Promise<FileChunk[]>;
     private initializeWorkers;
     private createWorker;
     private prioritizeChunks;

@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.1.0
-*Comprehensive Functional Testing for AI-Powered Development Assistant*
+# Manual Test Plan - Ollama Code CLI v0.2.29
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Phase 6 Optimizations*
 
 ## Overview
 
@@ -35,6 +35,14 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Real-time incremental updates with file watching
 - Partition-based querying for 10M+ line codebases
 - Performance monitoring and optimization recommendations
+
+### 🛠️ **Infrastructure & System Reliability**
+- Centralized performance configuration management
+- Shared cache utilities with LRU eviction and metrics
+- Managed EventEmitter system with automatic cleanup
+- Memory leak prevention and resource monitoring
+- Improved test infrastructure with reliable execution
+- TypeScript compilation optimizations
 
 ## Prerequisites
 
@@ -526,6 +534,223 @@ rm tests/math.test.js
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+### Test Group: AI Response Optimization (Phase 6.2)
+**Priority: Critical** *(New Phase 6.2 AI response optimization features)*
+
+#### Test: Predictive AI Caching System
+**Commands:**
+1. `"Enable predictive AI caching for this session"`
+2. `"Show me cache hit rates and performance metrics"`
+3. `"Clear predictive cache and demonstrate learning"`
+4. `"Show user behavior patterns and predictions"`
+
+**Expected Results:**
+- Intelligent caching with >80% cache hit rates for repeated queries
+- User behavior pattern learning and sequence prediction
+- Context-aware cache prefetching for likely next queries
+- Multi-tier prediction models (sequence, context, similarity, temporal)
+- 80% faster cached responses compared to uncached
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Real-Time Streaming Response System
+**Commands:**
+1. `"Start a complex analysis with streaming progress updates"`
+2. `"Cancel an operation mid-stream and verify cleanup"`
+3. `"Show streaming performance metrics and token rates"`
+4. `"Test concurrent streaming operations"`
+
+**Expected Results:**
+- Real-time progress updates with detailed status information
+- Token-by-token streaming for generation tasks with <100ms latency
+- Cancellable operations with proper resource cleanup
+- Performance metrics showing tokens/second and completion rates
+- Support for multiple concurrent streams without interference
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Startup Time Optimization (Phase 6.3)
+**Priority: High** *(New Phase 6.3 startup optimization features)*
+
+#### Test: Optimized Application Startup
+**Commands:**
+1. `"Restart the application and measure startup time"`
+2. `"Show startup optimization metrics and module loading"`
+3. `"Enable lazy loading mode and restart"`
+4. `"Show memory usage immediately after startup"`
+
+**Expected Results:**
+- Sub-2-second application startup time (target: <2000ms)
+- Lazy loading of non-critical modules (40-60% reduction in startup time)
+- Parallel initialization of independent components
+- Critical module prioritization with dependency resolution
+- Memory usage under 250MB immediately after startup
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Module Loading Optimization
+**Commands:**
+1. `"Show module loading priority and dependencies"`
+2. `"Load a deferred module on demand"`
+3. `"Show parallel loading performance vs sequential"`
+4. `"Test background module warming"`
+
+**Expected Results:**
+- Critical modules loaded first (logger, config, AI client)
+- On-demand loading of lazy modules (knowledge graph, realtime engine)
+- Parallel loading showing time savings vs sequential
+- Background warming of low-priority modules without blocking
+- Module load time tracking and optimization recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Performance Monitoring Dashboard (Phase 6.4)
+**Priority: Critical** *(New Phase 6.4 comprehensive monitoring)*
+
+#### Test: Real-Time Performance Dashboard
+**Commands:**
+1. `"Start the performance monitoring dashboard"`
+2. `"Show real-time CPU, memory, and cache metrics"`
+3. `"Generate performance alerts by exceeding thresholds"`
+4. `"Show performance trends over the last hour"`
+
+**Expected Results:**
+- Real-time monitoring with 5-second metric collection intervals
+- CPU, memory, network, cache, and streaming metrics displayed
+- Automatic alert generation when thresholds exceeded (CPU >90%, memory >1GB)
+- Performance trend analysis showing improving/degrading metrics
+- Health scoring with overall system status (good/warning/critical)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Optimization Recommendations Engine
+**Commands:**
+1. `"Generate optimization recommendations for current performance"`
+2. `"Show critical and high-priority performance issues"`
+3. `"Apply recommended optimizations and measure impact"`
+4. `"Export performance report with trends and recommendations"`
+
+**Expected Results:**
+- Intelligent recommendations based on metrics, trends, and alerts
+- Priority-based recommendation ranking (critical > high > medium > low)
+- Specific implementation guidance for each recommendation
+- Estimated performance improvement percentages and confidence scores
+- Comprehensive reports with actionable optimization strategies
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## 🛠️ Configuration Management & System Reliability
+
+### Test Group: Centralized Configuration System
+**Priority: High**
+
+#### Test: Performance Configuration Management
+**Commands:**
+1. `"Show me current performance configuration settings"`
+2. `"What caching strategies are currently enabled?"`
+3. `"Display indexing and storage optimization settings"`
+4. **NEW:** `"Validate that all systems use centralized configuration"`
+
+**Expected Results:**
+- Centralized configuration accessible across all systems
+- Performance settings displayed with current values and sources
+- Indexing configuration (B-tree order, search limits, spatial index settings)
+- Storage configuration (cache sizes, compression thresholds, cleanup intervals)
+- Monitoring configuration (collection intervals, alert thresholds)
+- File pattern configuration (exclusion/inclusion patterns)
+- No hardcoded values detected in system operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Configuration Validation and Consistency
+**Commands:**
+1. `"Check configuration consistency across all systems"`
+2. `"Validate performance threshold settings"`
+3. `"Show configuration impact on system performance"`
+
+**Expected Results:**
+- All systems reference centralized configuration values
+- No duplicate configuration definitions found
+- Configuration values within acceptable performance ranges
+- Clear documentation of configuration relationships
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Memory Management and Resource Cleanup
+**Priority: Critical**
+
+#### Test: Managed EventEmitter System
+**Commands:**
+1. `"Start multiple analysis operations and monitor EventEmitter usage"`
+2. `"Check for memory leaks during extended operations"`
+3. `"Verify automatic cleanup on system shutdown"`
+4. **NEW:** `"Test EventEmitter resource tracking and metrics"`
+
+**Expected Results:**
+- EventEmitter instances properly tracked and monitored
+- Automatic cleanup of listeners and timers on destroy
+- Memory leak warnings generated when thresholds exceeded
+- No hanging event listeners after operations complete
+- Resource metrics available for monitoring
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Cache Manager Performance
+**Commands:**
+1. `"Test LRU cache performance with various data sizes"`
+2. `"Verify cache eviction strategies under memory pressure"`
+3. `"Monitor cache hit rates and optimization effectiveness"`
+4. **NEW:** `"Test shared cache utilities across different systems"`
+
+**Expected Results:**
+- LRU cache operates efficiently with configurable size limits
+- Proper eviction of least recently used items under pressure
+- Cache metrics tracked (hit rate, eviction count, memory usage)
+- Multiple systems can share cache utilities without conflicts
+- TTL-based expiration works correctly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Test Infrastructure Reliability
+**Priority: High**
+
+#### Test: Integration Test Stability
+**Commands:**
+```bash
+# Run integration tests multiple times to verify stability
+yarn test tests/integration/system.test.js
+yarn test tests/integration/performance-integration.test.cjs
+yarn test --testPathPatterns="integration"
+```
+
+**Expected Results:**
+- Integration tests complete without hanging
+- Sequential execution prevents resource conflicts
+- All active tests pass consistently
+- No EPIPE errors or broken pipe issues
+- Test execution completes within expected timeframes (< 60 seconds)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: TypeScript Compilation and Build System
+**Commands:**
+```bash
+yarn build
+yarn lint
+yarn test
+```
+
+**Expected Results:**
+- TypeScript compilation completes without errors
+- No duplicate identifier issues
+- All type definitions properly resolved
+- Linting passes without critical issues
+- Build artifacts generated correctly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ---
 
 ## ⚡ Performance Optimization & Enterprise Features
@@ -539,6 +764,8 @@ rm tests/math.test.js
 2. `"Benchmark the analysis performance for this codebase"`
 3. `"What optimization recommendations do you have?"`
 4. `"Monitor query performance in real-time"`
+5. **NEW:** `"Start the performance monitoring dashboard"`
+6. **NEW:** `"Show me current system health and alerts"`
 
 **Expected Results:**
 - Real-time query metrics tracking with timing breakdowns
@@ -546,6 +773,8 @@ rm tests/math.test.js
 - Automatic benchmark detection and comparison
 - Optimization recommendations based on usage patterns
 - Alert generation for performance degradation
+- **NEW:** Comprehensive performance dashboard with real-time metrics
+- **NEW:** Health scoring and alert system for performance issues
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -755,6 +984,47 @@ done
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario F: Phase 6 Optimization Integration
+**Goal:** Validate end-to-end Phase 6 performance optimization features
+
+**Steps:**
+1. **Startup Optimization:** `"Restart application with startup optimization enabled"`
+2. **Predictive Caching:** `"Enable predictive caching and perform repeated analyses"`
+3. **Streaming Operations:** `"Start a large analysis with real-time streaming updates"`
+4. **Performance Dashboard:** `"Monitor system health and performance in real-time"`
+5. **Optimization Cycle:** `"Apply dashboard recommendations and measure improvements"`
+
+**Success Criteria:**
+- Startup time reduced to <2 seconds with lazy loading
+- Cache hit rates >80% for repeated operations
+- Streaming responses show real-time progress without blocking
+- Performance dashboard accurately reflects system health
+- Optimization recommendations lead to measurable performance improvements
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
+### Scenario G: Infrastructure and System Reliability Validation
+**Goal:** Validate infrastructure improvements and system reliability features
+
+**Steps:**
+1. **Configuration Management:** `"Verify all systems use centralized configuration without hardcoded values"`
+2. **Memory Management:** `"Run extended operations and monitor EventEmitter cleanup and cache performance"`
+3. **Test Infrastructure:** `"Execute complete test suite multiple times to verify reliability"`
+4. **Build System:** `"Perform clean builds and verify TypeScript compilation consistency"`
+5. **Resource Monitoring:** `"Monitor system resources during intensive operations"`
+
+**Success Criteria:**
+- All systems reference centralized configuration values consistently
+- No memory leaks detected during extended operations
+- Integration tests complete reliably without hanging (100% success rate)
+- TypeScript compilation produces no errors or warnings
+- EventEmitter resources cleaned up properly with metrics available
+- Cache utilities operate efficiently with proper eviction strategies
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
@@ -769,6 +1039,13 @@ done
 - [ ] **NEW:** Enterprise-scale performance optimization
 - [ ] **NEW:** Distributed processing for large codebases
 - [ ] **NEW:** Multi-tier intelligent caching system
+- [ ] **NEW:** Predictive AI caching with >80% hit rates
+- [ ] **NEW:** Real-time streaming response system
+- [ ] **NEW:** Performance monitoring dashboard
+- [ ] **NEW:** Centralized configuration management system
+- [ ] **NEW:** Managed EventEmitter with automatic cleanup
+- [ ] **NEW:** Shared cache utilities and resource management
+- [ ] **NEW:** Reliable integration test infrastructure
 
 ### High Priority Features
 - [ ] Session management and context continuity
@@ -781,6 +1058,13 @@ done
 - [ ] **NEW:** Memory optimization and caching
 - [ ] **NEW:** Real-time file watching and updates
 - [ ] **NEW:** Enterprise-scale partition querying
+- [ ] **NEW:** Startup time optimization with lazy loading
+- [ ] **NEW:** User behavior pattern learning for predictive caching
+- [ ] **NEW:** Performance trend analysis and alerting
+- [ ] **NEW:** Configuration consistency across all systems
+- [ ] **NEW:** Memory leak prevention and detection
+- [ ] **NEW:** TypeScript compilation and build system reliability
+- [ ] **NEW:** Test infrastructure stability and execution
 
 ### Medium Priority Features
 - [ ] Best practices integration
@@ -798,29 +1082,38 @@ done
 
 ---
 
-**Test Plan Version:** 11.0 (Added Performance Optimization Features)
+**Test Plan Version:** 13.0 (Added Infrastructure and System Reliability Features)
 **Created:** September 21, 2025
-**Last Updated:** September 21, 2025 (Added Phase 6 Performance Optimization Testing)
-**Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.1.0
-**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools, knowledge graph integration, system integration features, and enterprise-scale performance optimization
+**Last Updated:** September 22, 2025 (Added Infrastructure & System Reliability Testing)
+**Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.2.29
+**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, and infrastructure reliability improvements
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios.
 
-**Latest Updates (v11.0):**
-- Added comprehensive enterprise-scale performance optimization testing
-- Enhanced existing test categories with new distributed processing capabilities
-- Added real-time file watching and incremental update testing
-- Included multi-tier intelligent caching validation tests
-- Added partition-based querying tests for large codebases (10M+ lines)
-- Enhanced performance benchmarks with 10x improvement targets
-- Added stress testing scenarios for enterprise scalability validation
-- Updated all priority levels to reflect new critical performance features
+**Latest Updates (v13.0):**
+- Added Infrastructure & System Reliability testing section with centralized configuration
+- Added Managed EventEmitter testing for memory leak prevention and resource cleanup
+- Added shared cache utilities testing with LRU eviction and performance metrics
+- Added test infrastructure reliability validation with improved execution stability
+- Added TypeScript compilation and build system reliability testing
+- Enhanced integration scenarios with infrastructure validation (Scenario G)
+- Updated critical and high priority feature lists with infrastructure improvements
+- Added comprehensive configuration management and consistency testing
 
-**Key New Test Coverage:**
-- ⚡ Enterprise Performance Optimization (5 new test groups)
-- 🔄 Real-time incremental updates with file watching
-- 💾 Multi-tier intelligent caching system validation
-- 🗂️ Partition-based querying for massive codebases
-- 📊 Performance monitoring and benchmarking
-- 🏢 Enterprise scalability and concurrent user testing
+**Key New Test Coverage (v13.0):**
+- 🛠️ Centralized Performance Configuration Management with no hardcoded values
+- 🔧 Managed EventEmitter System with automatic cleanup and memory leak prevention
+- 📦 Shared Cache Utilities with LRU eviction, metrics, and resource management
+- 🧪 Reliable Integration Test Infrastructure with sequential execution and no hanging
+- 🔨 TypeScript Compilation System with error-free builds and proper type resolution
+- 📊 Configuration Consistency Validation across all system components
+- 🎯 Infrastructure and System Reliability integration testing scenario
+
+**Previous Updates (v12.0):**
+- 🧠 Predictive AI Caching System with >80% hit rates and user behavior learning
+- 🔄 Real-Time Streaming Response System with token-level progress and cancellation
+- ⚡ Startup Time Optimization with <2-second startup and lazy module loading
+- 📊 Performance Monitoring Dashboard with real-time metrics and health scoring
+- 🎯 Optimization Recommendations Engine with actionable performance improvements
+- 🔗 End-to-end Phase 6 optimization integration testing scenario

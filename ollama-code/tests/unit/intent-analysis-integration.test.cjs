@@ -10,13 +10,25 @@ describe('Intent Analysis Integration', () => {
   test('should handle timeout protection requirements', () => {
     // Test the timeout protection concept
     const createTimeoutPromise = (timeout) => {
-      return new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Analysis timeout')), timeout);
+      let timeoutId;
+      const promise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Analysis timeout')), timeout);
       });
+      // Add a clear function to the promise for cleanup
+      promise.clear = () => clearTimeout(timeoutId);
+      return promise;
     };
 
-    // Test timeout creation
-    expect(() => createTimeoutPromise(1000)).not.toThrow();
+    // Test timeout creation and cleanup - capture the promise to clean it up
+    let timeoutPromise;
+    expect(() => {
+      timeoutPromise = createTimeoutPromise(1000);
+    }).not.toThrow();
+
+    // Clean up the timeout to prevent open handles
+    if (timeoutPromise && timeoutPromise.clear) {
+      timeoutPromise.clear();
+    }
   });
 
   test('should validate intent structure requirements', () => {

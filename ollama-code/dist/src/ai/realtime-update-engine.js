@@ -73,7 +73,7 @@ export class RealtimeUpdateEngine extends EventEmitter {
         };
         this.updateCache = new IntelligentCache({
             maxMemoryMB: 128,
-            defaultTTL: 300000 // 5 minutes
+            defaultTTLMs: 300000 // 5 minutes
         });
         this.conflictResolver = new ConflictResolver();
         this.stats = this.initializeStats();

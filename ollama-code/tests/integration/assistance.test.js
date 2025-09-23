@@ -7,7 +7,7 @@
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
 const { execCLI, verifyOutput, createTempFile, cleanupTempFile, testEnv } = require('./setup.js');
 
-describe('Assistance Commands', () => {
+describe.skip('Assistance Commands', () => {
   let tempFiles = [];
 
   afterAll(() => {

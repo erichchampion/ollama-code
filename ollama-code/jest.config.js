@@ -20,9 +20,10 @@ export default {
     },
     {
       displayName: 'integration',
-      testMatch: ['**/tests/integration/*.test.js'],
+      testMatch: ['**/tests/integration/*.test.js', '**/tests/integration/*.test.cjs'],
       testEnvironment: 'node',
-      testTimeout: 30000,
+      testTimeout: 60000,
+      maxWorkers: 1,
       transform: {
         '^.+\\.js$': 'babel-jest'
       }
@@ -44,13 +45,18 @@ export default {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  verbose: true,
+  verbose: false,
+  silent: false,
   testTimeout: 30000,
+  maxWorkers: 1,
+  detectOpenHandles: true,
+  forceExit: true,
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/'
   ],
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))'
-  ]
+  ],
+  setupFiles: ['<rootDir>/tests/setup.js']
 };

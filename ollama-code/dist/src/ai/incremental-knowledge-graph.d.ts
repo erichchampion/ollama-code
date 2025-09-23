@@ -67,6 +67,7 @@ export interface IncrementalMetrics {
  */
 export declare class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
     private changeTracker;
+    private gitTracker;
     private fileWatchers;
     private incrementalConfig;
     private metrics;
@@ -185,6 +186,18 @@ export declare class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
     private extractInterfacesInternal;
     private generateIdInternal;
     private getLineNumberInternal;
+    /**
+     * Set up git integration for change tracking
+     */
+    private setupGitIntegration;
+    /**
+     * Get changes from git if available, fallback to file system scanning
+     */
+    getChangesSinceLastUpdate(): Promise<FileChange[]>;
+    /**
+     * Enhanced change detection with git awareness
+     */
+    performIncrementalUpdate(forceFullRebuild?: boolean): Promise<IncrementalUpdateResult>;
     /**
      * Clean up resources
      */

@@ -1,13 +1,14 @@
 import { EventEmitter } from 'events';
+import { CacheConfig } from '../config/performance.js';
 /**
- * Memory Optimization System for Large Codebase Analysis
+ * Intelligent Cache System for Large Codebase Analysis
  *
- * Implements intelligent caching strategies:
+ * Implements intelligent caching strategies complementing the existing MemoryManager:
  * - Multi-tier caching (memory → disk → network)
  * - LRU eviction with usage patterns
- * - Memory pressure monitoring
  * - Cache warming and predictive loading
  * - Compression for disk storage
+ * - Integration with existing memory management
  */
 export interface CacheEntry<T = any> {
     key: string;
@@ -35,15 +36,7 @@ export interface MemoryStats {
     diskCacheSize: number;
     activeCaches: number;
 }
-export interface CacheConfig {
-    maxMemoryMB: number;
-    maxDiskMB: number;
-    defaultTTL: number;
-    compressionThreshold: number;
-    evictionRatio: number;
-    warmupEnabled: boolean;
-    diskCacheDir?: string;
-}
+export type { CacheConfig } from '../config/performance.js';
 export interface OptimizationRecommendation {
     type: 'memory' | 'cache' | 'compression' | 'eviction';
     severity: 'low' | 'medium' | 'high' | 'critical';
@@ -117,13 +110,13 @@ export declare class IntelligentCache<T = any> extends EventEmitter {
     cleanup(): Promise<void>;
 }
 /**
- * Global memory optimizer singleton
+ * Advanced cache manager that integrates with existing MemoryManager
  */
-export declare class MemoryOptimizer {
+export declare class AdvancedCacheManager {
     private static instance;
     private caches;
     private globalStats;
-    static getInstance(): MemoryOptimizer;
+    static getInstance(): AdvancedCacheManager;
     /**
      * Get or create named cache
      */

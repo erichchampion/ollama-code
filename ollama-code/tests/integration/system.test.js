@@ -10,16 +10,14 @@ const { execCLI, verifyOutput, createTempFile, cleanupTempFile, testEnv } = requ
 describe('System Commands', () => {
   let tempFiles = [];
 
-  afterAll(() => {
-    // Clean up any temporary files
-    tempFiles.forEach(cleanupTempFile);
+  afterAll(async () => {
+    // Clean up any temporary files - handled by test isolation
   });
 
   describe('config command', () => {
     test('should show current configuration', async () => {
       const result = await execCLI(['--mode', 'advanced', 'config'], {
-        timeout: 10000,
-        env: testEnv
+        timeout: 5000
       });
 
       expect([0, 1]).toContain(result.exitCode);
@@ -28,8 +26,7 @@ describe('System Commands', () => {
 
     test('should handle config key lookup', async () => {
       const result = await execCLI(['--mode', 'advanced', 'config', 'ai.model'], {
-        timeout: 10000,
-        env: testEnv
+        timeout: 5000
       });
 
       expect([0, 1]).toContain(result.exitCode);

@@ -130,7 +130,7 @@ describe('Git Change Tracker', () => {
   afterEach(async () => {
     // Clean up test directory
     try {
-      await fs.rmdir(testDir, { recursive: true });
+      await fs.rm(testDir, { recursive: true, force: true });
     } catch (error) {
       // Ignore cleanup errors
     }

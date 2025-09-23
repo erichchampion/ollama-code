@@ -256,7 +256,7 @@ export class FileSystemTool extends BaseTool {
   private async deletePath(targetPath: string): Promise<any> {
     const stats = await fs.stat(targetPath);
     if (stats.isDirectory()) {
-      await fs.rmdir(targetPath, { recursive: true });
+      await fs.rm(targetPath, { recursive: true, force: true });
     } else {
       await fs.unlink(targetPath);
     }

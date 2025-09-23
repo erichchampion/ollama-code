@@ -2,6 +2,8 @@ import { EventEmitter } from 'events';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { logger } from '../utils/logger.js';
+import { getPerformanceConfig } from '../config/performance.js';
 export var CachePriority;
 (function (CachePriority) {
     CachePriority[CachePriority["LOW"] = 1] = "LOW";
@@ -24,13 +26,9 @@ export class IntelligentCache extends EventEmitter {
     evictionCount = 0;
     constructor(config = {}) {
         super();
+        const defaultConfig = getPerformanceConfig().cache;
         this.config = {
-            maxMemoryMB: 256,
-            maxDiskMB: 2048,
-            defaultTTL: 3600000, // 1 hour
-            compressionThreshold: 1024, // 1KB
-            evictionRatio: 0.3,
-            warmupEnabled: true,
+            ...defaultConfig,
             ...config
         };
         this.diskCacheDir = this.config.diskCacheDir || path.join(process.cwd(), '.cache', 'memory-optimizer');
@@ -43,7 +41,7 @@ export class IntelligentCache extends EventEmitter {
             await this.loadDiskCacheIndex();
         }
         catch (error) {
-            console.warn('Failed to initialize disk cache:', error);
+            logger.warn('Failed to initialize disk cache:', error);
         }
     }
     async loadDiskCacheIndex() {
@@ -66,7 +64,7 @@ export class IntelligentCache extends EventEmitter {
             await fs.writeFile(indexPath, JSON.stringify(index, null, 2));
         }
         catch (error) {
-            console.warn('Failed to save disk cache index:', error);
+            logger.warn('Failed to save disk cache index:', error);
         }
     }
     /**
@@ -100,7 +98,7 @@ export class IntelligentCache extends EventEmitter {
     async set(key, value, options = {}) {
         const size = options.size || this.estimateSize(value);
         const priority = options.priority || CachePriority.NORMAL;
-        const ttl = options.ttl || this.config.defaultTTL;
+        const ttl = options.ttl || this.config.defaultTTLMs;
         const entry = {
             key,
             value,
@@ -124,8 +122,8 @@ export class IntelligentCache extends EventEmitter {
         const memoryLimit = this.config.maxMemoryMB * 1024 * 1024;
         const projectedUsage = this.memoryUsage + entry.size;
         return (entry.priority >= CachePriority.HIGH ||
-            entry.size < this.config.compressionThreshold ||
-            projectedUsage < memoryLimit * 0.8);
+            entry.size < this.config.compressionThresholdBytes ||
+            projectedUsage < memoryLimit * this.config.memoryPressureThreshold);
     }
     async setMemoryCache(key, entry) {
         // Check if eviction is needed
@@ -151,7 +149,7 @@ export class IntelligentCache extends EventEmitter {
                 value: entry.value
             });
             // Compress if above threshold
-            if (entry.size > this.config.compressionThreshold) {
+            if (entry.size > this.config.compressionThresholdBytes) {
                 data = await this.compressData(data);
                 entry.compressed = true;
             }
@@ -160,7 +158,7 @@ export class IntelligentCache extends EventEmitter {
             await this.saveDiskCacheIndex();
         }
         catch (error) {
-            console.warn('Failed to write disk cache:', error);
+            logger.warn('Failed to write disk cache:', error);
         }
     }
     async getDiskCache(key) {
@@ -182,7 +180,7 @@ export class IntelligentCache extends EventEmitter {
             return parsed.value;
         }
         catch (error) {
-            console.warn('Failed to read disk cache:', error);
+            logger.warn('Failed to read disk cache:', error);
             return undefined;
         }
     }
@@ -196,7 +194,7 @@ export class IntelligentCache extends EventEmitter {
             }
         }
         catch (error) {
-            console.warn('Failed to delete disk cache:', error);
+            logger.warn('Failed to delete disk cache:', error);
         }
     }
     async evictMemoryEntries(spaceNeeded) {
@@ -349,7 +347,7 @@ export class IntelligentCache extends EventEmitter {
                     await this.set(key, value, { priority: CachePriority.NORMAL });
                 }
                 catch (error) {
-                    console.warn(`Failed to warm up cache for key ${key}:`, error);
+                    logger.warn(`Failed to warm up cache for key ${key}:`, error);
                 }
             }
         });
@@ -369,7 +367,7 @@ export class IntelligentCache extends EventEmitter {
             this.diskCacheIndex.clear();
         }
         catch (error) {
-            console.warn('Failed to clear disk cache:', error);
+            logger.warn('Failed to clear disk cache:', error);
         }
         this.emit('cleared');
     }
@@ -396,9 +394,9 @@ export class IntelligentCache extends EventEmitter {
     }
 }
 /**
- * Global memory optimizer singleton
+ * Advanced cache manager that integrates with existing MemoryManager
  */
-export class MemoryOptimizer {
+export class AdvancedCacheManager {
     static instance;
     caches = new Map();
     globalStats = {
@@ -407,10 +405,10 @@ export class MemoryOptimizer {
         totalMisses: 0
     };
     static getInstance() {
-        if (!MemoryOptimizer.instance) {
-            MemoryOptimizer.instance = new MemoryOptimizer();
+        if (!AdvancedCacheManager.instance) {
+            AdvancedCacheManager.instance = new AdvancedCacheManager();
         }
-        return MemoryOptimizer.instance;
+        return AdvancedCacheManager.instance;
     }
     /**
      * Get or create named cache

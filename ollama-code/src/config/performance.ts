@@ -41,10 +41,53 @@ export interface FileComplexityConfig {
   };
 }
 
+export interface IndexingConfig {
+  btreeOrder: number;
+  fullTextSearchDefaultLimit: number;
+  spatialIndexMaxEntries: number;
+}
+
+export interface StorageConfig {
+  cacheMaxSizeBytes: number;
+  partitionMaxSizeBytes: number;
+  compressionThresholdBytes: number;
+  memoryMapThresholdBytes: number;
+  cleanupIntervalMs: number;
+  compressionLevel: number;
+}
+
+export interface MonitoringConfig {
+  metricsCollectionIntervalMs: number;
+  trendAnalysisIntervalMs: number;
+  alertCheckIntervalMs: number;
+  recommendationIntervalMs: number;
+  dataRetentionDays: number;
+}
+
+export interface PerformanceThresholds {
+  responseTime: { warning: number; critical: number };
+  memoryUsage: { warning: number; critical: number };
+  cpuUsage: { warning: number; critical: number };
+  startupTime: { warning: number; critical: number };
+  cacheHitRate: { warning: number; critical: number };
+}
+
+export interface FilePatterns {
+  excludePatterns: string[];
+  includePatterns: string[];
+  highPriorityPatterns: string[];
+  mediumPriorityPatterns: string[];
+}
+
 export interface PerformanceConfig {
   distributedAnalysis: DistributedAnalysisConfig;
   cache: CacheConfig;
   fileComplexity: FileComplexityConfig;
+  indexing: IndexingConfig;
+  storage: StorageConfig;
+  monitoring: MonitoringConfig;
+  thresholds: PerformanceThresholds;
+  filePatterns: FilePatterns;
 }
 
 /**
@@ -103,6 +146,59 @@ export function getPerformanceConfig(): PerformanceConfig {
         high: (process.env.OLLAMA_HIGH_PRIORITY_PATTERNS || 'index.,main.,app.,server.,api.,core.').split(','),
         medium: (process.env.OLLAMA_MEDIUM_PRIORITY_PATTERNS || 'config,package.json,tsconfig,webpack,babel').split(',')
       }
+    },
+
+    indexing: {
+      btreeOrder: parseInt(process.env.OLLAMA_BTREE_ORDER || '') || 50,
+      fullTextSearchDefaultLimit: parseInt(process.env.OLLAMA_FULLTEXT_LIMIT || '') || 10,
+      spatialIndexMaxEntries: parseInt(process.env.OLLAMA_SPATIAL_MAX_ENTRIES || '') || 16
+    },
+
+    storage: {
+      cacheMaxSizeBytes: parseInt(process.env.OLLAMA_STORAGE_CACHE_SIZE || '') || (1024 * 1024 * 1024), // 1GB
+      partitionMaxSizeBytes: parseInt(process.env.OLLAMA_PARTITION_MAX_SIZE || '') || (50 * 1024 * 1024), // 50MB
+      compressionThresholdBytes: parseInt(process.env.OLLAMA_STORAGE_COMPRESSION_THRESHOLD || '') || (5 * 1024 * 1024), // 5MB
+      memoryMapThresholdBytes: parseInt(process.env.OLLAMA_MEMORY_MAP_THRESHOLD || '') || (100 * 1024 * 1024), // 100MB
+      cleanupIntervalMs: parseInt(process.env.OLLAMA_CLEANUP_INTERVAL || '') || (15 * 60 * 1000), // 15 minutes
+      compressionLevel: parseInt(process.env.OLLAMA_COMPRESSION_LEVEL || '') || 6
+    },
+
+    monitoring: {
+      metricsCollectionIntervalMs: parseInt(process.env.OLLAMA_METRICS_INTERVAL || '') || 5000, // 5 seconds
+      trendAnalysisIntervalMs: parseInt(process.env.OLLAMA_TREND_INTERVAL || '') || 60000, // 1 minute
+      alertCheckIntervalMs: parseInt(process.env.OLLAMA_ALERT_INTERVAL || '') || 10000, // 10 seconds
+      recommendationIntervalMs: parseInt(process.env.OLLAMA_RECOMMENDATION_INTERVAL || '') || 300000, // 5 minutes
+      dataRetentionDays: parseInt(process.env.OLLAMA_DATA_RETENTION_DAYS || '') || (isProduction ? 30 : 7)
+    },
+
+    thresholds: {
+      responseTime: {
+        warning: parseInt(process.env.OLLAMA_RESPONSE_TIME_WARNING || '') || 1000, // 1s
+        critical: parseInt(process.env.OLLAMA_RESPONSE_TIME_CRITICAL || '') || 5000 // 5s
+      },
+      memoryUsage: {
+        warning: parseFloat(process.env.OLLAMA_MEMORY_WARNING || '') || 0.75, // 75%
+        critical: parseFloat(process.env.OLLAMA_MEMORY_CRITICAL || '') || 0.90 // 90%
+      },
+      cpuUsage: {
+        warning: parseFloat(process.env.OLLAMA_CPU_WARNING || '') || 0.70, // 70%
+        critical: parseFloat(process.env.OLLAMA_CPU_CRITICAL || '') || 0.85 // 85%
+      },
+      startupTime: {
+        warning: parseInt(process.env.OLLAMA_STARTUP_WARNING || '') || 3000, // 3s
+        critical: parseInt(process.env.OLLAMA_STARTUP_CRITICAL || '') || 5000 // 5s
+      },
+      cacheHitRate: {
+        warning: parseFloat(process.env.OLLAMA_CACHE_HIT_WARNING || '') || 0.70, // 70%
+        critical: parseFloat(process.env.OLLAMA_CACHE_HIT_CRITICAL || '') || 0.50 // 50%
+      }
+    },
+
+    filePatterns: {
+      excludePatterns: (process.env.OLLAMA_EXCLUDE_PATTERNS || 'node_modules/**,dist/**,build/**,.git/**,**/*.log,**/*.tmp').split(','),
+      includePatterns: (process.env.OLLAMA_INCLUDE_PATTERNS || '**/*.ts,**/*.js,**/*.tsx,**/*.jsx,**/*.py,**/*.java,**/*.cpp,**/*.c').split(','),
+      highPriorityPatterns: (process.env.OLLAMA_HIGH_PRIORITY_PATTERNS || 'index.,main.,app.,server.,api.,core.').split(','),
+      mediumPriorityPatterns: (process.env.OLLAMA_MEDIUM_PRIORITY_PATTERNS || 'config,package.json,tsconfig,webpack,babel').split(',')
     }
   };
 }

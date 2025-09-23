@@ -12,6 +12,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { logger } from '../utils/logger.js';
 import { FileChange } from './incremental-knowledge-graph.js';
+import { getPerformanceConfig } from '../config/performance.js';
 
 const execAsync = promisify(exec);
 
@@ -50,18 +51,12 @@ export class GitChangeTracker {
   private lastProcessedCommit: string | null = null;
 
   constructor(config: Partial<GitTrackingConfig> = {}) {
+    const performanceConfig = getPerformanceConfig();
     this.config = {
       repositoryPath: process.cwd(),
       trackingMode: 'working_directory',
       includeUntracked: true,
-      excludePatterns: [
-        'node_modules/**',
-        'dist/**',
-        'build/**',
-        '.git/**',
-        '*.log',
-        '*.tmp'
-      ],
+      excludePatterns: config.excludePatterns || performanceConfig.filePatterns.excludePatterns,
       maxCommits: 100,
       ...config
     };
