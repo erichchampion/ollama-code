@@ -9,6 +9,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { BaseTool, ToolMetadata, ToolResult, ToolExecutionContext } from './types.js';
 import { logger } from '../utils/logger.js';
+import { getGitIgnoreParser } from '../utils/gitignore-parser.js';
+import { getDefaultExcludePatterns, globToRegex } from '../config/file-patterns.js';
 
 interface SearchMatch {
   file: string;
@@ -96,7 +98,14 @@ export class SearchTool extends BaseTool {
         type: 'array',
         description: 'Patterns to exclude from search (e.g., node_modules, .git)',
         required: false,
-        default: ['node_modules', '.git', 'dist', 'build']
+        default: 'getDefaultExcludePatterns()'
+      },
+      {
+        name: 'respectGitIgnore',
+        type: 'boolean',
+        description: 'Whether to respect .gitignore files when searching (default: true)',
+        required: false,
+        default: true
       }
     ],
     examples: [
@@ -149,7 +158,8 @@ export class SearchTool extends BaseTool {
         useRegex = false,
         contextLines = 2,
         maxResults = 100,
-        excludePatterns = ['node_modules', '.git', 'dist', 'build']
+        excludePatterns = getDefaultExcludePatterns(),
+        respectGitIgnore = true
       } = parameters;
 
       const resolvedPath = path.resolve(context.workingDirectory, searchPath);
@@ -184,7 +194,9 @@ export class SearchTool extends BaseTool {
         filePattern,
         contextLines,
         maxResults,
-        excludePatterns
+        excludePatterns,
+        respectGitIgnore,
+        projectRoot: context.projectRoot
       });
 
       return {
@@ -221,6 +233,8 @@ export class SearchTool extends BaseTool {
       contextLines: number;
       maxResults: number;
       excludePatterns: string[];
+      respectGitIgnore?: boolean;
+      projectRoot?: string;
     }
   ): Promise<SearchResult> {
     const matches: SearchMatch[] = [];
@@ -231,11 +245,25 @@ export class SearchTool extends BaseTool {
       ? new RegExp(options.filePattern.replace(/\*/g, '.*'))
       : null;
 
-    const excludeRegexes = options.excludePatterns.map(
-      pattern => new RegExp(pattern.replace(/\*/g, '.*'))
-    );
+    // Set up gitignore parser if enabled
+    let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
+    if (options.respectGitIgnore && options.projectRoot) {
+      try {
+        gitIgnoreParser = getGitIgnoreParser(options.projectRoot);
+      } catch (error) {
+        logger.warn('Failed to load .gitignore parser for searching', error);
+      }
+    }
+
+    const excludeRegexes = options.excludePatterns.map(pattern => globToRegex(pattern));
 
     const shouldExclude = (filePath: string): boolean => {
+      // Check gitignore first (if enabled)
+      if (gitIgnoreParser && gitIgnoreParser.isIgnored(filePath)) {
+        return true;
+      }
+
+      // Check hardcoded patterns
       return excludeRegexes.some(regex => regex.test(filePath));
     };
 

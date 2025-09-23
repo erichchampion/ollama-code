@@ -5,6 +5,8 @@
  * Provides environment-specific defaults and validation.
  */
 
+import { cpus, totalmem } from 'os';
+
 export interface DistributedAnalysisConfig {
   maxWorkers: number;
   chunkSizeTarget: number;
@@ -98,8 +100,8 @@ export function getPerformanceConfig(): PerformanceConfig {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Scale configuration based on available resources
-  const cpuCount = require('os').cpus().length;
-  const totalMemoryMB = Math.floor(require('os').totalmem() / 1024 / 1024);
+  const cpuCount = cpus().length;
+  const totalMemoryMB = Math.floor(totalmem() / 1024 / 1024);
 
   return {
     distributedAnalysis: {

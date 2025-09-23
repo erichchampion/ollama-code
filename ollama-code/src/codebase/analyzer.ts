@@ -7,10 +7,12 @@
 
 import path from 'path';
 import fs from 'fs/promises';
-import { fileExists, readTextFile, findFiles } from '../fs/operations.js';
+import { fileExists, directoryExists, readTextFile, findFiles } from '../fs/operations.js';
 import { logger } from '../utils/logger.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
+import { getGitIgnoreParser } from '../utils/gitignore-parser.js';
+import { getDefaultExcludePatterns, globToRegex } from '../config/file-patterns.js';
 
 /**
  * File info with language detection and stats
@@ -112,21 +114,8 @@ export interface ProjectStructure {
   dependencies: DependencyInfo[];
 }
 
-/**
- * File pattern to ignore during analysis
- */
-const DEFAULT_IGNORE_PATTERNS = [
-  'node_modules',
-  'dist',
-  'build',
-  '.git',
-  '.vscode',
-  '.idea',
-  'coverage',
-  '*.min.js',
-  '*.bundle.js',
-  '*.map'
-];
+// Use centralized exclude patterns from config/file-patterns.ts
+// This eliminates duplication and ensures consistency across the application
 
 /**
  * Language detection by file extension
@@ -172,18 +161,20 @@ export async function analyzeCodebase(
     ignorePatterns?: string[];
     maxFiles?: number;
     maxSizePerFile?: number; // in bytes
+    respectGitIgnore?: boolean;
   } = {}
 ): Promise<ProjectStructure> {
   logger.info(`Analyzing codebase in directory: ${directory}`);
-  
+
   const {
-    ignorePatterns = DEFAULT_IGNORE_PATTERNS,
+    ignorePatterns = getDefaultExcludePatterns(),
     maxFiles = 1000,
-    maxSizePerFile = 1024 * 1024 // 1MB
+    maxSizePerFile = 1024 * 1024, // 1MB
+    respectGitIgnore = true
   } = options;
   
   // Check if directory exists
-  if (!await fileExists(directory)) {
+  if (!await directoryExists(directory)) {
     throw createUserError(`Directory does not exist: ${directory}`, {
       category: ErrorCategory.FILE_NOT_FOUND,
       resolution: 'Please provide a valid directory path.'
@@ -200,6 +191,17 @@ export async function analyzeCodebase(
     dependencies: []
   };
   
+  // Set up file filtering
+  let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
+  if (respectGitIgnore) {
+    try {
+      gitIgnoreParser = getGitIgnoreParser(directory);
+      logger.debug(`Loaded .gitignore parser with ${gitIgnoreParser.getDebugInfo().ruleCount} rules`);
+    } catch (error) {
+      logger.warn('Failed to load .gitignore parser, falling back to default patterns', error);
+    }
+  }
+
   // Pattern for ignore patterns
   const ignoreRegexes = ignorePatterns.map(pattern => {
     // Convert glob pattern to regex pattern
@@ -210,18 +212,25 @@ export async function analyzeCodebase(
         .replace(/\?/g, '.')
     );
   });
-  
+
   // Find all files recursively
   let allFiles: string[] = [];
   try {
-    allFiles = await findFiles(directory, { 
+    allFiles = await findFiles(directory, {
       recursive: true,
       includeDirectories: false
     });
-    
+
     // Filter out ignored files
     allFiles = allFiles.filter(file => {
       const relativePath = path.relative(directory, file);
+
+      // Check gitignore first (if enabled)
+      if (gitIgnoreParser && gitIgnoreParser.isIgnored(file)) {
+        return false;
+      }
+
+      // Check hardcoded ignore patterns
       return !ignoreRegexes.some(regex => regex.test(relativePath));
     });
     
@@ -560,46 +569,56 @@ export async function findFilesByContent(
     fileExtensions?: string[];
     maxResults?: number;
     ignorePatterns?: string[];
+    respectGitIgnore?: boolean;
   } = {}
 ): Promise<Array<{ path: string; line: number; content: string }>> {
   const {
     caseSensitive = false,
     fileExtensions = [],
     maxResults = 100,
-    ignorePatterns = DEFAULT_IGNORE_PATTERNS
+    ignorePatterns = getDefaultExcludePatterns(),
+    respectGitIgnore = true
   } = options;
   
   const results: Array<{ path: string; line: number; content: string }> = [];
   const flags = caseSensitive ? 'g' : 'gi';
   const regex = new RegExp(searchTerm, flags);
-  
-  const ignoreRegexes = ignorePatterns.map(pattern => {
-    return new RegExp(
-      pattern
-        .replace(/\./g, '\\.')
-        .replace(/\*/g, '.*')
-        .replace(/\?/g, '.')
-    );
-  });
-  
+
+  // Set up file filtering
+  let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
+  if (respectGitIgnore) {
+    try {
+      gitIgnoreParser = getGitIgnoreParser(directory);
+    } catch (error) {
+      logger.warn('Failed to load .gitignore parser for content search', error);
+    }
+  }
+
+  const ignoreRegexes = ignorePatterns.map((pattern: string) => globToRegex(pattern));
+
   // Find all files (optionally filtered by extension)
   const allFiles = await findFiles(directory, { recursive: true });
-  
+
   // Filter by file extension and ignore patterns
   const filteredFiles = allFiles.filter(file => {
     const relativePath = path.relative(directory, file);
-    
-    // Check if file should be ignored
-    if (ignoreRegexes.some(regex => regex.test(relativePath))) {
+
+    // Check gitignore first (if enabled)
+    if (gitIgnoreParser && gitIgnoreParser.isIgnored(file)) {
       return false;
     }
-    
+
+    // Check if file should be ignored by hardcoded patterns
+    if (ignoreRegexes.some((regex: RegExp) => regex.test(relativePath))) {
+      return false;
+    }
+
     // Filter by extension if specified
     if (fileExtensions.length > 0) {
       const ext = path.extname(file).slice(1).toLowerCase();
       return fileExtensions.includes(ext);
     }
-    
+
     return true;
   });
   

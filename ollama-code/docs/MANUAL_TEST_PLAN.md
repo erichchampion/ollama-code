@@ -16,6 +16,7 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Code quality assessment and security scanning
 - Automated test generation and testing strategies
 - Project structure analysis and recommendations
+- Smart file filtering with .gitignore integration
 
 ### 📊 **Knowledge & Analysis**
 - Code knowledge graph with semantic understanding
@@ -371,6 +372,127 @@ git add . && git commit -m "Add project structure"
 - Framework-specific pattern recommendations
 - Security guideline compliance checking
 - Prioritized improvement suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Smart File Filtering and Project Management
+**Priority: High**
+
+#### Test: .gitignore Integration and Respect
+**Test Setup:**
+```bash
+# Create test project with .gitignore
+mkdir gitignore-test && cd gitignore-test
+git init
+echo "# Test .gitignore" > .gitignore
+echo "/.next/" >> .gitignore
+echo "/node_modules/" >> .gitignore
+echo "*.log" >> .gitignore
+echo "/build/" >> .gitignore
+echo "/dist/" >> .gitignore
+echo "temp-*" >> .gitignore
+
+# Create test files that should be ignored
+mkdir -p .next build dist node_modules
+echo '{"pages": {}}' > .next/build-manifest.json
+echo "console.log('build')" > build/main.js
+echo "console.log('dist')" > dist/app.js
+echo "module.exports = {}" > node_modules/package.json
+echo "Debug output" > debug.log
+echo "Error logs" > error.log
+echo "Temp data" > temp-cache.txt
+
+# Create test files that should be included
+mkdir -p src tests docs
+echo "export const main = () => console.log('Hello');" > src/index.js
+echo "import { main } from '../src/index';" > tests/index.test.js
+echo "# Project Documentation" > docs/README.md
+echo "console.log('root file');" > app.js
+```
+
+**Test Commands:**
+1. `"Analyze this codebase and show me what files are included"`
+2. `"List all files in this project"`
+3. `"Search for JavaScript files in this project"`
+4. `"What files does the .gitignore exclude?"`
+
+**Expected Results:**
+- ✅ `.next/build-manifest.json` is correctly ignored (not analyzed/listed)
+- ✅ `build/main.js` is correctly ignored
+- ✅ `dist/app.js` is correctly ignored
+- ✅ `node_modules/package.json` is correctly ignored
+- ✅ `debug.log` and `error.log` are correctly ignored (*.log pattern)
+- ✅ `temp-cache.txt` is correctly ignored (temp-* pattern)
+- ✅ `src/index.js` is correctly included in analysis
+- ✅ `tests/index.test.js` is correctly included
+- ✅ `docs/README.md` is correctly included
+- ✅ `app.js` is correctly included
+- ✅ `.gitignore` itself is handled appropriately
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: .gitignore Pattern Variations
+**Test Setup:**
+```bash
+# Test complex .gitignore patterns
+echo "# Complex patterns" > .gitignore
+echo "**/*.tmp" >> .gitignore           # Recursive wildcard
+echo "!/important.tmp" >> .gitignore    # Negation pattern
+echo "logs/" >> .gitignore              # Directory only
+echo "*.cache" >> .gitignore            # Extension pattern
+echo "test-*" >> .gitignore             # Prefix pattern
+
+# Create test files for pattern testing
+mkdir -p logs src/nested
+echo "temp" > file.tmp
+echo "temp" > src/nested/deep.tmp
+echo "important" > important.tmp
+echo "cache" > data.cache
+echo "log entry" > logs/access.log
+echo "test data" > test-data.txt
+echo "main code" > src/main.js
+```
+
+**Test Commands:**
+1. `"List all files respecting .gitignore patterns"`
+2. `"Analyze this project structure"`
+3. `"Search for all .tmp files"`
+
+**Expected Results:**
+- ✅ `file.tmp` and `src/nested/deep.tmp` are ignored (**/*.tmp pattern)
+- ✅ `important.tmp` is included (negation pattern overrides)
+- ✅ `logs/` directory and contents are ignored (directory pattern)
+- ✅ `data.cache` is ignored (*.cache pattern)
+- ✅ `test-data.txt` is ignored (test-* pattern)
+- ✅ `src/main.js` is included (not matching any ignore pattern)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Performance with .gitignore Integration
+**Test Commands:**
+1. `"Analyze this large project and show performance metrics"`
+2. `"How much time was saved by respecting .gitignore?"`
+3. `"Compare analysis with and without .gitignore filtering"`
+
+**Expected Results:**
+- Analysis completes faster when .gitignore filtering excludes large directories
+- Performance metrics show files excluded and time saved
+- Memory usage reduced by not processing ignored files
+- Clear indication of .gitignore effectiveness in logs
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: .gitignore Configuration Options
+**Test Commands:**
+1. `"Analyze with .gitignore disabled"`
+2. `"List files with respectGitIgnore set to false"`
+3. `"Show current .gitignore configuration settings"`
+
+**Expected Results:**
+- Option to disable .gitignore filtering works correctly
+- All files included when .gitignore is disabled
+- Configuration settings clearly display .gitignore status
+- Toggle functionality works as expected
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -1025,6 +1147,28 @@ done
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario H: .gitignore Integration and File Filtering Validation
+**Goal:** Validate complete .gitignore integration across all file operations
+
+**Steps:**
+1. **Project Setup:** Create a comprehensive test project with complex .gitignore patterns
+2. **Basic Filtering:** `"Analyze this project and show me what files are included"`
+3. **Pattern Testing:** `"List files and verify complex .gitignore patterns are respected"`
+4. **Search Integration:** `"Search for JavaScript files and ensure ignored files are excluded"`
+5. **Performance Validation:** `"Show me performance improvements from .gitignore filtering"`
+6. **Configuration Testing:** `"Toggle .gitignore respect off and on to show difference"`
+
+**Success Criteria:**
+- All .gitignore patterns correctly exclude files from operations (basic, wildcard, negation, directory)
+- File operations (analyze, list, search) consistently respect .gitignore settings
+- Performance improvements measurable when large directories excluded
+- Configuration options work correctly (respectGitIgnore toggle)
+- No regression in file operation functionality
+- Clear user feedback about .gitignore effectiveness
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
@@ -1036,6 +1180,7 @@ done
 - [ ] Test generation and strategy
 - [ ] Enhanced interactive mode
 - [ ] Error handling and recovery
+- [ ] **NEW:** Smart file filtering with .gitignore integration
 - [ ] **NEW:** Enterprise-scale performance optimization
 - [ ] **NEW:** Distributed processing for large codebases
 - [ ] **NEW:** Multi-tier intelligent caching system
@@ -1082,16 +1227,34 @@ done
 
 ---
 
-**Test Plan Version:** 13.0 (Added Infrastructure and System Reliability Features)
+**Test Plan Version:** 14.0 (Added .gitignore Integration and Smart File Filtering)
 **Created:** September 21, 2025
-**Last Updated:** September 22, 2025 (Added Infrastructure & System Reliability Testing)
+**Last Updated:** September 22, 2025 (Added .gitignore Integration Features)
 **Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.2.29
-**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, and infrastructure reliability improvements
+**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements, and .gitignore integration
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios.
 
-**Latest Updates (v13.0):**
+**Latest Updates (v14.0):**
+- Added Smart File Filtering and Project Management testing section with comprehensive .gitignore integration
+- Added .gitignore pattern testing for basic, wildcard, negation, and directory patterns
+- Added performance validation for .gitignore filtering effectiveness
+- Added configuration options testing for respectGitIgnore toggle functionality
+- Enhanced integration scenarios with .gitignore validation (Scenario H)
+- Updated critical features list to include smart file filtering as core functionality
+- Added comprehensive .gitignore integration testing across all file operations
+
+**Key New Test Coverage (v14.0):**
+- 📁 Smart File Filtering with complete .gitignore pattern support (basic, wildcard, negation, directory)
+- 🚀 Performance optimization through intelligent file exclusion during analysis
+- ⚙️ Configuration management for .gitignore respect settings (respectGitIgnore toggle)
+- 🔍 Integration testing across all file operations (analyze, list, search) with .gitignore filtering
+- 📊 Performance metrics and validation for .gitignore filtering effectiveness
+- 🎯 Complete .gitignore integration validation scenario (Scenario H)
+- 🛡️ Regression testing to ensure no functionality loss during .gitignore integration
+
+**Previous Updates (v13.0):**
 - Added Infrastructure & System Reliability testing section with centralized configuration
 - Added Managed EventEmitter testing for memory leak prevention and resource cleanup
 - Added shared cache utilities testing with LRU eviction and performance metrics
@@ -1100,15 +1263,6 @@ done
 - Enhanced integration scenarios with infrastructure validation (Scenario G)
 - Updated critical and high priority feature lists with infrastructure improvements
 - Added comprehensive configuration management and consistency testing
-
-**Key New Test Coverage (v13.0):**
-- 🛠️ Centralized Performance Configuration Management with no hardcoded values
-- 🔧 Managed EventEmitter System with automatic cleanup and memory leak prevention
-- 📦 Shared Cache Utilities with LRU eviction, metrics, and resource management
-- 🧪 Reliable Integration Test Infrastructure with sequential execution and no hanging
-- 🔨 TypeScript Compilation System with error-free builds and proper type resolution
-- 📊 Configuration Consistency Validation across all system components
-- 🎯 Infrastructure and System Reliability integration testing scenario
 
 **Previous Updates (v12.0):**
 - 🧠 Predictive AI Caching System with >80% hit rates and user behavior learning

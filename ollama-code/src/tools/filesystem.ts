@@ -9,6 +9,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { BaseTool, ToolMetadata, ToolResult, ToolExecutionContext } from './types.js';
 import { logger } from '../utils/logger.js';
+import { getGitIgnoreParser } from '../utils/gitignore-parser.js';
+import { getDefaultExcludePatterns, globToRegex } from '../config/file-patterns.js';
 
 export class FileSystemTool extends BaseTool {
   metadata: ToolMetadata = {
@@ -60,6 +62,20 @@ export class FileSystemTool extends BaseTool {
         name: 'createBackup',
         type: 'boolean',
         description: 'Create backup before writing (default: true)',
+        required: false,
+        default: true
+      },
+      {
+        name: 'excludePatterns',
+        type: 'array',
+        description: 'Patterns to exclude from listing/searching (e.g., .git, node_modules)',
+        required: false,
+        default: 'getDefaultExcludePatterns()'
+      },
+      {
+        name: 'respectGitIgnore',
+        type: 'boolean',
+        description: 'Whether to respect .gitignore files when listing/searching (default: true)',
         required: false,
         default: true
       }
@@ -127,7 +143,13 @@ export class FileSystemTool extends BaseTool {
           });
           break;
         case 'list':
-          result = await this.listDirectory(resolvedPath, parameters.recursive || false);
+          result = await this.listDirectory(
+            resolvedPath,
+            parameters.recursive || false,
+            parameters.excludePatterns || getDefaultExcludePatterns(),
+            parameters.respectGitIgnore !== false,
+            context.projectRoot
+          );
           break;
         case 'create':
           result = await this.createPath(resolvedPath);
@@ -136,7 +158,14 @@ export class FileSystemTool extends BaseTool {
           result = await this.deletePath(resolvedPath);
           break;
         case 'search':
-          result = await this.searchFiles(resolvedPath, parameters.pattern, parameters.recursive || false);
+          result = await this.searchFiles(
+            resolvedPath,
+            parameters.pattern,
+            parameters.recursive || false,
+            parameters.excludePatterns || getDefaultExcludePatterns(),
+            parameters.respectGitIgnore !== false,
+            context.projectRoot
+          );
           break;
         case 'exists':
           result = await this.pathExists(resolvedPath);
@@ -207,8 +236,31 @@ export class FileSystemTool extends BaseTool {
     };
   }
 
-  private async listDirectory(dirPath: string, recursive: boolean): Promise<any> {
+  private async listDirectory(dirPath: string, recursive: boolean, excludePatterns: string[] = [], respectGitIgnore: boolean = true, projectRoot?: string): Promise<any> {
     const items: any[] = [];
+
+    // Set up gitignore parser if enabled
+    let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
+    if (respectGitIgnore && projectRoot) {
+      try {
+        gitIgnoreParser = getGitIgnoreParser(projectRoot);
+      } catch (error) {
+        logger.warn('Failed to load .gitignore parser for listing', error);
+      }
+    }
+
+    // Create exclude regexes
+    const excludeRegexes = excludePatterns.map(pattern => globToRegex(pattern));
+
+    const shouldExclude = (filePath: string): boolean => {
+      // Check gitignore first (if enabled)
+      if (gitIgnoreParser && gitIgnoreParser.isIgnored(filePath)) {
+        return true;
+      }
+
+      // Check hardcoded patterns
+      return excludeRegexes.some(regex => regex.test(filePath));
+    };
 
     const processDirectory = async (currentPath: string): Promise<void> => {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
@@ -216,6 +268,11 @@ export class FileSystemTool extends BaseTool {
       for (const entry of entries) {
         const fullPath = path.join(currentPath, entry.name);
         const relativePath = path.relative(dirPath, fullPath);
+
+        // Skip excluded paths
+        if (shouldExclude(fullPath) || shouldExclude(relativePath) || shouldExclude(entry.name)) {
+          continue;
+        }
 
         if (entry.isDirectory()) {
           items.push({
@@ -263,9 +320,32 @@ export class FileSystemTool extends BaseTool {
     return { deleted: targetPath };
   }
 
-  private async searchFiles(dirPath: string, pattern?: string, recursive: boolean = false): Promise<any> {
+  private async searchFiles(dirPath: string, pattern?: string, recursive: boolean = false, excludePatterns: string[] = [], respectGitIgnore: boolean = true, projectRoot?: string): Promise<any> {
     const matches: any[] = [];
     const regex = pattern ? new RegExp(pattern.replace(/\*/g, '.*')) : null;
+
+    // Set up gitignore parser if enabled
+    let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
+    if (respectGitIgnore && projectRoot) {
+      try {
+        gitIgnoreParser = getGitIgnoreParser(projectRoot);
+      } catch (error) {
+        logger.warn('Failed to load .gitignore parser for searching', error);
+      }
+    }
+
+    // Create exclude regexes
+    const excludeRegexes = excludePatterns.map(pattern => globToRegex(pattern));
+
+    const shouldExclude = (filePath: string): boolean => {
+      // Check gitignore first (if enabled)
+      if (gitIgnoreParser && gitIgnoreParser.isIgnored(filePath)) {
+        return true;
+      }
+
+      // Check hardcoded patterns
+      return excludeRegexes.some(regex => regex.test(filePath));
+    };
 
     const searchDirectory = async (currentPath: string): Promise<void> => {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
@@ -273,6 +353,11 @@ export class FileSystemTool extends BaseTool {
       for (const entry of entries) {
         const fullPath = path.join(currentPath, entry.name);
         const relativePath = path.relative(dirPath, fullPath);
+
+        // Skip excluded paths
+        if (shouldExclude(fullPath) || shouldExclude(relativePath) || shouldExclude(entry.name)) {
+          continue;
+        }
 
         if (entry.isFile()) {
           if (!regex || regex.test(entry.name)) {

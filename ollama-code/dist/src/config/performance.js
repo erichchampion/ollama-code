@@ -4,6 +4,7 @@
  * Centralizes all performance-related configuration options for Phase 6 components.
  * Provides environment-specific defaults and validation.
  */
+import { cpus, totalmem } from 'os';
 /**
  * Get performance configuration based on environment
  */
@@ -11,8 +12,8 @@ export function getPerformanceConfig() {
     const isProduction = process.env.NODE_ENV === 'production';
     const isDevelopment = process.env.NODE_ENV === 'development';
     // Scale configuration based on available resources
-    const cpuCount = require('os').cpus().length;
-    const totalMemoryMB = Math.floor(require('os').totalmem() / 1024 / 1024);
+    const cpuCount = cpus().length;
+    const totalMemoryMB = Math.floor(totalmem() / 1024 / 1024);
     return {
         distributedAnalysis: {
             maxWorkers: parseInt(process.env.OLLAMA_MAX_WORKERS || '') || Math.min(cpuCount, isProduction ? 16 : 8),

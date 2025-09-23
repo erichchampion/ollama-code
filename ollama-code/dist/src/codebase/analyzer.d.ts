@@ -94,6 +94,7 @@ export declare function analyzeCodebase(directory: string, options?: {
     ignorePatterns?: string[];
     maxFiles?: number;
     maxSizePerFile?: number;
+    respectGitIgnore?: boolean;
 }): Promise<ProjectStructure>;
 /**
  * Analyze project dependencies from package files
@@ -107,6 +108,7 @@ export declare function findFilesByContent(directory: string, searchTerm: string
     fileExtensions?: string[];
     maxResults?: number;
     ignorePatterns?: string[];
+    respectGitIgnore?: boolean;
 }): Promise<Array<{
     path: string;
     line: number;
