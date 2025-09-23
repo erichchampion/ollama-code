@@ -35,6 +35,12 @@ export class BaseAIProvider extends EventEmitter {
         this.metrics = this.initializeMetrics();
     }
     /**
+     * Get provider display name
+     */
+    getDisplayName() {
+        return this.getName();
+    }
+    /**
      * Get provider health status
      */
     getHealth() {

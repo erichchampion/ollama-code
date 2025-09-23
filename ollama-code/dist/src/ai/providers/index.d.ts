@@ -8,6 +8,7 @@ export * from './base-provider.js';
 export { OllamaProvider } from './ollama-provider.js';
 export { OpenAIProvider } from './openai-provider.js';
 export { AnthropicProvider } from './anthropic-provider.js';
+export { GoogleProvider } from './google-provider.js';
 export { IntelligentAIRouter } from './intelligent-router.js';
 export type { RoutingStrategy, RoutingContext, RoutingDecision, RouterConfig, RouterMetrics } from './intelligent-router.js';
 import { BaseAIProvider, ProviderConfig } from './base-provider.js';

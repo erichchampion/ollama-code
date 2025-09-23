@@ -105,6 +105,66 @@ export function getPerformanceConfig() {
             includePatterns: (process.env.OLLAMA_INCLUDE_PATTERNS || '**/*.ts,**/*.js,**/*.tsx,**/*.jsx,**/*.py,**/*.java,**/*.cpp,**/*.c').split(','),
             highPriorityPatterns: (process.env.OLLAMA_HIGH_PRIORITY_PATTERNS || 'index.,main.,app.,server.,api.,core.').split(','),
             mediumPriorityPatterns: (process.env.OLLAMA_MEDIUM_PRIORITY_PATTERNS || 'config,package.json,tsconfig,webpack,babel').split(',')
+        },
+        codeAnalysis: {
+            architectural: {
+                confidenceThreshold: parseFloat(process.env.OLLAMA_ARCH_CONFIDENCE || '') || 0.3,
+                godClassMethodLimit: parseInt(process.env.OLLAMA_GOD_CLASS_METHODS || '') || 20,
+                godClassLineLimit: parseInt(process.env.OLLAMA_GOD_CLASS_LINES || '') || 500,
+                longMethodLineLimit: parseInt(process.env.OLLAMA_LONG_METHOD_LINES || '') || 50,
+                contextWindowSize: parseInt(process.env.OLLAMA_CONTEXT_WINDOW || '') || 200,
+                duplicateBlockMinLines: parseInt(process.env.OLLAMA_DUPLICATE_MIN_LINES || '') || 5,
+                similarityThreshold: parseFloat(process.env.OLLAMA_SIMILARITY_THRESHOLD || '') || 0.8
+            },
+            quality: {
+                criticalPenalty: parseInt(process.env.OLLAMA_CRITICAL_PENALTY || '') || 15,
+                warningPenalty: parseInt(process.env.OLLAMA_WARNING_PENALTY || '') || 5,
+                infoPenalty: parseInt(process.env.OLLAMA_INFO_PENALTY || '') || 1,
+                complexityThresholds: {
+                    high: parseInt(process.env.OLLAMA_COMPLEXITY_HIGH_THRESHOLD || '') || 15,
+                    medium: parseInt(process.env.OLLAMA_COMPLEXITY_MEDIUM_THRESHOLD || '') || 8
+                },
+                maintainabilityThresholds: {
+                    good: parseInt(process.env.OLLAMA_MAINTAINABILITY_GOOD || '') || 75,
+                    fair: parseInt(process.env.OLLAMA_MAINTAINABILITY_FAIR || '') || 60
+                },
+                technicalDebtLimits: {
+                    high: parseInt(process.env.OLLAMA_TECH_DEBT_HIGH || '') || 50,
+                    medium: parseInt(process.env.OLLAMA_TECH_DEBT_MEDIUM || '') || 25
+                }
+            },
+            security: {
+                maxVulnerabilitiesLow: parseInt(process.env.OLLAMA_SECURITY_LOW_MAX || '') || 0,
+                maxVulnerabilitiesMedium: parseInt(process.env.OLLAMA_SECURITY_MEDIUM_MAX || '') || 5,
+                patterns: {
+                    sqlInjection: process.env.OLLAMA_CHECK_SQL_INJECTION !== 'false',
+                    xss: process.env.OLLAMA_CHECK_XSS !== 'false',
+                    hardcodedCredentials: process.env.OLLAMA_CHECK_HARDCODED_CREDS !== 'false',
+                    eval: process.env.OLLAMA_CHECK_EVAL !== 'false',
+                    cryptoWeak: process.env.OLLAMA_CHECK_WEAK_CRYPTO !== 'false'
+                }
+            },
+            performance: {
+                maxFileLines: parseInt(process.env.OLLAMA_MAX_FILE_LINES || '') || 1000,
+                maxFunctionLines: parseInt(process.env.OLLAMA_MAX_FUNCTION_LINES || '') || 100,
+                complexMethodThreshold: parseInt(process.env.OLLAMA_COMPLEX_METHOD_THRESHOLD || '') || 10,
+                nestedLoopPenalty: parseInt(process.env.OLLAMA_NESTED_LOOP_PENALTY || '') || 5,
+                largeFileThreshold: parseInt(process.env.OLLAMA_LARGE_FILE_THRESHOLD || '') || 500
+            },
+            refactoring: {
+                extractMethodMinLines: parseInt(process.env.OLLAMA_EXTRACT_METHOD_MIN_LINES || '') || 30,
+                duplicateMinOccurrences: parseInt(process.env.OLLAMA_DUPLICATE_MIN_OCCURRENCES || '') || 2,
+                namingMinLength: parseInt(process.env.OLLAMA_NAMING_MIN_LENGTH || '') || 3,
+                maxParameterCount: parseInt(process.env.OLLAMA_MAX_PARAMETER_COUNT || '') || 5,
+                safetyChecksEnabled: process.env.OLLAMA_SAFETY_CHECKS_ENABLED !== 'false'
+            },
+            testing: {
+                coverageTarget: parseInt(process.env.OLLAMA_COVERAGE_TARGET || '') || 80,
+                maxTestRuntime: parseInt(process.env.OLLAMA_MAX_TEST_RUNTIME || '') || 10000,
+                mockGenerationEnabled: process.env.OLLAMA_MOCK_GENERATION !== 'false',
+                propertyTestingEnabled: process.env.OLLAMA_PROPERTY_TESTING !== 'false',
+                frameworkPreference: process.env.OLLAMA_TEST_FRAMEWORK || 'auto'
+            }
         }
     };
 }

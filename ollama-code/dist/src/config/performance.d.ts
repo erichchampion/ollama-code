@@ -85,6 +85,66 @@ export interface FilePatterns {
     highPriorityPatterns: string[];
     mediumPriorityPatterns: string[];
 }
+export interface CodeAnalysisConfig {
+    architectural: {
+        confidenceThreshold: number;
+        godClassMethodLimit: number;
+        godClassLineLimit: number;
+        longMethodLineLimit: number;
+        contextWindowSize: number;
+        duplicateBlockMinLines: number;
+        similarityThreshold: number;
+    };
+    quality: {
+        criticalPenalty: number;
+        warningPenalty: number;
+        infoPenalty: number;
+        complexityThresholds: {
+            high: number;
+            medium: number;
+        };
+        maintainabilityThresholds: {
+            good: number;
+            fair: number;
+        };
+        technicalDebtLimits: {
+            high: number;
+            medium: number;
+        };
+    };
+    security: {
+        maxVulnerabilitiesLow: number;
+        maxVulnerabilitiesMedium: number;
+        patterns: {
+            sqlInjection: boolean;
+            xss: boolean;
+            hardcodedCredentials: boolean;
+            eval: boolean;
+            cryptoWeak: boolean;
+        };
+    };
+    performance: {
+        maxFileLines: number;
+        maxFunctionLines: number;
+        complexMethodThreshold: number;
+        nestedLoopPenalty: number;
+        largeFileThreshold: number;
+    };
+    refactoring: {
+        extractMethodMinLines: number;
+        duplicateMinOccurrences: number;
+        namingMinLength: number;
+        maxParameterCount: number;
+        safetyChecksEnabled: boolean;
+    };
+    testing: {
+        coverageTarget: number;
+        maxTestRuntime: number;
+        mockGenerationEnabled: boolean;
+        propertyTestingEnabled: boolean;
+        frameworkPreference: 'jest' | 'mocha' | 'vitest' | 'auto';
+    };
+}
 export interface PerformanceConfig {
     distributedAnalysis: DistributedAnalysisConfig;
     cache: CacheConfig;
@@ -94,6 +154,7 @@ export interface PerformanceConfig {
     monitoring: MonitoringConfig;
     thresholds: PerformanceThresholds;
     filePatterns: FilePatterns;
+    codeAnalysis: CodeAnalysisConfig;
 }
 /**
  * Get performance configuration based on environment

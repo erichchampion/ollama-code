@@ -10,11 +10,13 @@ export * from './base-provider.js';
 export { OllamaProvider } from './ollama-provider.js';
 export { OpenAIProvider } from './openai-provider.js';
 export { AnthropicProvider } from './anthropic-provider.js';
+export { GoogleProvider } from './google-provider.js';
 // Intelligent router
 export { IntelligentAIRouter } from './intelligent-router.js';
 import { OllamaProvider } from './ollama-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
 import { AnthropicProvider } from './anthropic-provider.js';
+import { GoogleProvider } from './google-provider.js';
 /**
  * Factory function to create providers based on configuration
  */
@@ -26,6 +28,14 @@ export function createProvider(type, config) {
             return new OpenAIProvider(config);
         case 'anthropic':
             return new AnthropicProvider(config);
+        case 'google':
+            if (!config.apiKey) {
+                throw new Error('Google provider requires apiKey');
+            }
+            return new GoogleProvider({
+                ...config,
+                apiKey: config.apiKey
+            });
         default:
             throw new Error(`Unknown provider type: ${type}`);
     }
@@ -34,7 +44,7 @@ export function createProvider(type, config) {
  * Get list of available provider types
  */
 export function getAvailableProviderTypes() {
-    return ['ollama', 'openai', 'anthropic'];
+    return ['ollama', 'openai', 'anthropic', 'google'];
 }
 /**
  * Validate provider configuration
@@ -53,6 +63,9 @@ export function validateProviderConfig(type, config) {
         case 'anthropic':
             // Anthropic requires API key
             return !!(config.apiKey || process.env.ANTHROPIC_API_KEY);
+        case 'google':
+            // Google requires API key
+            return !!(config.apiKey || process.env.GOOGLE_API_KEY);
         default:
             return false;
     }

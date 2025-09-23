@@ -1,0 +1,452 @@
+/**
+ * Provider Performance Benchmarking System
+ *
+ * Comprehensive benchmarking system for comparing AI provider performance,
+ * response quality, cost efficiency, and reliability across different scenarios.
+ */
+import { logger } from '../../utils/logger.js';
+export class ProviderBenchmarker {
+    providers = new Map();
+    testCases = [];
+    results = [];
+    config;
+    constructor(config = {}) {
+        this.config = {
+            timeoutMs: 30000,
+            retryAttempts: 1,
+            parallelism: 3,
+            includeStreaming: false,
+            includeCostAnalysis: true,
+            ...config
+        };
+    }
+    /**
+     * Register a provider for benchmarking
+     */
+    registerProvider(id, provider) {
+        this.providers.set(id, provider);
+        logger.info(`Registered provider for benchmarking: ${id} (${provider.getDisplayName()})`);
+    }
+    /**
+     * Add a test case to the benchmark suite
+     */
+    addTestCase(testCase) {
+        this.testCases.push(testCase);
+        logger.debug(`Added test case: ${testCase.id} (${testCase.category})`);
+    }
+    /**
+     * Load standard test cases for common scenarios
+     */
+    loadStandardTestCases() {
+        const standardTests = [
+            // Code Generation Tests
+            {
+                id: 'code_gen_simple',
+                name: 'Simple Function Generation',
+                description: 'Generate a simple function to calculate factorial',
+                category: 'code_generation',
+                difficulty: 'simple',
+                messages: [
+                    { role: 'user', content: 'Write a JavaScript function to calculate factorial of a number' }
+                ],
+                expectedKeywords: ['function', 'factorial', 'return'],
+                maxResponseTime: 5000,
+                evaluationCriteria: { accuracy: 0.9, relevance: 0.95, completeness: 0.8, codeQuality: 0.85 }
+            },
+            // Code Analysis Tests
+            {
+                id: 'code_analysis_bugs',
+                name: 'Bug Detection',
+                description: 'Analyze code for potential bugs and issues',
+                category: 'code_analysis',
+                difficulty: 'medium',
+                messages: [
+                    {
+                        role: 'user',
+                        content: `Analyze this code for bugs:
+
+function divide(a, b) {
+    return a / b;
+}
+
+const result = divide(10, 0);
+console.log(result);`
+                    }
+                ],
+                expectedKeywords: ['division by zero', 'infinity', 'validation', 'error'],
+                maxResponseTime: 8000,
+                evaluationCriteria: { accuracy: 0.85, relevance: 0.9, completeness: 0.8 }
+            },
+            // Debugging Tests
+            {
+                id: 'debugging_complex',
+                name: 'Complex Debugging',
+                description: 'Debug a complex async function with multiple issues',
+                category: 'debugging',
+                difficulty: 'complex',
+                messages: [
+                    {
+                        role: 'user',
+                        content: `Debug this async function that's not working properly:
+
+async function processUsers(userIds) {
+    const users = [];
+    for (let i = 0; i < userIds.length; i++) {
+        const user = await fetchUser(userIds[i]);
+        if (user.isActive) {
+            users.push(user);
+        }
+    }
+    return users;
+}
+
+The function is slow and sometimes throws errors.`
+                    }
+                ],
+                expectedKeywords: ['parallel', 'Promise.all', 'error handling', 'try-catch'],
+                maxResponseTime: 15000,
+                evaluationCriteria: { accuracy: 0.8, relevance: 0.9, completeness: 0.85, codeQuality: 0.8 }
+            },
+            // Explanation Tests
+            {
+                id: 'explanation_algorithm',
+                name: 'Algorithm Explanation',
+                description: 'Explain a complex algorithm implementation',
+                category: 'explanation',
+                difficulty: 'medium',
+                messages: [
+                    {
+                        role: 'user',
+                        content: `Explain how this quicksort implementation works:
+
+function quicksort(arr, low = 0, high = arr.length - 1) {
+    if (low < high) {
+        const pi = partition(arr, low, high);
+        quicksort(arr, low, pi - 1);
+        quicksort(arr, pi + 1, high);
+    }
+    return arr;
+}
+
+function partition(arr, low, high) {
+    const pivot = arr[high];
+    let i = low - 1;
+    for (let j = low; j < high; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+    }
+    [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+    return i + 1;
+}`
+                    }
+                ],
+                expectedKeywords: ['divide and conquer', 'pivot', 'partition', 'recursive', 'sorting'],
+                maxResponseTime: 10000,
+                evaluationCriteria: { accuracy: 0.9, relevance: 0.95, completeness: 0.9 }
+            },
+            // General Coding Question
+            {
+                id: 'general_best_practices',
+                name: 'Best Practices Question',
+                description: 'Answer a general question about coding best practices',
+                category: 'general',
+                difficulty: 'simple',
+                messages: [
+                    { role: 'user', content: 'What are the key principles of clean code?' }
+                ],
+                expectedKeywords: ['readable', 'maintainable', 'DRY', 'SOLID', 'naming'],
+                maxResponseTime: 5000,
+                evaluationCriteria: { accuracy: 0.85, relevance: 0.9, completeness: 0.8 }
+            }
+        ];
+        standardTests.forEach(testCase => this.addTestCase(testCase));
+        logger.info(`Loaded ${standardTests.length} standard test cases`);
+    }
+    /**
+     * Run benchmark against all registered providers
+     */
+    async runBenchmark() {
+        if (this.providers.size === 0) {
+            throw new Error('No providers registered for benchmarking');
+        }
+        if (this.testCases.length === 0) {
+            throw new Error('No test cases available for benchmarking');
+        }
+        logger.info(`Starting benchmark with ${this.providers.size} providers and ${this.testCases.length} test cases`);
+        this.results = [];
+        const summaries = new Map();
+        for (const [providerId, provider] of this.providers) {
+            try {
+                logger.info(`Benchmarking provider: ${providerId}`);
+                const providerResults = await this.runProviderBenchmark(providerId, provider);
+                const summary = this.createSummary(providerId, provider.getDisplayName(), providerResults);
+                summaries.set(providerId, summary);
+                logger.info(`Completed benchmark for ${providerId}: ${summary.successfulTests}/${summary.totalTests} tests passed`);
+            }
+            catch (error) {
+                logger.error(`Benchmark failed for provider ${providerId}:`, error);
+            }
+        }
+        return summaries;
+    }
+    /**
+     * Run benchmark for a specific provider
+     */
+    async runProviderBenchmark(providerId, provider) {
+        const results = [];
+        // Run tests in parallel with controlled concurrency
+        const chunks = this.chunkArray(this.testCases, this.config.parallelism);
+        for (const chunk of chunks) {
+            const chunkPromises = chunk.map(testCase => this.runSingleTest(providerId, provider, testCase));
+            const chunkResults = await Promise.allSettled(chunkPromises);
+            for (const result of chunkResults) {
+                if (result.status === 'fulfilled') {
+                    results.push(result.value);
+                    this.results.push(result.value);
+                }
+            }
+        }
+        return results;
+    }
+    /**
+     * Run a single test case against a provider
+     */
+    async runSingleTest(providerId, provider, testCase) {
+        const startTime = Date.now();
+        try {
+            logger.debug(`Running test ${testCase.id} on ${providerId}`);
+            const response = await Promise.race([
+                provider.complete(testCase.messages, testCase.options),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), this.config.timeoutMs))
+            ]);
+            const responseTime = Date.now() - startTime;
+            const qualityScores = await this.evaluateResponse(testCase, response.content);
+            const result = {
+                testCaseId: testCase.id,
+                providerId,
+                providerName: provider.getDisplayName(),
+                timestamp: new Date(),
+                responseTime,
+                tokenUsage: response.usage,
+                response: response.content,
+                finishReason: response.finishReason,
+                qualityScores,
+                success: true,
+                estimatedCost: this.estimateCost(providerId, response.usage)
+            };
+            logger.debug(`Test ${testCase.id} completed for ${providerId}: ${responseTime}ms`);
+            return result;
+        }
+        catch (error) {
+            const responseTime = Date.now() - startTime;
+            const result = {
+                testCaseId: testCase.id,
+                providerId,
+                providerName: provider.getDisplayName(),
+                timestamp: new Date(),
+                responseTime,
+                tokenUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+                response: '',
+                finishReason: 'error',
+                qualityScores: { accuracy: 0, relevance: 0, completeness: 0, overall: 0 },
+                success: false,
+                error: error instanceof Error ? error.message : String(error)
+            };
+            logger.warn(`Test ${testCase.id} failed for ${providerId}: ${result.error}`);
+            return result;
+        }
+    }
+    /**
+     * Evaluate response quality
+     */
+    async evaluateResponse(testCase, response) {
+        if (this.config.customEvaluator) {
+            return await this.config.customEvaluator(testCase, response);
+        }
+        // Default heuristic evaluation
+        const scores = {
+            accuracy: 0,
+            relevance: 0,
+            completeness: 0,
+            codeQuality: 0,
+            overall: 0
+        };
+        // Check for expected keywords
+        if (testCase.expectedKeywords) {
+            const foundKeywords = testCase.expectedKeywords.filter(keyword => response.toLowerCase().includes(keyword.toLowerCase()));
+            scores.accuracy = foundKeywords.length / testCase.expectedKeywords.length;
+        }
+        else {
+            scores.accuracy = 0.5; // Default if no keywords specified
+        }
+        // Basic relevance heuristics
+        scores.relevance = response.length > 50 ? 0.8 : 0.4;
+        // Completeness based on response length and structure
+        scores.completeness = Math.min(response.length / 200, 1) * 0.8;
+        // Code quality for code generation tasks
+        if (testCase.category === 'code_generation') {
+            const hasFunction = /function|=>|def\s/.test(response);
+            const hasReturn = /return/.test(response);
+            const hasProperStructure = /\{[\s\S]*\}/.test(response);
+            scores.codeQuality = ((hasFunction ? 0.4 : 0) +
+                (hasReturn ? 0.3 : 0) +
+                (hasProperStructure ? 0.3 : 0));
+        }
+        // Calculate overall score
+        const weights = testCase.category === 'code_generation'
+            ? { accuracy: 0.3, relevance: 0.2, completeness: 0.2, codeQuality: 0.3 }
+            : { accuracy: 0.4, relevance: 0.3, completeness: 0.3, codeQuality: 0 };
+        scores.overall = (scores.accuracy * weights.accuracy +
+            scores.relevance * weights.relevance +
+            scores.completeness * weights.completeness +
+            scores.codeQuality * weights.codeQuality);
+        return scores;
+    }
+    /**
+     * Estimate cost based on token usage
+     */
+    estimateCost(providerId, usage) {
+        // Rough cost estimates per 1000 tokens (as of 2024)
+        const costPer1000Tokens = {
+            'openai': 0.03, // GPT-4 pricing
+            'anthropic': 0.015, // Claude pricing
+            'google': 0.0025, // Gemini Pro pricing
+            'ollama': 0 // Local models
+        };
+        const rate = costPer1000Tokens[providerId] || 0;
+        return (usage.totalTokens / 1000) * rate;
+    }
+    /**
+     * Create summary statistics for a provider
+     */
+    createSummary(providerId, providerName, results) {
+        const successfulResults = results.filter(r => r.success);
+        const categoryPerformance = new Map();
+        // Calculate category-specific metrics
+        for (const testCase of this.testCases) {
+            const categoryResults = results.filter(r => r.testCaseId === testCase.id);
+            const successfulCategoryResults = categoryResults.filter(r => r.success);
+            if (categoryResults.length > 0) {
+                categoryPerformance.set(testCase.category, {
+                    tests: categoryResults.length,
+                    successRate: successfulCategoryResults.length / categoryResults.length,
+                    averageQuality: successfulCategoryResults.length > 0
+                        ? successfulCategoryResults.reduce((sum, r) => sum + r.qualityScores.overall, 0) / successfulCategoryResults.length
+                        : 0,
+                    averageResponseTime: successfulCategoryResults.length > 0
+                        ? successfulCategoryResults.reduce((sum, r) => sum + r.responseTime, 0) / successfulCategoryResults.length
+                        : 0
+                });
+            }
+        }
+        // Calculate response time percentiles
+        const responseTimes = successfulResults.map(r => r.responseTime).sort((a, b) => a - b);
+        const p95Index = Math.floor(responseTimes.length * 0.95);
+        return {
+            providerId,
+            providerName,
+            totalTests: results.length,
+            successfulTests: successfulResults.length,
+            failedTests: results.length - successfulResults.length,
+            successRate: results.length > 0 ? successfulResults.length / results.length : 0,
+            averageResponseTime: successfulResults.length > 0
+                ? successfulResults.reduce((sum, r) => sum + r.responseTime, 0) / successfulResults.length
+                : 0,
+            medianResponseTime: responseTimes.length > 0
+                ? responseTimes[Math.floor(responseTimes.length / 2)]
+                : 0,
+            p95ResponseTime: responseTimes.length > 0 ? responseTimes[p95Index] : 0,
+            averageQualityScores: {
+                accuracy: successfulResults.length > 0
+                    ? successfulResults.reduce((sum, r) => sum + r.qualityScores.accuracy, 0) / successfulResults.length
+                    : 0,
+                relevance: successfulResults.length > 0
+                    ? successfulResults.reduce((sum, r) => sum + r.qualityScores.relevance, 0) / successfulResults.length
+                    : 0,
+                completeness: successfulResults.length > 0
+                    ? successfulResults.reduce((sum, r) => sum + r.qualityScores.completeness, 0) / successfulResults.length
+                    : 0,
+                codeQuality: successfulResults.length > 0
+                    ? successfulResults.reduce((sum, r) => sum + (r.qualityScores.codeQuality || 0), 0) / successfulResults.length
+                    : 0,
+                overall: successfulResults.length > 0
+                    ? successfulResults.reduce((sum, r) => sum + r.qualityScores.overall, 0) / successfulResults.length
+                    : 0
+            },
+            totalTokens: results.reduce((sum, r) => sum + r.tokenUsage.totalTokens, 0),
+            averageTokensPerRequest: results.length > 0
+                ? results.reduce((sum, r) => sum + r.tokenUsage.totalTokens, 0) / results.length
+                : 0,
+            totalEstimatedCost: results.reduce((sum, r) => sum + (r.estimatedCost || 0), 0),
+            averageCostPerRequest: results.length > 0
+                ? results.reduce((sum, r) => sum + (r.estimatedCost || 0), 0) / results.length
+                : 0,
+            costPerToken: 0, // Will be calculated after
+            categoryPerformance
+        };
+    }
+    /**
+     * Generate detailed benchmark report
+     */
+    generateReport(summaries) {
+        const lines = [
+            '# AI Provider Benchmark Report',
+            `Generated: ${new Date().toISOString()}`,
+            `Total Providers: ${summaries.size}`,
+            `Total Test Cases: ${this.testCases.length}`,
+            '',
+            '## Provider Comparison',
+            ''
+        ];
+        // Create comparison table
+        lines.push('| Provider | Success Rate | Avg Response Time | Avg Quality | Total Cost |');
+        lines.push('|----------|--------------|-------------------|-------------|------------|');
+        for (const [providerId, summary] of summaries) {
+            lines.push(`| ${summary.providerName} | ${(summary.successRate * 100).toFixed(1)}% | ` +
+                `${summary.averageResponseTime.toFixed(0)}ms | ` +
+                `${(summary.averageQualityScores.overall * 100).toFixed(1)}% | ` +
+                `$${summary.totalEstimatedCost.toFixed(4)} |`);
+        }
+        lines.push('', '## Detailed Results', '');
+        // Detailed breakdown for each provider
+        for (const [providerId, summary] of summaries) {
+            lines.push(`### ${summary.providerName} (${providerId})`);
+            lines.push('');
+            lines.push(`- **Success Rate**: ${(summary.successRate * 100).toFixed(1)}% (${summary.successfulTests}/${summary.totalTests})`);
+            lines.push(`- **Average Response Time**: ${summary.averageResponseTime.toFixed(0)}ms`);
+            lines.push(`- **95th Percentile Response Time**: ${summary.p95ResponseTime.toFixed(0)}ms`);
+            lines.push(`- **Average Quality Score**: ${(summary.averageQualityScores.overall * 100).toFixed(1)}%`);
+            lines.push(`- **Total Tokens Used**: ${summary.totalTokens.toLocaleString()}`);
+            lines.push(`- **Estimated Total Cost**: $${summary.totalEstimatedCost.toFixed(4)}`);
+            lines.push('');
+            // Category performance
+            lines.push('**Category Performance:**');
+            for (const [category, performance] of summary.categoryPerformance) {
+                lines.push(`- ${category}: ${(performance.successRate * 100).toFixed(1)}% success, ` +
+                    `${(performance.averageQuality * 100).toFixed(1)}% quality, ` +
+                    `${performance.averageResponseTime.toFixed(0)}ms avg time`);
+            }
+            lines.push('');
+        }
+        return lines.join('\n');
+    }
+    /**
+     * Get detailed results for analysis
+     */
+    getResults() {
+        return [...this.results];
+    }
+    /**
+     * Utility function to chunk array
+     */
+    chunkArray(array, size) {
+        const chunks = [];
+        for (let i = 0; i < array.length; i += size) {
+            chunks.push(array.slice(i, i + size));
+        }
+        return chunks;
+    }
+}
+//# sourceMappingURL=provider-benchmarker.js.map

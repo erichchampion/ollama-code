@@ -152,6 +152,10 @@ export declare abstract class BaseAIProvider extends EventEmitter {
      */
     abstract getName(): string;
     /**
+     * Get provider display name
+     */
+    getDisplayName(): string;
+    /**
      * Get provider capabilities
      */
     abstract getCapabilities(): ProviderCapabilities;

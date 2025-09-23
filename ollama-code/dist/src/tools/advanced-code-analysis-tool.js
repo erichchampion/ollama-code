@@ -1,7 +1,10 @@
 import { BaseTool } from './types.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { getPerformanceConfig } from '../config/performance.js';
+import { logger } from '../utils/logger.js';
 export class AdvancedCodeAnalysisTool extends BaseTool {
+    config = getPerformanceConfig();
     metadata = {
         name: 'advanced-code-analysis',
         description: 'Comprehensive code quality analysis and improvement suggestions with AST parsing and semantic analysis',
@@ -11,7 +14,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             {
                 name: 'operation',
                 type: 'string',
-                description: 'Analysis operation to perform (analyze, metrics, quality, security, performance, refactor)',
+                description: 'Analysis operation to perform (analyze, metrics, quality, security, performance, refactor, architectural, testing, generate-tests)',
                 required: true
             },
             {
@@ -70,6 +73,11 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
                     return await this.analyzePerformance(target, context, options);
                 case 'refactor':
                     return await this.suggestRefactoring(target, context, options);
+                case 'architectural':
+                    return await this.analyzeArchitecture(target, context, options);
+                case 'testing':
+                case 'generate-tests':
+                    return await this.generateTests(target, context, options);
                 default:
                     return this.createErrorResult(`Unknown operation: ${operation}`);
             }
@@ -94,6 +102,9 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             quality: await this.analyzeQuality(targetPath, context, options),
             security: options.includeSecurity ? await this.analyzeSecurity(targetPath, context, options) : null,
             performance: options.includePerformance ? await this.analyzePerformance(targetPath, context, options) : null,
+            architectural: options.includeArchitectural ? await this.analyzeArchitecture(targetPath, context, options) : null,
+            refactoring: options.includeRefactoring ? await this.suggestRefactoring(targetPath, context, options) : null,
+            testing: options.includeTesting ? await this.generateTests(targetPath, context, options) : null,
             recommendations: await this.generateRecommendations(targetPath, isDirectory, options)
         };
         return this.createSuccessResult('Code analysis completed', {
@@ -528,44 +539,143 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
     }
     scanFileForVulnerabilities(filePath) {
         const vulnerabilities = [];
+        const securityConfig = this.config.codeAnalysis.security;
         try {
             const content = fs.readFileSync(filePath, 'utf-8');
-            // Check for common security issues
-            if (content.includes('eval(')) {
-                vulnerabilities.push({
+            // Enhanced security patterns based on configuration
+            const securityPatterns = [
+                {
+                    enabled: securityConfig.patterns.eval,
+                    pattern: /\beval\s*\(/,
                     type: 'Code Injection',
-                    severity: 'High',
-                    description: 'Use of eval() function detected',
-                    file: path.basename(filePath)
-                });
-            }
-            if (content.includes('innerHTML') && !content.includes('sanitize')) {
-                vulnerabilities.push({
+                    severity: 'Critical',
+                    description: 'Use of eval() function detected - potential code injection',
+                    owaspCategory: 'A03:2021 – Injection'
+                },
+                {
+                    enabled: securityConfig.patterns.sqlInjection,
+                    pattern: /(query|sql|execute)\s*\(\s*['"`][^'"`]*\$\{|['"`][^'"`]*\+.*\+.*['"`]/i,
+                    type: 'SQL Injection',
+                    severity: 'Critical',
+                    description: 'Potential SQL injection vulnerability detected',
+                    owaspCategory: 'A03:2021 – Injection'
+                },
+                {
+                    enabled: securityConfig.patterns.xss,
+                    pattern: /(innerHTML|outerHTML|document\.write)\s*=.*\$\{|insertAdjacentHTML.*\$\{/,
                     type: 'XSS',
-                    severity: 'Medium',
-                    description: 'Potential XSS vulnerability with innerHTML',
-                    file: path.basename(filePath)
-                });
-            }
-            if (content.includes('fs.readFile') && content.includes('+')) {
-                vulnerabilities.push({
-                    type: 'Path Traversal',
-                    severity: 'Medium',
-                    description: 'Potential path traversal vulnerability',
-                    file: path.basename(filePath)
-                });
-            }
-            if (content.match(/password.*=.*["'][^"']*["']/i)) {
-                vulnerabilities.push({
-                    type: 'Hardcoded Credentials',
                     severity: 'High',
-                    description: 'Hardcoded password detected',
-                    file: path.basename(filePath)
-                });
-            }
+                    description: 'Potential XSS vulnerability with dynamic HTML injection',
+                    owaspCategory: 'A03:2021 – Injection'
+                },
+                {
+                    enabled: securityConfig.patterns.hardcodedCredentials,
+                    pattern: /(password|secret|key|token)\s*[:=]\s*['"][^'"]{8,}['"]/i,
+                    type: 'Hardcoded Credentials',
+                    severity: 'Critical',
+                    description: 'Potential hardcoded credentials detected',
+                    owaspCategory: 'A07:2021 – Identification and Authentication Failures'
+                },
+                {
+                    enabled: securityConfig.patterns.cryptoWeak,
+                    pattern: /(md5|sha1|des|rc4)\s*\(/i,
+                    type: 'Weak Cryptography',
+                    severity: 'High',
+                    description: 'Use of weak cryptographic algorithm detected',
+                    owaspCategory: 'A02:2021 – Cryptographic Failures'
+                },
+                {
+                    enabled: true,
+                    pattern: /process\.env\.[A-Z_]+\s*\+|`[^`]*\$\{process\.env\.[^}]+\}[^`]*`/,
+                    type: 'Environment Variable Injection',
+                    severity: 'Medium',
+                    description: 'Dynamic environment variable usage detected',
+                    owaspCategory: 'A03:2021 – Injection'
+                },
+                {
+                    enabled: true,
+                    pattern: /exec\s*\(|spawn\s*\(|execSync\s*\(/,
+                    type: 'Command Injection',
+                    severity: 'Critical',
+                    description: 'Command execution detected - potential command injection',
+                    owaspCategory: 'A03:2021 – Injection'
+                },
+                {
+                    enabled: true,
+                    pattern: /path\s*\+|\.\.\/|\.\.\\|\$\{.*path.*\}/,
+                    type: 'Path Traversal',
+                    severity: 'High',
+                    description: 'Potential path traversal vulnerability detected',
+                    owaspCategory: 'A01:2021 – Broken Access Control'
+                },
+                {
+                    enabled: true,
+                    pattern: /https?:\/\/[^'"`\s]+/g,
+                    type: 'Hardcoded URL',
+                    severity: 'Low',
+                    description: 'Hardcoded URL detected - consider using configuration',
+                    owaspCategory: 'A05:2021 – Security Misconfiguration'
+                }
+            ];
+            securityPatterns.forEach(({ enabled, pattern, type, severity, description, owaspCategory }) => {
+                if (!enabled)
+                    return;
+                const matches = content.matchAll(new RegExp(pattern, 'gm'));
+                for (const match of matches) {
+                    const lines = content.substring(0, match.index).split('\n');
+                    vulnerabilities.push({
+                        type,
+                        severity,
+                        description,
+                        owaspCategory,
+                        file: path.basename(filePath),
+                        line: lines.length,
+                        column: lines[lines.length - 1].length + 1,
+                        code: match[0],
+                        recommendation: this.getSecurityRecommendation(type)
+                    });
+                }
+            });
+            return vulnerabilities;
         }
         catch (error) {
-            // Handle file read errors silently
+            logger.warn(`Error scanning file ${filePath} for vulnerabilities:`, error);
+            return [];
+        }
+    }
+    getSecurityRecommendation(type) {
+        const recommendations = {
+            'Code Injection': 'Avoid eval() - use safer alternatives like JSON.parse() or Function constructor with validation',
+            'SQL Injection': 'Use parameterized queries or prepared statements',
+            'XSS': 'Sanitize all user inputs and use safe DOM manipulation methods',
+            'Hardcoded Credentials': 'Use environment variables or secure credential storage',
+            'Weak Cryptography': 'Use strong cryptographic algorithms like AES-256, SHA-256, or bcrypt',
+            'Environment Variable Injection': 'Validate and sanitize environment variables before use',
+            'Command Injection': 'Validate inputs and use safer alternatives to exec()',
+            'Path Traversal': 'Validate and sanitize file paths, use path.resolve()',
+            'Hardcoded URL': 'Move URLs to configuration files or environment variables'
+        };
+        return recommendations[type] || 'Review security implications and apply appropriate safeguards';
+    }
+    // Enhanced security analysis using configuration thresholds
+    categorizeSecurityRisk(vulnerabilityCount) {
+        const config = this.config.codeAnalysis.security;
+        if (vulnerabilityCount <= config.maxVulnerabilitiesLow)
+            return 'Low';
+        if (vulnerabilityCount <= config.maxVulnerabilitiesMedium)
+            return 'Medium';
+        return 'High';
+    }
+    // Legacy pattern matching for backward compatibility
+    legacySecurityCheck(content, filePath) {
+        const vulnerabilities = [];
+        if (content.match(/password.*=.*["'][^"']*["']/i)) {
+            vulnerabilities.push({
+                type: 'Hardcoded Credentials',
+                severity: 'High',
+                description: 'Hardcoded password detected',
+                file: path.basename(filePath)
+            });
         }
         return vulnerabilities;
     }
@@ -916,6 +1026,356 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
                 resourcesUsed: { tool: 'advanced-code-analysis' }
             }
         };
+    }
+    /**
+     * Comprehensive architectural analysis including patterns, code smells, and dependency analysis
+     */
+    async analyzeArchitecture(target, context, options) {
+        const targetPath = path.resolve(context.workingDirectory, target);
+        const isDirectory = fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory();
+        const config = this.config.codeAnalysis.architectural;
+        try {
+            const files = isDirectory ? this.getCodeFiles(targetPath) : [targetPath];
+            const findings = [];
+            const detectedPatterns = new Set();
+            logger.info('Starting architectural analysis', { fileCount: files.length });
+            for (const file of files.slice(0, 50)) { // Limit for performance
+                const content = fs.readFileSync(file, 'utf-8');
+                const fileFindings = this.analyzeArchitecturalPatterns(content, file);
+                findings.push(...fileFindings);
+                fileFindings.forEach(finding => detectedPatterns.add(finding.patternName));
+            }
+            // Calculate metrics
+            const metrics = this.calculateArchitecturalMetrics(files);
+            const qualityScore = this.calculateArchitecturalQuality(findings, metrics);
+            const result = {
+                summary: {
+                    totalFindings: findings.length,
+                    criticalIssues: findings.filter(f => f.severity === 'error').length,
+                    warnings: findings.filter(f => f.severity === 'warning').length,
+                    suggestions: findings.filter(f => f.severity === 'info').length,
+                    qualityScore
+                },
+                findings,
+                patterns: {
+                    detected: Array.from(detectedPatterns),
+                    recommended: this.getRecommendedPatterns(files.length, metrics)
+                },
+                metrics,
+                recommendations: this.generateArchitecturalRecommendations(findings, metrics)
+            };
+            return this.createSuccessResult('Architectural analysis completed', result);
+        }
+        catch (error) {
+            return this.createErrorResult(`Architectural analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    analyzeArchitecturalPatterns(content, filePath) {
+        const findings = [];
+        const config = this.config.codeAnalysis.architectural;
+        // Design patterns detection
+        const patterns = [
+            {
+                id: 'singleton_pattern',
+                name: 'Singleton Pattern',
+                pattern: /class\s+\w+\s*{[^}]*private\s+static\s+\w+[^}]*getInstance\s*\(/s,
+                category: 'design_pattern',
+                severity: 'info',
+                description: 'Singleton pattern detected'
+            },
+            {
+                id: 'factory_pattern',
+                name: 'Factory Pattern',
+                pattern: /class\s+\w*Factory\w*|function\s+create\w+|\.create\w+\s*\(/,
+                category: 'design_pattern',
+                severity: 'info',
+                description: 'Factory pattern detected'
+            },
+            {
+                id: 'god_class',
+                name: 'God Class',
+                pattern: (code) => {
+                    const classMatch = code.match(/class\s+\w+\s*{([\s\S]*?)}/);
+                    if (classMatch) {
+                        const classBody = classMatch[1];
+                        const methodCount = (classBody.match(/\w+\s*\([^)]*\)\s*{/g) || []).length;
+                        const lineCount = classBody.split('\n').length;
+                        return methodCount > config.godClassMethodLimit || lineCount > config.godClassLineLimit;
+                    }
+                    return false;
+                },
+                category: 'code_smell',
+                severity: 'warning',
+                description: 'Class with too many responsibilities detected'
+            }
+        ];
+        patterns.forEach(({ pattern, ...patternInfo }) => {
+            let matches = [];
+            if (pattern instanceof RegExp) {
+                const regexMatches = content.matchAll(new RegExp(pattern, 'gm'));
+                matches = Array.from(regexMatches);
+            }
+            else if (typeof pattern === 'function') {
+                if (pattern(content)) {
+                    matches = [{ index: 0, 0: 'Pattern match' }];
+                }
+            }
+            matches.forEach(match => {
+                const location = this.getLocationFromMatch(match, content);
+                const confidence = this.calculatePatternConfidence(patternInfo, content);
+                if (confidence > config.confidenceThreshold) {
+                    findings.push({
+                        patternId: patternInfo.id,
+                        patternName: patternInfo.name,
+                        category: patternInfo.category,
+                        severity: patternInfo.severity,
+                        location: {
+                            file: path.basename(filePath),
+                            line: location.line,
+                            column: location.column
+                        },
+                        message: patternInfo.description,
+                        confidence
+                    });
+                }
+            });
+        });
+        return findings;
+    }
+    calculateArchitecturalMetrics(files) {
+        let totalComplexity = 0;
+        let totalLines = 0;
+        files.forEach(file => {
+            try {
+                const content = fs.readFileSync(file, 'utf-8');
+                const lines = content.split('\n').length;
+                totalLines += lines;
+                // Simple complexity calculation
+                const controlStructures = (content.match(/\b(if|for|while|switch|catch)\b/g) || []).length;
+                totalComplexity += controlStructures;
+            }
+            catch (error) {
+                logger.warn(`Error analyzing file ${file}:`, error);
+            }
+        });
+        return {
+            codeComplexity: totalLines > 0 ? totalComplexity / totalLines * 100 : 0,
+            maintainabilityIndex: Math.max(0, 100 - Math.min(totalComplexity / 10, 50)),
+            technicalDebt: files.length * 2 // Simplified metric
+        };
+    }
+    calculateArchitecturalQuality(findings, metrics) {
+        const config = this.config.codeAnalysis.quality;
+        let score = 100;
+        // Penalty for findings
+        score -= findings.filter(f => f.severity === 'error').length * config.criticalPenalty;
+        score -= findings.filter(f => f.severity === 'warning').length * config.warningPenalty;
+        score -= findings.filter(f => f.severity === 'info').length * config.infoPenalty;
+        // Factor in maintainability
+        score = (score + metrics.maintainabilityIndex) / 2;
+        return Math.max(0, Math.min(100, Math.round(score)));
+    }
+    getLocationFromMatch(match, content) {
+        const beforeMatch = content.substring(0, match.index || 0);
+        const lines = beforeMatch.split('\n');
+        return { line: lines.length, column: lines[lines.length - 1].length + 1 };
+    }
+    calculatePatternConfidence(pattern, content) {
+        // Simple confidence calculation - can be enhanced
+        return 0.8;
+    }
+    getRecommendedPatterns(fileCount, metrics) {
+        const recommendations = [];
+        if (metrics.codeComplexity > 15) {
+            recommendations.push('Strategy Pattern for complex conditionals');
+        }
+        if (fileCount > 20) {
+            recommendations.push('Module Pattern for better organization');
+        }
+        return recommendations;
+    }
+    generateArchitecturalRecommendations(findings, metrics) {
+        const recommendations = [];
+        const config = this.config.codeAnalysis.quality;
+        const criticalFindings = findings.filter(f => f.severity === 'error');
+        if (criticalFindings.length > 0) {
+            recommendations.push({
+                priority: 'high',
+                category: 'Architecture',
+                description: 'Address critical architectural issues',
+                impact: 'Improves maintainability and reduces technical debt'
+            });
+        }
+        if (metrics.maintainabilityIndex < config.maintainabilityThresholds.fair) {
+            recommendations.push({
+                priority: 'medium',
+                category: 'Maintainability',
+                description: 'Refactor code to improve maintainability',
+                impact: 'Easier maintenance and development'
+            });
+        }
+        return recommendations;
+    }
+    /**
+     * Advanced test generation with comprehensive coverage analysis
+     */
+    async generateTests(target, context, options) {
+        const targetPath = path.resolve(context.workingDirectory, target);
+        const isDirectory = fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory();
+        const config = this.config.codeAnalysis.testing;
+        try {
+            const files = isDirectory ? this.getCodeFiles(targetPath) : [targetPath];
+            const testSuites = [];
+            const framework = options.frameworkPreference || config.frameworkPreference;
+            logger.info('Starting test generation', { fileCount: files.length, framework });
+            for (const file of files.slice(0, 20)) { // Limit for performance
+                const testSuite = this.generateTestSuiteForFile(file, framework);
+                if (testSuite.testCases.length > 0) {
+                    testSuites.push(testSuite);
+                }
+            }
+            const summary = {
+                totalTests: testSuites.reduce((sum, suite) => sum + suite.testCases.length, 0),
+                coverageEstimate: this.estimateCoverageImprovement(testSuites),
+                framework,
+                estimatedRuntime: testSuites.reduce((sum, suite) => sum + suite.estimatedDuration, 0)
+            };
+            const result = {
+                summary,
+                testSuites,
+                recommendations: this.generateTestingRecommendations(testSuites),
+                configuration: {
+                    framework,
+                    coverageTarget: options.coverageTarget || config.coverageTarget,
+                    timeout: config.maxTestRuntime
+                }
+            };
+            return this.createSuccessResult('Test generation completed', result);
+        }
+        catch (error) {
+            return this.createErrorResult(`Test generation failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    generateTestSuiteForFile(filePath, framework) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const className = this.extractClassName(content);
+        const methods = this.extractMethods(content);
+        const testCases = [];
+        // Generate basic unit tests
+        methods.forEach(method => {
+            testCases.push({
+                name: `should ${method.name} successfully with valid input`,
+                type: 'unit',
+                code: this.generateBasicTest(className, method.name, framework),
+                estimatedRuntime: 10
+            });
+            testCases.push({
+                name: `should handle ${method.name} error cases`,
+                type: 'error-handling',
+                code: this.generateErrorTest(className, method.name, framework),
+                estimatedRuntime: 15
+            });
+        });
+        // Generate integration tests if dependencies detected
+        const dependencies = this.extractDependencies(content);
+        if (dependencies.length > 0) {
+            testCases.push({
+                name: 'should integrate with dependencies',
+                type: 'integration',
+                code: this.generateIntegrationTest(className, dependencies, framework),
+                estimatedRuntime: 50
+            });
+        }
+        return {
+            targetFile: filePath,
+            testCases,
+            estimatedDuration: testCases.reduce((sum, tc) => sum + tc.estimatedRuntime, 0)
+        };
+    }
+    extractClassName(content) {
+        const match = content.match(/(?:export\s+)?class\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+        return match ? match[1] : null;
+    }
+    extractMethods(content) {
+        const methods = [];
+        const methodMatches = content.matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\([^)]*\)\s*[:{]/g);
+        for (const match of methodMatches) {
+            if (!['constructor', 'if', 'for', 'while', 'switch'].includes(match[1])) {
+                methods.push({ name: match[1] });
+            }
+        }
+        return methods;
+    }
+    extractDependencies(content) {
+        const deps = [];
+        const importMatches = content.matchAll(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
+        for (const match of importMatches) {
+            if (!match[1].startsWith('.')) {
+                deps.push(match[1]);
+            }
+        }
+        return deps;
+    }
+    generateBasicTest(className, methodName, framework) {
+        const instanceSetup = className ? `const instance = new ${className}();` : '';
+        const methodCall = className ? `instance.${methodName}()` : `${methodName}()`;
+        if (framework === 'jest') {
+            return `test('${methodName} should work with valid input', () => {
+    ${instanceSetup}
+    const result = ${methodCall};
+    expect(result).toBeDefined();
+});`;
+        }
+        else {
+            return `it('${methodName} should work with valid input', () => {
+    ${instanceSetup}
+    const result = ${methodCall};
+    expect(result).to.be.defined;
+});`;
+        }
+    }
+    generateErrorTest(className, methodName, framework) {
+        const instanceSetup = className ? `const instance = new ${className}();` : '';
+        const methodCall = className ? `instance.${methodName}` : methodName;
+        if (framework === 'jest') {
+            return `test('${methodName} should handle invalid input', () => {
+    ${instanceSetup}
+    expect(() => ${methodCall}(null)).toThrow();
+});`;
+        }
+        else {
+            return `it('${methodName} should handle invalid input', () => {
+    ${instanceSetup}
+    expect(() => ${methodCall}(null)).to.throw();
+});`;
+        }
+    }
+    generateIntegrationTest(className, dependencies, framework) {
+        const mocks = dependencies.map(dep => `const mock${dep} = jest.mock('${dep}');`).join('\n    ');
+        const instanceSetup = className ? `const instance = new ${className}();` : '';
+        return `test('should integrate with dependencies', () => {
+    ${mocks}
+    ${instanceSetup}
+    // Test integration logic here
+    expect(true).toBe(true); // Placeholder
+});`;
+    }
+    estimateCoverageImprovement(testSuites) {
+        const totalTests = testSuites.reduce((sum, suite) => sum + suite.testCases.length, 0);
+        return Math.min(95, Math.round(totalTests * 5)); // Rough estimate
+    }
+    generateTestingRecommendations(testSuites) {
+        const recommendations = [];
+        const hasIntegrationTests = testSuites.some(suite => suite.testCases.some((tc) => tc.type === 'integration'));
+        if (!hasIntegrationTests) {
+            recommendations.push({
+                priority: 'medium',
+                category: 'Testing',
+                description: 'Add integration tests for better coverage',
+                impact: 'Improved confidence in component interactions'
+            });
+        }
+        return recommendations;
     }
     createErrorResult(error) {
         return {

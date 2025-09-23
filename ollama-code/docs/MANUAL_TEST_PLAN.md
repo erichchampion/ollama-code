@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.2.29
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Phase 6 Optimizations*
+# Manual Test Plan - Ollama Code CLI v0.2.30
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Phase 7 Advanced AI Capabilities*
 
 ## Overview
 
@@ -7,13 +7,16 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 
 ### 🧠 **Core AI Capabilities**
 - Natural language understanding and intent recognition
-- Intelligent query processing and routing
+- Multi-provider AI integration with intelligent routing
 - Context-aware conversation management
 - Multi-step query handling and session management
+- Advanced AI provider benchmarking and optimization
 
 ### 🔧 **Development Tools**
 - Advanced Git repository analysis and insights
 - Code quality assessment and security scanning
+- Comprehensive security vulnerability detection (OWASP Top 10)
+- Advanced performance analysis and bottleneck detection
 - Automated test generation and testing strategies
 - Project structure analysis and recommendations
 - Smart file filtering with .gitignore integration
@@ -50,6 +53,7 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Node.js 18+ installed
 - Ollama server installed and running (`ollama serve`)
 - At least one Ollama model available (e.g., `llama3.2`, `codellama`)
+- Optional: API keys for testing multi-provider features (OpenAI, Anthropic, Google)
 - Project built successfully (`npm run build`)
 - CLI executable permissions set (`chmod +x dist/src/cli-selector.js`)
 - Git repository for testing git-related features
@@ -199,6 +203,127 @@ git add . && git commit -m "Add project structure"
 
 ---
 
+## 🤖 Multi-Provider AI Integration
+
+### Test Group: AI Provider Management and Routing
+**Priority: Critical**
+
+#### Test: Provider Discovery and Capabilities
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced
+```
+
+**Test Queries:**
+1. `"What AI providers are available?"`
+2. `"Show me the capabilities of each AI provider"`
+3. `"Which provider is best for code generation?"`
+4. `"Compare response quality across providers"`
+
+**Expected Results:**
+- Lists all available providers (Ollama, OpenAI, Anthropic, Google)
+- Shows capabilities matrix for each provider
+- Provides intelligent routing recommendations
+- Displays provider health and performance metrics
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Intelligent Provider Routing
+**Test Queries:**
+1. `"Generate a complex React component"` (should route to code-optimized provider)
+2. `"Explain this algorithm"` (should route to analysis-optimized provider)
+3. `"Debug this error message"` (should route to debugging-optimized provider)
+4. `"Write documentation for this API"` (should route to writing-optimized provider)
+
+**Expected:**
+- Automatic provider selection based on query type and capabilities
+- Fallback routing when primary provider unavailable
+- Cost-aware routing for budget optimization
+- Performance-aware routing for speed optimization
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Provider Health Monitoring and Circuit Breakers
+**Commands:**
+1. `"Check health status of all AI providers"`
+2. `"Show provider response times and error rates"`
+3. `"Test failover when a provider is unavailable"`
+
+**Expected:**
+- Real-time health monitoring for all configured providers
+- Circuit breaker activation for failing providers
+- Automatic failover to healthy providers
+- Health recovery detection and re-enablement
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Provider Performance Benchmarking
+**Priority: High**
+
+#### Test: Comprehensive Provider Benchmarking
+**Commands:**
+1. `"Run performance benchmarks across all providers"`
+2. `"Compare code generation quality between providers"`
+3. `"Show cost analysis for different providers"`
+4. `"Benchmark response times for various query types"`
+
+**Expected Results:**
+- Standardized test cases executed across all providers
+- Quality scoring with accuracy, relevance, completeness metrics
+- Cost estimation and comparison per provider
+- Response time analysis with percentile breakdowns
+- Provider ranking recommendations based on use case
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Provider-Specific Features
+**Test Queries:**
+1. **OpenAI GPT-4:** `"Use function calling to analyze this code structure"`
+2. **Anthropic Claude:** `"Analyze this large document with long context"`
+3. **Google Gemini:** `"Process this code with multimodal analysis"`
+4. **Ollama:** `"Use local models for privacy-sensitive code review"`
+
+**Expected:**
+- Provider-specific capabilities properly utilized
+- Function calling, long context, multimodal features working
+- Local vs cloud processing options respected
+- Privacy considerations properly handled
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Advanced AI Features
+**Priority: Medium**
+
+#### Test: Streaming and Real-Time Responses
+**Commands:**
+1. `"Generate a large code file with streaming updates"`
+2. `"Cancel a streaming operation mid-generation"`
+3. `"Show streaming performance across providers"`
+
+**Expected:**
+- Real-time token streaming for long responses
+- Progress indicators and partial results display
+- Clean cancellation with proper resource cleanup
+- Performance metrics for streaming operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Provider Configuration and Optimization
+**Commands:**
+1. `"Configure provider preferences for this session"`
+2. `"Set cost limits for expensive providers"`
+3. `"Optimize provider selection for development workflow"`
+
+**Expected:**
+- User preferences stored and applied consistently
+- Cost controls working with budget alerts
+- Workflow optimization improving productivity
+- Configuration persistence across sessions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
 ## 🔧 Advanced Development Tools
 
 ### Test Group: Git Repository Analysis
@@ -283,6 +408,150 @@ git add . && git commit -m "Add project structure"
 - Algorithm complexity analysis
 - Resource usage assessment
 - Optimization recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Advanced Security Analysis (OWASP Top 10)
+**Priority: Critical**
+
+#### Test: Comprehensive Security Vulnerability Detection
+**Test Setup:**
+```bash
+# Create test files with known security issues
+mkdir security-test && cd security-test
+cat > vulnerable.js << 'EOF'
+// SQL Injection vulnerability
+const query = "SELECT * FROM users WHERE id = " + req.params.id;
+
+// Hardcoded secrets
+const API_KEY = "sk-1234567890abcdef1234567890abcdef";
+
+// Weak crypto
+const hash = crypto.createHash('md5').update(password).digest('hex');
+
+// Command injection
+exec(`ls ${req.query.path}`);
+
+// XSS vulnerability
+document.innerHTML = userInput;
+EOF
+```
+
+**Commands:**
+1. `"Run comprehensive security analysis on this project"`
+2. `"Show me OWASP Top 10 vulnerabilities in this code"`
+3. `"Generate a security report with recommendations"`
+4. `"Analyze dependency vulnerabilities"`
+
+**Expected Results:**
+- ✅ **SQL Injection** detected with high severity rating
+- ✅ **Hardcoded Secrets** identified with critical severity
+- ✅ **Weak Cryptography** flagged with high severity
+- ✅ **Command Injection** detected with critical severity
+- ✅ **XSS Vulnerability** identified with high severity
+- ✅ Detailed remediation guidance for each vulnerability
+- ✅ Security risk scoring and prioritization
+- ✅ Dependency vulnerability scanning results
+- ✅ OWASP category mapping for each issue
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Security Pattern Recognition
+**Test Setup:**
+```bash
+cat > auth-issues.js << 'EOF'
+// Authentication bypass
+if (user.isAdmin || true) { allowAccess(); }
+
+// Weak password policy
+if (password.length >= 4) { acceptPassword(); }
+
+// Insecure deserialization
+const data = JSON.parse(untrustedInput);
+
+// Missing input validation
+database.query(userInput);
+EOF
+```
+
+**Commands:**
+1. `"Check for authentication and authorization issues"`
+2. `"Analyze data flow for security vulnerabilities"`
+3. `"Show me insecure coding patterns"`
+
+**Expected:**
+- Authentication bypass patterns detected
+- Weak validation logic identified
+- Data flow security issues flagged
+- Comprehensive security recommendations provided
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Advanced Performance Analysis
+**Priority: High**
+
+#### Test: Algorithm Complexity and Bottleneck Detection
+**Test Setup:**
+```bash
+# Create test files with performance issues
+mkdir performance-test && cd performance-test
+cat > slow-code.js << 'EOF'
+// Nested loops - O(n²) complexity
+for (let i = 0; i < data.length; i++) {
+  for (let j = 0; j < data.length; j++) {
+    processData(data[i], data[j]);
+  }
+}
+
+// Inefficient array search
+function findUser(users, id) {
+  return users.find(user => user.id === id); // O(n) each time
+}
+
+// Memory leak - event listeners not removed
+document.addEventListener('click', handler);
+
+// Synchronous file operations
+const data = fs.readFileSync('large-file.txt');
+
+// Sequential async operations
+await fetch('/api/user1');
+await fetch('/api/user2');
+await fetch('/api/user3');
+EOF
+```
+
+**Commands:**
+1. `"Analyze performance bottlenecks in this code"`
+2. `"Calculate algorithm complexity for this project"`
+3. `"Show me memory usage optimization opportunities"`
+4. `"Identify I/O and network performance issues"`
+
+**Expected Results:**
+- ✅ **Nested loops** identified with O(n²) complexity warning
+- ✅ **Inefficient search** flagged with optimization suggestions
+- ✅ **Memory leaks** detected in event listener patterns
+- ✅ **Synchronous I/O** identified as blocking operations
+- ✅ **Sequential async** operations flagged for parallelization
+- ✅ Cyclomatic complexity calculation for each function
+- ✅ Performance optimization recommendations with impact estimates
+- ✅ Bundle size analysis and optimization suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Performance Metrics and Reporting
+**Commands:**
+1. `"Generate a comprehensive performance report"`
+2. `"Show me the highest complexity functions"`
+3. `"Analyze bundle size and dependencies"`
+4. `"Compare performance characteristics across files"`
+
+**Expected:**
+- Performance summary with overall scores
+- High complexity files identified and ranked
+- Bundle analysis with size optimization recommendations
+- File-by-file performance comparison
+- Actionable optimization roadmap
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -1169,55 +1438,108 @@ done
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario I: Multi-Provider AI Optimization and Quality Comparison
+**Goal:** Validate complete multi-provider AI integration with intelligent routing and benchmarking
+
+**Steps:**
+1. **Provider Discovery:** `"Show me all available AI providers and their capabilities"`
+2. **Intelligent Routing:** `"Generate a complex authentication system"` (observe provider selection)
+3. **Quality Comparison:** `"Compare the quality of responses across all providers for code generation"`
+4. **Performance Benchmarking:** `"Run comprehensive benchmarks across all providers"`
+5. **Cost Analysis:** `"Show me cost analysis and optimization recommendations"`
+6. **Failover Testing:** `"Test fallback mechanisms when primary provider is unavailable"`
+
+**Success Criteria:**
+- All 4 providers (Ollama, OpenAI, Anthropic, Google) properly configured and accessible
+- Intelligent routing selects optimal provider based on query type and capabilities
+- Quality benchmarking provides comparative scores across providers
+- Cost analysis shows per-provider estimates and optimization suggestions
+- Failover mechanisms work seamlessly with circuit breaker patterns
+- Performance metrics show provider-specific response times and capabilities
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
+### Scenario J: Comprehensive Security and Performance Analysis Workflow
+**Goal:** Validate advanced code understanding capabilities with security and performance analysis
+
+**Steps:**
+1. **Security Analysis:** `"Run comprehensive security analysis and show OWASP Top 10 vulnerabilities"`
+2. **Performance Analysis:** `"Analyze performance bottlenecks and algorithm complexity"`
+3. **Vulnerability Details:** `"Show me detailed remediation steps for critical security issues"`
+4. **Optimization Recommendations:** `"Generate performance optimization roadmap with impact estimates"`
+5. **Compliance Checking:** `"Check code compliance with security best practices"`
+6. **Report Generation:** `"Generate comprehensive security and performance report"`
+
+**Success Criteria:**
+- Security analysis detects known vulnerability patterns with proper OWASP mapping
+- Performance analysis identifies bottlenecks and calculates complexity metrics
+- Detailed remediation guidance provided for each security issue
+- Performance optimization recommendations include impact estimates
+- Reports are comprehensive and actionable for development teams
+- Analysis completes efficiently even for large codebases
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
 
 ### Critical Features (Must Pass)
 - [ ] Natural language understanding and intent recognition
+- [ ] **NEW:** Multi-provider AI integration (Ollama, OpenAI, Anthropic, Google)
+- [ ] **NEW:** Intelligent AI provider routing and fallback mechanisms
+- [ ] **NEW:** Comprehensive security vulnerability detection (OWASP Top 10)
+- [ ] **NEW:** Advanced performance analysis and bottleneck detection
 - [ ] Git repository analysis and insights
 - [ ] Code quality assessment
 - [ ] Test generation and strategy
 - [ ] Enhanced interactive mode
 - [ ] Error handling and recovery
-- [ ] **NEW:** Smart file filtering with .gitignore integration
-- [ ] **NEW:** Enterprise-scale performance optimization
-- [ ] **NEW:** Distributed processing for large codebases
-- [ ] **NEW:** Multi-tier intelligent caching system
-- [ ] **NEW:** Predictive AI caching with >80% hit rates
-- [ ] **NEW:** Real-time streaming response system
-- [ ] **NEW:** Performance monitoring dashboard
-- [ ] **NEW:** Centralized configuration management system
-- [ ] **NEW:** Managed EventEmitter with automatic cleanup
-- [ ] **NEW:** Shared cache utilities and resource management
-- [ ] **NEW:** Reliable integration test infrastructure
+- [ ] Smart file filtering with .gitignore integration
+- [ ] Enterprise-scale performance optimization
+- [ ] Distributed processing for large codebases
+- [ ] Multi-tier intelligent caching system
+- [ ] Predictive AI caching with >80% hit rates
+- [ ] Real-time streaming response system
+- [ ] Performance monitoring dashboard
+- [ ] Centralized configuration management system
+- [ ] Managed EventEmitter with automatic cleanup
+- [ ] Shared cache utilities and resource management
+- [ ] Reliable integration test infrastructure
 
 ### High Priority Features
 - [ ] Session management and context continuity
 - [ ] Multi-step query processing
 - [ ] Knowledge graph integration
 - [ ] Tool routing and integration
-- [ ] Security analysis
-- [ ] Performance analysis
-- [ ] **NEW:** Distributed processing performance
-- [ ] **NEW:** Memory optimization and caching
-- [ ] **NEW:** Real-time file watching and updates
-- [ ] **NEW:** Enterprise-scale partition querying
-- [ ] **NEW:** Startup time optimization with lazy loading
-- [ ] **NEW:** User behavior pattern learning for predictive caching
-- [ ] **NEW:** Performance trend analysis and alerting
-- [ ] **NEW:** Configuration consistency across all systems
-- [ ] **NEW:** Memory leak prevention and detection
-- [ ] **NEW:** TypeScript compilation and build system reliability
-- [ ] **NEW:** Test infrastructure stability and execution
+- [ ] **NEW:** AI provider performance benchmarking and quality comparison
+- [ ] **NEW:** Provider health monitoring and circuit breakers
+- [ ] **NEW:** Security vulnerability pattern recognition and remediation
+- [ ] **NEW:** Algorithm complexity analysis and optimization recommendations
+- [ ] Distributed processing performance
+- [ ] Memory optimization and caching
+- [ ] Real-time file watching and updates
+- [ ] Enterprise-scale partition querying
+- [ ] Startup time optimization with lazy loading
+- [ ] User behavior pattern learning for predictive caching
+- [ ] Performance trend analysis and alerting
+- [ ] Configuration consistency across all systems
+- [ ] Memory leak prevention and detection
+- [ ] TypeScript compilation and build system reliability
+- [ ] Test infrastructure stability and execution
 
 ### Medium Priority Features
 - [ ] Best practices integration
 - [ ] Advanced semantic analysis
-- [ ] **ENHANCED:** Performance optimization (now includes enterprise features)
-- [ ] **ENHANCED:** Scalability testing (now includes enterprise stress testing)
-- [ ] **NEW:** Multi-project management and context switching
-- [ ] **NEW:** Concurrent user session handling
+- [ ] **NEW:** Provider-specific feature utilization (function calling, multimodal, long context)
+- [ ] **NEW:** Cost-aware routing and budget management
+- [ ] **NEW:** Streaming response optimization across providers
+- [ ] Performance optimization (includes enterprise features)
+- [ ] Scalability testing (includes enterprise stress testing)
+- [ ] Multi-project management and context switching
+- [ ] Concurrent user session handling
 
 ### Overall System Health
 - [ ] No critical bugs or crashes
@@ -1227,11 +1549,11 @@ done
 
 ---
 
-**Test Plan Version:** 14.0 (Added .gitignore Integration and Smart File Filtering)
+**Test Plan Version:** 15.0 (Added Phase 7 Multi-Provider AI and Advanced Code Understanding Features)
 **Created:** September 21, 2025
-**Last Updated:** September 22, 2025 (Added .gitignore Integration Features)
-**Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.2.29
-**Coverage:** Comprehensive functional testing covering natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements, and .gitignore integration
+**Last Updated:** September 22, 2025 (Added Phase 7.1 Multi-Provider AI Integration and Phase 7.2 Advanced Code Understanding)
+**Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.2.30
+**Coverage:** Comprehensive functional testing covering multi-provider AI integration, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements, and .gitignore integration
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios.
