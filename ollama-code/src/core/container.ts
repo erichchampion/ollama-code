@@ -254,6 +254,7 @@ export interface ServiceRegistry {
   // Other services
   terminal: any;
   projectContext: any;
+  ideIntegrationServer: any;
 }
 
 /**

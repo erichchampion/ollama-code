@@ -175,7 +175,8 @@ class TelemetryManager {
    * Generate an anonymous client ID
    */
   private generateClientId(): string {
-    return uuidv4();
+    const { generateTelemetryClientId } = require('../utils/id-generator.js');
+    return generateTelemetryClientId();
   }
   
   /**

@@ -5,6 +5,7 @@
  * unsafe Math.random() based implementations.
  */
 import { randomBytes } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 /**
  * Generate a cryptographically secure random ID
  */
@@ -29,5 +30,23 @@ export function generateSessionId() {
  */
 export function generateTaskId() {
     return generateSecureId('task', 8);
+}
+/**
+ * Generate a client ID for WebSocket connections (replaces duplicate implementations)
+ */
+export function generateClientId() {
+    return generateSecureId('client', 9);
+}
+/**
+ * Generate a telemetry client ID (anonymous UUID)
+ */
+export function generateTelemetryClientId() {
+    return uuidv4();
+}
+/**
+ * Generate a request ID for tracking requests
+ */
+export function generateRequestId() {
+    return generateSecureId('req', 8);
 }
 //# sourceMappingURL=id-generator.js.map

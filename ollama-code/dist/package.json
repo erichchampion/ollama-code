@@ -118,6 +118,7 @@
     "author": "Erich Champion",
     "license": "MIT",
     "dependencies": {
+        "@types/ws": "^8.18.1",
         "inquirer": "^12.9.6",
         "node-fetch": "^3.3.1",
         "open": "^9.1.0",
@@ -125,6 +126,7 @@
         "table": "^6.9.0",
         "terminal-link": "^5.0.0",
         "uuid": "^13.0.0",
+        "ws": "^8.18.3",
         "zod": "^4.1.8"
     },
     "devDependencies": {

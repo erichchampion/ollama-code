@@ -33,6 +33,7 @@ import { registerAnalyticsCommands } from './analytics-commands.js';
 import { registerTutorialCommands } from './tutorial-commands.js';
 import { registerMCPCommands } from './mcp-commands.js';
 import { registerMCPClientCommands } from './mcp-client-commands.js';
+import { registerIDECommands } from './ide-commands.js';
 
 /**
  * Register all commands
@@ -98,6 +99,9 @@ export function registerCommands(): void {
 
   // Register MCP client commands
   registerMCPClientCommands();
+
+  // Register IDE commands
+  registerIDECommands();
 
   // Register tool system command - temporarily disabled due to import issues
   // commandRegistry.register(toolCommand);

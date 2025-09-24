@@ -89,6 +89,7 @@ export interface ServiceRegistry {
     mcpClient: any;
     terminal: any;
     projectContext: any;
+    ideIntegrationServer: any;
 }
 /**
  * Type-safe container wrapper

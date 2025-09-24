@@ -90,6 +90,16 @@ export async function registerServices(): Promise<void> {
     return client;
   });
 
+  // Register IDE Integration Server
+  globalContainer.singleton('ideIntegrationServer', async () => {
+    const { IDEIntegrationServer } = await import('../ide/integration-server.js');
+    const { IDE_SERVER_DEFAULTS } = await import('../constants/websocket.js');
+    const { loadConfig } = await import('../config/loader.js');
+    const config = await loadConfig();
+    const port = config.ide?.port || IDE_SERVER_DEFAULTS.PORT;
+    return new IDEIntegrationServer(port);
+  });
+
   // Register AI client
   globalContainer.singleton('aiClient', async () => {
     const { OllamaClient } = await import('../ai/ollama-client.js');
@@ -175,6 +185,10 @@ export async function getProjectContext() {
 
 export async function getTerminal() {
   return globalContainer.resolve('terminal');
+}
+
+export async function getIDEIntegrationServer() {
+  return globalContainer.resolve('ideIntegrationServer');
 }
 
 /**

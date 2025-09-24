@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.2.30
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Phase 7 Advanced AI Capabilities*
+# Manual Test Plan - Ollama Code CLI v0.3.1
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Bug Fixes & Code Quality Improvements*
 
 ## Overview
 
@@ -36,6 +36,10 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Command execution with safety controls
 - Task planning and decomposition
 - Error handling and recovery
+- **NEW:** VS Code extension with real-time AI assistance
+- **NEW:** WebSocket-based IDE integration server
+- **NEW:** Inline completions and code actions in VS Code
+- **NEW:** Interactive AI chat panel in IDE sidebar
 
 ### ⚡ **Performance & Scalability**
 - Enterprise-scale distributed processing for large codebases
@@ -1356,6 +1360,549 @@ EOF
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+## 🖥️ IDE Integration & VS Code Extension
+
+### Test Group: IDE Integration Server
+**Priority: Critical**
+
+#### Test: WebSocket Server Setup and Connection
+**Commands:**
+```bash
+# Test IDE integration server commands
+./dist/src/cli-selector.js ide-server status
+./dist/src/cli-selector.js ide-server start
+./dist/src/cli-selector.js ide-server status  # Should show running
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Server Status Command** shows current server state (running/stopped)
+- ✅ **Server Start** successfully initializes WebSocket server on port 3002
+- ✅ **Server Connection** MCP server starts on port 3003 automatically
+- ✅ **Server Capabilities** displays available features (AI requests, analysis, commands)
+- ✅ **Server Stop** gracefully shuts down all services
+- ✅ **Connection Statistics** shows port, client count, and uptime
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Client Connection and Communication Protocol
+**Test Setup:**
+```bash
+# Start the IDE integration server
+./dist/src/cli-selector.js ide-server start --background
+
+# Test WebSocket connection (manual testing with WebSocket client)
+# Connection URL: ws://localhost:3002
+```
+
+**Test Messages:**
+1. **Welcome Message:** Should receive server capabilities and client ID
+2. **AI Request:** Send completion request and verify response
+3. **Command Request:** Execute CLI command and verify results
+4. **Context Update:** Send workspace context and verify acknowledgment
+5. **Heartbeat:** Verify connection stays alive with ping/pong
+
+**Expected Results:**
+- ✅ **WebSocket Connection** establishes successfully on port 3002
+- ✅ **Welcome Message** includes capabilities and client ID
+- ✅ **Request/Response Protocol** works for all message types
+- ✅ **Error Handling** provides clear error messages for invalid requests
+- ✅ **Connection Management** handles client disconnection gracefully
+- ✅ **Heartbeat System** maintains connection with timeout detection
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: AI Request Processing and Streaming
+**Test Requests:**
+```json
+{
+  "id": "test-1",
+  "type": "ai_request",
+  "payload": {
+    "prompt": "Explain this JavaScript function",
+    "type": "explanation",
+    "language": "javascript",
+    "context": {
+      "activeFile": "test.js",
+      "cursorPosition": {"line": 10, "character": 5}
+    }
+  },
+  "timestamp": 1695456789000
+}
+```
+
+**Expected Results:**
+- ✅ **AI Request Processing** routes to appropriate AI commands
+- ✅ **Progress Updates** sent during long operations
+- ✅ **Streaming Responses** for real-time feedback
+- ✅ **Context Integration** uses workspace context in AI responses
+- ✅ **Error Recovery** handles AI service failures gracefully
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: VS Code Extension Core Functions
+**Priority: Critical**
+
+#### Test: Extension Installation and Activation
+**Test Setup:**
+```bash
+# Build VS Code extension
+cd extensions/vscode
+npm install
+npm run compile
+
+# Install extension in VS Code
+# 1. Package extension: npm run package
+# 2. Install in VS Code: Extensions -> Install from VSIX
+```
+
+**Extension Commands to Test:**
+1. `Ollama Code: Ask AI` (`Ctrl+Shift+A`)
+2. `Ollama Code: Explain Code` (`Ctrl+Shift+E`)
+3. `Ollama Code: Refactor Code` (`Ctrl+Shift+R`)
+4. `Ollama Code: Fix Code Issues` (`Ctrl+Shift+F`)
+5. `Ollama Code: Generate Code`
+6. `Ollama Code: Analyze Workspace`
+7. `Ollama Code: Start Integration Server`
+8. `Ollama Code: Stop Integration Server`
+
+**Expected Results:**
+- ✅ **Extension Activation** loads successfully in VS Code
+- ✅ **Command Registration** all commands available in Command Palette
+- ✅ **Keyboard Shortcuts** work as configured
+- ✅ **Server Connection** automatically connects to backend on startup
+- ✅ **Configuration Settings** accessible in VS Code settings
+- ✅ **Status Indicators** show connection status in UI
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: AI-Powered Code Assistance
+**Test Scenarios:**
+1. **Ask AI General Question:**
+   - Open Command Palette (`Ctrl+Shift+P`)
+   - Run `Ollama Code: Ask AI`
+   - Input: "How do I implement authentication in Node.js?"
+   - Verify: Response displayed in new document
+
+2. **Explain Selected Code:**
+   - Select a complex function in JavaScript/TypeScript file
+   - Use `Ctrl+Shift+E` or right-click context menu
+   - Verify: AI explanation appears in popup or new document
+
+3. **Refactor Code:**
+   - Select problematic code (e.g., nested loops)
+   - Use `Ctrl+Shift+R` or context menu "Refactor with AI"
+   - Verify: Refactoring suggestions with apply/preview options
+
+4. **Fix Code Issues:**
+   - Select code with obvious issues (syntax errors, bad practices)
+   - Use `Ctrl+Shift+F` or context menu "Fix Issues with AI"
+   - Verify: Fix suggestions with apply/preview options
+
+**Expected Results:**
+- ✅ **AI Responses** relevant and contextually appropriate
+- ✅ **Code Context** properly sent to AI for analysis
+- ✅ **Response Display** clear and well-formatted
+- ✅ **Code Modification** apply/preview functionality works
+- ✅ **Error Handling** graceful handling of AI failures
+- ✅ **Progress Indicators** shown during AI processing
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Inline Completions and Code Actions
+**Test Scenarios:**
+1. **Inline Completions:**
+   - Start typing a function in JavaScript/TypeScript
+   - Pause typing and wait for completion suggestions
+   - Accept completion with `Tab` or `Enter`
+   - Verify: Contextually relevant completions appear
+
+2. **Code Actions (Right-Click Menu):**
+   - Right-click on various code elements
+   - Verify "Ollama Code" submenu appears with options:
+     - Explain Code
+     - Refactor with AI
+     - Fix Issues with AI
+     - Generate Documentation
+
+3. **Hover Information:**
+   - Hover over functions, variables, classes
+   - Verify: AI-generated explanations appear in hover popup
+   - Test with different programming languages
+
+**Expected Results:**
+- ✅ **Inline Completions** appear within 2 seconds of typing pause
+- ✅ **Completion Quality** contextually appropriate and syntactically correct
+- ✅ **Code Actions** available in context menu for relevant code selections
+- ✅ **Hover Information** provides helpful explanations without blocking UI
+- ✅ **Language Support** works across JavaScript, TypeScript, Python, etc.
+- ✅ **Performance** no noticeable lag in VS Code responsiveness
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Interactive Chat Interface
+**Priority: High**
+
+#### Test: VS Code Chat Panel Integration
+**Test Setup:**
+1. Ensure extension is activated and connected
+2. Open Explorer sidebar in VS Code
+3. Look for "AI Chat" view in Explorer panel
+4. If not visible, check View -> Open View and search for "Ollama Code"
+
+**Chat Interface Tests:**
+1. **Basic Chat Functionality:**
+   - Type message: "Hello, can you help me with my code?"
+   - Press Enter or click Send
+   - Verify: Response appears in chat history
+
+2. **Code-Specific Questions:**
+   - Open a code file in VS Code
+   - In chat, ask: "Explain the active file I have open"
+   - Verify: AI references the current file context
+
+3. **Follow-up Conversations:**
+   - Ask initial question: "What design patterns are used in this project?"
+   - Follow up: "Can you show me examples of the Observer pattern?"
+   - Verify: Context maintained between messages
+
+4. **Chat Controls:**
+   - Test send button functionality
+   - Test Enter key to send messages
+   - Verify chat history persistence during session
+
+**Expected Results:**
+- ✅ **Chat Panel Visibility** accessible from Explorer sidebar
+- ✅ **Message Exchange** bidirectional communication works smoothly
+- ✅ **Context Awareness** AI understands current workspace and files
+- ✅ **Conversation History** maintains context across multiple exchanges
+- ✅ **UI Responsiveness** chat interface remains responsive during AI processing
+- ✅ **Error Display** clear error messages for connection or AI failures
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Workspace Analysis Integration
+**Commands in Chat Interface:**
+1. **Project Overview:** "Analyze my current workspace structure"
+2. **Security Analysis:** "Check this project for security vulnerabilities"
+3. **Performance Analysis:** "Identify performance bottlenecks in my code"
+4. **Code Quality:** "What can I improve about my code quality?"
+5. **Dependency Analysis:** "Show me the dependencies in this project"
+
+**Expected Results:**
+- ✅ **Workspace Detection** correctly identifies project root and files
+- ✅ **Analysis Integration** routes requests to appropriate CLI analysis tools
+- ✅ **Results Display** presents analysis results in readable format
+- ✅ **File References** clickable links to specific files and line numbers
+- ✅ **Progress Updates** shows progress for long-running analyses
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Extension Configuration and Settings
+**Priority: High**
+
+#### Test: VS Code Settings Integration
+**Access Settings:**
+1. Open VS Code Settings (`Ctrl+,`)
+2. Search for "Ollama Code"
+3. Verify all extension settings are available
+
+**Configuration Tests:**
+```json
+{
+  "ollama-code.serverPort": 3002,
+  "ollama-code.autoStart": true,
+  "ollama-code.showChatView": true,
+  "ollama-code.inlineCompletions": true,
+  "ollama-code.codeActions": true,
+  "ollama-code.diagnostics": true,
+  "ollama-code.contextLines": 20,
+  "ollama-code.connectionTimeout": 10000,
+  "ollama-code.logLevel": "info"
+}
+```
+
+**Setting Change Tests:**
+1. **Auto-start Toggle:** Disable auto-start, restart VS Code, verify no automatic connection
+2. **Port Change:** Change port to 3003, restart, verify connection uses new port
+3. **Feature Toggles:** Disable inline completions, verify they stop working
+4. **Context Lines:** Change to 50, verify more context sent in requests
+5. **Log Level:** Change to debug, verify more detailed logging
+
+**Expected Results:**
+- ✅ **Settings Visibility** all configuration options accessible in VS Code settings
+- ✅ **Setting Changes** take effect immediately or after restart as appropriate
+- ✅ **Validation** invalid settings show appropriate error messages
+- ✅ **Persistence** settings persist between VS Code sessions
+- ✅ **Documentation** setting descriptions are clear and helpful
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Error Handling and Reliability
+**Priority: Critical**
+
+#### Test: Connection Failure Scenarios
+**Test Scenarios:**
+1. **Server Not Running:**
+   - Ensure IDE server is stopped
+   - Open VS Code with extension
+   - Verify: Clear error message about server connection
+
+2. **Server Disconnection:**
+   - Start with working connection
+   - Stop IDE server while VS Code is running
+   - Verify: Extension detects disconnection and shows status
+
+3. **Server Restart:**
+   - Restart IDE server while extension is running
+   - Verify: Extension automatically reconnects
+
+4. **Network Issues:**
+   - Simulate network interruption
+   - Verify: Extension handles timeout gracefully
+
+**Expected Results:**
+- ✅ **Clear Error Messages** inform user about connection issues
+- ✅ **Automatic Reconnection** attempts to reconnect when server available
+- ✅ **Graceful Degradation** extension remains functional where possible
+- ✅ **Status Indicators** show connection state in UI
+- ✅ **Recovery Instructions** guide user on how to resolve connection issues
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: AI Service Failure Handling
+**Test Scenarios:**
+1. **AI Model Unavailable:**
+   - Stop Ollama server or ensure no models available
+   - Attempt AI operations through extension
+   - Verify: Clear error messages with resolution steps
+
+2. **AI Request Timeout:**
+   - Send complex AI request that might timeout
+   - Verify: Timeout handled gracefully with partial results if available
+
+3. **Invalid AI Responses:**
+   - Test with edge cases that might produce invalid responses
+   - Verify: Extension handles malformed responses without crashing
+
+**Expected Results:**
+- ✅ **Error Recovery** extension continues working after AI failures
+- ✅ **User Feedback** clear messages about AI service issues
+- ✅ **Fallback Options** suggest alternative approaches when AI unavailable
+- ✅ **No Crashes** extension remains stable during AI service failures
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Cross-Platform Compatibility
+**Priority: Medium**
+
+#### Test: Platform-Specific Features
+**Platforms to Test:**
+- Windows (if available)
+- macOS (primary test environment)
+- Linux (if available)
+
+**Cross-Platform Tests:**
+1. **Extension Installation** on each platform
+2. **WebSocket Communication** works on all platforms
+3. **File Path Handling** correct on all platforms (Windows vs Unix paths)
+4. **Keyboard Shortcuts** work as expected on each platform
+5. **Process Management** IDE server starts/stops correctly
+
+**Expected Results:**
+- ✅ **Universal Installation** extension installs and activates on all platforms
+- ✅ **Path Compatibility** file operations work with platform-specific paths
+- ✅ **Process Handling** server processes managed correctly on each OS
+- ✅ **UI Consistency** extension appears and behaves consistently
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+### Test Group: IDE Integration Error Handling & Reliability
+**Priority: Critical**
+
+#### Test: Server Uptime Tracking Accuracy
+**Commands:**
+```bash
+# Test accurate uptime tracking
+./dist/src/cli-selector.js ide-server start
+sleep 5
+./dist/src/cli-selector.js ide-server status
+sleep 10
+./dist/src/cli-selector.js ide-server status
+./dist/src/cli-selector.js ide-server stop
+./dist/src/cli-selector.js ide-server status  # Should show no uptime
+```
+
+**Expected Results:**
+- ✅ **Uptime Accuracy** - Status shows accurate uptime in seconds (not undefined)
+- ✅ **Time Progression** - Second status check shows ~15 seconds uptime
+- ✅ **Clean Reset** - After stop, uptime is undefined/null
+- ✅ **No Type Errors** - No "(this.server as any).startTime" undefined errors
+- ✅ **Proper Tracking** - Server start time properly set and tracked
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: MCP Server Graceful Degradation
+**Commands:**
+```bash
+# Test MCP server failure handling (block port 3003 first)
+netstat -an | grep 3003  # Check if port is in use
+nc -l 3003 &  # Block the MCP port
+NC_PID=$!
+./dist/src/cli-selector.js ide-server start
+./dist/src/cli-selector.js ide-server status
+kill $NC_PID  # Clean up
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Warning Message** - Shows "Failed to start MCP server, continuing without it"
+- ✅ **IDE Server Continues** - IDE integration server starts successfully despite MCP failure
+- ✅ **No Fatal Error** - Application doesn't crash or exit
+- ✅ **Status Reports** - Server status shows running state correctly
+- ✅ **Graceful Handling** - Warning logged but operation continues
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Client Connection Race Condition Prevention
+**Test Setup:**
+```bash
+# Start server and simulate concurrent client connections
+./dist/src/cli-selector.js ide-server start --background
+
+# Use a WebSocket testing tool or script to create multiple concurrent connections
+# and disconnect them rapidly to test race conditions
+# Example with wscat (if available): wscat -c ws://localhost:3002
+```
+
+**Expected Results:**
+- ✅ **No Race Conditions** - Server handles multiple concurrent client connects/disconnects
+- ✅ **Clean Client Tracking** - Client map remains consistent during high connection churn
+- ✅ **Heartbeat Safety** - Heartbeat checks use client snapshots, no concurrent modification errors
+- ✅ **Memory Management** - No client entries leak in the clients map
+- ✅ **Stable Operation** - Server remains responsive during client connection stress
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Configuration Management & Constants
+**Priority: High**
+
+#### Test: Port Configuration Centralization
+**Commands:**
+```bash
+# Test default port usage and configuration
+./dist/src/cli-selector.js ide-server start  # Should use 3002
+./dist/src/cli-selector.js ide-server status | grep "Port: 3002"
+./dist/src/cli-selector.js ide-server stop
+
+# Test custom port configuration
+./dist/src/cli-selector.js ide-server start --port 3005
+./dist/src/cli-selector.js ide-server status | grep "Port: 3005"
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Default Port** - Server uses port 3002 from IDE_SERVER_DEFAULTS.PORT constant
+- ✅ **Custom Port** - Server correctly uses --port parameter when specified
+- ✅ **MCP Port Offset** - MCP server uses main port + 1 (3003 or 3006)
+- ✅ **No Hardcoded Values** - No "3002" literals in server initialization
+- ✅ **Configuration Loading** - Service loads port from config.ide.port if available
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Timeout Configuration Centralization
+**Commands:**
+```bash
+# Test WebSocket client timeout behavior (requires WebSocket client)
+./dist/src/cli-selector.js ide-server start
+
+# Connect WebSocket client and let it idle for over 60 seconds
+# Client should be disconnected due to CLIENT_TIMEOUT (60000ms)
+
+# Test heartbeat interval (30 seconds between pings)
+# Monitor WebSocket traffic for ping frequency
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Client Timeout** - Inactive clients disconnected after 60 seconds (IDE_TIMEOUTS.CLIENT_TIMEOUT)
+- ✅ **Heartbeat Interval** - Server sends pings every 30 seconds (IDE_TIMEOUTS.HEARTBEAT_INTERVAL)
+- ✅ **No Hardcoded Values** - Timeout values come from constants file
+- ✅ **Consistent Behavior** - Same timeout values used across all WebSocket operations
+- ✅ **Configurable Timeouts** - Timeout constants properly imported and used
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: WebSocket Close Code Standardization
+**Commands:**
+```bash
+# Test proper WebSocket close codes
+./dist/src/cli-selector.js ide-server start
+
+# Connect WebSocket client, then stop server
+# Monitor close codes in WebSocket connection
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Normal Shutdown** - Server shutdown uses close code 1000 (WS_CLOSE_CODES.NORMAL)
+- ✅ **Client Timeout** - Timeout uses close code 1001 (WS_CLOSE_CODES.GOING_AWAY)
+- ✅ **Descriptive Reasons** - Close messages use IDE_CLOSE_REASONS constants
+- ✅ **Standard Compliance** - All close codes follow WebSocket RFC standards
+- ✅ **No Magic Numbers** - No hardcoded 1000, 1001 values in code
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Shared Utilities & DRY Compliance
+**Priority: Medium**
+
+#### Test: Client ID Generation Security and Consistency
+**Commands:**
+```bash
+# Test client ID generation (requires connecting to IDE server)
+./dist/src/cli-selector.js ide-server start
+
+# Connect multiple WebSocket clients and verify ID generation
+# Each should receive unique, secure client IDs
+./dist/src/cli-selector.js ide-server status  # Check client count
+
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Secure Generation** - Client IDs use crypto.randomBytes (not Math.random)
+- ✅ **Unique IDs** - Each client gets unique ID with timestamp and secure random part
+- ✅ **Consistent Format** - All IDs follow "client_timestamp_randomhex" format
+- ✅ **No Duplicates** - Multiple rapid connections get unique IDs
+- ✅ **Shared Implementation** - Same generateClientId() function used everywhere
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Error Handling Utilities Consistency
+**Commands:**
+```bash
+# Test error handling in various failure scenarios
+./dist/src/cli-selector.js ide-server start
+
+# Test invalid AI request (should use shared error utilities)
+# Send malformed JSON to WebSocket endpoint
+# Test command execution failures
+# Test workspace analysis failures
+
+./dist/src/cli-selector.js ide-server stop
+```
+
+**Expected Results:**
+- ✅ **Consistent Error Format** - All errors use getErrorMessage() utility function
+- ✅ **Safe Error Extraction** - No "error instanceof Error ? error.message : 'Unknown error'" patterns
+- ✅ **Error Wrapping** - Complex errors properly wrapped with context
+- ✅ **JSON Serialization** - Error objects safely serializable for WebSocket transmission
+- ✅ **Unified Handling** - Same error patterns across all failure scenarios
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ## 🔄 Integration & System Features
 
 ### Test Group: Enhanced Interactive Mode
@@ -2125,6 +2672,58 @@ done
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario M: IDE Integration End-to-End Workflow
+**Goal:** Validate complete IDE integration workflow from installation to advanced features
+
+**Steps:**
+1. **Server Setup:** `"Start IDE integration server and verify WebSocket connectivity"`
+2. **Extension Installation:** Install VS Code extension and verify activation
+3. **Basic AI Features:** Test Ask AI, Explain Code, and Refactor Code commands
+4. **Inline Features:** Test inline completions, code actions, and hover information
+5. **Chat Interface:** Use sidebar chat for interactive AI assistance
+6. **Workspace Analysis:** Analyze project through both CLI and extension
+7. **Error Scenarios:** Test extension behavior during server failures
+8. **Configuration:** Test all extension settings and preferences
+9. **Performance:** Monitor performance impact on VS Code responsiveness
+
+**Success Criteria:**
+- IDE server starts and accepts WebSocket connections successfully
+- VS Code extension installs, activates, and connects to server
+- All AI features work seamlessly within VS Code environment
+- Inline features provide contextual assistance without performance impact
+- Chat interface maintains conversation context and workspace awareness
+- Extension gracefully handles server disconnection and reconnection
+- Configuration changes take effect properly and persist
+- No noticeable performance degradation in VS Code during AI operations
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
+### Scenario N: VS Code Extension Real-World Development Workflow
+**Goal:** Test extension capabilities in realistic development scenarios
+
+**Steps:**
+1. **Project Setup:** Open a real JavaScript/TypeScript project in VS Code
+2. **Development Context:** Work on implementing a new feature (e.g., user authentication)
+3. **AI Assistance:** Use extension for code explanations, refactoring, and generation
+4. **Code Review:** Use AI to review code changes and suggest improvements
+5. **Problem Solving:** Encounter and resolve development issues with AI help
+6. **Testing:** Generate tests for new functionality using AI assistance
+7. **Documentation:** Create documentation with AI help
+8. **Performance:** Monitor system responsiveness during extended development session
+
+**Success Criteria:**
+- Extension provides relevant, contextual assistance throughout development workflow
+- AI suggestions improve code quality and development velocity
+- Context is maintained across multiple AI interactions during development
+- Code generation produces working, well-structured code
+- Testing and documentation assistance saves significant development time
+- Extension remains stable and responsive during extended use
+- Integration enhances rather than interrupts natural development flow
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
@@ -2143,6 +2742,14 @@ done
 - [ ] **NEW:** Centralized validation utilities for consistent behavior
 - [ ] **NEW:** Transactional rollback mechanisms for safe operations
 - [ ] **NEW:** Configuration validation with initialization checks
+- [ ] **NEW:** IDE Integration Server with WebSocket communication
+- [ ] **NEW:** VS Code extension with real-time AI assistance
+- [ ] **NEW:** Inline completions and code actions in VS Code
+- [ ] **NEW:** Interactive AI chat panel in IDE sidebar
+- [ ] **NEW:** Extension configuration and settings management
+- [ ] **FIXED:** Server uptime tracking accuracy and timestamp management
+- [ ] **FIXED:** MCP server graceful degradation on startup failures
+- [ ] **FIXED:** WebSocket client connection race condition prevention
 - [ ] Git repository analysis and insights
 - [ ] Code quality assessment
 - [ ] Test generation and strategy
@@ -2175,8 +2782,18 @@ done
 - [ ] **NEW:** Emergency rollback capabilities for critical operation failures
 - [ ] **NEW:** Centralized configuration management with consistent thresholds
 - [ ] **NEW:** Performance bottleneck analysis with optimization roadmaps
+- [ ] **IMPROVED:** Port configuration centralization with constants management
+- [ ] **IMPROVED:** Timeout configuration centralization for consistent behavior
+- [ ] **IMPROVED:** WebSocket close code standardization and RFC compliance
+- [ ] **IMPROVED:** Secure client ID generation with crypto.randomBytes
+- [ ] **IMPROVED:** Error handling utilities with consistent patterns
 - [ ] **NEW:** Security vulnerability pattern recognition and remediation
 - [ ] **NEW:** Algorithm complexity analysis and optimization recommendations
+- [ ] **NEW:** WebSocket server reliability and connection management
+- [ ] **NEW:** Extension error handling and automatic reconnection
+- [ ] **NEW:** Cross-platform compatibility for VS Code extension
+- [ ] **NEW:** AI request processing and streaming responses
+- [ ] **NEW:** Workspace analysis integration with IDE context
 - [ ] Distributed processing performance
 - [ ] Memory optimization and caching
 - [ ] Real-time file watching and updates
@@ -2212,16 +2829,68 @@ done
 
 ---
 
-**Test Plan Version:** 17.0 (Added Infrastructure & Reliability Testing with Error Handling, Validation, and Rollback Mechanisms)
+**Test Plan Version:** 18.0 (Added IDE Integration & VS Code Extension Testing with WebSocket Communication, Real-time AI Assistance, and Interactive Chat Interface)
 **Created:** September 21, 2025
-**Last Updated:** September 23, 2025 (Added comprehensive infrastructure testing for error handling, validation utilities, rollback mechanisms, language detection, and configuration management)
-**Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.2.30
-**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, and configuration management
+**Last Updated:** September 24, 2025 (Added comprehensive IDE integration testing for Phase 8.1 with VS Code extension, WebSocket server, inline completions, code actions, chat interface, and cross-platform compatibility)
+**Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.3.0
+**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, and interactive development workflow
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios, including comprehensive autonomous development assistant testing.
 
-**Latest Updates (v17.0):**
+**Latest Updates (v18.1):**
+- Added IDE Integration Error Handling & Reliability test group with 3 critical bug fix tests
+- Added Server Uptime Tracking Accuracy testing to verify proper timestamp management
+- Added MCP Server Graceful Degradation testing for failure scenario handling
+- Added Client Connection Race Condition Prevention testing for concurrent connection safety
+- Added Configuration Management & Constants test group with 3 high-priority configuration tests
+- Added Port Configuration Centralization testing to verify constant usage and custom port handling
+- Added Timeout Configuration Centralization testing for WebSocket timeout behavior validation
+- Added WebSocket Close Code Standardization testing for RFC compliance and proper error messages
+- Added Shared Utilities & DRY Compliance test group with 2 medium-priority code quality tests
+- Added Client ID Generation Security testing to verify crypto.randomBytes usage and uniqueness
+- Added Error Handling Utilities Consistency testing for unified error handling patterns
+- Updated version to v18.1 with enhanced bug fixes, configuration management, and code quality focus
+- Enhanced test coverage with reliability testing, configuration validation, and shared utility testing
+
+**Previous Updates (v18.0):**
+- Added comprehensive IDE Integration & VS Code Extension Testing section with 6 major test groups
+- Added WebSocket server setup and connection testing with client communication protocol
+- Added VS Code extension core functions testing (installation, activation, AI features)
+- Added inline completions and code actions testing with real-time assistance
+- Added interactive chat interface testing with workspace analysis integration
+- Added extension configuration and settings management testing
+- Added error handling and reliability testing for IDE integration scenarios
+- Added cross-platform compatibility testing for VS Code extension
+- Added 2 new integration test scenarios (M & N) for end-to-end IDE workflow validation
+- Updated critical and high priority features to include IDE integration capabilities
+- Enhanced test coverage with WebSocket communication, AI assistance, and development workflow testing
+
+**Key New Test Coverage (v18.1):**
+- 🛠️ **IDE Integration Bug Fixes** with server uptime tracking accuracy and MCP graceful degradation
+- 🔒 **Race Condition Prevention** in WebSocket client management with safe concurrent operations
+- ⚙️ **Configuration Centralization** with port, timeout, and WebSocket constant management
+- 🆔 **Secure ID Generation** replacing unsafe Math.random() with crypto.randomBytes
+- 🚨 **Error Handling Utilities** with consistent error extraction and JSON serialization
+- 📚 **DRY Compliance** eliminating code duplication across ID generation and error handling
+- 🔧 **WebSocket Standards** with proper close codes and descriptive error messages
+- 💾 **Shared Constants** for timeouts, ports, and configuration values
+- 🧪 **Enhanced Testing** for reliability, error scenarios, and configuration management
+- ✅ **TypeScript Compliance** with proper type safety and compilation fixes
+
+**Previous Test Coverage (v18.0):**
+- 🖥️ **IDE Integration Server** with WebSocket communication on port 3002
+- 📦 **VS Code Extension** with comprehensive installation, activation, and command testing
+- 🤖 **Real-time AI Assistance** with inline completions, code actions, and hover information
+- 💬 **Interactive Chat Interface** in VS Code sidebar with workspace context awareness
+- ⚙️ **Extension Configuration** with VS Code settings integration and persistence
+- 🔗 **WebSocket Protocol** with request/response patterns, streaming, and error handling
+- 🛡️ **Error Handling & Reliability** with connection failure scenarios and automatic reconnection
+- 🌍 **Cross-Platform Compatibility** for Windows, macOS, and Linux environments
+- 🔄 **End-to-End IDE Workflow** with realistic development scenarios and performance monitoring
+- 📊 **Workspace Analysis Integration** connecting CLI analysis tools with IDE context
+
+**Previous Updates (v17.0):**
 - Added comprehensive Infrastructure & Reliability Testing section with 5 major test groups
 - Added Result-pattern error handling testing with graceful degradation validation
 - Added centralized validation utilities testing for consistent behavior across components
@@ -2232,7 +2901,7 @@ done
 - Updated critical and high priority features to include infrastructure improvements
 - Enhanced test environment setup with additional validation test files
 
-**Key New Test Coverage (v17.0):**
+**Previous Key Test Coverage (v17.0):**
 - 🛡️ **Result-Pattern Error Handling** with graceful degradation and no crashes
 - ✅ **Centralized Validation Utilities** with consistent behavior across all components
 - 🌐 **Shared Language Detection** supporting 18+ languages with consistent identification
