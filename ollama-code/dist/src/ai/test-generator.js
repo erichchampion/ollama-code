@@ -1,860 +1,654 @@
 /**
  * Test Generator
  *
- * Automated test generation system that creates comprehensive test suites
- * based on code analysis, coverage gaps, and testing best practices.
+ * Provides automated test generation capabilities for various testing frameworks.
+ * Generates unit tests, integration tests, and test strategies.
  */
 import { logger } from '../utils/logger.js';
+import { getPerformanceConfig } from '../config/performance.js';
+import * as path from 'path';
 export class TestGenerator {
-    templates = [];
-    constructor() {
-        this.initializeTemplates();
-    }
+    config = getPerformanceConfig();
     /**
-     * Generate comprehensive test suite for given code
+     * Generate comprehensive test suite for codebase
      */
-    async generateTestSuite(sourceFiles, options = {}) {
-        const startTime = Date.now();
-        logger.info('Starting test generation', {
-            fileCount: sourceFiles.length,
-            framework: options.framework || 'auto-detect'
-        });
-        const suites = [];
-        let totalTests = 0;
-        const recommendations = [];
-        // Detect framework if not specified
-        const framework = options.framework || this.detectTestFramework(sourceFiles);
-        // Generate tests for each source file
-        for (const file of sourceFiles) {
-            const context = await this.analyzeSourceFile(file.path, file.content, framework);
-            const applicableTemplates = this.findApplicableTemplates(context, options.testTypes);
-            const testCases = [];
-            for (const template of applicableTemplates) {
-                try {
-                    const cases = template.generator(context);
-                    testCases.push(...cases);
-                }
-                catch (error) {
-                    logger.warn(`Error generating tests with template ${template.id}:`, error);
-                }
-            }
-            if (testCases.length > 0) {
-                const suite = this.createTestSuite(file, testCases, framework, context);
-                suites.push(suite);
-                totalTests += testCases.length;
-            }
-        }
-        // Analyze coverage gaps
-        const coverageGaps = await this.analyzeCoverageGaps(sourceFiles, suites);
-        // Generate quality metrics
-        const quality = this.calculateTestQuality(suites, coverageGaps);
-        // Generate recommendations
-        const testRecommendations = this.generateRecommendations(suites, coverageGaps, quality);
-        const report = {
-            summary: {
-                totalTests,
-                coverageImprovement: this.estimateCoverageImprovement(suites),
-                criticalPaths: suites.reduce((sum, s) => sum + s.testCases.filter(tc => tc.tags.includes('critical')).length, 0),
-                edgeCases: suites.reduce((sum, s) => sum + s.testCases.filter(tc => tc.tags.includes('edge-case')).length, 0),
-                performance: suites.reduce((sum, s) => sum + s.testCases.filter(tc => tc.category === 'performance').length, 0),
-                security: suites.reduce((sum, s) => sum + s.testCases.filter(tc => tc.category === 'security').length, 0)
-            },
-            suites,
-            recommendations: testRecommendations,
-            gaps: {
-                uncoveredCode: coverageGaps,
-                missingTestTypes: this.identifyMissingTestTypes(suites, options.testTypes),
-                riskAreas: this.identifyRiskAreas(sourceFiles, suites)
-            },
-            quality
-        };
-        logger.info('Test generation completed', {
-            duration: Date.now() - startTime,
-            totalTests,
-            suites: suites.length,
-            qualityScore: quality.score
-        });
-        return report;
-    }
-    /**
-     * Generate tests for specific coverage gaps
-     */
-    async generateCoverageTests(sourceCode, filePath, gaps, framework = 'jest') {
-        const testCases = [];
-        const context = await this.analyzeSourceFile(filePath, sourceCode, framework);
-        context.coverageGaps = gaps;
-        for (const gap of gaps) {
-            const cases = this.generateGapSpecificTests(context, gap);
-            testCases.push(...cases);
-        }
-        return testCases;
-    }
-    /**
-     * Analyze source file to extract testing context
-     */
-    async analyzeSourceFile(filePath, content, framework) {
-        const context = {
-            sourceCode: content,
-            filePath,
-            framework,
-            imports: this.extractImports(content),
-            dependencies: this.extractDependencies(content),
-            existingTests: []
-        };
-        // Extract class information
-        const classMatch = content.match(/(?:export\s+)?class\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
-        if (classMatch) {
-            context.className = classMatch[1];
-        }
-        // Extract methods
-        const methods = this.extractMethods(content);
-        if (methods.length > 0) {
-            // For now, focus on the first method found
-            const method = methods[0];
-            context.methodName = method.name;
-            context.parameters = method.parameters;
-            context.returnType = method.returnType;
-        }
-        return context;
-    }
-    /**
-     * Find applicable test templates for context
-     */
-    findApplicableTemplates(context, requestedTypes) {
-        return this.templates.filter(template => {
-            // Filter by requested test types
-            if (requestedTypes && !requestedTypes.includes(template.category)) {
-                return false;
-            }
-            // Check template applicability
-            if (template.pattern instanceof RegExp) {
-                return template.pattern.test(context.sourceCode);
-            }
-            else if (typeof template.pattern === 'function') {
-                return template.pattern(context.sourceCode);
-            }
-            return false;
-        }).sort((a, b) => b.priority - a.priority);
-    }
-    /**
-     * Create test suite from test cases
-     */
-    createTestSuite(sourceFile, testCases, framework, context) {
-        const imports = this.generateImports(testCases, framework, context);
-        const setup = this.generateSetup(testCases, framework);
-        return {
-            id: `suite_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-            name: `${context.className || 'Module'} Tests`,
-            description: `Comprehensive test suite for ${sourceFile.path}`,
-            framework,
-            targetFile: sourceFile.path,
-            testCases,
-            setup: {
-                imports,
-                beforeEach: setup.beforeEach,
-                afterEach: setup.afterEach
-            },
-            configuration: {
-                timeout: 10000,
-                retries: 0,
-                parallel: true,
-                environment: {}
-            },
-            metadata: {
-                generatedAt: new Date(),
-                coverageTarget: 80,
-                estimatedDuration: testCases.reduce((sum, tc) => sum + tc.estimatedRuntime, 0),
-                confidence: 0.8
-            }
-        };
-    }
-    /**
-     * Initialize test templates
-     */
-    initializeTemplates() {
-        this.templates = [
-            // Unit Test Template
-            {
-                id: 'basic_unit_test',
-                name: 'Basic Unit Test',
-                description: 'Generate basic unit tests for functions and methods',
-                framework: 'generic',
-                category: 'unit',
-                priority: 9,
-                pattern: /(?:function|method|class)/i,
-                generator: (context) => {
-                    const testCases = [];
-                    if (context.methodName) {
-                        // Happy path test
-                        testCases.push({
-                            id: `test_${context.methodName}_happy_path`,
-                            name: `should ${context.methodName} successfully with valid input`,
-                            description: `Test ${context.methodName} with valid parameters`,
-                            category: 'unit',
-                            code: this.generateBasicTest(context, 'happy_path'),
-                            assertions: [{
-                                    type: 'equality',
-                                    expected: 'expectedResult',
-                                    actual: `result`,
-                                    message: `${context.methodName} should return expected result`
-                                }],
-                            tags: ['happy-path', 'basic'],
-                            estimatedRuntime: 10,
-                            dependencies: []
-                        });
-                        // Error handling test
-                        testCases.push({
-                            id: `test_${context.methodName}_error_handling`,
-                            name: `should handle invalid input gracefully`,
-                            description: `Test ${context.methodName} error handling`,
-                            category: 'unit',
-                            code: this.generateBasicTest(context, 'error_handling'),
-                            assertions: [{
-                                    type: 'exception',
-                                    expected: 'Error',
-                                    actual: `() => ${context.methodName}(invalidInput)`,
-                                    message: 'Should throw error for invalid input'
-                                }],
-                            tags: ['error-handling', 'edge-case'],
-                            estimatedRuntime: 15,
-                            dependencies: []
-                        });
-                    }
-                    return testCases;
-                }
-            },
-            // Property-Based Testing Template
-            {
-                id: 'property_based_test',
-                name: 'Property-Based Tests',
-                description: 'Generate property-based tests for comprehensive coverage',
-                framework: 'jest',
-                category: 'property',
-                priority: 7,
-                pattern: (code) => {
-                    return code.includes('function') && code.includes('return');
-                },
-                generator: (context) => {
-                    const testCases = [];
-                    if (context.methodName) {
-                        testCases.push({
-                            id: `property_test_${context.methodName}`,
-                            name: `property: ${context.methodName} should maintain invariants`,
-                            description: `Property-based test for ${context.methodName}`,
-                            category: 'property',
-                            code: this.generatePropertyTest(context),
-                            assertions: [{
-                                    type: 'custom',
-                                    expected: 'property holds',
-                                    actual: 'propertyCheck(input, output)',
-                                    message: 'Property should hold for all generated inputs'
-                                }],
-                            tags: ['property-based', 'comprehensive'],
-                            estimatedRuntime: 100,
-                            dependencies: ['fast-check']
-                        });
-                    }
-                    return testCases;
-                }
-            },
-            // Integration Test Template
-            {
-                id: 'integration_test',
-                name: 'Integration Tests',
-                description: 'Generate integration tests for component interactions',
-                framework: 'jest',
-                category: 'integration',
-                priority: 6,
-                pattern: /(import|require).*from/,
-                generator: (context) => {
-                    const testCases = [];
-                    if (context.dependencies && context.dependencies.length > 0) {
-                        testCases.push({
-                            id: `integration_test_${context.className || 'module'}`,
-                            name: `should integrate correctly with dependencies`,
-                            description: `Integration test for ${context.className || 'module'}`,
-                            category: 'integration',
-                            code: this.generateIntegrationTest(context),
-                            assertions: [{
-                                    type: 'truthiness',
-                                    expected: true,
-                                    actual: 'integrationResult.success',
-                                    message: 'Integration should succeed'
-                                }],
-                            mockRequirements: context.dependencies.map(dep => ({
-                                target: dep,
-                                type: 'module',
-                                behavior: 'return_value',
-                                configuration: { returnValue: 'mockResult' }
-                            })),
-                            tags: ['integration', 'dependencies'],
-                            estimatedRuntime: 50,
-                            dependencies: context.dependencies
-                        });
-                    }
-                    return testCases;
-                }
-            },
-            // Security Test Template
-            {
-                id: 'security_test',
-                name: 'Security Tests',
-                description: 'Generate security-focused tests',
-                framework: 'jest',
-                category: 'security',
-                priority: 8,
-                pattern: /(password|auth|token|secret|sql|eval|exec)/i,
-                generator: (context) => {
-                    const testCases = [];
-                    // SQL Injection test
-                    if (context.sourceCode.includes('sql') || context.sourceCode.includes('query')) {
-                        testCases.push({
-                            id: `security_sql_injection`,
-                            name: `should prevent SQL injection attacks`,
-                            description: `Test SQL injection prevention`,
-                            category: 'security',
-                            code: this.generateSecurityTest(context, 'sql_injection'),
-                            assertions: [{
-                                    type: 'exception',
-                                    expected: 'Error',
-                                    actual: `() => ${context.methodName}("'; DROP TABLE users; --")`,
-                                    message: 'Should reject malicious SQL input'
-                                }],
-                            tags: ['security', 'sql-injection'],
-                            estimatedRuntime: 25,
-                            dependencies: []
-                        });
-                    }
-                    // XSS test
-                    if (context.sourceCode.includes('html') || context.sourceCode.includes('innerHTML')) {
-                        testCases.push({
-                            id: `security_xss`,
-                            name: `should prevent XSS attacks`,
-                            description: `Test XSS prevention`,
-                            category: 'security',
-                            code: this.generateSecurityTest(context, 'xss'),
-                            assertions: [{
-                                    type: 'regex',
-                                    expected: /^(?!.*<script>).*$/,
-                                    actual: 'sanitizedOutput',
-                                    message: 'Output should not contain script tags'
-                                }],
-                            tags: ['security', 'xss'],
-                            estimatedRuntime: 20,
-                            dependencies: []
-                        });
-                    }
-                    return testCases;
-                }
-            },
-            // Performance Test Template
-            {
-                id: 'performance_test',
-                name: 'Performance Tests',
-                description: 'Generate performance benchmark tests',
-                framework: 'jest',
-                category: 'performance',
-                priority: 5,
-                pattern: (code) => {
-                    return code.includes('for') || code.includes('while') || code.includes('map') || code.includes('filter');
-                },
-                generator: (context) => {
-                    const testCases = [];
-                    testCases.push({
-                        id: `performance_test_${context.methodName}`,
-                        name: `should complete within performance threshold`,
-                        description: `Performance test for ${context.methodName}`,
-                        category: 'performance',
-                        code: this.generatePerformanceTest(context),
-                        assertions: [{
-                                type: 'range',
-                                expected: { min: 0, max: 100 },
-                                actual: 'executionTime',
-                                message: 'Execution time should be under 100ms'
-                            }],
-                        tags: ['performance', 'benchmark'],
-                        estimatedRuntime: 200,
-                        dependencies: []
+    async generateTestSuite(files, options = {}) {
+        try {
+            logger.info('Generating test suite', { fileCount: files.length, options });
+            const framework = options.framework || this.detectOptimalFramework(files);
+            const testTypes = options.testTypes || ['unit', 'integration'];
+            const coverage = options.coverage || 'comprehensive';
+            const strategy = await this.generateTestStrategy(files, framework);
+            const tests = [];
+            for (const file of files) {
+                if (this.shouldGenerateTestsFor(file)) {
+                    const fileTests = await this.generateTestsForFile(file, {
+                        framework,
+                        testTypes,
+                        coverage
                     });
-                    return testCases;
+                    tests.push(...fileTests);
                 }
             }
-        ];
-    }
-    /**
-     * Generate basic test code
-     */
-    generateBasicTest(context, type) {
-        const framework = context.framework || 'jest';
-        const className = context.className;
-        const methodName = context.methodName;
-        if (type === 'happy_path') {
-            return framework === 'jest' ? `
-describe('${className || 'Module'}', () => {
-  test('${methodName} should work with valid input', () => {
-    // Arrange
-    const input = validTestInput;
-    ${className ? `const instance = new ${className}();` : ''}
-
-    // Act
-    const result = ${className ? `instance.${methodName}(input)` : `${methodName}(input)`};
-
-    // Assert
-    expect(result).toBe(expectedResult);
-  });
-});` : `
-it('${methodName} should work with valid input', () => {
-  const input = validTestInput;
-  ${className ? `const instance = new ${className}();` : ''}
-  const result = ${className ? `instance.${methodName}(input)` : `${methodName}(input)`};
-  expect(result).to.equal(expectedResult);
-});`;
+            const setupFiles = await this.generateSetupFiles(framework, tests);
+            const configFiles = await this.generateConfigFiles(framework, tests);
+            const totalCoverage = this.calculateExpectedCoverage(tests);
+            return {
+                name: `Test Suite (${framework})`,
+                tests,
+                strategy,
+                setupFiles,
+                configFiles,
+                totalCoverage,
+                estimatedRuntime: this.estimateRuntime(tests)
+            };
         }
-        else {
-            return framework === 'jest' ? `
-test('${methodName} should handle invalid input', () => {
-  ${className ? `const instance = new ${className}();` : ''}
-  expect(() => {
-    ${className ? `instance.${methodName}(invalidInput)` : `${methodName}(invalidInput)`};
-  }).toThrow();
-});` : `
-it('${methodName} should handle invalid input', () => {
-  ${className ? `const instance = new ${className}();` : ''}
-  expect(() => {
-    ${className ? `instance.${methodName}(invalidInput)` : `${methodName}(invalidInput)`};
-  }).to.throw();
-});`;
+        catch (error) {
+            logger.error('Test suite generation failed:', error);
+            throw error;
         }
     }
     /**
-     * Generate property-based test code
+     * Generate tests for a specific file
      */
-    generatePropertyTest(context) {
-        return `
-import fc from 'fast-check';
-
-describe('Property-based tests', () => {
-  test('${context.methodName} properties', () => {
-    fc.assert(fc.property(
-      fc.string(), // Generate random string inputs
-      (input) => {
-        ${context.className ? `const instance = new ${context.className}();` : ''}
-        const result = ${context.className ? `instance.${context.methodName}(input)` : `${context.methodName}(input)`};
-
-        // Property: result should never be null/undefined
-        expect(result).toBeDefined();
-
-        // Add more properties based on function semantics
-        return true;
-      }
-    ));
-  });
-});`;
-    }
-    /**
-     * Generate integration test code
-     */
-    generateIntegrationTest(context) {
-        return `
-describe('Integration tests', () => {
-  test('should integrate with dependencies', async () => {
-    // Setup mocks
-    ${context.dependencies?.map(dep => `const mock${dep} = jest.mock('${dep}');`).join('\n    ')}
-
-    ${context.className ? `const instance = new ${context.className}();` : ''}
-
-    // Execute integration scenario
-    const result = await ${context.className ? `instance.${context.methodName}()` : `${context.methodName}()`};
-
-    // Verify integration
-    expect(result).toBeTruthy();
-    ${context.dependencies?.map(dep => `expect(mock${dep}).toHaveBeenCalled();`).join('\n    ')}
-  });
-});`;
-    }
-    /**
-     * Generate security test code
-     */
-    generateSecurityTest(context, type) {
-        if (type === 'sql_injection') {
-            return `
-describe('Security tests', () => {
-  test('should prevent SQL injection', () => {
-    const maliciousInput = "'; DROP TABLE users; --";
-    ${context.className ? `const instance = new ${context.className}();` : ''}
-
-    expect(() => {
-      ${context.className ? `instance.${context.methodName}(maliciousInput)` : `${context.methodName}(maliciousInput)`};
-    }).toThrow('Invalid input');
-  });
-});`;
-        }
-        else {
-            return `
-describe('XSS Prevention tests', () => {
-  test('should sanitize HTML input', () => {
-    const xssInput = '<script>alert("XSS")</script>';
-    ${context.className ? `const instance = new ${context.className}();` : ''}
-
-    const result = ${context.className ? `instance.${context.methodName}(xssInput)` : `${context.methodName}(xssInput)`};
-
-    expect(result).not.toMatch(/<script>/);
-  });
-});`;
-        }
-    }
-    /**
-     * Generate performance test code
-     */
-    generatePerformanceTest(context) {
-        return `
-describe('Performance tests', () => {
-  test('should complete within time threshold', () => {
-    const largeInput = Array(1000).fill('test');
-    ${context.className ? `const instance = new ${context.className}();` : ''}
-
-    const startTime = performance.now();
-    const result = ${context.className ? `instance.${context.methodName}(largeInput)` : `${context.methodName}(largeInput)`};
-    const endTime = performance.now();
-
-    const executionTime = endTime - startTime;
-    expect(executionTime).toBeLessThan(100); // 100ms threshold
-    expect(result).toBeDefined();
-  });
-});`;
-    }
-    /**
-     * Extract imports from source code
-     */
-    extractImports(content) {
-        const imports = [];
-        const importMatches = content.matchAll(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
-        for (const match of importMatches) {
-            imports.push(match[1]);
-        }
-        return imports;
-    }
-    /**
-     * Extract dependencies from source code
-     */
-    extractDependencies(content) {
-        const deps = new Set();
-        // ES6 imports
-        const importMatches = content.matchAll(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
-        for (const match of importMatches) {
-            if (!match[1].startsWith('.')) { // External dependencies
-                deps.add(match[1]);
+    async generateTestsForFile(file, options) {
+        const tests = [];
+        const analysis = this.analyzeFileForTesting(file);
+        for (const testType of options.testTypes) {
+            if (testType === 'unit') {
+                tests.push(...await this.generateUnitTests(file, analysis, options));
+            }
+            else if (testType === 'integration') {
+                tests.push(...await this.generateIntegrationTests(file, analysis, options));
+            }
+            else if (testType === 'e2e' && this.isE2ECandidate(file)) {
+                tests.push(...await this.generateE2ETests(file, analysis, options));
             }
         }
-        // Require statements
-        const requireMatches = content.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
-        for (const match of requireMatches) {
-            if (!match[1].startsWith('.')) {
-                deps.add(match[1]);
-            }
-        }
-        return Array.from(deps);
+        return tests;
     }
     /**
-     * Extract methods from source code
+     * Generate unit tests
      */
-    extractMethods(content) {
-        const methods = [];
-        // Function declarations
-        const functionMatches = content.matchAll(/(?:function|async\s+function)\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(([^)]*)\)/g);
-        for (const match of functionMatches) {
-            methods.push({
-                name: match[1],
-                parameters: this.parseParameters(match[2])
+    async generateUnitTests(file, analysis, options) {
+        const tests = [];
+        for (const func of analysis.functions) {
+            const testContent = this.generateUnitTestContent(func, options.framework, file);
+            tests.push({
+                testFile: this.getTestFilePath(file.path, 'unit', options.framework),
+                content: testContent,
+                framework: options.framework,
+                testType: 'unit',
+                coverage: {
+                    functions: [func.name],
+                    branches: func.branches,
+                    statements: func.statements,
+                    expectedCoverage: this.config.codeAnalysis.testing.coverageTarget || 85
+                },
+                dependencies: this.extractDependencies(file),
+                setupRequired: ['Mock external dependencies', 'Setup test environment'],
+                description: `Unit tests for ${func.name} function`
             });
         }
-        // Method definitions in classes
-        const methodMatches = content.matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\(([^)]*)\)\s*[:{]/g);
-        for (const match of methodMatches) {
-            if (!['constructor', 'if', 'for', 'while', 'switch'].includes(match[1])) {
-                methods.push({
-                    name: match[1],
-                    parameters: this.parseParameters(match[2])
-                });
-            }
+        for (const cls of analysis.classes) {
+            const testContent = this.generateClassTestContent(cls, options.framework, file);
+            tests.push({
+                testFile: this.getTestFilePath(file.path, 'unit', options.framework),
+                content: testContent,
+                framework: options.framework,
+                testType: 'unit',
+                coverage: {
+                    functions: cls.methods,
+                    branches: cls.branches,
+                    statements: cls.statements,
+                    expectedCoverage: this.config.codeAnalysis.testing.coverageTarget
+                },
+                dependencies: this.extractDependencies(file),
+                setupRequired: ['Mock dependencies', 'Setup class instances'],
+                description: `Unit tests for ${cls.name} class`
+            });
         }
-        return methods;
+        return tests;
     }
     /**
-     * Parse parameter string into Parameter objects
+     * Generate unit test content for a function
      */
-    parseParameters(paramString) {
-        if (!paramString.trim())
-            return [];
-        return paramString.split(',').map(param => {
-            const trimmed = param.trim();
-            const [name, type] = trimmed.split(':').map(s => s.trim());
-            return {
-                name: name.replace(/[?=].*$/, ''), // Remove optional marker and default values
-                type: type || 'any',
-                isOptional: trimmed.includes('?') || trimmed.includes('='),
-                defaultValue: trimmed.includes('=') ? trimmed.split('=')[1].trim() : undefined
-            };
-        });
-    }
-    /**
-     * Detect test framework from existing code
-     */
-    detectTestFramework(files) {
-        const frameworks = { jest: 0, mocha: 0, vitest: 0, jasmine: 0 };
-        for (const file of files) {
-            if (file.content.includes('describe') && file.content.includes('expect')) {
-                if (file.content.includes('jest'))
-                    frameworks.jest++;
-                else if (file.content.includes('mocha'))
-                    frameworks.mocha++;
-                else if (file.content.includes('vitest'))
-                    frameworks.vitest++;
-                else if (file.content.includes('jasmine'))
-                    frameworks.jasmine++;
-                else
-                    frameworks.jest++; // Default assumption
-            }
-        }
-        const winner = Object.entries(frameworks).reduce((a, b) => a[1] > b[1] ? a : b);
-        return winner[1] > 0 ? winner[0] : 'jest';
-    }
-    /**
-     * Generate appropriate imports for test cases
-     */
-    generateImports(testCases, framework, context) {
-        const imports = new Set();
-        // Framework imports
+    generateUnitTestContent(func, framework, file) {
+        const testName = `${func.name}.test.${this.getFileExtension(framework)}`;
+        const modulePath = this.getRelativeImportPath(file.path);
         if (framework === 'jest') {
-            imports.add(`import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';`);
+            return this.generateJestTest(func, modulePath);
         }
         else if (framework === 'mocha') {
-            imports.add(`import { describe, it, beforeEach, afterEach } from 'mocha';`);
-            imports.add(`import { expect } from 'chai';`);
+            return this.generateMochaTest(func, modulePath);
         }
-        // Source imports
-        if (context.className) {
-            imports.add(`import { ${context.className} } from '${context.filePath.replace('.ts', '').replace('.js', '')}';`);
+        else if (framework === 'vitest') {
+            return this.generateVitestTest(func, modulePath);
         }
-        // Mock libraries
-        if (testCases.some(tc => tc.mockRequirements && tc.mockRequirements.length > 0)) {
-            imports.add(`import { jest } from '@jest/globals';`);
+        else {
+            return this.generateGenericTest(func, modulePath);
         }
-        // Property testing
-        if (testCases.some(tc => tc.dependencies.includes('fast-check'))) {
-            imports.add(`import fc from 'fast-check';`);
-        }
-        return Array.from(imports);
     }
     /**
-     * Generate setup code for test suite
+     * Framework-specific test generators
      */
-    generateSetup(testCases, framework) {
-        let beforeEach = '';
-        let afterEach = '';
-        // Check if mocks are needed
-        const needsMocks = testCases.some(tc => tc.mockRequirements && tc.mockRequirements.length > 0);
-        if (needsMocks) {
-            beforeEach = `
-    // Setup mocks
-    jest.clearAllMocks();`;
-            afterEach = `
-    // Cleanup mocks
-    jest.restoreAllMocks();`;
-        }
-        return { beforeEach: beforeEach || undefined, afterEach: afterEach || undefined };
-    }
-    /**
-     * Generate tests for specific coverage gaps
-     */
-    generateGapSpecificTests(context, gap) {
-        const testCases = [];
-        switch (gap.type) {
-            case 'branch':
-                testCases.push({
-                    id: `coverage_branch_${gap.location.startLine}`,
-                    name: `should cover branch at line ${gap.location.startLine}`,
-                    description: `Test to cover uncovered branch: ${gap.description}`,
-                    category: 'unit',
-                    code: this.generateBranchCoverageTest(context, gap),
-                    assertions: [{
-                            type: 'truthiness',
-                            expected: true,
-                            actual: 'branchExecuted',
-                            message: `Branch should be executed`
-                        }],
-                    tags: ['coverage', 'branch'],
-                    estimatedRuntime: 15,
-                    dependencies: []
-                });
-                break;
-            case 'statement':
-                testCases.push({
-                    id: `coverage_statement_${gap.location.startLine}`,
-                    name: `should execute statement at line ${gap.location.startLine}`,
-                    description: `Test to cover uncovered statement: ${gap.description}`,
-                    category: 'unit',
-                    code: this.generateStatementCoverageTest(context, gap),
-                    assertions: [{
-                            type: 'truthiness',
-                            expected: true,
-                            actual: 'statementExecuted',
-                            message: `Statement should be executed`
-                        }],
-                    tags: ['coverage', 'statement'],
-                    estimatedRuntime: 10,
-                    dependencies: []
-                });
-                break;
-        }
-        return testCases;
-    }
-    /**
-     * Generate branch coverage test
-     */
-    generateBranchCoverageTest(context, gap) {
-        return `
-test('should cover branch at line ${gap.location.startLine}', () => {
-  // Setup conditions to trigger the uncovered branch
-  const condition = ${gap.location.condition || 'true'};
+    generateJestTest(func, modulePath) {
+        const imports = `import { ${func.name} } from '${modulePath}';`;
+        const mocks = func.dependencies.map(dep => `jest.mock('${dep}');`).join('\n');
+        return `${imports}
+${mocks}
 
-  ${context.className ? `const instance = new ${context.className}();` : ''}
-  const result = ${context.className ? `instance.${context.methodName}(condition)` : `${context.methodName}(condition)`};
+describe('${func.name}', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-  expect(result).toBeDefined();
-});`;
-    }
-    /**
-     * Generate statement coverage test
-     */
-    generateStatementCoverageTest(context, gap) {
-        return `
-test('should execute statement at line ${gap.location.startLine}', () => {
-  // Setup to trigger statement execution
-  ${context.className ? `const instance = new ${context.className}();` : ''}
-  const result = ${context.className ? `instance.${context.methodName}()` : `${context.methodName}()`};
+  it('should handle normal case', () => {
+    // Arrange
+    const input = ${this.generateSampleInput(func)};
+    const expected = ${this.generateExpectedOutput(func)};
 
-  expect(result).toBeDefined();
-});`;
+    // Act
+    const result = ${func.name}(input);
+
+    // Assert
+    expect(result).toEqual(expected);
+  });
+
+  it('should handle edge cases', () => {
+    // Test edge cases
+    ${this.generateEdgeCaseTests(func)}
+  });
+
+  ${func.isAsync ? this.generateAsyncTests(func) : ''}
+
+  ${func.canThrow ? this.generateErrorTests(func) : ''}
+});
+`;
     }
-    /**
-     * Analyze coverage gaps in source files
-     */
-    async analyzeCoverageGaps(sourceFiles, suites) {
-        const gaps = [];
-        // Simple gap analysis - in production would use actual coverage data
-        for (const file of sourceFiles) {
-            const lines = file.content.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                // Identify potential uncovered branches
-                if (line.includes('if') && line.includes('else')) {
-                    gaps.push({
-                        type: 'branch',
-                        location: { startLine: i + 1, endLine: i + 1, condition: line },
-                        description: `Conditional branch may not be fully covered`,
-                        priority: 'medium'
-                    });
-                }
-                // Identify error handling that might not be covered
-                if (line.includes('catch') || line.includes('throw')) {
-                    gaps.push({
-                        type: 'statement',
-                        location: { startLine: i + 1, endLine: i + 1 },
-                        description: `Error handling statement may not be covered`,
-                        priority: 'high'
-                    });
-                }
-            }
-        }
-        return gaps;
+    generateMochaTest(func, modulePath) {
+        return `const { expect } = require('chai');
+const { ${func.name} } = require('${modulePath}');
+
+describe('${func.name}', () => {
+  it('should handle normal case', () => {
+    const input = ${this.generateSampleInput(func)};
+    const expected = ${this.generateExpectedOutput(func)};
+
+    const result = ${func.name}(input);
+
+    expect(result).to.equal(expected);
+  });
+
+  it('should handle edge cases', () => {
+    ${this.generateEdgeCaseTests(func)}
+  });
+});
+`;
     }
-    /**
-     * Calculate test quality metrics
-     */
-    calculateTestQuality(suites, gaps) {
-        const totalTests = suites.reduce((sum, s) => sum + s.testCases.length, 0);
-        const criticalTests = suites.reduce((sum, s) => sum + s.testCases.filter(tc => tc.tags.includes('critical')).length, 0);
-        const maintainability = Math.min(100, (totalTests / Math.max(suites.length, 1)) * 10);
-        const reliability = Math.max(0, 100 - (gaps.filter(g => g.priority === 'high').length * 10));
-        const comprehensiveness = Math.min(100, (criticalTests / Math.max(totalTests, 1)) * 100);
-        const score = Math.round((maintainability + reliability + comprehensiveness) / 3);
-        return { score, maintainability, reliability, comprehensiveness };
+    generateVitestTest(func, modulePath) {
+        return `import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ${func.name} } from '${modulePath}';
+
+describe('${func.name}', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should handle normal case', () => {
+    const input = ${this.generateSampleInput(func)};
+    const expected = ${this.generateExpectedOutput(func)};
+
+    const result = ${func.name}(input);
+
+    expect(result).toEqual(expected);
+  });
+});
+`;
     }
-    /**
-     * Generate recommendations based on analysis
-     */
-    generateRecommendations(suites, gaps, quality) {
-        const recommendations = [];
-        if (gaps.filter(g => g.priority === 'high').length > 0) {
-            recommendations.push({
-                priority: 'high',
-                category: 'Coverage',
-                description: 'Address high-priority coverage gaps',
-                impact: 'Improves test reliability and bug detection'
-            });
-        }
-        if (quality.score < 70) {
-            recommendations.push({
-                priority: 'medium',
-                category: 'Quality',
-                description: 'Improve overall test quality',
-                impact: 'Better maintainability and reliability'
-            });
-        }
-        const securityTests = suites.reduce((sum, s) => sum + s.testCases.filter(tc => tc.category === 'security').length, 0);
-        if (securityTests === 0) {
-            recommendations.push({
-                priority: 'medium',
-                category: 'Security',
-                description: 'Add security-focused tests',
-                impact: 'Prevents security vulnerabilities'
-            });
-        }
-        return recommendations;
-    }
-    /**
-     * Estimate coverage improvement from generated tests
-     */
-    estimateCoverageImprovement(suites) {
-        // Simple estimation based on test count and types
-        const totalTests = suites.reduce((sum, s) => sum + s.testCases.length, 0);
-        const uniquePaths = suites.reduce((sum, s) => sum + new Set(s.testCases.map(tc => tc.name)).size, 0);
-        return Math.min(95, Math.round((uniquePaths / Math.max(totalTests, 1)) * 100));
-    }
-    /**
-     * Identify missing test types
-     */
-    identifyMissingTestTypes(suites, requestedTypes) {
-        const present = new Set(suites.flatMap(s => s.testCases.map(tc => tc.category)));
-        const allTypes = ['unit', 'integration', 'e2e', 'property', 'performance', 'security'];
-        return allTypes.filter(type => !present.has(type));
-    }
-    /**
-     * Identify risk areas in code
-     */
-    identifyRiskAreas(sourceFiles, suites) {
-        const risks = [];
-        for (const file of sourceFiles) {
-            // Check for complex functions without tests
-            const complexFunctions = (file.content.match(/function[^{]*{[^}]{200,}/g) || []).length;
-            const fileHasTests = suites.some(s => s.targetFile === file.path);
-            if (complexFunctions > 0 && !fileHasTests) {
-                risks.push(`Complex functions in ${file.path} lack test coverage`);
-            }
-            // Check for error handling without tests
-            if (file.content.includes('throw') || file.content.includes('catch')) {
-                const hasErrorTests = suites.some(s => s.testCases.some(tc => tc.tags.includes('error-handling')));
-                if (!hasErrorTests) {
-                    risks.push(`Error handling in ${file.path} needs test coverage`);
-                }
-            }
-        }
-        return risks;
-    }
+    generateGenericTest(func, modulePath) {
+        return `// Generic test template for ${func.name}
+// TODO: Adapt for your testing framework
+
+function test_${func.name}() {
+  const input = ${this.generateSampleInput(func)};
+  const expected = ${this.generateExpectedOutput(func)};
+
+  const result = ${func.name}(input);
+
+  assert(result === expected, 'Function should return expected value');
 }
-// Factory function for easy instantiation
-export function createTestGenerator() {
-    return new TestGenerator();
+`;
+    }
+    /**
+     * Generate integration tests
+     */
+    async generateIntegrationTests(file, analysis, options) {
+        const tests = [];
+        if (analysis.hasExternalDependencies) {
+            const testContent = this.generateIntegrationTestContent(file, analysis, options.framework);
+            tests.push({
+                testFile: this.getTestFilePath(file.path, 'integration', options.framework),
+                content: testContent,
+                framework: options.framework,
+                testType: 'integration',
+                coverage: {
+                    functions: analysis.functions.map(f => f.name),
+                    branches: [],
+                    statements: 0,
+                    expectedCoverage: this.config.codeAnalysis.testing.coverageTarget * 0.875
+                },
+                dependencies: analysis.externalDependencies,
+                setupRequired: ['Database setup', 'API mocking', 'Environment configuration'],
+                description: `Integration tests for ${path.basename(file.path)}`
+            });
+        }
+        return tests;
+    }
+    generateIntegrationTestContent(file, analysis, framework) {
+        return `// Integration tests for ${path.basename(file.path)}
+// Tests interaction between components and external dependencies
+
+describe('${path.basename(file.path)} Integration', () => {
+  beforeAll(async () => {
+    // Setup test environment
+    // Initialize database connections
+    // Start mock servers
+  });
+
+  afterAll(async () => {
+    // Cleanup test environment
+    // Close database connections
+    // Stop mock servers
+  });
+
+  it('should integrate with external services', async () => {
+    // Test external API calls
+    // Test database operations
+    // Test file system operations
+  });
+
+  it('should handle service failures gracefully', async () => {
+    // Test error scenarios
+    // Test fallback mechanisms
+    // Test retry logic
+  });
+});
+`;
+    }
+    /**
+     * Generate E2E tests
+     */
+    async generateE2ETests(file, analysis, options) {
+        if (!this.isE2ECandidate(file)) {
+            return [];
+        }
+        const framework = this.detectE2EFramework(options.framework);
+        const testContent = this.generateE2ETestContent(file, framework);
+        return [{
+                testFile: this.getTestFilePath(file.path, 'e2e', framework),
+                content: testContent,
+                framework: framework,
+                testType: 'e2e',
+                coverage: {
+                    functions: [],
+                    branches: [],
+                    statements: 0,
+                    expectedCoverage: this.config.codeAnalysis.testing.coverageTarget * 0.75
+                },
+                dependencies: ['browser', 'test-server'],
+                setupRequired: ['Start application', 'Setup test data', 'Configure browser'],
+                description: `End-to-end tests for ${path.basename(file.path)}`
+            }];
+    }
+    generateE2ETestContent(file, framework) {
+        if (framework === 'cypress') {
+            return this.generateCypressTest(file);
+        }
+        else if (framework === 'playwright') {
+            return this.generatePlaywrightTest(file);
+        }
+        return '';
+    }
+    generateCypressTest(file) {
+        return `describe('${path.basename(file.path)} E2E', () => {
+  beforeEach(() => {
+    cy.visit('/');
+  });
+
+  it('should complete user workflow', () => {
+    // User interaction tests
+    cy.get('[data-testid="submit"]').click();
+    cy.url().should('include', '/success');
+  });
+
+  it('should handle error scenarios', () => {
+    // Error handling tests
+    cy.get('[data-testid="error-trigger"]').click();
+    cy.get('[data-testid="error-message"]').should('be.visible');
+  });
+});
+`;
+    }
+    generatePlaywrightTest(file) {
+        return `import { test, expect } from '@playwright/test';
+
+test.describe('${path.basename(file.path)} E2E', () => {
+  test('should complete user workflow', async ({ page }) => {
+    await page.goto('/');
+    await page.click('[data-testid="submit"]');
+    await expect(page).toHaveURL(/.*success/);
+  });
+
+  test('should handle error scenarios', async ({ page }) => {
+    await page.goto('/');
+    await page.click('[data-testid="error-trigger"]');
+    await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
+  });
+});
+`;
+    }
+    /**
+     * Generate test strategy
+     */
+    async generateTestStrategy(files, framework) {
+        const analysis = this.analyzeCodebaseForTesting(files);
+        return {
+            recommendedFramework: framework,
+            testPyramid: {
+                unit: 70,
+                integration: 20,
+                e2e: 10
+            },
+            coverage: {
+                target: this.config.codeAnalysis.testing.coverageTarget,
+                critical: analysis.criticalFiles,
+                optional: analysis.optionalFiles
+            },
+            priority: this.prioritizeFiles(files),
+            setupInstructions: this.generateSetupInstructions(framework),
+            recommendations: this.generateTestingRecommendations(analysis)
+        };
+    }
+    /**
+     * Helper methods
+     */
+    analyzeFileForTesting(file) {
+        const functions = this.extractFunctions(file.content);
+        const classes = this.extractClasses(file.content);
+        const dependencies = this.extractDependencies(file);
+        return {
+            functions,
+            classes,
+            dependencies,
+            externalDependencies: dependencies.filter(dep => !dep.startsWith('.')),
+            hasExternalDependencies: dependencies.some(dep => !dep.startsWith('.')),
+            complexity: this.calculateComplexity(file.content),
+            testability: this.assessTestability(file.content)
+        };
+    }
+    extractFunctions(content) {
+        const functions = [];
+        const functionPattern = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)/g;
+        const arrowFunctionPattern = /(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>/g;
+        let match;
+        while ((match = functionPattern.exec(content)) !== null) {
+            functions.push(this.analyzeFunctionSignature(match[1], match[2], content));
+        }
+        while ((match = arrowFunctionPattern.exec(content)) !== null) {
+            functions.push(this.analyzeFunctionSignature(match[1], match[2], content));
+        }
+        return functions;
+    }
+    analyzeFunctionSignature(name, params, content) {
+        return {
+            name,
+            parameters: params.split(',').map(p => p.trim()).filter(p => p),
+            returnType: 'unknown',
+            isAsync: content.includes(`async function ${name}`) || content.includes(`${name} = async`),
+            canThrow: content.includes('throw') || content.includes('error'),
+            dependencies: [],
+            branches: [],
+            statements: 10, // Simplified
+            complexity: 5 // Simplified
+        };
+    }
+    extractClasses(content) {
+        const classes = [];
+        const classPattern = /class\s+(\w+)/g;
+        let match;
+        while ((match = classPattern.exec(content)) !== null) {
+            classes.push({
+                name: match[1],
+                methods: [],
+                properties: [],
+                branches: [],
+                statements: 20,
+                complexity: 8
+            });
+        }
+        return classes;
+    }
+    extractDependencies(file) {
+        const importPattern = /import.*from\s+['"]([^'"]+)['"]/g;
+        const requirePattern = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+        const dependencies = [];
+        let match;
+        while ((match = importPattern.exec(file.content)) !== null) {
+            dependencies.push(match[1]);
+        }
+        while ((match = requirePattern.exec(file.content)) !== null) {
+            dependencies.push(match[1]);
+        }
+        return [...new Set(dependencies)];
+    }
+    analyzeCodebaseForTesting(files) {
+        return {
+            criticalFiles: files.filter(f => this.isCriticalFile(f)).map(f => f.path),
+            optionalFiles: files.filter(f => !this.isCriticalFile(f)).map(f => f.path),
+            complexity: 'medium',
+            testingChallenges: ['External dependencies', 'Async operations', 'Complex business logic']
+        };
+    }
+    isCriticalFile(file) {
+        return file.path.includes('core') ||
+            file.path.includes('main') ||
+            file.path.includes('index') ||
+            file.content.includes('export default');
+    }
+    shouldGenerateTestsFor(file) {
+        return !file.path.includes('test') &&
+            !file.path.includes('spec') &&
+            (file.type === 'typescript' || file.type === 'javascript');
+    }
+    detectOptimalFramework(files) {
+        // Check for existing test framework usage
+        for (const file of files) {
+            if (file.content.includes('jest'))
+                return 'jest';
+            if (file.content.includes('vitest'))
+                return 'vitest';
+            if (file.content.includes('mocha'))
+                return 'mocha';
+        }
+        // Default recommendation based on project type
+        const hasTypeScript = files.some(f => f.path.endsWith('.ts'));
+        return hasTypeScript ? 'vitest' : 'jest';
+    }
+    isE2ECandidate(file) {
+        return file.path.includes('page') ||
+            file.path.includes('component') ||
+            file.content.includes('render') ||
+            file.content.includes('router');
+    }
+    detectE2EFramework(framework) {
+        return framework === 'cypress' || framework === 'playwright' ? framework : 'playwright';
+    }
+    // Additional helper methods with simplified implementations
+    generateSampleInput(func) {
+        return func.parameters.length > 0 ? `{ /* sample input */ }` : '';
+    }
+    generateExpectedOutput(func) {
+        return '/* expected output */';
+    }
+    generateEdgeCaseTests(func) {
+        return '// TODO: Add edge case tests';
+    }
+    generateAsyncTests(func) {
+        return `
+  it('should handle async operations', async () => {
+    const result = await ${func.name}();
+    expect(result).toBeDefined();
+  });`;
+    }
+    generateErrorTests(func) {
+        return `
+  it('should handle errors appropriately', () => {
+    expect(() => ${func.name}(invalidInput)).toThrow();
+  });`;
+    }
+    generateClassTestContent(cls, framework, file) {
+        return `// Class tests for ${cls.name}`;
+    }
+    getTestFilePath(filePath, testType, framework) {
+        const dir = path.dirname(filePath);
+        const name = path.basename(filePath, path.extname(filePath));
+        const ext = this.getFileExtension(framework);
+        return path.join(dir, '__tests__', `${name}.${testType}.${ext}`);
+    }
+    getFileExtension(framework) {
+        return framework === 'vitest' ? 'test.ts' : 'test.js';
+    }
+    getRelativeImportPath(filePath) {
+        return '../' + path.basename(filePath, path.extname(filePath));
+    }
+    calculateComplexity(content) {
+        return Math.min(content.split('\n').length / 10, 10);
+    }
+    assessTestability(content) {
+        const hasExternalDeps = content.includes('import') && content.includes('from');
+        const hasComplexLogic = content.includes('if') && content.includes('for');
+        if (hasExternalDeps && hasComplexLogic)
+            return 'low';
+        if (hasExternalDeps || hasComplexLogic)
+            return 'medium';
+        return 'high';
+    }
+    prioritizeFiles(files) {
+        return files.map(file => ({
+            file: file.path,
+            priority: this.isCriticalFile(file) ? 'high' : 'medium',
+            reason: this.isCriticalFile(file) ? 'Critical business logic' : 'Supporting functionality'
+        }));
+    }
+    generateSetupInstructions(framework) {
+        const instructions = [`Install ${framework} testing framework`];
+        if (framework === 'jest') {
+            instructions.push('Configure jest.config.js', 'Setup test environment');
+        }
+        else if (framework === 'vitest') {
+            instructions.push('Configure vitest.config.ts', 'Setup test utilities');
+        }
+        return instructions;
+    }
+    generateTestingRecommendations(analysis) {
+        return [
+            'Implement test-driven development (TDD) for new features',
+            'Focus on high-coverage unit tests for critical business logic',
+            'Use integration tests for external API interactions',
+            'Implement automated test runs in CI/CD pipeline'
+        ];
+    }
+    async generateSetupFiles(framework, tests) {
+        return [{
+                path: `tests/setup.${framework === 'vitest' ? 'ts' : 'js'}`,
+                content: this.generateSetupFileContent(framework),
+                description: 'Test environment setup and global configuration'
+            }];
+    }
+    generateSetupFileContent(framework) {
+        if (framework === 'jest') {
+            return `// Jest setup file
+global.console = {
+  ...console,
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+};
+`;
+        }
+        return '// Test setup file\n';
+    }
+    async generateConfigFiles(framework, tests) {
+        return [{
+                path: this.getConfigFileName(framework),
+                content: this.generateConfigFileContent(framework),
+                description: `${framework} configuration file`
+            }];
+    }
+    getConfigFileName(framework) {
+        if (framework === 'jest')
+            return 'jest.config.js';
+        if (framework === 'vitest')
+            return 'vitest.config.ts';
+        return `${framework}.config.js`;
+    }
+    generateConfigFileContent(framework) {
+        if (framework === 'jest') {
+            return `module.exports = {
+  testEnvironment: 'node',
+  collectCoverageFrom: [
+    'src/**/*.{js,ts}',
+    '!src/**/*.test.{js,ts}',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};
+`;
+        }
+        if (framework === 'vitest') {
+            return `import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    environment: 'node',
+    coverage: {
+      provider: 'c8',
+      reporter: ['text', 'json', 'html'],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+    },
+  },
+});
+`;
+        }
+        return '// Configuration file\n';
+    }
+    calculateExpectedCoverage(tests) {
+        if (tests.length === 0)
+            return 0;
+        return tests.reduce((sum, test) => sum + test.coverage.expectedCoverage, 0) / tests.length;
+    }
+    estimateRuntime(tests) {
+        const unitTests = tests.filter(t => t.testType === 'unit').length;
+        const integrationTests = tests.filter(t => t.testType === 'integration').length;
+        const e2eTests = tests.filter(t => t.testType === 'e2e').length;
+        const totalMinutes = (unitTests * 0.1) + (integrationTests * 0.5) + (e2eTests * 2);
+        if (totalMinutes < 1)
+            return '< 1 minute';
+        if (totalMinutes < 60)
+            return `~${Math.ceil(totalMinutes)} minutes`;
+        return `~${Math.ceil(totalMinutes / 60)} hours`;
+    }
 }
 //# sourceMappingURL=test-generator.js.map

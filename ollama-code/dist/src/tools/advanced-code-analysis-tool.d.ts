@@ -15,6 +15,9 @@ export interface CodeAnalysisOptions {
 }
 export declare class AdvancedCodeAnalysisTool extends BaseTool {
     private config;
+    private architecturalAnalyzer;
+    private refactoringEngine;
+    private testGenerator;
     metadata: ToolMetadata;
     execute(parameters: Record<string, any>, context: ToolExecutionContext): Promise<ToolResult>;
     private analyzeCode;
@@ -24,7 +27,7 @@ export declare class AdvancedCodeAnalysisTool extends BaseTool {
     private getCodeMetrics;
     private calculateComplexity;
     private analyzeFileComplexity;
-    private calculateCyclomaticComplexity;
+    private calculateFileCyclomaticComplexity;
     private categorizeComplexity;
     private rateComplexity;
     private calculateMaintainability;

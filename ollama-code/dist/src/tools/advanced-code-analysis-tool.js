@@ -3,8 +3,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getPerformanceConfig } from '../config/performance.js';
 import { logger } from '../utils/logger.js';
+import { ArchitecturalAnalyzer } from '../ai/architectural-analyzer.js';
+import { RefactoringEngine } from '../ai/refactoring-engine.js';
+import { TestGenerator } from '../ai/test-generator.js';
+import { calculateCyclomaticComplexity } from '../utils/complexity-calculator.js';
 export class AdvancedCodeAnalysisTool extends BaseTool {
     config = getPerformanceConfig();
+    architecturalAnalyzer = new ArchitecturalAnalyzer();
+    refactoringEngine = new RefactoringEngine();
+    testGenerator = new TestGenerator();
     metadata = {
         name: 'advanced-code-analysis',
         description: 'Comprehensive code quality analysis and improvement suggestions with AST parsing and semantic analysis',
@@ -220,7 +227,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             const content = fs.readFileSync(filePath, 'utf-8');
             const lines = content.split('\n');
             // Basic complexity analysis
-            const cyclomaticComplexity = this.calculateCyclomaticComplexity(content);
+            const cyclomaticComplexity = this.calculateFileCyclomaticComplexity(content);
             const functionCount = (content.match(/function\s+\w+|=>\s*{|def\s+\w+/g) || []).length;
             const classCount = (content.match(/class\s+\w+|interface\s+\w+/g) || []).length;
             return {
@@ -239,12 +246,14 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             };
         }
     }
-    calculateCyclomaticComplexity(content) {
-        // Count decision points in code
-        const conditionals = (content.match(/\b(if|while|for|case|catch|else if|elif|unless)\b/g) || []).length;
-        const logicalOperators = (content.match(/(\|\||&&|\band\b|\bor\b)/g) || []).length;
-        const ternaryOperators = (content.match(/\?.*?:/g) || []).length;
-        return conditionals + logicalOperators + ternaryOperators + 1; // +1 for the main path
+    calculateFileCyclomaticComplexity(content) {
+        // Use centralized complexity calculator for consistency
+        const complexityThresholds = {
+            low: this.config.codeAnalysis.quality.complexityThresholds.medium,
+            moderate: this.config.codeAnalysis.quality.complexityThresholds.high,
+            high: this.config.codeAnalysis.quality.complexityThresholds.high * 2
+        };
+        return calculateCyclomaticComplexity(content, { thresholds: complexityThresholds }).cyclomaticComplexity;
     }
     categorizeComplexity(complexity) {
         if (complexity <= 5)
@@ -764,7 +773,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             }
             // Check for complex functions
             const complexityThreshold = 20;
-            const complexity = this.calculateCyclomaticComplexity(content);
+            const complexity = this.calculateFileCyclomaticComplexity(content);
             if (complexity > complexityThreshold) {
                 analysis.complexFunctions = 1;
                 analysis.bottlenecks.push({
@@ -784,42 +793,50 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
     async suggestRefactoring(target, context, options) {
         const targetPath = path.resolve(context.workingDirectory, target);
         const isDirectory = fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory();
-        const refactoring = {
-            suggestions: [],
-            priority: {
-                high: [],
-                medium: [],
-                low: []
-            },
-            estimatedEffort: 'Medium',
-            benefits: []
-        };
         try {
             const files = isDirectory ? this.getCodeFiles(targetPath) : [targetPath];
-            for (const file of files.slice(0, 10)) {
-                const suggestions = this.analyzeRefactoringOpportunities(file);
-                refactoring.suggestions.push(...suggestions);
-            }
-            // Categorize suggestions by priority
-            refactoring.suggestions.forEach(suggestion => {
-                if (suggestion.impact === 'High') {
-                    refactoring.priority.high.push(suggestion.description);
-                }
-                else if (suggestion.impact === 'Medium') {
-                    refactoring.priority.medium.push(suggestion.description);
-                }
-                else {
-                    refactoring.priority.low.push(suggestion.description);
-                }
-            });
-            refactoring.benefits = [
-                'Improved code readability',
-                'Better maintainability',
-                'Enhanced performance',
-                'Reduced technical debt',
-                'Easier testing'
-            ];
-            return this.createSuccessResult('Refactoring analysis completed', refactoring);
+            // Prepare files for analysis
+            const fileContents = files.slice(0, 20).map(file => ({
+                path: file,
+                content: fs.readFileSync(file, 'utf-8'),
+                type: this.detectLanguage(file) || 'unknown'
+            }));
+            logger.info('Starting enhanced refactoring analysis', { fileCount: fileContents.length });
+            // Use the new RefactoringEngine
+            const operations = await this.refactoringEngine.suggestRefactorings(fileContents, context);
+            // Categorize operations by impact and effort
+            const prioritized = {
+                high: operations.filter(op => op.impact.maintainabilityImprovement >= 20 || op.impact.performanceImprovement >= 10),
+                medium: operations.filter(op => op.impact.maintainabilityImprovement >= 10 && op.impact.maintainabilityImprovement < 20),
+                low: operations.filter(op => op.impact.maintainabilityImprovement < 10)
+            };
+            const result = {
+                summary: {
+                    totalOperations: operations.length,
+                    highPriority: prioritized.high.length,
+                    mediumPriority: prioritized.medium.length,
+                    lowPriority: prioritized.low.length,
+                    estimatedBenefit: Math.round(operations.reduce((sum, op) => sum + op.impact.maintainabilityImprovement, 0) / operations.length)
+                },
+                operations: operations,
+                prioritized: prioritized,
+                recommendations: operations.slice(0, 5).map(op => ({
+                    operation: op.type,
+                    description: op.description,
+                    impact: `${op.impact.maintainabilityImprovement}% maintainability improvement`,
+                    effort: op.estimatedEffort,
+                    safety: op.safety.riskLevel,
+                    confidence: Math.round(op.safety.confidence * 100) + '%'
+                })),
+                benefits: [
+                    'Improved code maintainability',
+                    'Reduced technical debt',
+                    'Enhanced readability',
+                    'Better testability',
+                    'Performance optimizations'
+                ]
+            };
+            return this.createSuccessResult('Enhanced refactoring analysis completed', result);
         }
         catch (error) {
             return this.createErrorResult(`Refactoring analysis failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -912,7 +929,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             }
             else {
                 const content = fs.readFileSync(targetPath, 'utf-8');
-                const complexity = this.calculateCyclomaticComplexity(content);
+                const complexity = this.calculateFileCyclomaticComplexity(content);
                 if (complexity > 15) {
                     recommendations.push('Reduce function complexity by breaking down large functions');
                 }
@@ -1033,38 +1050,33 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
     async analyzeArchitecture(target, context, options) {
         const targetPath = path.resolve(context.workingDirectory, target);
         const isDirectory = fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory();
-        const config = this.config.codeAnalysis.architectural;
         try {
             const files = isDirectory ? this.getCodeFiles(targetPath) : [targetPath];
-            const findings = [];
-            const detectedPatterns = new Set();
-            logger.info('Starting architectural analysis', { fileCount: files.length });
-            for (const file of files.slice(0, 50)) { // Limit for performance
-                const content = fs.readFileSync(file, 'utf-8');
-                const fileFindings = this.analyzeArchitecturalPatterns(content, file);
-                findings.push(...fileFindings);
-                fileFindings.forEach(finding => detectedPatterns.add(finding.patternName));
-            }
-            // Calculate metrics
-            const metrics = this.calculateArchitecturalMetrics(files);
-            const qualityScore = this.calculateArchitecturalQuality(findings, metrics);
+            // Prepare files for analysis
+            const fileContents = files.slice(0, 50).map(file => ({
+                path: file,
+                content: fs.readFileSync(file, 'utf-8'),
+                type: this.detectLanguage(file) || 'unknown' || 'unknown'
+            }));
+            logger.info('Starting enhanced architectural analysis', { fileCount: fileContents.length });
+            // Use the new ArchitecturalAnalyzer
+            const analysis = await this.architecturalAnalyzer.analyzeArchitecture(fileContents, context);
             const result = {
                 summary: {
-                    totalFindings: findings.length,
-                    criticalIssues: findings.filter(f => f.severity === 'error').length,
-                    warnings: findings.filter(f => f.severity === 'warning').length,
-                    suggestions: findings.filter(f => f.severity === 'info').length,
-                    qualityScore
+                    totalPatterns: analysis.patterns.length,
+                    totalCodeSmells: analysis.codeSmells.length,
+                    criticalSmells: analysis.codeSmells.filter(s => s.severity === 'critical' || s.severity === 'high').length,
+                    maintainabilityIndex: analysis.metrics.maintainabilityIndex,
+                    technicalDebt: analysis.metrics.technicalDebt,
+                    overallSummary: analysis.summary
                 },
-                findings,
-                patterns: {
-                    detected: Array.from(detectedPatterns),
-                    recommended: this.getRecommendedPatterns(files.length, metrics)
-                },
-                metrics,
-                recommendations: this.generateArchitecturalRecommendations(findings, metrics)
+                patterns: analysis.patterns,
+                codeSmells: analysis.codeSmells,
+                metrics: analysis.metrics,
+                recommendations: analysis.recommendations,
+                detailedAnalysis: analysis
             };
-            return this.createSuccessResult('Architectural analysis completed', result);
+            return this.createSuccessResult('Enhanced architectural analysis completed', result);
         }
         catch (error) {
             return this.createErrorResult(`Architectural analysis failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -1225,32 +1237,40 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         const config = this.config.codeAnalysis.testing;
         try {
             const files = isDirectory ? this.getCodeFiles(targetPath) : [targetPath];
-            const testSuites = [];
-            const framework = options.frameworkPreference || config.frameworkPreference;
-            logger.info('Starting test generation', { fileCount: files.length, framework });
-            for (const file of files.slice(0, 20)) { // Limit for performance
-                const testSuite = this.generateTestSuiteForFile(file, framework);
-                if (testSuite.testCases.length > 0) {
-                    testSuites.push(testSuite);
-                }
-            }
-            const summary = {
-                totalTests: testSuites.reduce((sum, suite) => sum + suite.testCases.length, 0),
-                coverageEstimate: this.estimateCoverageImprovement(testSuites),
-                framework,
-                estimatedRuntime: testSuites.reduce((sum, suite) => sum + suite.estimatedDuration, 0)
-            };
+            // Prepare files for analysis
+            const fileContents = files.slice(0, 20).map(file => ({
+                path: file,
+                content: fs.readFileSync(file, 'utf-8'),
+                type: this.detectLanguage(file) || 'unknown'
+            }));
+            logger.info('Starting enhanced test generation', { fileCount: fileContents.length });
+            // Use the new TestGenerator
+            const testSuite = await this.testGenerator.generateTestSuite(fileContents, {
+                framework: options.frameworkPreference || config.frameworkPreference,
+                testTypes: ['unit', 'integration'],
+                coverage: 'comprehensive'
+            });
             const result = {
-                summary,
-                testSuites,
-                recommendations: this.generateTestingRecommendations(testSuites),
+                summary: {
+                    totalTests: testSuite.tests.length,
+                    framework: testSuite.strategy.recommendedFramework,
+                    expectedCoverage: testSuite.totalCoverage,
+                    estimatedRuntime: testSuite.estimatedRuntime,
+                    testPyramid: testSuite.strategy.testPyramid
+                },
+                tests: testSuite.tests,
+                strategy: testSuite.strategy,
+                setupFiles: testSuite.setupFiles,
+                configFiles: testSuite.configFiles,
+                recommendations: testSuite.strategy.recommendations,
                 configuration: {
-                    framework,
+                    framework: testSuite.strategy.recommendedFramework,
                     coverageTarget: options.coverageTarget || config.coverageTarget,
                     timeout: config.maxTestRuntime
-                }
+                },
+                detailedSuite: testSuite
             };
-            return this.createSuccessResult('Test generation completed', result);
+            return this.createSuccessResult('Enhanced test generation completed', result);
         }
         catch (error) {
             return this.createErrorResult(`Test generation failed: ${error instanceof Error ? error.message : String(error)}`);

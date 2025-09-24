@@ -1,173 +1,105 @@
 /**
  * Refactoring Engine
  *
- * Automated code refactoring system that safely transforms code while preserving
- * functionality, with comprehensive impact analysis and rollback capabilities.
+ * Provides automated code refactoring capabilities with safety checks.
+ * Implements safe refactoring operations with rollback support.
  */
-export interface RefactoringRule {
+export interface RefactoringOperation {
     id: string;
-    name: string;
+    type: RefactoringType;
     description: string;
-    category: 'extract_method' | 'rename' | 'move_class' | 'inline' | 'replace_conditional' | 'eliminate_duplication' | 'improve_naming';
-    applicability: (code: string) => RefactoringOpportunity[];
-    transform: (code: string, opportunity: RefactoringOpportunity) => RefactoringResult;
-    safetyChecks: ((code: string, result: RefactoringResult) => string[])[];
-    priority: number;
-}
-export interface RefactoringOpportunity {
-    ruleId: string;
-    location: {
+    target: {
         file: string;
         startLine: number;
         endLine: number;
-        startColumn: number;
-        endColumn: number;
+        originalCode: string;
     };
-    description: string;
-    impact: 'low' | 'medium' | 'high';
+    transformation: {
+        newCode: string;
+        additionalFiles?: Array<{
+            path: string;
+            content: string;
+        }>;
+    };
+    impact: RefactoringImpact;
+    safety: SafetyAssessment;
+    estimatedEffort: 'low' | 'medium' | 'high';
+}
+export type RefactoringType = 'extract-method' | 'extract-class' | 'rename-variable' | 'rename-method' | 'move-method' | 'inline-method' | 'remove-duplicate' | 'simplify-conditional' | 'replace-magic-number' | 'introduce-parameter-object' | 'remove-dead-code' | 'optimize-imports';
+export interface RefactoringImpact {
+    filesAffected: string[];
+    dependenciesChanged: boolean;
+    testingRequired: boolean;
+    breakingChange: boolean;
+    performanceImprovement: number;
+    maintainabilityImprovement: number;
+}
+export interface SafetyAssessment {
+    riskLevel: 'low' | 'medium' | 'high';
     confidence: number;
-    benefits: string[];
-    risks: string[];
-    estimatedEffort: 'minutes' | 'hours' | 'days';
+    potentialIssues: string[];
     prerequisites: string[];
-    metadata: Record<string, any>;
+    rollbackSupported: boolean;
 }
 export interface RefactoringResult {
     success: boolean;
-    originalCode: string;
-    transformedCode: string;
-    changes: CodeChange[];
-    warnings: string[];
-    errors: string[];
-    preservedBehavior: boolean;
-    testSuggestions: string[];
-    rollbackInstructions: string[];
-}
-export interface CodeChange {
-    type: 'insert' | 'delete' | 'replace' | 'move';
-    location: {
-        startLine: number;
-        endLine: number;
-        startColumn: number;
-        endColumn: number;
+    operationsApplied: RefactoringOperation[];
+    backupCreated: string;
+    filesModified: string[];
+    testResults?: {
+        passed: boolean;
+        details: string;
     };
-    oldContent: string;
-    newContent: string;
-    reason: string;
-}
-export interface RefactoringPlan {
-    opportunities: RefactoringOpportunity[];
-    dependencies: {
-        from: string;
-        to: string;
-        reason: string;
-    }[];
-    executionOrder: string[];
-    totalImpact: {
-        filesAffected: number;
-        linesChanged: number;
-        estimatedTime: string;
-        riskLevel: 'low' | 'medium' | 'high';
-    };
-    rollbackPlan: string[];
-}
-export interface RefactoringSession {
-    id: string;
-    timestamp: Date;
-    plan: RefactoringPlan;
-    results: Map<string, RefactoringResult>;
-    status: 'planned' | 'executing' | 'completed' | 'failed' | 'rolled_back';
-    rollbackPoint: {
-        files: Map<string, string>;
-        timestamp: Date;
-    };
+    rollbackInstructions?: string;
+    error?: string;
 }
 export declare class RefactoringEngine {
-    private rules;
-    private activeSessions;
-    constructor();
+    private config;
+    private backupDirectory;
+    constructor(backupDir?: string);
     /**
-     * Analyze code for refactoring opportunities
+     * Analyze code and suggest refactoring opportunities
      */
-    analyzeRefactoringOpportunities(files: {
+    suggestRefactorings(files: Array<{
         path: string;
         content: string;
-    }[]): Promise<RefactoringOpportunity[]>;
+        type: string;
+    }>, context?: any): Promise<RefactoringOperation[]>;
     /**
-     * Create a refactoring plan from opportunities
+     * Apply refactoring operations safely
      */
-    createRefactoringPlan(opportunities: RefactoringOpportunity[]): RefactoringPlan;
-    /**
-     * Execute a refactoring plan
-     */
-    executeRefactoringPlan(plan: RefactoringPlan, files: Map<string, string>, options?: {
+    applyRefactorings(operations: RefactoringOperation[], options?: {
         dryRun?: boolean;
-        stopOnError?: boolean;
-        autoRollback?: boolean;
-    }): Promise<RefactoringSession>;
+        runTests?: boolean;
+        createBackup?: boolean;
+    }): Promise<RefactoringResult>;
     /**
-     * Rollback a refactoring session
+     * Analyze individual file for refactoring opportunities
      */
-    rollbackSession(sessionId: string): Promise<boolean>;
+    private analyzeFileForRefactoring;
     /**
-     * Get refactoring session status
+     * Detect extract method opportunities
      */
-    getSessionStatus(sessionId: string): RefactoringSession | null;
+    private detectExtractMethodOpportunities;
     /**
-     * Initialize refactoring rules
+     * Detect magic numbers
      */
-    private initializeRules;
+    private detectMagicNumbers;
     /**
-     * Run safety checks for a refactoring result
+     * Detect other refactoring opportunities (simplified implementations)
      */
-    private runSafetyChecks;
+    private detectDuplicateCode;
+    private detectComplexConditionals;
+    private detectDeadCode;
+    private detectImportOptimizations;
     /**
-     * Analyze dependencies between refactoring opportunities
+     * Helper methods
      */
-    private analyzeDependencies;
-    /**
-     * Calculate execution order based on dependencies
-     */
-    private calculateExecutionOrder;
-    /**
-     * Calculate total impact of refactoring plan
-     */
-    private calculateTotalImpact;
-    /**
-     * Create rollback plan
-     */
-    private createRollbackPlan;
-    /**
-     * Generate session ID
-     */
-    private generateSessionId;
-    /**
-     * Check if two locations overlap
-     */
-    private locationsOverlap;
-    /**
-     * Get location from string index
-     */
-    private getLocationFromIndex;
-    /**
-     * Find duplicate code blocks
-     */
-    private findDuplicateCode;
-    /**
-     * Calculate similarity between two strings
-     */
-    private calculateSimilarity;
-    /**
-     * Calculate Levenshtein distance
-     */
-    private levenshteinDistance;
-    /**
-     * Identify extractable blocks within a method
-     */
-    private identifyExtractableBlocks;
-    /**
-     * Generate name suggestions for poorly named variables
-     */
-    private generateNameSuggestions;
+    private calculateRefactoringScore;
+    private generateExtractMethodRefactoring;
+    private validateOperations;
+    private createBackup;
+    private applyOperation;
+    private rollbackOperations;
+    private runTests;
 }
-export declare function createRefactoringEngine(): RefactoringEngine;

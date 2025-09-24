@@ -1,649 +1,519 @@
 /**
  * Architectural Analyzer
  *
- * Advanced architectural pattern detection and analysis system for identifying
- * design patterns, code smells, and architectural improvements in codebases.
+ * Provides comprehensive architectural pattern detection and analysis.
+ * Identifies design patterns, code smells, and architectural improvements.
  */
 import { logger } from '../utils/logger.js';
+import { getPerformanceConfig } from '../config/performance.js';
+import { calculateCyclomaticComplexity } from '../utils/complexity-calculator.js';
 export class ArchitecturalAnalyzer {
-    patterns = [];
-    constructor() {
-        this.initializePatterns();
-    }
+    config = getPerformanceConfig();
     /**
      * Analyze codebase for architectural patterns and issues
      */
-    async analyzeCodebase(files) {
-        const startTime = Date.now();
-        logger.info('Starting architectural analysis', { fileCount: files.length });
-        const findings = [];
-        const detectedPatterns = new Set();
-        // Analyze each file
-        for (const file of files) {
-            const fileFindings = await this.analyzeFile(file.path, file.content);
-            findings.push(...fileFindings);
-            fileFindings.forEach(finding => detectedPatterns.add(finding.patternId));
+    async analyzeArchitecture(files, context) {
+        try {
+            logger.info('Starting architectural analysis', { fileCount: files.length });
+            const patterns = await this.detectDesignPatterns(files);
+            const codeSmells = await this.detectCodeSmells(files);
+            const metrics = await this.calculateArchitecturalMetrics(files);
+            const recommendations = await this.generateRecommendations(patterns, codeSmells, metrics);
+            const analysis = {
+                patterns,
+                codeSmells,
+                metrics,
+                recommendations,
+                summary: this.generateSummary(patterns, codeSmells, metrics)
+            };
+            logger.info('Architectural analysis completed', {
+                patterns: patterns.length,
+                codeSmells: codeSmells.length,
+                maintainabilityIndex: metrics.maintainabilityIndex
+            });
+            return analysis;
         }
-        // Build dependency graph
-        const dependencyGraph = this.buildDependencyGraph(files);
-        // Calculate metrics
-        const metrics = this.calculateArchitecturalMetrics(files, dependencyGraph);
-        // Generate recommendations
-        const recommendations = this.generateRecommendations(findings, dependencyGraph, metrics);
-        // Calculate quality score
-        const qualityScore = this.calculateQualityScore(findings, metrics);
-        const report = {
-            timestamp: new Date(),
-            summary: {
-                totalFindings: findings.length,
-                criticalIssues: findings.filter(f => f.severity === 'error').length,
-                warnings: findings.filter(f => f.severity === 'warning').length,
-                suggestions: findings.filter(f => f.severity === 'info').length,
-                qualityScore
-            },
-            findings,
-            patterns: {
-                detected: Array.from(detectedPatterns),
-                missing: this.identifyMissingPatterns(files, Array.from(detectedPatterns)),
-                recommended: this.recommendPatterns(files, metrics)
-            },
-            recommendations,
-            metrics
-        };
-        logger.info('Architectural analysis completed', {
-            duration: Date.now() - startTime,
-            findings: findings.length,
-            qualityScore
-        });
-        return report;
+        catch (error) {
+            logger.error('Architectural analysis failed:', error);
+            throw error;
+        }
     }
     /**
-     * Analyze a single file for architectural patterns
+     * Detect design patterns in the codebase
      */
-    async analyzeFile(filePath, content) {
-        const findings = [];
-        const lines = content.split('\n');
-        for (const pattern of this.patterns) {
-            if (pattern.pattern instanceof RegExp) {
-                const matches = content.matchAll(new RegExp(pattern.pattern, 'gm'));
-                for (const match of matches) {
-                    const location = this.getLocationFromMatch(match, lines);
-                    const confidence = this.calculatePatternConfidence(pattern, content, match);
-                    if (confidence > 0.3) { // Threshold for reporting
-                        findings.push({
-                            patternId: pattern.id,
-                            patternName: pattern.name,
-                            category: pattern.category,
-                            severity: pattern.severity,
+    async detectDesignPatterns(files) {
+        const patterns = [];
+        for (const file of files) {
+            patterns.push(...this.detectSingletonPattern(file));
+            patterns.push(...this.detectFactoryPattern(file));
+            patterns.push(...this.detectObserverPattern(file));
+            patterns.push(...this.detectDecoratorPattern(file));
+            patterns.push(...this.detectMVCPattern(file));
+            patterns.push(...this.detectRepositoryPattern(file));
+            patterns.push(...this.detectBuilderPattern(file));
+            patterns.push(...this.detectStrategyPattern(file));
+        }
+        return patterns.filter(p => p.confidence >= this.config.codeAnalysis.architectural.confidenceThreshold);
+    }
+    /**
+     * Detect Singleton pattern
+     */
+    detectSingletonPattern(file) {
+        const patterns = [];
+        const lines = file.content.split('\n');
+        // TypeScript/JavaScript Singleton patterns
+        const singletonPatterns = [
+            /class\s+(\w+)[\s\S]*?private\s+static\s+instance/,
+            /private\s+constructor\s*\(/,
+            /public\s+static\s+getInstance\s*\(/,
+            /export\s+const\s+\w+\s*=\s*new\s+/
+        ];
+        let hasPrivateConstructor = false;
+        let hasStaticInstance = false;
+        let hasGetInstance = false;
+        let className = '';
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (singletonPatterns[0].test(line)) {
+                hasStaticInstance = true;
+                const match = line.match(/class\s+(\w+)/);
+                if (match)
+                    className = match[1];
+            }
+            if (singletonPatterns[1].test(line))
+                hasPrivateConstructor = true;
+            if (singletonPatterns[2].test(line))
+                hasGetInstance = true;
+        }
+        if ((hasPrivateConstructor && hasStaticInstance && hasGetInstance) ||
+            file.content.includes('export const') && file.content.includes('new ')) {
+            patterns.push({
+                name: 'Singleton',
+                confidence: Math.max(this.config.codeAnalysis.architectural.confidenceThreshold * 2.8, 0.85),
+                location: {
+                    file: file.path,
+                    startLine: 1,
+                    endLine: lines.length
+                },
+                description: `Singleton pattern detected in ${className || 'exported constant'}`,
+                benefits: [
+                    'Ensures single instance',
+                    'Global point of access',
+                    'Lazy initialization'
+                ],
+                suggestions: [
+                    'Consider dependency injection instead',
+                    'Ensure thread safety if needed',
+                    'Document singleton lifetime'
+                ]
+            });
+        }
+        return patterns;
+    }
+    /**
+     * Detect Factory pattern
+     */
+    detectFactoryPattern(file) {
+        const patterns = [];
+        const factoryPatterns = [
+            /create\w*\s*\(/,
+            /factory/i,
+            /switch\s*\([^)]*type/,
+            /if\s*\([^)]*type.*===.*\)\s*return\s+new/
+        ];
+        let factoryScore = 0;
+        const lines = file.content.split('\n');
+        for (const pattern of factoryPatterns) {
+            if (pattern.test(file.content)) {
+                factoryScore += 0.3;
+            }
+        }
+        if (factoryScore >= 0.6) {
+            patterns.push({
+                name: 'Factory',
+                confidence: Math.min(factoryScore, 0.9),
+                location: {
+                    file: file.path,
+                    startLine: 1,
+                    endLine: lines.length
+                },
+                description: 'Factory pattern detected for object creation',
+                benefits: [
+                    'Encapsulates object creation',
+                    'Supports multiple variants',
+                    'Reduces coupling'
+                ]
+            });
+        }
+        return patterns;
+    }
+    /**
+     * Detect Observer pattern
+     */
+    detectObserverPattern(file) {
+        const patterns = [];
+        const observerIndicators = [
+            /addEventListener|on\w+|subscribe|notify/,
+            /EventEmitter|Observable|Subject/,
+            /observers?\s*[:=]/,
+            /update\s*\(/
+        ];
+        let observerScore = 0;
+        for (const indicator of observerIndicators) {
+            if (indicator.test(file.content)) {
+                observerScore += 0.25;
+            }
+        }
+        if (observerScore >= 0.5) {
+            patterns.push({
+                name: 'Observer',
+                confidence: Math.min(observerScore, 0.9),
+                location: {
+                    file: file.path,
+                    startLine: 1,
+                    endLine: file.content.split('\n').length
+                },
+                description: 'Observer pattern detected for event handling',
+                benefits: [
+                    'Loose coupling between subjects and observers',
+                    'Dynamic relationships',
+                    'Broadcast communication'
+                ]
+            });
+        }
+        return patterns;
+    }
+    /**
+     * Detect other patterns (simplified implementations)
+     */
+    detectDecoratorPattern(file) {
+        if (/@\w+\s*\(|decorator/i.test(file.content)) {
+            return [{
+                    name: 'Decorator',
+                    confidence: 0.7,
+                    location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
+                    description: 'Decorator pattern detected',
+                    benefits: ['Extends functionality', 'Composition over inheritance']
+                }];
+        }
+        return [];
+    }
+    detectMVCPattern(file) {
+        const mvcIndicators = /controller|model|view|router/i;
+        if (mvcIndicators.test(file.path) || mvcIndicators.test(file.content)) {
+            return [{
+                    name: 'MVC',
+                    confidence: 0.6,
+                    location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
+                    description: 'MVC pattern structure detected',
+                    benefits: ['Separation of concerns', 'Maintainable code', 'Testable components']
+                }];
+        }
+        return [];
+    }
+    detectRepositoryPattern(file) {
+        if (/repository|repo\b/i.test(file.path) && /find|save|delete|update/.test(file.content)) {
+            return [{
+                    name: 'Repository',
+                    confidence: 0.8,
+                    location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
+                    description: 'Repository pattern detected for data access',
+                    benefits: ['Data access abstraction', 'Testable persistence', 'Centralized queries']
+                }];
+        }
+        return [];
+    }
+    detectBuilderPattern(file) {
+        if (/builder/i.test(file.path) && /build\(\)|with\w+\(/.test(file.content)) {
+            return [{
+                    name: 'Builder',
+                    confidence: 0.75,
+                    location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
+                    description: 'Builder pattern detected for object construction',
+                    benefits: ['Flexible object creation', 'Readable construction', 'Optional parameters']
+                }];
+        }
+        return [];
+    }
+    detectStrategyPattern(file) {
+        if (/strategy|algorithm/i.test(file.content) && /execute\(|apply\(/.test(file.content)) {
+            return [{
+                    name: 'Strategy',
+                    confidence: 0.7,
+                    location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
+                    description: 'Strategy pattern detected for algorithm selection',
+                    benefits: ['Interchangeable algorithms', 'Runtime selection', 'Open/closed principle']
+                }];
+        }
+        return [];
+    }
+    /**
+     * Detect code smells
+     */
+    async detectCodeSmells(files) {
+        const codeSmells = [];
+        for (const file of files) {
+            codeSmells.push(...this.detectGodClass(file));
+            codeSmells.push(...this.detectLongMethod(file));
+            codeSmells.push(...this.detectDuplicateCode(file, files));
+            codeSmells.push(...this.detectLargeClass(file));
+            codeSmells.push(...this.detectLongParameterList(file));
+        }
+        return codeSmells;
+    }
+    /**
+     * Detect God Class code smell
+     */
+    detectGodClass(file) {
+        const codeSmells = [];
+        const lines = file.content.split('\n');
+        // Count methods and lines in classes
+        let inClass = false;
+        let className = '';
+        let classStartLine = 0;
+        let methodCount = 0;
+        let classLines = 0;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (/class\s+(\w+)/.test(line)) {
+                if (inClass && (methodCount > this.config.codeAnalysis.architectural.godClassMethodLimit ||
+                    classLines > this.config.codeAnalysis.architectural.godClassLineLimit)) {
+                    codeSmells.push({
+                        type: 'God Class',
+                        severity: 'high',
+                        confidence: 0.8,
+                        location: {
+                            file: file.path,
+                            startLine: classStartLine,
+                            endLine: i
+                        },
+                        description: `Class ${className} has ${methodCount} methods and ${classLines} lines`,
+                        impact: 'Reduces maintainability and testability',
+                        suggestion: 'Consider breaking this class into smaller, more focused classes',
+                        effort: 'high'
+                    });
+                }
+                const match = line.match(/class\s+(\w+)/);
+                className = match ? match[1] : '';
+                inClass = true;
+                classStartLine = i + 1;
+                methodCount = 0;
+                classLines = 0;
+            }
+            if (inClass) {
+                classLines++;
+                if (/^\s*(public|private|protected)?\s*(static\s+)?\w+\s*\(/.test(line)) {
+                    methodCount++;
+                }
+            }
+        }
+        return codeSmells;
+    }
+    /**
+     * Detect Long Method code smell
+     */
+    detectLongMethod(file) {
+        const codeSmells = [];
+        const lines = file.content.split('\n');
+        let inMethod = false;
+        let methodStartLine = 0;
+        let methodLines = 0;
+        let methodName = '';
+        let braceCount = 0;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Detect method start
+            const methodMatch = line.match(/^\s*(public|private|protected)?\s*(static\s+)?(async\s+)?(\w+)\s*\(/);
+            if (methodMatch && !inMethod) {
+                methodName = methodMatch[4];
+                methodStartLine = i + 1;
+                methodLines = 0;
+                inMethod = true;
+                braceCount = 0;
+            }
+            if (inMethod) {
+                methodLines++;
+                braceCount += (line.match(/\{/g) || []).length;
+                braceCount -= (line.match(/\}/g) || []).length;
+                if (braceCount === 0 && methodLines > 1) {
+                    if (methodLines > this.config.codeAnalysis.architectural.longMethodLineLimit) {
+                        codeSmells.push({
+                            type: 'Long Method',
+                            severity: 'medium',
+                            confidence: 0.9,
                             location: {
-                                file: filePath,
-                                line: location.line,
-                                column: location.column,
-                                length: match[0].length
+                                file: file.path,
+                                startLine: methodStartLine,
+                                endLine: i + 1
                             },
-                            message: pattern.description,
-                            recommendation: pattern.recommendation,
-                            context: this.getContext(lines, location.line),
-                            confidence
+                            description: `Method ${methodName} has ${methodLines} lines`,
+                            impact: 'Reduces readability and maintainability',
+                            suggestion: 'Consider breaking this method into smaller, more focused methods',
+                            effort: 'medium'
                         });
                     }
+                    inMethod = false;
                 }
             }
-            else if (typeof pattern.pattern === 'function') {
-                const isMatch = pattern.pattern(content);
-                if (isMatch) {
-                    findings.push({
-                        patternId: pattern.id,
-                        patternName: pattern.name,
-                        category: pattern.category,
-                        severity: pattern.severity,
+        }
+        return codeSmells;
+    }
+    /**
+     * Detect duplicate code blocks
+     */
+    detectDuplicateCode(file, allFiles) {
+        const codeSmells = [];
+        const lines = file.content.split('\n');
+        const minBlockSize = this.config.codeAnalysis.architectural.duplicateBlockMinLines;
+        // Simple duplicate detection - look for identical blocks
+        for (let i = 0; i < lines.length - minBlockSize; i++) {
+            const block = lines.slice(i, i + minBlockSize).join('\n');
+            if (block.trim().length > 50) { // Only check substantial blocks
+                const duplicates = this.findDuplicateBlocks(block, allFiles, file.path);
+                if (duplicates.length > 0) {
+                    codeSmells.push({
+                        type: 'Duplicate Code',
+                        severity: 'medium',
+                        confidence: 0.7,
                         location: {
-                            file: filePath,
-                            line: 1,
-                            column: 1,
-                            length: 0
+                            file: file.path,
+                            startLine: i + 1,
+                            endLine: i + minBlockSize
                         },
-                        message: pattern.description,
-                        recommendation: pattern.recommendation,
-                        context: 'File-level pattern',
-                        confidence: 0.8
+                        description: `Duplicate code block found in ${duplicates.length} other location(s)`,
+                        impact: 'Increases maintenance burden and bug risk',
+                        suggestion: 'Extract common code into a shared function or module',
+                        effort: 'medium'
                     });
                 }
             }
         }
-        return findings;
+        return codeSmells;
+    }
+    findDuplicateBlocks(block, allFiles, currentFile) {
+        const duplicates = [];
+        for (const file of allFiles) {
+            if (file.path !== currentFile && file.content.includes(block)) {
+                duplicates.push(file.path);
+            }
+        }
+        return duplicates;
     }
     /**
-     * Build dependency graph for architectural analysis
+     * Detect other code smells (simplified)
      */
-    buildDependencyGraph(files) {
-        const nodes = [];
-        const edges = [];
-        // Extract components and their dependencies
-        for (const file of files) {
-            const component = this.extractComponent(file.path, file.content);
-            if (component) {
-                nodes.push(component);
-                // Create edges for dependencies
-                component.dependencies.forEach(dep => {
-                    edges.push({
-                        from: component.name,
-                        to: dep,
-                        type: 'depends_on',
-                        weight: 1
-                    });
+    detectLargeClass(file) {
+        const lines = file.content.split('\n').length;
+        if (lines > this.config.codeAnalysis.architectural.godClassLineLimit) {
+            return [{
+                    type: 'Large Class',
+                    severity: 'medium',
+                    confidence: 0.8,
+                    location: { file: file.path, startLine: 1, endLine: lines },
+                    description: `File has ${lines} lines`,
+                    impact: 'Reduces maintainability',
+                    suggestion: 'Consider splitting into multiple files',
+                    effort: 'high'
+                }];
+        }
+        return [];
+    }
+    detectLongParameterList(file) {
+        const codeSmells = [];
+        const paramPattern = /\(([^)]*)\)/g;
+        let match;
+        while ((match = paramPattern.exec(file.content)) !== null) {
+            const params = match[1].split(',').filter(p => p.trim());
+            if (params.length > 5) {
+                codeSmells.push({
+                    type: 'Long Parameter List',
+                    severity: 'low',
+                    confidence: 0.9,
+                    location: { file: file.path, startLine: 1, endLine: 1 },
+                    description: `Function has ${params.length} parameters`,
+                    impact: 'Reduces readability',
+                    suggestion: 'Consider using parameter objects or configuration',
+                    effort: 'low'
                 });
             }
         }
-        // Identify architectural layers
-        const layers = this.identifyArchitecturalLayers(nodes, edges);
-        // Detect architectural violations
-        const violations = this.detectArchitecturalViolations(nodes, edges, layers);
-        return { nodes, edges, layers, violations };
+        return codeSmells;
     }
     /**
      * Calculate architectural metrics
      */
-    calculateArchitecturalMetrics(files, graph) {
-        const codeComplexity = this.calculateCodeComplexity(files);
-        const maintainabilityIndex = this.calculateMaintainabilityIndex(files, graph);
-        const technicalDebt = this.calculateTechnicalDebt(files);
-        return {
-            codeComplexity,
-            maintainabilityIndex,
-            technicalDebt
-        };
-    }
-    /**
-     * Initialize architectural patterns for detection
-     */
-    initializePatterns() {
-        this.patterns = [
-            // Design Patterns
-            {
-                id: 'singleton_pattern',
-                name: 'Singleton Pattern',
-                description: 'Singleton pattern detected',
-                pattern: /class\s+\w+\s*{[^}]*private\s+static\s+\w+[^}]*getInstance\s*\(/s,
-                category: 'design_pattern',
-                severity: 'info',
-                recommendation: 'Consider dependency injection for better testability'
-            },
-            {
-                id: 'factory_pattern',
-                name: 'Factory Pattern',
-                description: 'Factory pattern detected',
-                pattern: /class\s+\w*Factory\w*|function\s+create\w+|\.create\w+\s*\(/,
-                category: 'design_pattern',
-                severity: 'info'
-            },
-            {
-                id: 'observer_pattern',
-                name: 'Observer Pattern',
-                description: 'Observer pattern detected',
-                pattern: /(addEventListener|on\w+|subscribe|notify|emit)/,
-                category: 'design_pattern',
-                severity: 'info'
-            },
-            {
-                id: 'strategy_pattern',
-                name: 'Strategy Pattern',
-                description: 'Strategy pattern detected',
-                pattern: /interface\s+\w*Strategy\w*|class\s+\w*Strategy\w*/,
-                category: 'design_pattern',
-                severity: 'info'
-            },
-            // Code Smells
-            {
-                id: 'god_class',
-                name: 'God Class',
-                description: 'Class with too many responsibilities detected',
-                pattern: (code) => {
-                    const classMatch = code.match(/class\s+\w+\s*{([\s\S]*?)}/);
-                    if (classMatch) {
-                        const classBody = classMatch[1];
-                        const methodCount = (classBody.match(/\w+\s*\([^)]*\)\s*{/g) || []).length;
-                        const lineCount = classBody.split('\n').length;
-                        return methodCount > 20 || lineCount > 500;
-                    }
-                    return false;
-                },
-                category: 'code_smell',
-                severity: 'warning',
-                recommendation: 'Break down class into smaller, more focused classes'
-            },
-            {
-                id: 'long_method',
-                name: 'Long Method',
-                description: 'Method with too many lines detected',
-                pattern: (code) => {
-                    const methods = code.matchAll(/(\w+\s*\([^)]*\)\s*{)([\s\S]*?)(?=\n\s*})/g);
-                    for (const method of methods) {
-                        const lineCount = method[2].split('\n').length;
-                        if (lineCount > 50)
-                            return true;
-                    }
-                    return false;
-                },
-                category: 'code_smell',
-                severity: 'warning',
-                recommendation: 'Extract method functionality into smaller methods'
-            },
-            {
-                id: 'duplicate_code',
-                name: 'Duplicate Code',
-                description: 'Similar code blocks detected',
-                pattern: (code) => {
-                    const lines = code.split('\n').filter(line => line.trim().length > 10);
-                    const duplicates = new Set();
-                    for (let i = 0; i < lines.length - 5; i++) {
-                        const block = lines.slice(i, i + 5).join('\n');
-                        const remainingLines = lines.slice(i + 5);
-                        if (remainingLines.some(line => line.includes(block.split('\n')[0]))) {
-                            duplicates.add(block);
-                        }
-                    }
-                    return duplicates.size > 0;
-                },
-                category: 'code_smell',
-                severity: 'warning',
-                recommendation: 'Extract common code into reusable functions or classes'
-            },
-            // Anti-patterns
-            {
-                id: 'callback_hell',
-                name: 'Callback Hell',
-                description: 'Deeply nested callbacks detected',
-                pattern: /callback\s*\([^)]*\)\s*{\s*[^}]*callback\s*\([^)]*\)\s*{\s*[^}]*callback/s,
-                category: 'anti_pattern',
-                severity: 'error',
-                recommendation: 'Use Promises or async/await to flatten callback chains'
-            },
-            {
-                id: 'magic_numbers',
-                name: 'Magic Numbers',
-                description: 'Hardcoded numeric literals detected',
-                pattern: /(?<![a-zA-Z_$])[0-9]{2,}(?![a-zA-Z_$])/g,
-                category: 'code_smell',
-                severity: 'info',
-                recommendation: 'Replace magic numbers with named constants'
-            },
-            {
-                id: 'global_variables',
-                name: 'Global Variables',
-                description: 'Global variable usage detected',
-                pattern: /(var|let|const)\s+[A-Z_][A-Z0-9_]*\s*=/,
-                category: 'anti_pattern',
-                severity: 'warning',
-                recommendation: 'Encapsulate global state in modules or classes'
-            },
-            // Security Issues
-            {
-                id: 'hardcoded_credentials',
-                name: 'Hardcoded Credentials',
-                description: 'Potential hardcoded credentials detected',
-                pattern: /(password|secret|key|token)\s*[:=]\s*['"][^'"]{8,}['"]/i,
-                category: 'code_smell',
-                severity: 'error',
-                recommendation: 'Use environment variables or secure credential storage'
-            },
-            {
-                id: 'eval_usage',
-                name: 'Eval Usage',
-                description: 'Use of eval() function detected',
-                pattern: /\beval\s*\(/,
-                category: 'anti_pattern',
-                severity: 'error',
-                recommendation: 'Avoid eval() - use safer alternatives like JSON.parse()'
-            }
-        ];
-    }
-    /**
-     * Calculate pattern confidence based on context
-     */
-    calculatePatternConfidence(pattern, code, match) {
-        let confidence = 0.5; // Base confidence
-        // Adjust confidence based on pattern type and context
-        if (pattern.category === 'design_pattern') {
-            // Higher confidence for well-formed patterns
-            if (match[0].includes('class') && match[0].includes('interface')) {
-                confidence += 0.3;
-            }
-        }
-        else if (pattern.category === 'code_smell') {
-            // Context-aware confidence for code smells
-            const context = this.getExtendedContext(code, match.index || 0);
-            if (context.includes('TODO') || context.includes('FIXME')) {
-                confidence += 0.2;
-            }
-        }
-        return Math.min(confidence, 1.0);
-    }
-    /**
-     * Get location information from regex match
-     */
-    getLocationFromMatch(match, lines) {
-        const beforeMatch = match.input?.substring(0, match.index) || '';
-        const lineNumber = beforeMatch.split('\n').length;
-        const column = beforeMatch.split('\n').pop()?.length || 0;
-        return { line: lineNumber, column: column + 1 };
-    }
-    /**
-     * Get context around a finding
-     */
-    getContext(lines, lineNumber) {
-        const start = Math.max(0, lineNumber - 3);
-        const end = Math.min(lines.length, lineNumber + 2);
-        return lines.slice(start, end).join('\n');
-    }
-    /**
-     * Get extended context for confidence calculation
-     */
-    getExtendedContext(code, index) {
-        const start = Math.max(0, index - 200);
-        const end = Math.min(code.length, index + 200);
-        return code.substring(start, end);
-    }
-    /**
-     * Extract component information from file
-     */
-    extractComponent(filePath, content) {
-        // Extract class/module name
-        const classMatch = content.match(/(?:class|interface|module)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
-        const functionMatch = content.match(/(?:function|export\s+function)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
-        const name = classMatch?.[1] || functionMatch?.[1] || filePath.split('/').pop()?.replace(/\.[^.]*$/, '') || 'unknown';
-        // Extract dependencies (imports and usages)
-        const dependencies = this.extractDependencies(content);
-        // Calculate coupling and cohesion
-        const coupling = dependencies.length;
-        const cohesion = this.calculateCohesion(content);
-        return {
-            name,
-            type: classMatch ? 'class' : functionMatch ? 'function' : 'module',
-            dependencies,
-            dependents: [], // Will be populated later
-            coupling,
-            cohesion
-        };
-    }
-    /**
-     * Extract dependencies from code
-     */
-    extractDependencies(content) {
-        const dependencies = new Set();
-        // Import statements
-        const importMatches = content.matchAll(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
-        for (const match of importMatches) {
-            dependencies.add(match[1]);
-        }
-        // Require statements
-        const requireMatches = content.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
-        for (const match of requireMatches) {
-            dependencies.add(match[1]);
-        }
-        return Array.from(dependencies);
-    }
-    /**
-     * Calculate cohesion metric for a component
-     */
-    calculateCohesion(content) {
-        // Simple cohesion calculation based on shared variables/methods
-        const variables = content.match(/(?:let|const|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g) || [];
-        const methods = content.match(/(?:function|[A-Za-z_$][A-Za-z0-9_$]*\s*\()/g) || [];
-        if (variables.length === 0 || methods.length === 0)
-            return 0;
-        // Count how many methods use each variable
-        let sharedUsage = 0;
-        variables.forEach(variable => {
-            const varName = variable.split(/\s+/)[1];
-            const usageCount = (content.match(new RegExp(`\\b${varName}\\b`, 'g')) || []).length - 1;
-            if (usageCount > 1)
-                sharedUsage++;
-        });
-        return sharedUsage / variables.length;
-    }
-    /**
-     * Identify architectural layers
-     */
-    identifyArchitecturalLayers(nodes, edges) {
-        // Simple layer identification based on naming conventions and dependencies
-        const layers = [
-            { name: 'Presentation', components: nodes.filter(n => n.name.toLowerCase().includes('view') ||
-                    n.name.toLowerCase().includes('component') ||
-                    n.name.toLowerCase().includes('ui')).map(n => n.name) },
-            { name: 'Business Logic', components: nodes.filter(n => n.name.toLowerCase().includes('service') ||
-                    n.name.toLowerCase().includes('logic') ||
-                    n.name.toLowerCase().includes('manager')).map(n => n.name) },
-            { name: 'Data Access', components: nodes.filter(n => n.name.toLowerCase().includes('repository') ||
-                    n.name.toLowerCase().includes('dao') ||
-                    n.name.toLowerCase().includes('data')).map(n => n.name) }
-        ];
-        return layers.filter(layer => layer.components.length > 0);
-    }
-    /**
-     * Detect architectural violations
-     */
-    detectArchitecturalViolations(nodes, edges, layers) {
-        const violations = [];
-        // Check for circular dependencies
-        const cycles = this.findCircularDependencies(edges);
-        if (cycles.length > 0) {
-            violations.push({
-                type: 'circular_dependency',
-                description: 'Circular dependencies detected',
-                components: cycles.flat()
-            });
-        }
-        // Check for layer violations (lower layers depending on higher layers)
-        for (const edge of edges) {
-            const fromLayer = layers.find(l => l.components.includes(edge.from));
-            const toLayer = layers.find(l => l.components.includes(edge.to));
-            if (fromLayer && toLayer) {
-                const fromIndex = layers.indexOf(fromLayer);
-                const toIndex = layers.indexOf(toLayer);
-                if (fromIndex > toIndex) {
-                    violations.push({
-                        type: 'layer_violation',
-                        description: `${fromLayer.name} layer depends on ${toLayer.name} layer`,
-                        components: [edge.from, edge.to]
-                    });
-                }
-            }
-        }
-        return violations;
-    }
-    /**
-     * Find circular dependencies in the dependency graph
-     */
-    findCircularDependencies(edges) {
-        const graph = new Map();
-        // Build adjacency list
-        edges.forEach(edge => {
-            if (!graph.has(edge.from))
-                graph.set(edge.from, []);
-            graph.get(edge.from).push(edge.to);
-        });
-        const cycles = [];
-        const visited = new Set();
-        const recursionStack = new Set();
-        const dfs = (node, path) => {
-            visited.add(node);
-            recursionStack.add(node);
-            path.push(node);
-            const neighbors = graph.get(node) || [];
-            for (const neighbor of neighbors) {
-                if (recursionStack.has(neighbor)) {
-                    // Found a cycle
-                    const cycleStart = path.indexOf(neighbor);
-                    cycles.push(path.slice(cycleStart));
-                }
-                else if (!visited.has(neighbor)) {
-                    dfs(neighbor, [...path]);
-                }
-            }
-            recursionStack.delete(node);
-        };
-        for (const node of graph.keys()) {
-            if (!visited.has(node)) {
-                dfs(node, []);
-            }
-        }
-        return cycles;
-    }
-    /**
-     * Calculate overall code complexity
-     */
-    calculateCodeComplexity(files) {
+    async calculateArchitecturalMetrics(files) {
         let totalComplexity = 0;
         let totalLines = 0;
+        let coupling = 0;
+        let cohesion = 0;
         for (const file of files) {
-            const lines = file.content.split('\n').length;
-            totalLines += lines;
-            // Simple complexity calculation based on control structures
-            const controlStructures = (file.content.match(/\b(if|for|while|switch|catch)\b/g) || []).length;
-            const nestedStructures = (file.content.match(/\s{4,}(if|for|while)\b/g) || []).length;
-            totalComplexity += controlStructures + (nestedStructures * 2);
+            const fileComplexity = this.calculateFileCyclomaticComplexity(file.content);
+            totalComplexity += fileComplexity;
+            totalLines += file.content.split('\n').length;
+            // Simplified coupling calculation
+            const imports = (file.content.match(/import.*from/g) || []).length;
+            coupling += imports;
         }
-        return totalLines > 0 ? totalComplexity / totalLines * 100 : 0;
+        const avgComplexity = totalComplexity / files.length;
+        const maintainabilityIndex = Math.max(0, 171 - 5.2 * Math.log(avgComplexity) - 0.23 * avgComplexity - 16.2 * Math.log(totalLines / files.length));
+        return {
+            maintainabilityIndex: Math.round(maintainabilityIndex),
+            technicalDebt: Math.round(100 - maintainabilityIndex),
+            complexity: Math.round(avgComplexity),
+            coupling: Math.round(coupling / files.length),
+            cohesion: Math.round(85 - (coupling / files.length) * 2) // Simplified inverse relationship
+        };
     }
     /**
-     * Calculate maintainability index
+     * Calculate cyclomatic complexity using centralized calculator
      */
-    calculateMaintainabilityIndex(files, graph) {
-        // Simplified maintainability index calculation
-        const avgCoupling = graph.nodes.reduce((sum, node) => sum + node.coupling, 0) / graph.nodes.length;
-        const avgCohesion = graph.nodes.reduce((sum, node) => sum + node.cohesion, 0) / graph.nodes.length;
-        const violations = graph.violations.length;
-        let index = 100;
-        index -= avgCoupling * 5; // Penalty for high coupling
-        index += avgCohesion * 10; // Bonus for high cohesion
-        index -= violations * 10; // Penalty for violations
-        return Math.max(0, Math.min(100, index));
+    calculateFileCyclomaticComplexity(content) {
+        const complexityThresholds = {
+            low: this.config.codeAnalysis.quality.complexityThresholds.medium,
+            moderate: this.config.codeAnalysis.quality.complexityThresholds.high,
+            high: this.config.codeAnalysis.quality.complexityThresholds.high * 2
+        };
+        return calculateCyclomaticComplexity(content, { thresholds: complexityThresholds }).cyclomaticComplexity;
     }
     /**
-     * Calculate technical debt
+     * Generate recommendations based on analysis
      */
-    calculateTechnicalDebt(files) {
-        let debtScore = 0;
-        for (const file of files) {
-            // Count code smells and anti-patterns
-            const todos = (file.content.match(/TODO|FIXME|HACK/gi) || []).length;
-            const longLines = file.content.split('\n').filter(line => line.length > 120).length;
-            const complexMethods = (file.content.match(/function[^{]*{[^}]{500,}}/gs) || []).length;
-            debtScore += todos * 1 + longLines * 0.5 + complexMethods * 5;
-        }
-        return debtScore;
-    }
-    /**
-     * Generate architectural recommendations
-     */
-    generateRecommendations(findings, graph, metrics) {
+    async generateRecommendations(patterns, codeSmells, metrics) {
         const recommendations = [];
-        // High-priority recommendations based on critical findings
-        const criticalFindings = findings.filter(f => f.severity === 'error');
-        if (criticalFindings.length > 0) {
-            recommendations.push({
-                priority: 'high',
-                category: 'Security',
-                description: 'Address critical security and anti-pattern issues',
-                impact: 'Prevents security vulnerabilities and improves code safety',
-                effort: 'medium'
-            });
-        }
-        // Architecture recommendations based on violations
-        if (graph.violations.length > 0) {
-            recommendations.push({
-                priority: 'high',
-                category: 'Architecture',
-                description: 'Resolve architectural violations and circular dependencies',
-                impact: 'Improves maintainability and reduces coupling',
-                effort: 'high'
-            });
-        }
         // Maintainability recommendations
-        if (metrics.maintainabilityIndex < 60) {
-            recommendations.push({
-                priority: 'medium',
-                category: 'Maintainability',
-                description: 'Refactor code to improve maintainability index',
-                impact: 'Easier code maintenance and development velocity',
-                effort: 'medium'
-            });
+        if (metrics.maintainabilityIndex < this.config.codeAnalysis.quality.maintainabilityThresholds.fair) {
+            recommendations.push('Consider refactoring to improve maintainability index');
         }
-        // Technical debt recommendations
-        if (metrics.technicalDebt > 50) {
-            recommendations.push({
-                priority: 'medium',
-                category: 'Technical Debt',
-                description: 'Address accumulated technical debt',
-                impact: 'Improved code quality and development speed',
-                effort: 'high'
-            });
+        // Code smell recommendations
+        const criticalSmells = codeSmells.filter(s => s.severity === 'critical' || s.severity === 'high');
+        if (criticalSmells.length > 0) {
+            recommendations.push(`Address ${criticalSmells.length} critical code smell(s) to improve code quality`);
         }
-        return recommendations;
-    }
-    /**
-     * Identify missing beneficial patterns
-     */
-    identifyMissingPatterns(files, detected) {
-        const missing = [];
-        // Check for error handling patterns
-        if (!detected.includes('error_handling') &&
-            files.some(f => f.content.includes('throw') || f.content.includes('catch'))) {
-            missing.push('Comprehensive error handling strategy');
+        // Pattern recommendations
+        if (patterns.length === 0) {
+            recommendations.push('Consider implementing design patterns to improve code structure');
         }
-        // Check for logging patterns
-        if (!detected.includes('logging') &&
-            !files.some(f => f.content.includes('console.log') || f.content.includes('logger'))) {
-            missing.push('Structured logging system');
+        // Complexity recommendations
+        if (metrics.complexity > this.config.codeAnalysis.quality.complexityThresholds.high) {
+            recommendations.push('Reduce code complexity through method extraction and simplification');
         }
-        // Check for testing patterns
-        if (!files.some(f => f.path.includes('test') || f.path.includes('spec'))) {
-            missing.push('Comprehensive test coverage');
-        }
-        return missing;
-    }
-    /**
-     * Recommend patterns based on codebase analysis
-     */
-    recommendPatterns(files, metrics) {
-        const recommendations = [];
-        if (metrics.codeComplexity > 15) {
-            recommendations.push('Strategy Pattern for complex conditionals');
-        }
-        if (metrics.maintainabilityIndex < 60) {
-            recommendations.push('Dependency Injection for better testability');
-            recommendations.push('Repository Pattern for data access');
-        }
-        if (files.length > 50) {
-            recommendations.push('Module Pattern for better organization');
-            recommendations.push('Facade Pattern for simplified interfaces');
+        // Coupling recommendations
+        if (metrics.coupling > 10) {
+            recommendations.push('Reduce coupling between components through dependency injection');
         }
         return recommendations;
     }
     /**
-     * Calculate overall quality score
+     * Generate analysis summary
      */
-    calculateQualityScore(findings, metrics) {
-        let score = 100;
-        // Penalty for findings
-        const criticalPenalty = findings.filter(f => f.severity === 'error').length * 15;
-        const warningPenalty = findings.filter(f => f.severity === 'warning').length * 5;
-        const infoPenalty = findings.filter(f => f.severity === 'info').length * 1;
-        score -= criticalPenalty + warningPenalty + infoPenalty;
-        // Factor in maintainability index
-        score = (score + metrics.maintainabilityIndex) / 2;
-        // Penalty for high complexity
-        if (metrics.codeComplexity > 20) {
-            score -= (metrics.codeComplexity - 20) * 2;
-        }
-        // Penalty for technical debt
-        score -= Math.min(metrics.technicalDebt / 10, 20);
-        return Math.max(0, Math.min(100, Math.round(score)));
+    generateSummary(patterns, codeSmells, metrics) {
+        const patternCount = patterns.length;
+        const smellCount = codeSmells.length;
+        const criticalSmells = codeSmells.filter(s => s.severity === 'critical' || s.severity === 'high').length;
+        return `Architectural analysis found ${patternCount} design pattern(s) and ${smellCount} code smell(s) ` +
+            `(${criticalSmells} critical). Maintainability index: ${metrics.maintainabilityIndex}/100. ` +
+            `Complexity: ${metrics.complexity}, Coupling: ${metrics.coupling}.`;
     }
-}
-// Factory function for easy instantiation
-export function createArchitecturalAnalyzer() {
-    return new ArchitecturalAnalyzer();
 }
 //# sourceMappingURL=architectural-analyzer.js.map

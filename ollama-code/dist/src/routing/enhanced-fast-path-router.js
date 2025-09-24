@@ -180,7 +180,11 @@ export class EnhancedFastPathRouter {
             /\b(how to|how can|can you|please|help me)\b/i,
             /\b(i want|i need|i would like)\b/i,
             /\b(what is|what are|explain|describe)\b/i,
-            /\b(complete|comprehensive|full|entire)\b.*\b(testing|framework|system|solution)\b/i
+            /\b(complete|comprehensive|full|entire)\b.*\b(testing|framework|system|solution)\b/i,
+            /\b(analyze|review|examine)\s+.*\b(code|performance|characteristics|quality|structure)/i,
+            /\b(refactor|improve|optimize|enhance)\s+.*\b(code|function|class|component)/i,
+            /\b(find|identify|detect)\s+.*\b(issues|problems|bugs|errors|vulnerabilities)/i,
+            /\b(generate|write|create)\s+.*\b(tests|documentation|comments|examples)/i
         ];
         return naturalLanguageIndicators.some(pattern => pattern.test(input));
     }
@@ -358,19 +362,31 @@ export class EnhancedFastPathRouter {
         // Pattern contains input (partial match)
         if (pattern.includes(input))
             return 0.8;
-        // Word-based matching
+        // Word-based matching with improved precision
         const inputWords = input.split(/\s+/);
         const patternWords = pattern.split(/\s+/);
         let matchedWords = 0;
+        const matchedInputWords = new Set();
         for (const word of inputWords) {
-            if (patternWords.some(pw => pw.includes(word) || word.includes(pw))) {
-                matchedWords++;
+            for (const pw of patternWords) {
+                // Only match if words are identical, or if one is a meaningful prefix/suffix
+                // Avoid matching short substrings like "is" in "characteristics"
+                if (word === pw ||
+                    (word.length > 3 && pw.length > 3 &&
+                        (word.startsWith(pw) || pw.startsWith(word) ||
+                            word.endsWith(pw) || pw.endsWith(word)))) {
+                    if (!matchedInputWords.has(word)) {
+                        matchedWords++;
+                        matchedInputWords.add(word);
+                        break;
+                    }
+                }
             }
         }
         const wordScore = matchedWords / Math.max(inputWords.length, patternWords.length);
-        // Lower the threshold for better matching
-        if (wordScore > 0.3) {
-            return Math.max(wordScore * 0.8, 0.7); // Ensure minimum score of 0.7 for partial matches
+        // Require higher word match ratio for pattern matching
+        if (wordScore > 0.4) {
+            return Math.max(wordScore * 0.8, 0.6); // Reduced minimum score
         }
         return 0;
     }
