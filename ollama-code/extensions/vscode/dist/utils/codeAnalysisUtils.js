@@ -50,6 +50,28 @@ class CodeAnalysisUtils {
         return analysisConstants_1.SUPPORTED_LANGUAGES.includes(languageId);
     }
     /**
+     * Validate file size for analysis
+     */
+    static validateFileSize(text, maxSizeKB) {
+        const sizeKB = text.length / 1024;
+        const maxSize = maxSizeKB || analysisConstants_1.CODE_METRICS_THRESHOLDS.MAX_FILE_SIZE_KB;
+        return {
+            isValid: sizeKB <= maxSize,
+            sizeKB: Math.round(sizeKB * 100) / 100 // Round to 2 decimal places
+        };
+    }
+    /**
+     * Check if file is too large for analysis and log warning if needed
+     */
+    static checkFileSizeForAnalysis(text, fileName, logger) {
+        const { isValid, sizeKB } = this.validateFileSize(text);
+        if (!isValid && logger) {
+            const fileInfo = fileName ? ` ${fileName}` : '';
+            logger.warn(`File${fileInfo} is too large (${sizeKB}KB) for analysis`);
+        }
+        return isValid;
+    }
+    /**
      * Calculate cyclomatic complexity with improved accuracy
      */
     static calculateComplexity(text) {
@@ -229,33 +251,32 @@ class CodeAnalysisUtils {
      * Get function regex patterns for different languages
      */
     static getFunctionPatterns(languageId) {
-        const upperLangId = languageId.toUpperCase();
-        // Handle special cases
+        // Handle special cases and convert readonly arrays to mutable arrays
         switch (languageId.toLowerCase()) {
             case 'typescript':
             case 'javascript':
-                return analysisConstants_1.LANGUAGE_PATTERNS.TYPESCRIPT.FUNCTIONS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.TYPESCRIPT.FUNCTIONS];
             case 'python':
-                return analysisConstants_1.LANGUAGE_PATTERNS.PYTHON.FUNCTIONS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.PYTHON.FUNCTIONS];
             case 'java':
-                return analysisConstants_1.LANGUAGE_PATTERNS.JAVA.METHODS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.JAVA.METHODS];
             case 'csharp':
-                return analysisConstants_1.LANGUAGE_PATTERNS.CSHARP.METHODS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.CSHARP.METHODS];
             case 'cpp':
             case 'c':
-                return analysisConstants_1.LANGUAGE_PATTERNS.CPP.FUNCTIONS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.CPP.FUNCTIONS];
             case 'go':
-                return analysisConstants_1.LANGUAGE_PATTERNS.GO.FUNCTIONS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.GO.FUNCTIONS];
             case 'rust':
-                return analysisConstants_1.LANGUAGE_PATTERNS.RUST.FUNCTIONS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.RUST.FUNCTIONS];
             default:
-                return analysisConstants_1.LANGUAGE_PATTERNS.GENERIC.FUNCTIONS;
+                return [...analysisConstants_1.LANGUAGE_PATTERNS.GENERIC.FUNCTIONS];
         }
     }
     /**
      * Extract function information from document with improved error handling
      */
-    static async extractFunctions(document) {
+    static async extractFunctions(document, cancellationToken) {
         const functions = [];
         const text = document.getText();
         // Check file size limit
@@ -267,10 +288,16 @@ class CodeAnalysisUtils {
         const lines = text.split('\n');
         const patterns = this.getFunctionPatterns(document.languageId);
         for (const pattern of patterns) {
+            // Check for cancellation
+            if (cancellationToken?.isCancellationRequested) {
+                break;
+            }
             // Reset regex lastIndex to avoid issues with global regexes
             pattern.lastIndex = 0;
             const matches = text.matchAll(pattern);
             for (const match of matches) {
+                if (cancellationToken?.isCancellationRequested)
+                    break;
                 if (match.index === undefined)
                     continue;
                 try {

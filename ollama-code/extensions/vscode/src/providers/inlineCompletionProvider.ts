@@ -9,7 +9,8 @@ import * as vscode from 'vscode';
 import { OllamaCodeClient } from '../client/ollamaCodeClient';
 import { Logger } from '../utils/logger';
 import { CodeAnalysisUtils } from '../utils/codeAnalysisUtils';
-import { CODE_METRICS_THRESHOLDS } from '../config/analysisConstants';
+import { TIMEOUT_CONSTANTS } from '../config/analysisConstants';
+import { ProviderCache, CACHE_TTL } from '../utils/cacheUtils';
 
 interface CompletionContext {
   functionName?: string;
@@ -22,8 +23,7 @@ interface CompletionContext {
 }
 
 export class InlineCompletionProvider implements vscode.InlineCompletionItemProvider {
-  private completionCache = new Map<string, { completion: string; timestamp: number }>();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private completionCache = new ProviderCache<string>(CACHE_TTL.COMPLETION);
 
   constructor(
     private client: OllamaCodeClient,
@@ -48,9 +48,7 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
 
       // Check file size limits
       const text = document.getText();
-      const fileSizeKB = text.length / 1024;
-      if (fileSizeKB > CODE_METRICS_THRESHOLDS.MAX_FILE_SIZE_KB) {
-        this.logger.warn(`File too large for completion: ${fileSizeKB.toFixed(1)}KB`);
+      if (!CodeAnalysisUtils.checkFileSizeForAnalysis(text, document.fileName, this.logger)) {
         return [];
       }
 
@@ -73,8 +71,8 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
       // Check cache first
       const cacheKey = this.createCacheKey(document, position, completionContext);
       const cached = this.completionCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-        return this.createCompletionItems(cached.completion, position);
+      if (cached) {
+        return this.createCompletionItems(cached, position);
       }
 
       // Get contextual prompt
@@ -87,7 +85,7 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
           language: document.languageId
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Completion timeout')), 5000)
+          setTimeout(() => reject(new Error('Completion timeout')), TIMEOUT_CONSTANTS.COMPLETION_TIMEOUT)
         )
       ]) as any;
 
@@ -99,10 +97,7 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
         const completion = this.processCompletion(result.result, prefix, completionContext);
 
         // Cache the result
-        this.completionCache.set(cacheKey, {
-          completion,
-          timestamp: Date.now()
-        });
+        this.completionCache.set(cacheKey, completion);
 
         return this.createCompletionItems(completion, position);
       }
@@ -367,14 +362,9 @@ export class InlineCompletionProvider implements vscode.InlineCompletionItemProv
   }
 
   /**
-   * Clean up expired cache entries
+   * Dispose of resources
    */
-  private cleanupCache(): void {
-    const now = Date.now();
-    for (const [key, value] of this.completionCache.entries()) {
-      if (now - value.timestamp > this.CACHE_TTL) {
-        this.completionCache.delete(key);
-      }
-    }
+  dispose(): void {
+    this.completionCache.dispose();
   }
 }

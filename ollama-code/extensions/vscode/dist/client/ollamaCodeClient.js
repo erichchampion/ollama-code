@@ -37,9 +37,12 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OllamaCodeClient = void 0;
-const WebSocket = __importStar(require("ws"));
+const ws_1 = __importDefault(require("ws"));
 const vscode = __importStar(require("vscode"));
 const events_1 = require("events");
 class OllamaCodeClient extends events_1.EventEmitter {
@@ -67,21 +70,21 @@ class OllamaCodeClient extends events_1.EventEmitter {
                 reject(new Error('Connection timeout'));
             }, this.config.connectionTimeout);
             try {
-                this.ws = new WebSocket(`ws://localhost:${this.config.port}`);
-                this.ws.on('open', () => {
+                this.ws = new ws_1.default(`ws://localhost:${this.config.port}`);
+                this.ws?.on('open', () => {
                     clearTimeout(timeout);
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
                     this.emit('connected');
                     resolve();
                 });
-                this.ws.on('message', (data) => {
+                this.ws?.on('message', (data) => {
                     this.handleMessage(data);
                 });
-                this.ws.on('close', (code, reason) => {
+                this.ws?.on('close', (code, reason) => {
                     this.handleDisconnection(code, reason);
                 });
-                this.ws.on('error', (error) => {
+                this.ws?.on('error', (error) => {
                     clearTimeout(timeout);
                     this.emit('error', error);
                     if (!this.isConnected) {

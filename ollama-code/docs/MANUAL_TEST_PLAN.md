@@ -3683,6 +3683,519 @@ def find_duplicates(arr):
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+### Test Group: Enhanced CodeActionProvider - AI-Powered Quick Fixes
+**Priority: Critical**
+
+#### Test: AI-Powered Quick Fix Suggestions
+**Test Setup:**
+1. Open VS Code with the ollama-code extension activated
+2. Create test files with various code issues
+3. Right-click on code issues to access Quick Fix menu
+4. Test AI-powered suggestions and improvements
+
+**Test Files to Create:**
+```javascript
+// test-code-actions.js - Various code issues for AI fixing
+function calculateTotal(items) {
+    var total = 0;  // Style issue: using var
+    for (var i = 0; i < items.length; i++) {  // Performance: not caching length
+        if (items[i].price == null) {  // Logic: loose equality
+            continue;
+        }
+        total += items[i].price;
+    }
+    return total;
+}
+
+// Missing error handling
+function processUserData(userData) {
+    const result = JSON.parse(userData);
+    return result.name.toUpperCase();
+}
+
+// Inefficient algorithm
+function findDuplicate(arr) {
+    for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+            if (arr[i] === arr[j]) {
+                return arr[i];
+            }
+        }
+    }
+}
+
+// Security issue
+function createUser(name) {
+    const query = `INSERT INTO users (name) VALUES ('${name}')`;
+    return executeQuery(query);
+}
+```
+
+**AI Quick Fix Tests:**
+1. **Style Improvements:**
+   - Right-click on `var` declarations → verify "Convert to let/const" action
+   - Select function → verify "Modernize JavaScript" action
+   - Check AI suggests appropriate modern syntax replacements
+
+2. **Performance Optimizations:**
+   - Right-click on loop → verify "Optimize loop performance" action
+   - Select inefficient algorithm → verify "Improve algorithm efficiency" action
+   - Check AI suggests concrete performance improvements
+
+3. **Security Fixes:**
+   - Right-click on SQL string concatenation → verify "Fix SQL injection" action
+   - Select vulnerable code → verify "Apply security best practices" action
+   - Check AI provides secure code alternatives
+
+4. **Error Handling:**
+   - Right-click on risky code → verify "Add error handling" action
+   - Select function → verify "Improve error handling" action
+   - Check AI suggests try/catch blocks and validation
+
+**Expected Results:**
+- ✅ **Contextual Actions** AI suggestions are relevant to selected code
+- ✅ **Security Fixes** identifies and fixes security vulnerabilities
+- ✅ **Performance Improvements** suggests concrete optimization strategies
+- ✅ **Error Handling** adds appropriate try/catch and validation logic
+- ✅ **Code Modernization** updates legacy patterns to modern standards
+- ✅ **Actionable Suggestions** all suggestions are immediately applicable
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Refactoring and Code Improvement Actions
+**Test Setup:**
+Create complex code that needs refactoring:
+
+```typescript
+// test-refactoring.ts - Code needing refactoring
+export class OrderProcessor {
+    processOrder(orderData: any): any {
+        // Method too long - needs extraction
+        let total = 0;
+        const tax = 0.08;
+        const shipping = 5.99;
+
+        // Validation
+        if (!orderData || !orderData.items || orderData.items.length === 0) {
+            throw new Error('Invalid order data');
+        }
+
+        // Calculate subtotal
+        for (const item of orderData.items) {
+            if (!item.price || item.price < 0) {
+                throw new Error('Invalid item price');
+            }
+            if (!item.quantity || item.quantity < 1) {
+                throw new Error('Invalid item quantity');
+            }
+            total += item.price * item.quantity;
+        }
+
+        // Apply discounts
+        if (orderData.discountCode) {
+            if (orderData.discountCode === 'SAVE10') {
+                total *= 0.9;
+            } else if (orderData.discountCode === 'SAVE20') {
+                total *= 0.8;
+            } else if (orderData.discountCode === 'FIRSTTIME') {
+                total *= 0.85;
+            }
+        }
+
+        // Calculate final total
+        const taxAmount = total * tax;
+        const finalTotal = total + taxAmount + shipping;
+
+        // Create result object
+        return {
+            subtotal: total,
+            tax: taxAmount,
+            shipping: shipping,
+            total: finalTotal,
+            items: orderData.items
+        };
+    }
+}
+
+// Duplicate code that should be extracted
+class UserManager {
+    createUser(userData: any) {
+        // Validation logic (duplicated)
+        if (!userData.email || !userData.email.includes('@')) {
+            throw new Error('Invalid email');
+        }
+        if (!userData.name || userData.name.length < 2) {
+            throw new Error('Invalid name');
+        }
+        if (!userData.age || userData.age < 18) {
+            throw new Error('Must be 18 or older');
+        }
+        // ... rest of user creation
+    }
+
+    updateUser(userData: any) {
+        // Same validation logic (duplicated)
+        if (!userData.email || !userData.email.includes('@')) {
+            throw new Error('Invalid email');
+        }
+        if (!userData.name || userData.name.length < 2) {
+            throw new Error('Invalid name');
+        }
+        if (!userData.age || userData.age < 18) {
+            throw new Error('Must be 18 or older');
+        }
+        // ... rest of user update
+    }
+}
+```
+
+**Refactoring Action Tests:**
+1. **Extract Method:**
+   - Select validation logic in `processOrder` → verify "Extract method" action
+   - Select discount calculation → verify "Extract method" action
+   - Check AI suggests appropriate method names and parameters
+
+2. **Extract Common Code:**
+   - Select duplicate validation in `UserManager` → verify "Extract to shared method" action
+   - Select repeated patterns → verify "Eliminate duplication" action
+   - Check AI creates reusable utility methods
+
+3. **Improve Method Complexity:**
+   - Right-click on `processOrder` → verify "Reduce method complexity" action
+   - Select complex method → verify "Break down large method" action
+   - Check AI suggests logical method breakdown
+
+4. **Type Safety Improvements:**
+   - Right-click on `any` type → verify "Add proper typing" action
+   - Select untyped parameters → verify "Improve type definitions" action
+   - Check AI suggests specific interface types
+
+**Expected Results:**
+- ✅ **Method Extraction** creates well-named, focused methods
+- ✅ **Code Deduplication** eliminates repeated logic effectively
+- ✅ **Type Safety** adds appropriate TypeScript types and interfaces
+- ✅ **Complexity Reduction** breaks down large methods logically
+- ✅ **Maintainability** refactored code is more readable and maintainable
+- ✅ **Preserve Functionality** refactoring maintains original behavior
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Enhanced ChatViewProvider - Comprehensive AI Sidebar Panel
+**Priority: Critical**
+
+#### Test: Interactive AI Chat Interface
+**Test Setup:**
+1. Open VS Code with ollama-code extension installed
+2. Verify "AI Chat" panel appears in Explorer sidebar
+3. Test interactive chat functionality with workspace context
+4. Verify real-time connection status and controls
+
+**Chat Interface Tests:**
+1. **Basic Chat Functionality:**
+   - Open AI Chat panel → verify chat interface loads
+   - Type "Hello, can you help me with code?" → verify AI responds
+   - Send multiple messages → verify conversation history maintained
+   - Scroll through long conversations → verify smooth scrolling
+
+2. **Workspace Context Integration:**
+   - Open a JavaScript file → verify "Current File" shows in chat header
+   - Select code text → verify "Selection" indicator appears
+   - Ask "Explain this code" → verify AI uses current file/selection context
+   - Switch files → verify context updates automatically
+
+3. **Quick Action Buttons:**
+   - Click "Analyze Project" button → verify project analysis starts
+   - Click "Explain Code" with selection → verify contextual explanation
+   - Click "Generate Tests" → verify test generation for current file
+   - Click "Find Issues" → verify code analysis begins
+
+4. **Connection Status Display:**
+   - With server running → verify "Connected" status shows green
+   - Stop ollama-code server → verify "Disconnected" status shows red
+   - Restart server → verify status updates to "Connected" automatically
+   - Test "Reconnect" button when disconnected
+
+**Expected Results:**
+- ✅ **Chat Interface** responsive and user-friendly chat experience
+- ✅ **Context Awareness** AI understands current file and selection
+- ✅ **Quick Actions** buttons provide immediate access to common tasks
+- ✅ **Real-time Status** connection status updates automatically
+- ✅ **Conversation History** maintains chat history across sessions
+- ✅ **Visual Polish** professional appearance with proper theming
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Workspace Context Tracking and Analysis
+**Test Setup:**
+Create a test workspace with multiple files and test context tracking:
+
+```javascript
+// src/utils/calculator.js
+export class Calculator {
+    add(a, b) {
+        return a + b;
+    }
+
+    divide(a, b) {
+        // Potential division by zero
+        return a / b;
+    }
+}
+
+// src/api/userService.js
+export class UserService {
+    constructor() {
+        this.users = [];
+    }
+
+    async createUser(userData) {
+        // Missing validation
+        this.users.push(userData);
+        return userData;
+    }
+}
+
+// tests/calculator.test.js (incomplete)
+import { Calculator } from '../src/utils/calculator.js';
+
+describe('Calculator', () => {
+    // Missing tests
+});
+```
+
+**Context Tracking Tests:**
+1. **File Context Recognition:**
+   - Open `calculator.js` → verify chat shows "📄 calculator.js"
+   - Switch to `userService.js` → verify context updates
+   - Open `calculator.test.js` → verify test file context recognized
+
+2. **Selection Context:**
+   - Select `divide` method → ask "What's wrong with this?"
+   - Verify AI identifies division by zero issue
+   - Select `createUser` method → ask "How can I improve this?"
+   - Verify AI suggests validation improvements
+
+3. **Project-Wide Analysis:**
+   - Click "Analyze Project" → verify workspace overview generated
+   - Ask "What files need tests?" → verify identifies missing test coverage
+   - Ask "What are the security issues?" → verify scans all files
+
+4. **Language-Specific Context:**
+   - Open JavaScript file → verify JS-specific suggestions
+   - Open TypeScript file → verify TS-specific analysis
+   - Open JSON/config file → verify appropriate context handling
+
+**Expected Results:**
+- ✅ **File Tracking** accurately tracks current active file
+- ✅ **Selection Context** provides context-aware responses for selections
+- ✅ **Project Understanding** maintains understanding of project structure
+- ✅ **Language Awareness** adapts responses to specific file types
+- ✅ **Multi-file Analysis** can analyze relationships between files
+- ✅ **Context Persistence** maintains context across VS Code sessions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: StatusBarProvider - Real-Time AI Status Integration
+**Priority: High**
+
+#### Test: Connection Status Monitoring and Display
+**Test Setup:**
+1. Install and activate ollama-code VS Code extension
+2. Verify status bar shows AI connection status
+3. Test status updates with server start/stop cycles
+
+**Connection Status Tests:**
+1. **Initial Connection Status:**
+   - Fresh VS Code start → verify shows "🔌 Ollama Disconnected"
+   - Status has red background → indicates disconnected state
+   - Tooltip shows "Ollama Code is disconnected. Click to reconnect."
+
+2. **Connection Process:**
+   - Start ollama-code server → verify status shows "⏳ Connecting..."
+   - Status shows yellow background during connection
+   - After connection → verify status shows "🔌 Ollama Connected"
+   - Connected status has normal background/colors
+
+3. **Connection Monitoring:**
+   - Stop server while connected → verify status updates to disconnected
+   - Status change happens within 5 seconds of server stop
+   - Restart server → verify reconnection within 5 seconds
+   - Click status item → verify toggles connection attempt
+
+4. **Status Item Click Actions:**
+   - Click "Ollama Disconnected" → verify attempts reconnection
+   - Click "Ollama Connected" → verify shows connection details
+   - Hover over status → verify shows helpful tooltip information
+
+**Expected Results:**
+- ✅ **Real-time Updates** status reflects actual connection state
+- ✅ **Visual Indicators** appropriate colors and icons for each state
+- ✅ **Click Actions** clicking status provides useful actions
+- ✅ **Tooltip Information** helpful information on hover
+- ✅ **Responsive Updates** status updates within 5 seconds of changes
+- ✅ **Error Resilience** handles server crashes gracefully
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: AI Operation Progress and Notifications
+**Test Setup:**
+Test status bar updates during AI operations:
+
+**Operation Status Tests:**
+1. **Code Analysis Progress:**
+   - Trigger "Analyze Code" command → verify shows "🔍 Analyzing code..."
+   - Progress indicator shows during analysis
+   - Completion shows "✅ Analysis complete" briefly
+   - Status clears after 3 seconds
+
+2. **Code Generation Progress:**
+   - Use "Generate Tests" command → verify shows "⚙️ Generating suggestions..."
+   - Long operations show progress percentage if available
+   - Completion shows "✅ Generation complete"
+   - Error states show "❌ Failed: error message"
+
+3. **Refactoring Operations:**
+   - Use refactor command → verify shows "🔧 Refactoring code..."
+   - Multi-step operations show progress updates
+   - Completion shows appropriate success message
+   - Auto-hide after completion
+
+4. **Notification System:**
+   - Test info notification → verify shows "ℹ️ Info message"
+   - Test warning notification → verify shows "⚠️ Warning message"
+   - Test error notification → verify shows "❌ Error message"
+   - Notifications auto-dismiss after 5 seconds
+
+**Expected Results:**
+- ✅ **Operation Visibility** clearly shows what AI is doing
+- ✅ **Progress Feedback** provides progress information when available
+- ✅ **Success Indicators** confirms when operations complete successfully
+- ✅ **Error Communication** clearly shows errors with helpful messages
+- ✅ **Appropriate Timing** shows/hides status at appropriate times
+- ✅ **Visual Hierarchy** uses appropriate colors and icons
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Quick Actions and Context Updates
+**Test Setup:**
+Test the "🤖 AI" quick actions button and context-sensitive updates:
+
+**Quick Actions Tests:**
+1. **Basic Quick Actions:**
+   - Click "🤖 AI" button → verify shows quick actions menu
+   - Menu includes: Ask AI, Explain Code, Generate Tests, Find Issues
+   - Actions are enabled/disabled based on context appropriately
+
+2. **Context-Sensitive Updates:**
+   - No file open → button shows "🤖 AI" with basic tooltip
+   - Open file → button updates to show file is ready for AI
+   - Select code → button shows "🤖 AI (Selected)"
+   - Tooltip updates to mention selection analysis available
+
+3. **Connection State Integration:**
+   - When disconnected → button shows "🤖 AI (Offline)" with red background
+   - When connected → button shows normal state
+   - Quick actions disabled when offline
+   - Reconnection enables actions automatically
+
+4. **Workspace Context:**
+   - Open workspace → button adapts to workspace features
+   - Multi-file context → button shows project-aware options
+   - Language-specific files → button prioritizes relevant actions
+
+**Expected Results:**
+- ✅ **Quick Access** one-click access to common AI features
+- ✅ **Context Awareness** button state reflects current editor context
+- ✅ **Connection Integration** button state reflects AI availability
+- ✅ **Workspace Intelligence** adapts to current workspace/project
+- ✅ **Visual Feedback** clear visual indicators for different states
+- ✅ **Accessibility** proper tooltips and keyboard navigation
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Command Palette Integration - AI Operations
+**Priority: High**
+
+#### Test: AI Command Discovery and Execution
+**Test Setup:**
+1. Open VS Code with ollama-code extension activated
+2. Press Ctrl/Cmd+Shift+P to open Command Palette
+3. Test all AI-related commands are accessible and functional
+
+**Command Palette Tests:**
+1. **Core AI Commands:**
+   - Search "Ollama Code: Ask AI" → verify command appears and executes
+   - Search "Ollama Code: Explain Code" → verify works with selection
+   - Search "Ollama Code: Refactor Code" → verify refactors selected code
+   - Search "Ollama Code: Fix Code Issues" → verify identifies and fixes issues
+
+2. **Specialized Analysis Commands:**
+   - Search "Ollama Code: Optimize Code Performance" → verify suggests optimizations
+   - Search "Ollama Code: Generate Unit Tests" → verify creates tests
+   - Search "Ollama Code: Run Security Analysis" → verify scans for security issues
+   - Search "Ollama Code: Find Bugs and Issues" → verify identifies potential bugs
+
+3. **Documentation and Quality Commands:**
+   - Search "Ollama Code: Add Documentation" → verify adds appropriate comments/docs
+   - Search "Ollama Code: Improve Code Readability" → verify enhances readability
+   - Search "Ollama Code: Analyze Function Complexity" → verify analyzes complexity
+   - Search "Ollama Code: Analyze Current File" → verify provides file analysis
+
+4. **Integration and Control Commands:**
+   - Search "Ollama Code: Start Integration Server" → verify starts background server
+   - Search "Ollama Code: Stop Integration Server" → verify stops server
+   - Search "Ollama Code: Show Output" → verify opens extension output panel
+   - Search "Ollama Code: Toggle AI Connection" → verify connects/disconnects
+
+**Expected Results:**
+- ✅ **Command Discovery** all 15+ AI commands are discoverable in palette
+- ✅ **Context Sensitivity** commands show appropriate "when" conditions
+- ✅ **Execution Success** all commands execute without errors
+- ✅ **Proper Categorization** commands are grouped under "Ollama Code"
+- ✅ **Keyboard Shortcuts** assigned shortcuts work as expected
+- ✅ **Command Descriptions** clear, helpful descriptions for each command
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Context-Conditional Command Availability
+**Test Setup:**
+Test that commands are only available in appropriate contexts:
+
+**Context Condition Tests:**
+1. **File-Based Commands:**
+   - No file open → verify file-specific commands are disabled/hidden
+   - Open JavaScript file → verify JS-specific commands are available
+   - Open TypeScript file → verify TS-specific analysis available
+   - Open test file → verify test-related commands prioritized
+
+2. **Selection-Based Commands:**
+   - No selection → verify "Explain Code" shows context requirement
+   - Select function → verify function-specific commands available
+   - Select class → verify class analysis commands available
+   - Select multiple functions → verify bulk operation commands
+
+3. **Workspace-Based Commands:**
+   - No workspace → verify project analysis commands disabled
+   - Open workspace → verify "Analyze Project" command available
+   - Git repository → verify git-aware commands enabled
+   - Multi-root workspace → verify workspace selection handling
+
+4. **Connection-Based Commands:**
+   - Server disconnected → verify AI commands show connection requirement
+   - Server connecting → verify commands show "connecting" state
+   - Server connected → verify all AI commands fully enabled
+   - Server error → verify error state handling in commands
+
+**Expected Results:**
+- ✅ **Contextual Availability** commands only appear when applicable
+- ✅ **Clear Feedback** disabled commands explain requirements
+- ✅ **Workspace Awareness** commands adapt to workspace type
+- ✅ **Connection Dependency** AI commands require active connection
+- ✅ **Selection Intelligence** selection-based commands work correctly
+- ✅ **File Type Recognition** commands adapt to current file language
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ---
 
 ## 🎯 Integration Test Scenarios
@@ -4137,16 +4650,33 @@ def find_duplicates(arr):
 
 ---
 
-**Test Plan Version:** 18.3 (Added InlineCompletionProvider, HoverProvider, and DiagnosticProvider Testing for Complete Advanced IDE Features)
+**Test Plan Version:** 18.4 (Added CodeActionProvider, Enhanced ChatViewProvider, StatusBarProvider, and Command Palette Integration Testing)
 **Created:** September 21, 2025
-**Last Updated:** September 24, 2025 (Added InlineCompletionProvider, HoverProvider, and DiagnosticProvider testing to complete Phase 8.1 Advanced IDE Features with AI-powered code suggestions, documentation, and multi-layer analysis)
+**Last Updated:** September 24, 2025 (Added CodeActionProvider, Enhanced ChatViewProvider, StatusBarProvider, and Command Palette Integration testing to complete Phase 8.1 Advanced IDE Features with AI-powered quick fixes, comprehensive chat interface, real-time status monitoring, and command palette integration)
 **Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.3.0
-**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, interactive development workflow, **CodeLens Provider** with AI-powered complexity analysis and code insights, **DocumentSymbol Provider** with enhanced multi-language navigation, **InlineCompletionProvider** with contextual AI-powered code suggestions, **HoverProvider** with AI-generated documentation and explanations, and **DiagnosticProvider** with multi-layer static analysis, complexity detection, and AI-powered code analysis
+**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, interactive development workflow, **CodeLens Provider** with AI-powered complexity analysis and code insights, **DocumentSymbol Provider** with enhanced multi-language navigation, **InlineCompletionProvider** with contextual AI-powered code suggestions, **HoverProvider** with AI-generated documentation and explanations, **DiagnosticProvider** with multi-layer static analysis, complexity detection, and AI-powered code analysis, **Enhanced CodeActionProvider** with AI-powered quick fixes and refactoring suggestions, **Enhanced ChatViewProvider** with comprehensive AI sidebar panel and workspace context tracking, **StatusBarProvider** with real-time connection monitoring and operation progress display, and **Command Palette Integration** with 15+ AI commands and context-conditional availability
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios, including comprehensive autonomous development assistant testing.
 
-**Latest Updates (v18.3):**
+**Latest Updates (v18.4):**
+- Added Enhanced CodeActionProvider test group with AI-powered quick fixes and refactoring suggestions
+- Added AI quick fix testing for style improvements, performance optimizations, security fixes, and error handling
+- Added refactoring action testing for method extraction, code deduplication, complexity reduction, and type safety
+- Added Enhanced ChatViewProvider test group with comprehensive AI sidebar panel functionality
+- Added interactive chat interface testing with workspace context integration and quick action buttons
+- Added workspace context tracking testing with file recognition, selection context, and project-wide analysis
+- Added StatusBarProvider test group with real-time AI status integration and monitoring
+- Added connection status monitoring testing with visual indicators, click actions, and error resilience
+- Added AI operation progress testing with notifications, timing controls, and visual hierarchy
+- Added quick actions testing with context-sensitive updates and workspace intelligence
+- Added Command Palette Integration test group with 15+ AI commands and context-conditional availability
+- Added AI command discovery testing with proper categorization, keyboard shortcuts, and execution success
+- Added context-conditional command availability testing for file-based, selection-based, workspace-based, and connection-based commands
+- Updated test plan version to 18.4 with complete Phase 8.1 Advanced IDE Features testing coverage
+- Enhanced VS Code extension testing with comprehensive UI integration, status monitoring, and command palette functionality
+
+**Previous Updates (v18.3):**
 - Added InlineCompletionProvider test group with contextual AI-powered code suggestions
 - Added completion accuracy testing with real-world JavaScript/TypeScript/React scenarios
 - Added method/property completion testing with context awareness and type intelligence

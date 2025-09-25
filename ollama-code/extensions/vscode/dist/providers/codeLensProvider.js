@@ -61,7 +61,7 @@ class CodeLensProvider {
                 return [];
             }
             // Find functions and classes for analysis
-            const functions = await codeAnalysisUtils_1.CodeAnalysisUtils.extractFunctions(document);
+            const functions = await codeAnalysisUtils_1.CodeAnalysisUtils.extractFunctions(document, token);
             for (const func of functions) {
                 if (token.isCancellationRequested) {
                     break;

@@ -47,6 +47,37 @@ export class CodeAnalysisUtils {
   }
 
   /**
+   * Validate file size for analysis
+   */
+  static validateFileSize(text: string, maxSizeKB?: number): { isValid: boolean; sizeKB: number } {
+    const sizeKB = text.length / 1024;
+    const maxSize = maxSizeKB || CODE_METRICS_THRESHOLDS.MAX_FILE_SIZE_KB;
+
+    return {
+      isValid: sizeKB <= maxSize,
+      sizeKB: Math.round(sizeKB * 100) / 100 // Round to 2 decimal places
+    };
+  }
+
+  /**
+   * Check if file is too large for analysis and log warning if needed
+   */
+  static checkFileSizeForAnalysis(
+    text: string,
+    fileName?: string,
+    logger?: { warn: (message: string) => void }
+  ): boolean {
+    const { isValid, sizeKB } = this.validateFileSize(text);
+
+    if (!isValid && logger) {
+      const fileInfo = fileName ? ` ${fileName}` : '';
+      logger.warn(`File${fileInfo} is too large (${sizeKB}KB) for analysis`);
+    }
+
+    return isValid;
+  }
+
+  /**
    * Calculate cyclomatic complexity with improved accuracy
    */
   static calculateComplexity(text: string): number {

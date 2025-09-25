@@ -119,72 +119,77 @@ class DocumentSymbolProvider {
         }
         // Interfaces
         const interfaceRegex = /(?:export\s+)?interface\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
-        while ((match = interfaceRegex.exec(text)) !== null) {
-            const position = document.positionAt(match.index);
+        let match2;
+        while ((match2 = interfaceRegex.exec(text)) !== null) {
+            const position = document.positionAt(match2.index);
             const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
             symbols.push({
-                name: match[1],
+                name: match2[1],
                 kind: vscode.SymbolKind.Interface,
                 range,
                 selectionRange: new vscode.Range(position.line, 0, position.line, lines[position.line].length),
-                isExported: match[0].includes('export'),
+                isExported: match2[0].includes('export'),
                 children: []
             });
         }
         // Functions
         const functionRegex = /(?:export\s+)?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
-        while ((match = functionRegex.exec(text)) !== null) {
-            const position = document.positionAt(match.index);
+        let match3;
+        while ((match3 = functionRegex.exec(text)) !== null) {
+            const position = document.positionAt(match3.index);
             const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
             symbols.push({
-                name: match[1],
+                name: match3[1],
                 kind: vscode.SymbolKind.Function,
                 range,
                 selectionRange: new vscode.Range(position.line, 0, position.line, lines[position.line].length),
-                isExported: match[0].includes('export'),
-                isAsync: match[0].includes('async'),
-                isTest: match[1].toLowerCase().includes('test') || match[1].toLowerCase().includes('spec'),
+                isExported: match3[0].includes('export'),
+                isAsync: match3[0].includes('async'),
+                isTest: match3[1].toLowerCase().includes('test') || match3[1].toLowerCase().includes('spec'),
                 children: []
             });
         }
         // Arrow functions and methods
         const arrowFuncRegex = /(?:export\s+)?(?:const\s+|let\s+|var\s+)?([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:\s*(?:\([^)]*\)\s*=>|[^=]*=>\s*{)/g;
-        while ((match = arrowFuncRegex.exec(text)) !== null) {
-            const position = document.positionAt(match.index);
+        let match4;
+        while ((match4 = arrowFuncRegex.exec(text)) !== null) {
+            const position = document.positionAt(match4.index);
             const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
             symbols.push({
-                name: match[1],
+                name: match4[1],
                 kind: vscode.SymbolKind.Function,
                 range,
                 selectionRange: new vscode.Range(position.line, 0, position.line, lines[position.line].length),
-                isExported: match[0].includes('export'),
+                isExported: match4[0].includes('export'),
                 children: []
             });
         }
         // Enums
         const enumRegex = /(?:export\s+)?enum\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
-        while ((match = enumRegex.exec(text)) !== null) {
-            const position = document.positionAt(match.index);
+        let match5;
+        while ((match5 = enumRegex.exec(text)) !== null) {
+            const position = document.positionAt(match5.index);
             const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
             symbols.push({
-                name: match[1],
+                name: match5[1],
                 kind: vscode.SymbolKind.Enum,
                 range,
                 selectionRange: new vscode.Range(position.line, 0, position.line, lines[position.line].length),
-                isExported: match[0].includes('export'),
+                isExported: match5[0].includes('export'),
                 children: []
             });
         }
         // Constants and variables
         const variableRegex = /(?:export\s+)?(?:const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
-        while ((match = variableRegex.exec(text)) !== null) {
-            const position = document.positionAt(match.index);
+        let match6;
+        while ((match6 = variableRegex.exec(text)) !== null) {
+            const position = document.positionAt(match6.index);
             symbols.push({
-                name: match[1],
-                kind: match[0].includes('const') ? vscode.SymbolKind.Constant : vscode.SymbolKind.Variable,
+                name: match6[1],
+                kind: match6[0].includes('const') ? vscode.SymbolKind.Constant : vscode.SymbolKind.Variable,
                 range: new vscode.Range(position.line, 0, position.line, lines[position.line].length),
                 selectionRange: new vscode.Range(position.line, 0, position.line, lines[position.line].length),
-                isExported: match[0].includes('export'),
+                isExported: match6[0].includes('export'),
                 children: []
             });
         }

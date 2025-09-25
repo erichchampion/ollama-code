@@ -6,7 +6,7 @@
  * to eliminate hardcoded values throughout the codebase.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LANGUAGE_PATTERNS = exports.COMPLEXITY_KEYWORDS = exports.SUPPORTED_LANGUAGES = exports.CODE_METRICS_THRESHOLDS = void 0;
+exports.LANGUAGE_PATTERNS = exports.COMPLEXITY_KEYWORDS = exports.SUPPORTED_LANGUAGES = exports.TIMEOUT_CONSTANTS = exports.CODE_METRICS_THRESHOLDS = void 0;
 exports.CODE_METRICS_THRESHOLDS = {
     // Complexity thresholds
     HIGH_COMPLEXITY: 10,
@@ -20,6 +20,21 @@ exports.CODE_METRICS_THRESHOLDS = {
     // Performance limits
     MAX_FILE_SIZE_KB: 1024, // 1MB limit for analysis
     ANALYSIS_TIMEOUT_MS: 30000, // 30 second timeout
+};
+exports.TIMEOUT_CONSTANTS = {
+    // AI operation timeouts
+    COMPLETION_TIMEOUT: 5000, // 5 seconds for code completions
+    CODE_ACTION_TIMEOUT: 3000, // 3 seconds for code actions/quick fixes
+    HOVER_TIMEOUT: 3000, // 3 seconds for hover information
+    AI_ANALYSIS_TIMEOUT: 10000, // 10 seconds for AI-powered analysis
+    CHAT_TIMEOUT: 15000, // 15 seconds for chat responses
+    // UI operation timeouts
+    CONNECTION_CHECK_INTERVAL: 5000, // 5 seconds between connection checks
+    OPERATION_HIDE_DELAY: 10000, // 10 seconds before hiding operation status
+    SUCCESS_MESSAGE_DELAY: 3000, // 3 seconds for success messages
+    NOTIFICATION_HIDE_DELAY: 5000, // 5 seconds for notifications
+    // Cache cleanup
+    CACHE_CLEANUP_INTERVAL: 5 * 60 * 1000, // 5 minutes cache cleanup
 };
 exports.SUPPORTED_LANGUAGES = [
     'typescript', 'javascript', 'python', 'java', 'csharp', 'cpp', 'c',

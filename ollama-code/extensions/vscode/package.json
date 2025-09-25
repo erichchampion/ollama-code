@@ -72,6 +72,71 @@
         "command": "ollama-code.showOutput",
         "title": "Show Output",
         "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.optimizeCode",
+        "title": "Optimize Code Performance",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.generateTests",
+        "title": "Generate Unit Tests",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.securityAnalysis",
+        "title": "Run Security Analysis",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.findBugs",
+        "title": "Find Bugs and Issues",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.addDocumentation",
+        "title": "Add Documentation",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.improveReadability",
+        "title": "Improve Code Readability",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.analyzeFunction",
+        "title": "Analyze Function Complexity",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.analyzeFile",
+        "title": "Analyze Current File",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.refactorCode",
+        "title": "AI Refactor Code",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.improveCode",
+        "title": "AI Improve Code",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.toggleConnection",
+        "title": "Toggle AI Connection",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.showQuickActions",
+        "title": "Show AI Quick Actions",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.showProgress",
+        "title": "Show AI Operation Progress",
+        "category": "Ollama Code"
       }
     ],
     "menus": {
@@ -126,6 +191,54 @@
         {
           "command": "ollama-code.analyze",
           "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "ollama-code.optimizeCode",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.generateTests",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.securityAnalysis",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.findBugs",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.addDocumentation",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.improveReadability",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.analyzeFunction",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "ollama-code.analyzeFile",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.refactorCode",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.improveCode",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ollama-code.toggleConnection",
+          "when": "true"
+        },
+        {
+          "command": "ollama-code.showQuickActions",
+          "when": "true"
         }
       ]
     },

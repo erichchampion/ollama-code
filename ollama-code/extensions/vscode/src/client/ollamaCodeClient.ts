@@ -4,7 +4,7 @@
  * Handles communication with the Ollama Code CLI backend server
  */
 
-import * as WebSocket from 'ws';
+import WebSocket from 'ws';
 import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
 
@@ -87,7 +87,7 @@ export class OllamaCodeClient extends EventEmitter {
       try {
         this.ws = new WebSocket(`ws://localhost:${this.config.port}`);
 
-        this.ws.on('open', () => {
+        this.ws?.on('open', () => {
           clearTimeout(timeout);
           this.isConnected = true;
           this.reconnectAttempts = 0;
@@ -95,15 +95,15 @@ export class OllamaCodeClient extends EventEmitter {
           resolve();
         });
 
-        this.ws.on('message', (data: WebSocket.Data) => {
+        this.ws?.on('message', (data: WebSocket.Data) => {
           this.handleMessage(data);
         });
 
-        this.ws.on('close', (code: number, reason: Buffer) => {
+        this.ws?.on('close', (code: number, reason: Buffer) => {
           this.handleDisconnection(code, reason);
         });
 
-        this.ws.on('error', (error: Error) => {
+        this.ws?.on('error', (error: Error) => {
           clearTimeout(timeout);
           this.emit('error', error);
           if (!this.isConnected) {

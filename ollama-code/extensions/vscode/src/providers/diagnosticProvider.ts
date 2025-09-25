@@ -291,7 +291,7 @@ export class DiagnosticProvider {
       const result = await Promise.race([
         this.client.sendAIRequest({
           prompt,
-          type: 'analysis',
+          type: 'completion',
           language: document.languageId
         }),
         new Promise((_, reject) =>
@@ -305,7 +305,7 @@ export class DiagnosticProvider {
       }
 
     } catch (error) {
-      this.logger.debug('AI analysis skipped or failed:', error.message);
+      this.logger.debug('AI analysis skipped or failed:', error instanceof Error ? error.message : String(error));
       // Don't propagate AI analysis errors - it's supplementary
     }
 
