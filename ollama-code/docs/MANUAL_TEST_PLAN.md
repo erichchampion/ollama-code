@@ -33,6 +33,8 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 
 ### 🔄 **Integration Features**
 - Enhanced interactive mode with rich formatting
+- **NEW:** Intent-based context prioritization for accurate file selection
+- **NEW:** Complete analysis result saving with detailed task plan capture
 - Command execution with safety controls
 - Task planning and decomposition
 - Error handling and recovery
@@ -1922,9 +1924,13 @@ kill $NC_PID  # Clean up
 1. `"Help me understand this codebase"` (should route to appropriate tool)
 2. `"Improve the quality of my project"` (should route to code analysis)
 3. `"Check if my code is ready for production"` (should route to multiple tools)
+4. **NEW:** `"Review this project for bugs"` (should prioritize source code files)
+5. **NEW:** `"Save this analysis to a markdown file"` (should capture complete results)
 
 **Expected:**
 - Correct tool selection based on natural language input
+- **NEW:** Intent-based context prioritization (code review focuses on source files)
+- **NEW:** Complete analysis result capture and saving functionality
 - Fallback to conversation mode when routing is uncertain
 - Clear indication of which tools are being used
 - Seamless integration between different capabilities
@@ -1962,6 +1968,78 @@ kill $NC_PID  # Clean up
 - State preservation during issues
 - Clear recovery options presented to user
 - Data integrity maintained
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Context Management and Analysis Saving
+**Priority: High** *(NEW: Enhanced context prioritization and analysis saving)*
+
+#### Test: Intent-Based Context Prioritization
+**Test Scenarios for Code Review Context:**
+1. `"Review this project for bugs"` (should prioritize source code files)
+2. `"Analyze the code quality in this repository"` (should focus on .ts/.js/.py files)
+3. `"Check this project for security issues"` (should prioritize source code over documentation)
+4. `"Find performance bottlenecks in the code"` (should focus on implementation files)
+
+**Test Scenarios for Documentation Context:**
+1. `"Show me the documentation"` (should prioritize .md files and docs/)
+2. `"Explain the project setup instructions"` (should focus on README.md, docs/)
+3. `"Help me understand the API documentation"` (should prioritize documentation files)
+
+**Test Scenarios for Configuration Context:**
+1. `"Check the build configuration"` (should prioritize package.json, tsconfig.json, etc.)
+2. `"Review the project settings"` (should focus on config files)
+
+**Expected Results:**
+- **Code Review Queries:** Top 10 files should be primarily TypeScript/JavaScript/Python source files (≥70%)
+- **Documentation Queries:** Top 5 files should be primarily .md and documentation files (≥80%)
+- **Configuration Queries:** Top 5 files should be configuration files (≥60%)
+- **Context Relevance:** Files returned should match the query intent, not just keyword matching
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Analysis Result Saving
+**Test Command Sequence:**
+1. Start interactive mode: `ollama-code --mode interactive`
+2. Execute analysis: `"Review this project for potential bugs and code quality issues"`
+3. Wait for complete task plan execution and detailed results
+4. Request save: `"Create a .md file to save this analysis"`
+5. Verify saved file contains complete results, not empty sections
+
+**Alternative Save Commands to Test:**
+- `"Save this analysis to a markdown file"`
+- `"Export these results to analysis.md"`
+- `"Create a report file with these findings"`
+- `"Write this analysis to a .md file"`
+
+**Expected Results:**
+- ✅ **Complete Results Captured:** Saved file contains detailed task plan execution results
+- ✅ **Structured Format:** Professional markdown with sections for each completed task
+- ✅ **Metadata Preservation:** Analysis type, timestamp, file paths, and confidence scores included
+- ✅ **No Empty Sections:** Analysis Results section contains actual findings, not placeholders
+- ✅ **Task Plan Results:** Individual task results are preserved in readable format
+- **File Location:** Analysis saved to working directory with descriptive filename
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Conversation History Management
+**Test Scenarios:**
+1. **Multi-Step Analysis:** Execute complex analysis, then ask follow-up questions
+2. **Context Continuity:** Verify that subsequent requests reference previous analysis results
+3. **Save After Discussion:** Perform analysis, have conversation about results, then save
+4. **Mixed Content Handling:** Combine code review with documentation queries
+
+**Test Commands:**
+1. `"Analyze the code architecture of this project"`
+2. `"What are the main issues you found?"`
+3. `"Can you elaborate on the security concerns?"`
+4. `"Save all of our discussion about this analysis"`
+
+**Expected Results:**
+- ✅ **Session Continuity:** Follow-up questions properly reference previous analysis
+- ✅ **Complete Context Saving:** Saved file includes entire conversation and analysis context
+- ✅ **Response Content Storage:** All analysis results properly stored in conversation history
+- ✅ **Format Preservation:** Task plan results maintain structure when saved
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -2724,6 +2802,39 @@ done
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario O: Enhanced Context Prioritization and Analysis Saving
+**Goal:** Validate intent-based context prioritization and complete analysis result saving functionality
+
+**Steps:**
+1. **Project Setup:** Use a project with mixed file types (source code, documentation, config files)
+2. **Code Review Context Test:** `"Review this project for bugs and security issues"`
+   - Verify: Analysis focuses on .ts/.js/.py source files, not README.md or config files
+   - Verify: Top 10 files are primarily source code (≥70%)
+3. **Task Plan Execution:** Allow complete task plan to execute with detailed results
+4. **Analysis Saving:** `"Create a .md file to save this analysis"`
+   - Verify: Saved file contains complete task plan results, not empty sections
+   - Verify: Individual task results are preserved with details
+5. **Documentation Context Test:** `"Show me the project documentation"`
+   - Verify: Analysis prioritizes .md files and documentation folders
+6. **Configuration Context Test:** `"Check the build and deployment configuration"`
+   - Verify: Analysis focuses on package.json, tsconfig.json, config files
+7. **Follow-up Analysis:** `"What security concerns did you find?"`
+   - Verify: Response references specific findings from previous analysis
+8. **Conversation Saving:** `"Save our entire discussion about this project"`
+   - Verify: Complete conversation history with analysis results is saved
+
+**Success Criteria:**
+- **Context Accuracy:** Different query intents receive appropriately filtered file context
+- **Source Code Prioritization:** Code review queries focus on implementation files, not documentation
+- **Complete Result Capture:** Saved analysis files contain detailed findings, not empty placeholders
+- **Task Plan Preservation:** Individual task results with outcomes are properly stored and saved
+- **Conversation Continuity:** Follow-up questions properly reference previous analysis context
+- **Format Quality:** Saved analysis files are professional, structured, and comprehensive
+- **Metadata Preservation:** Analysis type, timestamp, confidence scores, and file paths included
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
@@ -2750,6 +2861,8 @@ done
 - [ ] **FIXED:** Server uptime tracking accuracy and timestamp management
 - [ ] **FIXED:** MCP server graceful degradation on startup failures
 - [ ] **FIXED:** WebSocket client connection race condition prevention
+- [ ] **NEW:** Intent-based context prioritization for code review accuracy
+- [ ] **NEW:** Complete analysis result saving with task plan capture
 - [ ] Git repository analysis and insights
 - [ ] Code quality assessment
 - [ ] Test generation and strategy
@@ -2769,6 +2882,7 @@ done
 
 ### High Priority Features
 - [ ] Session management and context continuity
+- [ ] **NEW:** Conversation history management with complete result storage
 - [ ] Multi-step query processing
 - [ ] Knowledge graph integration
 - [ ] Tool routing and integration

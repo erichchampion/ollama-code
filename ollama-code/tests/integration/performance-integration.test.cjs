@@ -18,6 +18,7 @@ class MockIncrementalKnowledgeGraph {
   constructor() {
     this.nodeIndex = new Map();
     this.edgeIndex = new Map();
+    this.queryCache = new Map(); // Add query cache
     this.isInitialized = false;
     this.metrics = {
       indexingTime: 0,
@@ -78,17 +79,25 @@ class MockIncrementalKnowledgeGraph {
   async queryGraph(query) {
     const startTime = Date.now();
 
-    // Simulate cache check
-    const cacheHit = Math.random() > 0.2; // 80% cache hit rate
-    if (cacheHit) {
-      this.metrics.cacheHitRate = (this.metrics.cacheHitRate + 1) / 2; // Running average
+    // Check if query result is cached
+    let cacheHit = false;
+    let results;
+
+    if (this.queryCache.has(query)) {
+      // Cache hit - return cached results quickly
+      cacheHit = true;
+      results = this.queryCache.get(query);
       await new Promise(resolve => setTimeout(resolve, 5)); // Fast cache response
     } else {
+      // Cache miss - compute and cache results
+      cacheHit = false;
+      results = Array.from(this.nodeIndex.values()).slice(0, 10);
+      this.queryCache.set(query, results); // Cache the results
       await new Promise(resolve => setTimeout(resolve, 50)); // Slower computed response
     }
 
     return {
-      results: Array.from(this.nodeIndex.values()).slice(0, 10),
+      results,
       executionTime: Date.now() - startTime,
       cacheHit
     };

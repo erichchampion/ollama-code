@@ -177,6 +177,10 @@ export class EnhancedInteractiveMode {
                     await this.handlePendingTaskPlanResponse(userInput);
                     continue;
                 }
+                // Check if this is a save request that should use cached analysis
+                if (await this.handleSaveRequest(userInput)) {
+                    continue;
+                }
                 // Process the input
                 await this.processUserInput(userInput);
             }
@@ -268,6 +272,116 @@ export class EnhancedInteractiveMode {
         }
     }
     /**
+     * Handle save requests that should use cached analysis instead of creating new analysis
+     */
+    async handleSaveRequest(userInput) {
+        const input = userInput.toLowerCase().trim();
+        // Detect save patterns
+        const savePatterns = [
+            /(?:create|save|write|export).*(?:\.md|markdown|file)/,
+            /save.*(?:this|that|analysis|result)/,
+            /(?:create|make).*(?:\.md|markdown).*(?:file|document)/,
+            /export.*(?:analysis|result|output)/
+        ];
+        const isSaveRequest = savePatterns.some(pattern => pattern.test(input));
+        if (!isSaveRequest) {
+            return false;
+        }
+        // Look for recent analysis in conversation history
+        const recentHistory = this.conversationManager.getRecentHistory(5);
+        const analysisHistory = recentHistory.filter(turn => turn.intent.type === 'question' || // Questions often generate analysis responses
+            turn.intent.type === 'task_request' || // Task requests like code review generate detailed results
+            turn.intent.action.toLowerCase().includes('analyz') ||
+            turn.intent.action.toLowerCase().includes('explain') ||
+            turn.intent.action.toLowerCase().includes('review') ||
+            turn.response.length > 500 // Likely analysis if response is substantial
+        );
+        if (analysisHistory.length === 0) {
+            this.terminal.warn('No recent analysis found to save. Please run an analysis first.');
+            return true;
+        }
+        // Use the most recent analysis
+        const latestAnalysis = analysisHistory[0];
+        const saveSpinner = createSpinner('Saving analysis to markdown file...');
+        saveSpinner.start();
+        try {
+            // Generate filename based on timestamp and intent
+            const timestamp = new Date().toISOString().split('T')[0];
+            const sanitizedInput = latestAnalysis.userInput
+                .replace(/[^a-zA-Z0-9\s]/g, '')
+                .replace(/\s+/g, '-')
+                .toLowerCase()
+                .substring(0, 50);
+            const filename = `analysis-${timestamp}-${sanitizedInput}.md`;
+            // Create markdown content
+            const markdownContent = this.createAnalysisMarkdown(latestAnalysis);
+            // Write the file
+            await import('fs/promises').then(fs => fs.writeFile(filename, markdownContent, 'utf8'));
+            saveSpinner.succeed(`Analysis saved to ${filename}`);
+            this.terminal.success(`✅ Analysis saved to ${filename}`);
+            // Update conversation with success
+            await this.conversationManager.addTurn(userInput, { type: 'file_operation', action: 'save', confidence: 1.0, entities: { concepts: ['save', 'analysis'], files: [filename] } }, `Analysis saved to ${filename}`, [{ type: 'file_create', target: filename, details: 'Saved cached analysis', timestamp: new Date(), success: true }]);
+            return true;
+        }
+        catch (error) {
+            saveSpinner.fail('Failed to save analysis');
+            this.terminal.error(`Failed to save analysis: ${error instanceof Error ? error.message : String(error)}`);
+            return true;
+        }
+    }
+    /**
+     * Create markdown content from analysis
+     */
+    createAnalysisMarkdown(analysisResult) {
+        const timestamp = new Date().toISOString();
+        // Handle different types of analysis results
+        let analysisContent = analysisResult.response || 'No analysis results available.';
+        // If the response looks like it contains task plan results, preserve formatting
+        if (analysisContent.includes('Task Plan Results:') || analysisContent.includes('✅ Completed')) {
+            // It's already formatted task plan results, preserve the formatting
+            analysisContent = analysisContent;
+        }
+        else if (analysisContent.length < 100) {
+            // Short response, might be incomplete - add warning
+            analysisContent = `${analysisContent}\n\n⚠️ *Note: This appears to be an incomplete analysis result. The detailed results may not have been captured properly.*`;
+        }
+        return `# Code Analysis Report
+
+**Generated:** ${timestamp}
+**Query:** ${analysisResult.userInput}
+**Type:** ${analysisResult.intent.type}
+**Intent Action:** ${analysisResult.intent.action || 'Not specified'}
+
+---
+
+## Analysis Results
+
+${analysisContent}
+
+---
+
+## Context
+
+- **Working Directory:** ${analysisResult.contextSnapshot.workingDirectory}
+- **Active Files:** ${analysisResult.contextSnapshot.activeFiles.join(', ') || 'None'}
+- **Last Modified:** ${analysisResult.contextSnapshot.lastModified.join(', ') || 'None'}
+
+## Actions Taken
+
+${analysisResult.actions.map((action) => `- **${action.type}**: ${action.target} - ${action.details} ${action.success ? '✅' : '❌'}`).join('\n') || 'No actions taken'}
+
+## Analysis Metadata
+
+- **Confidence:** ${analysisResult.intent.confidence || 'Not specified'}
+- **Complexity:** ${analysisResult.intent.complexity || 'Not specified'}
+- **Risk Level:** ${analysisResult.intent.riskLevel || 'Not specified'}
+
+---
+
+*Generated by Ollama Code Enhanced Interactive Mode*
+`;
+    }
+    /**
      * Handle user response to pending task plan
      */
     async handlePendingTaskPlanResponse(userInput) {
@@ -294,7 +408,9 @@ export class EnhancedInteractiveMode {
                     this.terminal.error('❌ Could not retrieve completed plan for results display');
                 }
                 this.terminal.success('Task plan completed successfully!');
-                await this.updateConversationOutcome('success');
+                // Capture detailed results for conversation history
+                const detailedResults = this.formatPlanResultsForStorage(completedPlan);
+                await this.updateConversationOutcome('success', detailedResults);
             }
             catch (error) {
                 executeSpinner.fail('Task execution failed');
@@ -430,8 +546,11 @@ export class EnhancedInteractiveMode {
             // Execute the plan immediately if no confirmation needed
             planSpinner.setText('Executing task plan...');
             await this.taskPlanner.executePlan(plan.id);
+            // Get completed plan and capture detailed results
+            const completedPlan = this.taskPlanner.getPlan(plan.id);
+            const detailedResults = this.formatPlanResultsForStorage(completedPlan);
             planSpinner.succeed('Task plan completed successfully!');
-            await this.updateConversationOutcome('success');
+            await this.updateConversationOutcome('success', detailedResults);
         }
         catch (error) {
             planSpinner.fail('Task planning failed');
@@ -1292,7 +1411,19 @@ ${plan.tasks.map((task, index) => `${index + 1}. [${task.priority}] ${task.title
     async updateConversationOutcome(outcome, response) {
         const recentHistory = this.conversationManager.getRecentHistory(1);
         if (recentHistory.length > 0) {
-            await this.conversationManager.updateTurnOutcome(recentHistory[0].id, outcome);
+            const mostRecentTurn = recentHistory[0];
+            // Update the turn outcome
+            await this.conversationManager.updateTurnOutcome(mostRecentTurn.id, outcome);
+            // If we have response content and the current response is empty or very short, update it
+            if (response && response.length > 100 && mostRecentTurn.response.length < 100) {
+                // Update the response content directly in the conversation history
+                const turn = this.conversationManager.getRecentHistory(1)[0];
+                if (turn) {
+                    turn.response = response;
+                    // Persist the updated conversation
+                    await this.conversationManager.persistConversation();
+                }
+            }
         }
     }
     async processRoutingResult(routingResult) {
@@ -1310,6 +1441,43 @@ ${plan.tasks.map((task, index) => `${index + 1}. [${task.priority}] ${task.title
                 await this.handleConversation(routingResult);
                 break;
         }
+    }
+    /**
+     * Format task plan results for storage in conversation history
+     */
+    formatPlanResultsForStorage(plan) {
+        if (!plan) {
+            return 'Task plan completed but results not available.';
+        }
+        let resultsText = `Task Plan Results: ${plan.title || 'Untitled Plan'}\n\n`;
+        const completedTasks = plan.tasks.filter((t) => t.status === 'completed');
+        const failedTasks = plan.tasks.filter((t) => t.status === 'failed');
+        if (completedTasks.length > 0) {
+            resultsText += `✅ Completed ${completedTasks.length}/${plan.tasks.length} tasks:\n\n`;
+            for (const task of completedTasks) {
+                resultsText += `## ${task.title}\n`;
+                if (task.result) {
+                    const result = typeof task.result === 'string' ? task.result : JSON.stringify(task.result, null, 2);
+                    resultsText += `${result}\n\n`;
+                }
+                else {
+                    resultsText += `Task completed successfully.\n\n`;
+                }
+            }
+        }
+        if (failedTasks.length > 0) {
+            resultsText += `❌ Failed ${failedTasks.length} tasks:\n`;
+            for (const task of failedTasks) {
+                resultsText += `- ${task.title}: ${task.error || 'Unknown error'}\n`;
+            }
+            resultsText += '\n';
+        }
+        // Add execution summary
+        const duration = plan.completed ?
+            ((new Date(plan.completed).getTime() - new Date(plan.started).getTime()) / (1000 * 60)).toFixed(1) :
+            'N/A';
+        resultsText += `Execution completed in ${duration} minutes`;
+        return resultsText;
     }
     /**
      * Display task plan results to user

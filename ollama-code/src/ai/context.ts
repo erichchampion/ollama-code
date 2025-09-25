@@ -501,15 +501,55 @@ export class ProjectContext {
     const queryLower = query.toLowerCase();
     const relevantFiles: { file: FileInfo; score: number }[] = [];
 
+    // Detect query intent
+    const isCodeReview = /review|analyz|bug|error|issue|quality|refactor|improve|fix|check|audit|inspect/.test(queryLower);
+    const isDocumentationQuery = /document|readme|doc|guide|help|instruction/.test(queryLower);
+    const isConfigQuery = /config|setting|setup|environment|build/.test(queryLower);
+
     for (const [filePath, fileInfo] of this.structure.files) {
       let score = 0;
 
-      // Check if file path matches query
+      // Skip directories
+      if (fileInfo.type === 'directory') {
+        continue;
+      }
+
+      // Intent-based scoring
+      if (isCodeReview) {
+        // For code review requests, prioritize actual source code files
+        if (fileInfo.language && ['typescript', 'javascript', 'python', 'java', 'cpp', 'c', 'go', 'rust'].includes(fileInfo.language)) {
+          score += 8; // High priority for source code files
+
+          // Skip test and config files unless specifically requested
+          if (!this.structure.testFiles.includes(fileInfo.relativePath) &&
+              !this.structure.configFiles.includes(fileInfo.relativePath) &&
+              !this.structure.documentationFiles.includes(fileInfo.relativePath)) {
+            score += 5; // Extra points for non-test/config/doc source files
+          }
+        }
+
+        // Lower priority for documentation during code review
+        if (this.structure.documentationFiles.includes(fileInfo.relativePath)) {
+          score = Math.max(score - 3, 1); // Reduce score for docs in code review context
+        }
+      } else if (isDocumentationQuery) {
+        // For documentation queries, prioritize docs
+        if (this.structure.documentationFiles.includes(fileInfo.relativePath)) {
+          score += 8;
+        }
+      } else if (isConfigQuery) {
+        // For config queries, prioritize config files
+        if (this.structure.configFiles.includes(fileInfo.relativePath)) {
+          score += 8;
+        }
+      }
+
+      // Check if file path matches query keywords
       if (fileInfo.relativePath.toLowerCase().includes(queryLower)) {
         score += 5;
       }
 
-      // Check if it's a key file type
+      // Check if it's a key file type (entry points)
       if (this.structure.entryPoints.includes(fileInfo.relativePath)) {
         score += 3;
       }
@@ -518,6 +558,11 @@ export class ProjectContext {
       const daysSinceModified = (Date.now() - fileInfo.modified.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceModified < 1) score += 2;
       else if (daysSinceModified < 7) score += 1;
+
+      // Default score for any file if no specific criteria match
+      if (score === 0 && fileInfo.language) {
+        score = 1; // Include all code files as potential matches
+      }
 
       if (score > 0) {
         relevantFiles.push({ file: fileInfo, score });

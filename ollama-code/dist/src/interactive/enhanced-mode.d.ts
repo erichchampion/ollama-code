@@ -43,6 +43,14 @@ export declare class EnhancedInteractiveMode {
      */
     private processUserInput;
     /**
+     * Handle save requests that should use cached analysis instead of creating new analysis
+     */
+    private handleSaveRequest;
+    /**
+     * Create markdown content from analysis
+     */
+    private createAnalysisMarkdown;
+    /**
      * Handle user response to pending task plan
      */
     private handlePendingTaskPlanResponse;
@@ -133,6 +141,10 @@ export declare class EnhancedInteractiveMode {
     private displayEnhancedContextSuggestions;
     private updateConversationOutcome;
     private processRoutingResult;
+    /**
+     * Format task plan results for storage in conversation history
+     */
+    private formatPlanResultsForStorage;
     /**
      * Display task plan results to user
      */
