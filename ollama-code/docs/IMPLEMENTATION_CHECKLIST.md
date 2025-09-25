@@ -926,9 +926,9 @@ Implementation of comprehensive ecosystem integrations to transform ollama-code 
 - [ ] Implement `InlineCompletionProvider` for AI-powered code suggestions
 - [ ] Create `CodeActionProvider` for AI-powered quick fixes and refactoring
 - [ ] Add `HoverProvider` for AI-generated documentation and explanations
-- [ ] Implement `CodeLensProvider` for AI insights and metrics
+- [x] Implement `CodeLensProvider` for AI insights and metrics
 - [ ] Create `DiagnosticProvider` for AI-powered code analysis
-- [ ] Add `DocumentSymbolProvider` with AI-enhanced navigation
+- [x] Add `DocumentSymbolProvider` with AI-enhanced navigation
 
 #### **Context-Aware Intelligence**
 - [ ] Implement workspace analysis for contextual AI responses
@@ -1023,7 +1023,6 @@ Implementation of comprehensive ecosystem integrations to transform ollama-code 
 #### **Multi-Platform CI Support**
 - [ ] Implement GitLab CI/CD integration with similar capabilities
 - [ ] Add Azure DevOps pipeline support
-- [ ] Create Jenkins plugin for legacy CI/CD systems
 - [ ] Implement Bitbucket Pipelines integration
 - [ ] Add CircleCI and Travis CI support
 - [ ] Create universal CI/CD API for custom integrations

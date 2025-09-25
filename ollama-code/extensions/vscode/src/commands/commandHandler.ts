@@ -5,6 +5,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { OllamaCodeClient } from '../client/ollamaCodeClient';
 import { Logger } from '../utils/logger';
 
@@ -368,6 +369,128 @@ export class CommandHandler {
   private getCurrentLanguage(): string {
     const editor = vscode.window.activeTextEditor;
     return editor?.document.languageId || 'plaintext';
+  }
+
+  /**
+   * Handle analyze function command from code lens
+   */
+  async handleAnalyzeFunction(uri: vscode.Uri, range: vscode.Range, functionName: string): Promise<void> {
+    try {
+      const document = await vscode.workspace.openTextDocument(uri);
+      const functionCode = document.getText(range);
+
+      this.logger.info(`Analyzing function: ${functionName}`);
+
+      const result = await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Analyzing ${functionName}...`,
+        cancellable: true
+      }, async () => {
+        return await this.client.sendAIRequest({
+          prompt: `Analyze this function for complexity, performance, and potential improvements:\n\n\`\`\`${document.languageId}\n${functionCode}\n\`\`\``,
+          type: 'explanation',
+          language: document.languageId
+        });
+      });
+
+      await this.showResult(`Function Analysis: ${functionName}`, result.result);
+
+    } catch (error) {
+      this.handleError('Failed to analyze function', error);
+    }
+  }
+
+  /**
+   * Handle analyze file command from code lens
+   */
+  async handleAnalyzeFile(uri: vscode.Uri): Promise<void> {
+    try {
+      const document = await vscode.workspace.openTextDocument(uri);
+
+      this.logger.info(`Analyzing file: ${uri.fsPath}`);
+
+      const result = await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Analyzing file...',
+        cancellable: true
+      }, async () => {
+        return await this.client.sendAIRequest({
+          prompt: `Analyze this file for overall code quality, structure, and suggestions for improvement:\n\n\`\`\`${document.languageId}\n${document.getText()}\n\`\`\``,
+          type: 'explanation',
+          language: document.languageId
+        });
+      });
+
+      await this.showResult('File Analysis', result.result);
+
+    } catch (error) {
+      this.handleError('Failed to analyze file', error);
+    }
+  }
+
+  /**
+   * Handle generate tests command from code lens
+   */
+  async handleGenerateTests(uri: vscode.Uri): Promise<void> {
+    try {
+      const document = await vscode.workspace.openTextDocument(uri);
+
+      this.logger.info(`Generating tests for file: ${uri.fsPath}`);
+
+      const result = await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Generating tests...',
+        cancellable: true
+      }, async () => {
+        return await this.client.sendAIRequest({
+          prompt: `Generate comprehensive unit tests for this code:\n\n\`\`\`${document.languageId}\n${document.getText()}\n\`\`\``,
+          type: 'generate',
+          language: document.languageId
+        });
+      });
+
+      // Create new test file
+      const fileName = document.fileName;
+      const testFileName = fileName.replace(/\.(ts|js|py|java|cpp|c|go|rs)$/, '.test.$1');
+      const testDoc = await vscode.workspace.openTextDocument({
+        content: result.result,
+        language: document.languageId
+      });
+
+      await vscode.window.showTextDocument(testDoc);
+      vscode.window.showInformationMessage(`Generated tests for ${path.basename(fileName)}`);
+
+    } catch (error) {
+      this.handleError('Failed to generate tests', error);
+    }
+  }
+
+  /**
+   * Handle security analysis command from code lens
+   */
+  async handleSecurityAnalysis(uri: vscode.Uri): Promise<void> {
+    try {
+      const document = await vscode.workspace.openTextDocument(uri);
+
+      this.logger.info(`Running security analysis for file: ${uri.fsPath}`);
+
+      const result = await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Running security analysis...',
+        cancellable: true
+      }, async () => {
+        return await this.client.sendAIRequest({
+          prompt: `Perform a security analysis of this code, looking for potential vulnerabilities, security issues, and recommendations:\n\n\`\`\`${document.languageId}\n${document.getText()}\n\`\`\``,
+          type: 'explanation',
+          language: document.languageId
+        });
+      });
+
+      await this.showResult('Security Analysis', result.result);
+
+    } catch (error) {
+      this.handleError('Failed to perform security analysis', error);
+    }
   }
 
   /**

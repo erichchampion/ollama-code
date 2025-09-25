@@ -12,6 +12,8 @@ import { InlineCompletionProvider } from './providers/inlineCompletionProvider';
 import { CodeActionProvider } from './providers/codeActionProvider';
 import { HoverProvider } from './providers/hoverProvider';
 import { DiagnosticProvider } from './providers/diagnosticProvider';
+import { CodeLensProvider } from './providers/codeLensProvider';
+import { DocumentSymbolProvider } from './providers/documentSymbolProvider';
 import { ChatViewProvider } from './views/chatViewProvider';
 import { Logger } from './utils/logger';
 
@@ -140,6 +142,26 @@ async function initializeProviders(context: vscode.ExtensionContext) {
     context.subscriptions.push(diagnosticProvider);
     logger.info('Diagnostic provider registered');
   }
+
+  // Register code lens provider
+  const codeLensProvider = new CodeLensProvider(client, logger);
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(
+      { scheme: 'file' },
+      codeLensProvider
+    )
+  );
+  logger.info('Code lens provider registered');
+
+  // Register document symbol provider
+  const documentSymbolProvider = new DocumentSymbolProvider(client, logger);
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSymbolProvider(
+      { scheme: 'file' },
+      documentSymbolProvider
+    )
+  );
+  logger.info('Document symbol provider registered');
 
   // Register chat view provider
   if (config.get<boolean>('showChatView', true)) {

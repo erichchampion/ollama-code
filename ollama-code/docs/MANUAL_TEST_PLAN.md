@@ -2489,6 +2489,346 @@ done
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+### Test Group: CodeLens Provider - AI Insights and Metrics
+**Priority: High**
+
+#### Test: Code Complexity Analysis and Metrics
+**Test Setup:**
+1. Open VS Code with the ollama-code extension activated
+2. Create test files with functions of varying complexity
+3. Ensure IDE integration server is running
+
+**Test Files to Create:**
+```javascript
+// test-complex.js - High complexity function
+function calculateTaxWithDiscounts(income, age, dependents, isVeteran, hasDisability) {
+  if (income <= 0) return 0;
+
+  let tax = income * 0.25;
+
+  if (age >= 65) {
+    tax = tax * 0.9;
+  } else if (age >= 50) {
+    tax = tax * 0.95;
+  }
+
+  if (dependents > 0) {
+    for (let i = 0; i < dependents; i++) {
+      if (i < 2) {
+        tax = tax * 0.95;
+      } else if (i < 4) {
+        tax = tax * 0.98;
+      }
+    }
+  }
+
+  if (isVeteran && hasDisability) {
+    tax = tax * 0.8;
+  } else if (isVeteran) {
+    tax = tax * 0.9;
+  } else if (hasDisability) {
+    tax = tax * 0.85;
+  }
+
+  return Math.max(tax, income * 0.1);
+}
+
+// test-simple.js - Low complexity function
+function add(a, b) {
+  return a + b;
+}
+
+// test-medium.js - Medium complexity function
+function processUserData(user) {
+  if (!user) return null;
+
+  const result = {
+    name: user.name || 'Anonymous',
+    email: user.email ? user.email.toLowerCase() : null,
+    age: user.age || 0
+  };
+
+  if (user.preferences) {
+    result.theme = user.preferences.theme || 'light';
+  }
+
+  return result;
+}
+```
+
+**CodeLens Tests:**
+1. **Complexity Warnings:**
+   - Open `test-complex.js`
+   - Verify red warning lens: "⚠️ Complexity: [high number] (Consider refactoring)"
+   - Click the lens to trigger refactoring command
+   - Verify refactoring suggestions appear
+
+2. **Complexity Information:**
+   - Open `test-medium.js`
+   - Verify information lens: "📊 Complexity: [medium number]"
+   - Click the lens to trigger analysis command
+
+3. **Function Metrics:**
+   - Create a function with 40+ lines
+   - Verify length warning: "📏 Lines: [count] (Consider breaking down)"
+   - Create a function with 6+ parameters
+   - Verify parameter warning: "📝 Parameters: [count] (Too many parameters)"
+
+4. **AI Insights:**
+   - Verify all functions show: "🤖 Get AI insights for [function_name]"
+   - Click to trigger function analysis
+   - Verify detailed AI analysis appears
+
+5. **File-Level Metrics:**
+   - Verify file complexity lens at top: "📊 File Complexity: [average]"
+   - Verify test generation lens: "🧪 Generate tests for this file"
+   - Verify security analysis lens: "🔒 Run security analysis"
+
+**Expected Results:**
+- ✅ **Complexity Detection** accurately calculates cyclomatic complexity
+- ✅ **Visual Indicators** appropriate icons and colors for different complexity levels
+- ✅ **Interactive Actions** clicking lenses triggers corresponding commands
+- ✅ **Multi-Language Support** works with JavaScript, TypeScript, Python, Java, etc.
+- ✅ **Performance** lenses appear within 2 seconds of opening files
+- ✅ **Real-time Updates** lenses refresh when code is modified
+- ✅ **Command Integration** seamlessly integrates with existing AI commands
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Security and Quality Analysis Lenses
+**Test Files:**
+```python
+# test-security.py - Security vulnerabilities
+import subprocess
+import pickle
+
+def unsafe_command_execution(user_input):
+    # SQL injection vulnerability
+    query = f"SELECT * FROM users WHERE name = '{user_input}'"
+
+    # Command injection vulnerability
+    result = subprocess.run(f"echo {user_input}", shell=True)
+
+    # Unsafe deserialization
+    data = pickle.loads(user_input)
+
+    return result
+
+def safe_function(name):
+    return f"Hello, {name}!"
+```
+
+**Security Analysis Tests:**
+1. **Security Lens Visibility:**
+   - Open `test-security.py`
+   - Verify security analysis lens appears at file level
+   - Click "🔒 Run security analysis"
+   - Verify security report identifies vulnerabilities
+
+2. **Test Generation:**
+   - Click "🧪 Generate tests for this file"
+   - Verify comprehensive test suite is generated
+   - Check that tests cover both safe and unsafe functions
+
+**Expected Results:**
+- ✅ **Security Detection** identifies common vulnerabilities
+- ✅ **Test Generation** creates comprehensive test coverage
+- ✅ **Quality Metrics** provides actionable quality insights
+- ✅ **Language Specific** adapts analysis to programming language
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: DocumentSymbol Provider - AI-Enhanced Navigation
+**Priority: High**
+
+#### Test: Symbol Detection and Parsing
+**Test Setup:**
+1. Create comprehensive test files with various symbol types
+2. Open VS Code outline panel (Ctrl+Shift+O or View -> Open View -> Outline)
+3. Verify DocumentSymbol provider integration
+
+**Test Files to Create:**
+```typescript
+// test-symbols.ts - Comprehensive symbol types
+export interface UserConfig {
+  theme: 'light' | 'dark';
+  language: string;
+  notifications: boolean;
+}
+
+export class UserManager {
+  private users: Map<string, UserConfig> = new Map();
+
+  constructor(private apiKey: string) {}
+
+  async createUser(id: string, config: UserConfig): Promise<boolean> {
+    try {
+      this.users.set(id, config);
+      return true;
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      return false;
+    }
+  }
+
+  getUserConfig(id: string): UserConfig | null {
+    return this.users.get(id) || null;
+  }
+
+  private validateConfig(config: UserConfig): boolean {
+    return config.theme && config.language &&
+           typeof config.notifications === 'boolean';
+  }
+}
+
+export enum Status {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  PENDING = 'pending'
+}
+
+export type EventHandler = (event: CustomEvent) => void;
+
+export const DEFAULT_CONFIG: UserConfig = {
+  theme: 'light',
+  language: 'en',
+  notifications: true
+};
+```
+
+```python
+# test-symbols.py - Python symbols
+class DatabaseManager:
+    """Manages database connections and operations."""
+
+    def __init__(self, connection_string: str):
+        self.connection_string = connection_string
+        self._connection = None
+
+    def connect(self) -> bool:
+        """Establish database connection."""
+        try:
+            # Connection logic here
+            return True
+        except Exception as e:
+            print(f"Connection failed: {e}")
+            return False
+
+    async def execute_query(self, query: str, params: list = None) -> list:
+        """Execute SQL query with optional parameters."""
+        if not self._connection:
+            await self.connect()
+
+        # Query execution logic
+        return []
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if database is connected."""
+        return self._connection is not None
+
+    @staticmethod
+    def validate_query(query: str) -> bool:
+        """Validate SQL query syntax."""
+        return len(query.strip()) > 0
+
+def process_data(data: dict) -> dict:
+    """Process incoming data."""
+    return {
+        'processed': True,
+        'timestamp': '2025-01-01',
+        'data': data
+    }
+
+# Global constants
+MAX_CONNECTIONS = 10
+DEFAULT_TIMEOUT = 30
+```
+
+**Symbol Detection Tests:**
+1. **TypeScript/JavaScript Symbols:**
+   - Open `test-symbols.ts`
+   - Verify outline shows all symbols with correct hierarchy:
+     - Interface: `UserConfig`
+     - Class: `UserManager`
+       - Constructor: `constructor`
+       - Methods: `createUser`, `getUserConfig`, `validateConfig`
+       - Properties: `users`, `apiKey`
+     - Enum: `Status` with values
+     - Type alias: `EventHandler`
+     - Constant: `DEFAULT_CONFIG`
+
+2. **Python Symbols:**
+   - Open `test-symbols.py`
+   - Verify outline shows:
+     - Class: `DatabaseManager`
+       - Constructor: `__init__`
+       - Methods: `connect`, `execute_query`, `validate_query`
+       - Properties: `is_connected`
+     - Function: `process_data`
+     - Constants: `MAX_CONNECTIONS`, `DEFAULT_TIMEOUT`
+
+3. **Symbol Navigation:**
+   - Click on symbols in outline
+   - Verify cursor jumps to correct location
+   - Test keyboard navigation (arrow keys, Enter)
+   - Verify search functionality in symbol picker
+
+**Expected Results:**
+- ✅ **Complete Symbol Detection** identifies all classes, functions, methods, properties
+- ✅ **Correct Hierarchy** shows proper nesting and relationships
+- ✅ **Multi-Language Support** works with TypeScript, Python, Java, C++, Go, Rust
+- ✅ **Symbol Types** correctly identifies and categorizes different symbol types
+- ✅ **Navigation Accuracy** clicking symbols navigates to exact location
+- ✅ **Real-time Updates** symbols refresh when code changes
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: AI-Enhanced Symbol Information
+**Test Cases:**
+1. **Symbol Analysis:**
+   - Hover over complex functions in outline
+   - Verify AI-generated complexity information appears
+   - Check for performance insights and suggestions
+
+2. **Contextual Intelligence:**
+   - Open files with imported dependencies
+   - Verify symbols show usage context
+   - Check that related symbols are highlighted
+
+3. **Smart Grouping:**
+   - Verify public/private method grouping
+   - Check that related functionality is grouped logically
+   - Verify inheritance relationships are shown
+
+**Expected Results:**
+- ✅ **AI Insights** symbols enhanced with AI-generated information
+- ✅ **Context Awareness** shows symbol relationships and usage
+- ✅ **Smart Organization** logical grouping of related symbols
+- ✅ **Performance Impact** minimal impact on outline rendering speed
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Cross-Language Symbol Consistency
+**Test Setup:**
+Create equivalent functionality in multiple languages and verify consistent symbol detection.
+
+**Languages to Test:**
+- JavaScript/TypeScript
+- Python
+- Java
+- C++
+- Go
+- Rust
+
+**Expected Results:**
+- ✅ **Consistent Detection** similar structures detected across languages
+- ✅ **Language-Specific Features** adapts to language-specific constructs
+- ✅ **Uniform Experience** consistent UI and interaction patterns
+- ✅ **Fallback Handling** graceful degradation for unsupported languages
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ---
 
 ## 🎯 Integration Test Scenarios
@@ -2943,16 +3283,29 @@ done
 
 ---
 
-**Test Plan Version:** 18.0 (Added IDE Integration & VS Code Extension Testing with WebSocket Communication, Real-time AI Assistance, and Interactive Chat Interface)
+**Test Plan Version:** 18.2 (Added CodeLens Provider and DocumentSymbol Provider Testing for Advanced VS Code Integration)
 **Created:** September 21, 2025
-**Last Updated:** September 24, 2025 (Added comprehensive IDE integration testing for Phase 8.1 with VS Code extension, WebSocket server, inline completions, code actions, chat interface, and cross-platform compatibility)
+**Last Updated:** September 24, 2025 (Added CodeLens Provider and DocumentSymbol Provider testing for Phase 8.1 Advanced IDE Features with AI-powered code insights and enhanced navigation)
 **Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.3.0
-**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, and interactive development workflow
+**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, interactive development workflow, **CodeLens Provider** with AI-powered complexity analysis and code insights, and **DocumentSymbol Provider** with enhanced multi-language navigation
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios, including comprehensive autonomous development assistant testing.
 
-**Latest Updates (v18.1):**
+**Latest Updates (v18.2):**
+- Added CodeLens Provider test group with comprehensive AI insights and metrics testing
+- Added complexity analysis testing with high/medium/low complexity function examples
+- Added security and quality analysis testing with Python vulnerability detection
+- Added DocumentSymbol Provider test group with multi-language symbol detection
+- Added symbol parsing testing for TypeScript, Python, Java, C++, Go, and Rust
+- Added AI-enhanced symbol information testing with contextual intelligence
+- Added cross-language symbol consistency testing for uniform experience
+- Added function metrics testing (line count, parameter count, complexity warnings)
+- Added file-level metrics testing (complexity analysis, test generation, security lenses)
+- Added real-time symbol updates and performance impact validation
+- Updated test coverage to include Phase 8.1 Advanced IDE Features completion
+
+**Previous Updates (v18.1):**
 - Added IDE Integration Error Handling & Reliability test group with 3 critical bug fix tests
 - Added Server Uptime Tracking Accuracy testing to verify proper timestamp management
 - Added MCP Server Graceful Degradation testing for failure scenario handling
@@ -2980,7 +3333,19 @@ done
 - Updated critical and high priority features to include IDE integration capabilities
 - Enhanced test coverage with WebSocket communication, AI assistance, and development workflow testing
 
-**Key New Test Coverage (v18.1):**
+**Key New Test Coverage (v18.2):**
+- 🧠 **CodeLens Provider** with AI-powered complexity analysis and code metrics
+- 🔍 **DocumentSymbol Provider** with enhanced navigation and multi-language support
+- 📊 **Complexity Detection** with cyclomatic complexity calculation and visual indicators
+- 🛡️ **Security Analysis Lenses** with vulnerability detection and quality metrics
+- 🧪 **Test Generation Lenses** with comprehensive test coverage creation
+- 📁 **Symbol Navigation** with TypeScript, Python, Java, C++, Go, Rust support
+- 🤖 **AI-Enhanced Symbols** with contextual intelligence and smart grouping
+- ⚡ **Real-time Updates** with symbol refresh and performance optimization
+- 🎯 **Interactive Actions** with clickable lenses and command integration
+- 🌐 **Cross-Language Consistency** with uniform experience across programming languages
+
+**Previous Test Coverage (v18.1):**
 - 🛠️ **IDE Integration Bug Fixes** with server uptime tracking accuracy and MCP graceful degradation
 - 🔒 **Race Condition Prevention** in WebSocket client management with safe concurrent operations
 - ⚙️ **Configuration Centralization** with port, timeout, and WebSocket constant management
