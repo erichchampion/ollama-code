@@ -186,6 +186,14 @@ export class EnhancedClient {
     try {
       logger.info('Processing user message', { message: message.substring(0, 100) });
 
+      // Check for pending task plan confirmation before analyzing intent
+      if (this.sessionState.activeTaskPlan) {
+        const confirmationResponse = this.checkForTaskPlanConfirmation(message);
+        if (confirmationResponse.isConfirmation) {
+          return await this.handleTaskPlanConfirmation(confirmationResponse, startTime);
+        }
+      }
+
       // Add to conversation
       // User message is handled when adding turn
 
@@ -701,5 +709,227 @@ You can also ask for more details about any specific task or phase.`;
         averageProgress: streamingStats.averageProgress
       }
     };
+  }
+
+  /**
+   * Check if user message is a confirmation for pending task plan
+   */
+  private checkForTaskPlanConfirmation(message: string): {
+    isConfirmation: boolean;
+    action: 'execute' | 'cancel' | 'modify' | 'details' | 'none';
+  } {
+    const lowerMessage = message.toLowerCase().trim();
+
+    // Execution confirmations
+    if (['yes', 'y', 'execute', 'run', 'start', 'proceed', 'go', 'ok', 'okay'].includes(lowerMessage)) {
+      return { isConfirmation: true, action: 'execute' };
+    }
+
+    // Cancellation confirmations
+    if (['no', 'n', 'cancel', 'abort', 'stop', 'skip', 'quit'].includes(lowerMessage)) {
+      return { isConfirmation: true, action: 'cancel' };
+    }
+
+    // Modification requests
+    if (['modify', 'edit', 'change', 'adjust', 'update'].includes(lowerMessage)) {
+      return { isConfirmation: true, action: 'modify' };
+    }
+
+    // Details requests
+    if (['details', 'info', 'explain', 'describe', 'more'].includes(lowerMessage)) {
+      return { isConfirmation: true, action: 'details' };
+    }
+
+    return { isConfirmation: false, action: 'none' };
+  }
+
+  /**
+   * Handle task plan confirmation response
+   */
+  private async handleTaskPlanConfirmation(
+    confirmation: { isConfirmation: boolean; action: 'execute' | 'cancel' | 'modify' | 'details' | 'none' },
+    startTime: number
+  ): Promise<ProcessingResult> {
+    const plan = this.sessionState.activeTaskPlan!;
+
+    switch (confirmation.action) {
+      case 'execute':
+        logger.info('Executing confirmed task plan', { planId: plan.id, taskCount: plan.tasks.length });
+
+        try {
+          const result = await this.executePendingPlan();
+          // Clear active plan after execution
+          this.sessionState.activeTaskPlan = undefined;
+          return result;
+        } catch (error) {
+          const errorMessage = `Failed to execute task plan: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          logger.error('Task plan execution failed', error);
+
+          return {
+            success: false,
+            intent: {
+              type: 'task_execution',
+              action: 'execute_plan',
+              entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
+              confidence: 1.0,
+              complexity: 'simple',
+              multiStep: false,
+              riskLevel: 'low',
+              requiresClarification: false,
+              suggestedClarifications: [],
+              estimatedDuration: 0,
+              context: {
+                projectAware: false,
+                fileSpecific: false,
+                followUp: true,
+                references: []
+              }
+            },
+            response: errorMessage,
+            conversationId: this.sessionState.conversationId,
+            processingTime: Date.now() - startTime,
+            error: errorMessage
+          };
+        }
+
+      case 'cancel':
+        logger.info('Task plan cancelled by user', { planId: plan.id });
+        this.sessionState.activeTaskPlan = undefined;
+
+        return {
+          success: true,
+          intent: {
+            type: 'task_execution',
+            action: 'cancel_plan',
+            entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
+            confidence: 1.0,
+            complexity: 'simple',
+            multiStep: false,
+            riskLevel: 'low',
+            requiresClarification: false,
+            suggestedClarifications: [],
+            estimatedDuration: 0,
+            context: {
+              projectAware: false,
+              fileSpecific: false,
+              followUp: true,
+              references: []
+            }
+          },
+          response: 'Task plan cancelled. How else can I help you?',
+          conversationId: this.sessionState.conversationId,
+          processingTime: Date.now() - startTime
+        };
+
+      case 'modify':
+        logger.info('Task plan modification requested', { planId: plan.id });
+
+        return {
+          success: true,
+          intent: {
+            type: 'task_execution',
+            action: 'modify_plan',
+            entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
+            confidence: 1.0,
+            complexity: 'simple',
+            multiStep: false,
+            riskLevel: 'low',
+            requiresClarification: true,
+            suggestedClarifications: ['Which tasks would you like to modify?', 'What changes do you want to make?'],
+            estimatedDuration: 0,
+            context: {
+              projectAware: false,
+              fileSpecific: false,
+              followUp: true,
+              references: []
+            }
+          },
+          response: 'What modifications would you like to make to the task plan? Please specify which tasks to change or what adjustments you need.',
+          conversationId: this.sessionState.conversationId,
+          processingTime: Date.now() - startTime
+        };
+
+      case 'details':
+        logger.info('Task plan details requested', { planId: plan.id });
+
+        const detailsResponse = this.generateTaskPlanDetails(plan);
+
+        return {
+          success: true,
+          intent: {
+            type: 'task_execution',
+            action: 'show_details',
+            entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
+            confidence: 1.0,
+            complexity: 'simple',
+            multiStep: false,
+            riskLevel: 'low',
+            requiresClarification: false,
+            suggestedClarifications: [],
+            estimatedDuration: 0,
+            context: {
+              projectAware: true,
+              fileSpecific: false,
+              followUp: true,
+              references: []
+            }
+          },
+          response: detailsResponse,
+          conversationId: this.sessionState.conversationId,
+          processingTime: Date.now() - startTime
+        };
+
+      default:
+        return {
+          success: false,
+          intent: {
+            type: 'conversation',
+            action: 'unknown_confirmation',
+            entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
+            confidence: 0,
+            complexity: 'simple',
+            multiStep: false,
+            riskLevel: 'low',
+            requiresClarification: true,
+            suggestedClarifications: ['Do you want to execute the plan?', 'Should I cancel the plan?'],
+            estimatedDuration: 0,
+            context: {
+              projectAware: false,
+              fileSpecific: false,
+              followUp: true,
+              references: []
+            }
+          },
+          response: 'I need clarification about the task plan. Would you like me to execute it, cancel it, or modify it?',
+          conversationId: this.sessionState.conversationId,
+          processingTime: Date.now() - startTime
+        };
+    }
+  }
+
+  /**
+   * Generate detailed description of task plan
+   */
+  private generateTaskPlanDetails(plan: TaskPlan): string {
+    let details = `**Task Plan Details: ${plan.title}**\n\n`;
+    details += `**Description:** ${plan.description}\n`;
+    details += `**Estimated Duration:** ${plan.estimatedDuration} minutes\n`;
+    details += `**Risk Level:** ${plan.riskLevel}\n`;
+    details += `**Task Count:** ${plan.tasks.length}\n\n`;
+
+    details += `**Tasks:**\n`;
+    plan.tasks.forEach((task, index) => {
+      details += `${index + 1}. **${task.title}**\n`;
+      details += `   - ${task.description}\n`;
+      details += `   - Estimated time: ${task.estimatedDuration} minutes\n`;
+      if (task.dependencies && task.dependencies.length > 0) {
+        details += `   - Dependencies: ${task.dependencies.join(', ')}\n`;
+      }
+      details += `\n`;
+    });
+
+    details += `\nWould you like to proceed with this plan? Say "yes" to execute, "no" to cancel, or "modify" to make changes.`;
+
+    return details;
   }
 }

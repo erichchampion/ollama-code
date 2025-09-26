@@ -10,7 +10,7 @@ import { OllamaClient } from './ollama-client.js';
 import { ProjectContext } from './context.js';
 
 export interface UserIntent {
-  type: 'task_request' | 'question' | 'command' | 'clarification' | 'conversation';
+  type: 'task_request' | 'question' | 'command' | 'clarification' | 'conversation' | 'task_execution';
   action: string;
   entities: {
     files: string[];
@@ -319,6 +319,27 @@ Be precise and only include entities that are clearly referenced.`;
       'run', 'execute', 'start', 'stop', 'test', 'build', 'deploy',
       'list', 'show', 'display', 'search', 'find'
     ];
+
+    // Confirmation indicators
+    const confirmationKeywords = [
+      'yes', 'y', 'ok', 'okay', 'sure', 'proceed', 'continue', 'go ahead',
+      'execute', 'run', 'do it', 'start', 'launch', 'begin'
+    ];
+
+    // Negative confirmation indicators
+    const negativeKeywords = [
+      'no', 'n', 'cancel', 'abort', 'stop', 'never mind', 'nevermind'
+    ];
+
+    // Check for confirmation patterns first (short responses are likely confirmations)
+    if (normalized.length <= 20) {
+      if (confirmationKeywords.some(keyword => normalized.includes(keyword))) {
+        return 'task_execution';
+      }
+      if (negativeKeywords.some(keyword => normalized.includes(keyword))) {
+        return 'task_execution';
+      }
+    }
 
     if (taskKeywords.some(keyword => normalized.includes(keyword))) {
       return 'task_request';

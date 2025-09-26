@@ -51,6 +51,7 @@ export interface TaskPlan {
     confidence: number;
     adaptations: number;
   };
+  riskLevel: 'low' | 'medium' | 'high';
 }
 
 export interface PlanningContext {
@@ -114,7 +115,8 @@ export class TaskPlanner {
           complexity,
           confidence: planData.confidence,
           adaptations: 0
-        }
+        },
+        riskLevel: this.assessRiskLevel(planData.tasks, complexity)
       };
 
       // Validate and optimize plan
@@ -1473,5 +1475,26 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
       }
       logger.info(`Plan cancelled: ${plan.title}`);
     }
+  }
+
+  /**
+   * Assess risk level based on tasks and complexity
+   */
+  private assessRiskLevel(tasks: Task[], complexity: 'simple' | 'moderate' | 'complex' | 'expert'): 'low' | 'medium' | 'high' {
+    // Base risk on complexity
+    if (complexity === 'expert') return 'high';
+    if (complexity === 'complex') return 'medium';
+
+    // Check for risky task types
+    const riskyTasks = tasks.filter(task =>
+      task.type === 'implementation' ||
+      task.type === 'refactoring' ||
+      task.filesInvolved.length > 5
+    );
+
+    if (riskyTasks.length > tasks.length * 0.7) return 'high';
+    if (riskyTasks.length > tasks.length * 0.3) return 'medium';
+
+    return 'low';
   }
 }
