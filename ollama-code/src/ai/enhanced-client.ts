@@ -20,6 +20,8 @@ import { StreamingProcessor, ProcessingUpdate } from '../streaming/streaming-pro
 import { STREAMING_CONFIG_DEFAULTS } from '../constants/streaming.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../constants/messages.js';
 import { API_REQUEST_TIMEOUT } from '../constants.js';
+import { AsyncMutex } from '../utils/async-mutex.js';
+import { UserIntentFactory } from '../utils/user-intent-factory.js';
 
 export interface EnhancedClientConfig {
   model: string;
@@ -87,6 +89,7 @@ export class EnhancedClient {
   private sessionState: SessionState;
   private sessionMetrics: Map<string, number> = new Map();
   private responseCache: Map<string, string> = new Map();
+  private sessionStateMutex: AsyncMutex = new AsyncMutex();
 
   constructor(
     ollamaClient: any,
@@ -187,12 +190,39 @@ export class EnhancedClient {
       logger.info('Processing user message', { message: message.substring(0, 100) });
 
       // Check for pending task plan confirmation before analyzing intent
-      if (this.sessionState.activeTaskPlan) {
-        const confirmationResponse = this.checkForTaskPlanConfirmation(message);
-        if (confirmationResponse.isConfirmation) {
-          return await this.handleTaskPlanConfirmation(confirmationResponse, startTime);
+      // Use mutex to prevent race conditions on session state
+      return await this.sessionStateMutex.lock(async () => {
+        if (this.sessionState.activeTaskPlan) {
+          const confirmationResponse = this.checkForTaskPlanConfirmation(message);
+          if (confirmationResponse.isConfirmation) {
+            return await this.handleTaskPlanConfirmation(confirmationResponse, startTime);
+          }
         }
-      }
+
+        return await this.processMessageInternal(message, startTime);
+      });
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      logger.error('Message processing failed:', error);
+
+      const errorResponse = `I encountered an error while processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`;
+
+      return {
+        success: false,
+        intent: UserIntentFactory.createErrorResponse(),
+        response: errorResponse,
+        conversationId: this.sessionState.conversationId,
+        processingTime,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Internal message processing logic
+   */
+  private async processMessageInternal(message: string, startTime: number): Promise<ProcessingResult> {
+    try {
 
       // Add to conversation
       // User message is handled when adding turn
@@ -758,8 +788,6 @@ You can also ask for more details about any specific task or phase.`;
 
         try {
           const result = await this.executePendingPlan();
-          // Clear active plan after execution
-          this.sessionState.activeTaskPlan = undefined;
           return result;
         } catch (error) {
           const errorMessage = `Failed to execute task plan: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -767,29 +795,15 @@ You can also ask for more details about any specific task or phase.`;
 
           return {
             success: false,
-            intent: {
-              type: 'task_execution',
-              action: 'execute_plan',
-              entities: { files: [], directories: [], functions: [], classes: [], technologies: [], concepts: [], variables: [] },
-              confidence: 1.0,
-              complexity: 'simple',
-              multiStep: false,
-              riskLevel: 'low',
-              requiresClarification: false,
-              suggestedClarifications: [],
-              estimatedDuration: 0,
-              context: {
-                projectAware: false,
-                fileSpecific: false,
-                followUp: true,
-                references: []
-              }
-            },
+            intent: UserIntentFactory.createTaskExecution('execute_plan'),
             response: errorMessage,
             conversationId: this.sessionState.conversationId,
             processingTime: Date.now() - startTime,
             error: errorMessage
           };
+        } finally {
+          // Always clear the active task plan regardless of success or failure
+          this.sessionState.activeTaskPlan = undefined;
         }
 
       case 'cancel':

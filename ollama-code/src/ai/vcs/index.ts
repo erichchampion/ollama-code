@@ -6,6 +6,13 @@
  * commit message generation, code review, and quality tracking.
  */
 
+import { VCSIntelligence } from './vcs-intelligence.js';
+import { CommitMessageGenerator } from './commit-message-generator.js';
+import { PullRequestReviewer } from './pull-request-reviewer.js';
+import { RegressionAnalyzer } from './regression-analyzer.js';
+import { CodeQualityTracker } from './code-quality-tracker.js';
+import type { GitHookType } from './vcs-intelligence.js';
+
 export { VCSIntelligence } from './vcs-intelligence.js';
 export { CommitMessageGenerator } from './commit-message-generator.js';
 export { PullRequestReviewer } from './pull-request-reviewer.js';
@@ -90,7 +97,7 @@ export class VCSIntegrationFactory {
       enableAutoAnalysis: config.enableAutoAnalysis ?? true,
       analysisDepth: config.analysisDepth || 30,
       enableGitHooks: config.enableGitHooks ?? false,
-      hookTypes: ['pre-commit', 'commit-msg', 'pre-push'] as const,
+      hookTypes: ['pre-commit', 'commit-msg', 'pre-push'] as GitHookType[],
       qualityThresholds: {
         maxComplexity: 10,
         minTestCoverage: 80,
@@ -149,7 +156,7 @@ export class VCSIntegrationFactory {
         maxLinesChanged: 500,
         minTestCoverage: 80,
         requiresDocumentation: true,
-        blockingIssueThreshold: 'high',
+        blockingIssueThreshold: 'high' as 'low' | 'medium' | 'high' | 'critical',
         autoApproveThreshold: 85
       }
     };
@@ -220,7 +227,7 @@ export class VCSIntegrationFactory {
         testCoverageDecrease: 10,
         technicalDebtIncrease: 8
       },
-      storageBackend: 'file',
+      storageBackend: 'file' as 'file' | 'database' | 'memory',
       storagePath: config.repositoryPath + '/.ollama-code/quality-tracking'
     };
 

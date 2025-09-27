@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.3.1
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Bug Fixes & Code Quality Improvements*
+# Manual Test Plan - Ollama Code CLI v0.4.0
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced Workspace Analysis, Progress Tracking, Configuration Management, Code Quality Improvements & AI-Powered VCS Integration*
 
 ## Overview
 
@@ -25,6 +25,16 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Project structure analysis and recommendations
 - Smart file filtering with .gitignore integration
 
+### 🔄 **VCS Integration & Version Control Intelligence**
+- **NEW:** AI-powered commit message generation with multiple styles
+- **NEW:** Automated pull request review with multi-platform support
+- **NEW:** Regression risk analysis with predictive modeling
+- **NEW:** Code quality tracking with trend analysis and alerts
+- **NEW:** Repository intelligence with activity summaries and metrics
+- **NEW:** File hotspot identification and change pattern analysis
+- **NEW:** Historical pattern learning for risk assessment
+- **NEW:** Technical debt tracking with automated recommendations
+
 ### 📊 **Knowledge & Analysis**
 - Code knowledge graph with semantic understanding
 - Architectural pattern detection and analysis
@@ -42,6 +52,10 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** WebSocket-based IDE integration server
 - **NEW:** Inline completions and code actions in VS Code
 - **NEW:** Interactive AI chat panel in IDE sidebar
+- **ENHANCED:** Advanced workspace analysis with context intelligence
+- **ENHANCED:** Multi-modal progress tracking with cancellation support
+- **ENHANCED:** Comprehensive configuration management with profiles and validation
+- **ENHANCED:** Centralized error handling with shared utilities
 
 ### ⚡ **Performance & Scalability**
 - Enterprise-scale distributed processing for large codebases
@@ -62,6 +76,10 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** Transactional rollback mechanisms for safe operations
 - **NEW:** Shared language detection eliminating code duplication
 - **NEW:** Configuration validation with initialization checks
+- **ENHANCED:** Service constants management eliminating hardcoded values
+- **ENHANCED:** Progress tracking utilities with status bar integration
+- **ENHANCED:** Configuration helper with type safety and intelligent defaults
+- **ENHANCED:** Error utilities with consistent formatting and recovery
 
 ## Prerequisites
 
@@ -1542,6 +1560,373 @@ npm run compile
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+### Test Group: Advanced Workspace Analysis & Context Intelligence
+**Priority: High**
+
+#### Test: Comprehensive Project Analysis
+**Test Setup:**
+1. Open workspace with mixed languages (JS/TS, Python, etc.)
+2. Include various file types: source, tests, config files
+3. Run `Ollama Code: Analyze Workspace` command
+4. Verify analysis results in output panel
+
+**Analysis Features to Test:**
+1. **Project Type Detection:**
+   - TypeScript project with tsconfig.json → detects "typescript"
+   - Node.js with package.json → detects dependencies and framework
+   - Python project with requirements.txt → detects "python"
+   - Mixed language projects → handles multiple languages
+
+2. **Dependency Analysis:**
+   - Parses package.json dependencies and devDependencies
+   - Identifies frameworks (React, Vue, Angular, Express, etc.)
+   - Detects test frameworks and build tools
+   - Maps dependency relationships
+
+3. **File Structure Intelligence:**
+   - Identifies source directories (src/, lib/, source/)
+   - Locates test directories (test/, tests/, __tests__, spec/)
+   - Finds configuration files (tsconfig.json, webpack.config.js, etc.)
+   - Maps file types and counts
+
+4. **Git Integration:**
+   - Detects git repository presence
+   - Identifies current branch if available
+   - Lists modified files
+   - Repository status integration
+
+**Expected Results:**
+- ✅ **Accurate Detection** correct project type and language identification
+- ✅ **Complete Dependency Mapping** all dependencies and frameworks detected
+- ✅ **Intelligent Structure Analysis** proper categorization of directories and files
+- ✅ **Context Caching** subsequent analyses use cached results for performance
+- ✅ **Multi-Language Support** handles polyglot projects correctly
+- ✅ **Git Awareness** incorporates repository context when available
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Context-Aware Code Intelligence
+**Test Setup:**
+1. Open TypeScript/JavaScript file with classes, functions, and imports
+2. Position cursor in different code contexts
+3. Use AI features to verify context awareness
+
+**Context Detection Tests:**
+1. **Function Context:**
+   - Place cursor inside function body
+   - Run AI explanation/completion
+   - Verify: Function name and scope detected in context
+
+2. **Class Context:**
+   - Position cursor within class definition
+   - Test AI features
+   - Verify: Class name and structure included in context
+
+3. **Comment/String Context:**
+   - Cursor in comment block or string literal
+   - Test AI completions
+   - Verify: Context type correctly identified
+
+4. **Import/Export Context:**
+   - Test AI features near import statements
+   - Verify: Related files and dependencies identified
+   - Check cross-file relationship detection
+
+5. **Multi-File Analysis:**
+   - Open file with complex import relationships
+   - Test workspace-wide context understanding
+   - Verify: Inter-file dependencies tracked
+
+**Expected Results:**
+- ✅ **Accurate Context Detection** cursor position context correctly identified
+- ✅ **Surrounding Code Analysis** 10 lines before/after included appropriately
+- ✅ **Symbol Recognition** function, class, namespace detection works
+- ✅ **Scope Awareness** understands code hierarchy and structure
+- ✅ **Cross-File Intelligence** tracks imports, exports, and relationships
+- ✅ **Language-Specific Patterns** adapts to different programming languages
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Enhanced Progress Tracking & Status Management
+**Priority: High**
+
+#### Test: Multi-Modal Progress Indicators
+**Test Setup:**
+1. Initiate long-running operations (workspace analysis, AI processing)
+2. Monitor progress indicators in multiple locations
+3. Test cancellation and completion scenarios
+
+**Progress Display Tests:**
+1. **VS Code Progress Bar:**
+   - Large workspace analysis → verify notification progress bar
+   - AI request processing → verify window status bar progress
+   - Batch file operations → verify incremental progress updates
+
+2. **Status Bar Integration:**
+   - Connection status → shows "🔌 Connected" / "🔌 Disconnected"
+   - Operation progress → shows current operation with spinner
+   - Completion status → shows checkmark with auto-hide after 3 seconds
+   - Error status → shows error icon with auto-hide after 5 seconds
+
+3. **Step-by-Step Progress:**
+   - Multi-step operations → shows "Step 2/5: Analyzing dependencies"
+   - File processing → shows "Processing file.js (15/20 files)"
+   - Batch operations → individual and overall progress tracking
+
+**Progress Control Tests:**
+1. **Cancellation Support:**
+   - Start long operation → verify cancel button appears
+   - Click cancel → operation stops gracefully
+   - Cleanup → no orphaned processes or incomplete state
+
+2. **Error Handling:**
+   - Simulate operation failure → progress shows error state
+   - Partial completion → shows progress up to failure point
+   - Recovery → allows retry without full restart
+
+**Expected Results:**
+- ✅ **Multi-Location Display** progress shown in appropriate UI locations
+- ✅ **Real-Time Updates** progress reflects actual operation state
+- ✅ **Accurate Percentage** progress calculations are correct
+- ✅ **Cancellation Works** operations can be stopped safely
+- ✅ **Error Integration** failures handled gracefully with clear feedback
+- ✅ **Performance Impact** progress tracking doesn't slow operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Batch Operation Management
+**Test Setup:**
+1. Select multiple files in VS Code Explorer
+2. Run batch AI operations (analyze, refactor, document)
+3. Monitor batch progress and individual file status
+
+**Batch Processing Tests:**
+1. **File Selection:**
+   - Multi-select in Explorer → run "Analyze Selected Files"
+   - Workspace-wide operation → run "Analyze All Source Files"
+   - Filtered selection → exclude test files, include only .js/.ts
+
+2. **Progress Tracking:**
+   - Overall progress → "Processing 15/20 files (75%)"
+   - Current file → "Analyzing src/components/Button.tsx"
+   - Completion status → "✅ 18 successful, ❌ 2 failed"
+
+3. **Error Handling:**
+   - File access errors → continue with other files
+   - AI processing errors → retry with fallback or skip
+   - Partial success → report results for completed files
+
+4. **Resource Management:**
+   - Concurrent processing → respect maxConcurrentRequests setting
+   - Memory usage → stays within bounds during large batches
+   - Performance → maintains responsiveness during processing
+
+**Expected Results:**
+- ✅ **Batch Coordination** multiple files processed efficiently
+- ✅ **Individual Tracking** progress shown per file and overall
+- ✅ **Error Isolation** failures don't stop entire batch
+- ✅ **Resource Limits** concurrent operations respect configuration
+- ✅ **Results Summary** clear report of successes and failures
+- ✅ **Performance** batch processing doesn't block VS Code UI
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Configuration Management & Validation
+**Priority: High**
+
+#### Test: Advanced Configuration Interface
+**Test Setup:**
+1. Open Command Palette in VS Code
+2. Run `Ollama Code: Show Configuration` command
+3. Test comprehensive configuration interface
+
+**Configuration UI Features:**
+1. **Profile Management:**
+   - Switch between profiles: Minimal, Balanced, Full-Featured
+   - Verify settings change appropriately for each profile
+   - Create custom profile with specific settings combination
+   - Export/import configuration profiles
+
+2. **Setting Categories:**
+   - Connection Settings (server port, timeout, retry attempts)
+   - AI Features (inline completions, code actions, diagnostics)
+   - Performance (context lines, cache size, concurrent requests)
+   - UI Preferences (notifications, status bar, compact mode)
+   - Advanced (debug mode, telemetry, log level)
+
+3. **Workspace-Aware Recommendations:**
+   - TypeScript project → suggests increased context lines
+   - Large codebase → recommends performance optimizations
+   - Team project → suggests standardized settings
+   - Performance issues → recommends cache adjustments
+
+**Configuration Validation Tests:**
+1. **Input Validation:**
+   - Invalid port number (0, 70000) → shows error with valid range
+   - Invalid timeout (-1000, 100000) → prevents setting with guidance
+   - Invalid context lines (0, 500) → suggests reasonable values
+   - Invalid cache size → shows memory impact warnings
+
+2. **Real-Time Updates:**
+   - Change inline completions setting → takes effect immediately
+   - Modify context lines → next AI request uses new value
+   - Update notification level → changes notification behavior
+   - Toggle features → UI reflects changes instantly
+
+**Expected Results:**
+- ✅ **Comprehensive Interface** all settings accessible and well-organized
+- ✅ **Profile System** pre-configured profiles work correctly
+- ✅ **Smart Recommendations** suggestions appropriate for workspace type
+- ✅ **Input Validation** prevents invalid configurations with clear guidance
+- ✅ **Real-Time Updates** changes take effect without restart when possible
+- ✅ **Persistence** settings saved and restored correctly
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Configuration Helper Integration
+**Test Setup:**
+1. Access configuration through multiple paths
+2. Verify consistent behavior across all access methods
+3. Test configuration validation and defaults
+
+**Configuration Access Methods:**
+1. **VS Code Settings UI:**
+   - Open Settings (`Ctrl+,`) → search "Ollama Code"
+   - Verify all settings appear with correct defaults
+   - Change values → verify immediate effect or restart notification
+
+2. **Configuration Command:**
+   - `Ollama Code: Show Configuration` → comprehensive UI
+   - `Ollama Code: Reset Configuration` → restores all defaults
+   - Setting modifications → reflected in VS Code settings
+
+3. **Automatic Configuration:**
+   - New workspace → detects project type and suggests settings
+   - Performance issues → offers optimization recommendations
+   - Error conditions → suggests configuration fixes
+
+**Configuration Helper Features:**
+1. **Type Safety:**
+   - Port numbers → validated as integers in correct range
+   - Boolean settings → properly toggled with clear states
+   - Enum values → dropdown with valid options only
+   - String settings → validated format and length
+
+2. **Default Management:**
+   - All settings have sensible defaults from serviceConstants.ts
+   - Reset functionality restores proper defaults
+   - Missing settings → automatically filled with defaults
+   - Version migration → updates old configurations
+
+**Expected Results:**
+- ✅ **Consistent Access** same settings available through all methods
+- ✅ **Type Safety** invalid values prevented with clear error messages
+- ✅ **Smart Defaults** appropriate default values for all settings
+- ✅ **Validation Integration** shared validation across all access points
+- ✅ **Configuration Helper** eliminates duplicate configuration code
+- ✅ **Error Prevention** configuration helper prevents invalid states
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Error Handling & Shared Utilities
+**Priority: Critical**
+
+#### Test: Centralized Error Management
+**Test Setup:**
+1. Trigger various error conditions across extension features
+2. Verify consistent error handling and user feedback
+3. Test error recovery and graceful degradation
+
+**Error Handling Scenarios:**
+1. **Network Errors:**
+   - Server unavailable → clear "Connection failed" message with retry option
+   - Request timeout → "Request timed out" with option to increase timeout
+   - Network interruption → "Connection lost" with automatic reconnection
+
+2. **AI Service Errors:**
+   - Model unavailable → "AI model not available" with model list
+   - Invalid response → "AI response malformed" with fallback options
+   - Rate limiting → "Rate limit exceeded" with wait time indication
+
+3. **Configuration Errors:**
+   - Invalid port → "Port must be between 1024-65535" with current value
+   - Missing workspace → "No workspace found" with guidance
+   - Permission errors → "File access denied" with permission instructions
+
+4. **File Operation Errors:**
+   - File not found → "File not found: path" with browse option
+   - Read permission → "Cannot read file" with permission check
+   - Write permission → "Cannot write file" with permission guidance
+
+**Error Recovery Tests:**
+1. **Automatic Recovery:**
+   - Connection lost → automatic reconnection when server available
+   - AI timeout → retry with longer timeout automatically
+   - File lock → retry after brief delay
+
+2. **User-Guided Recovery:**
+   - Configuration error → offer to open settings
+   - Permission error → provide command to fix permissions
+   - Service unavailable → show steps to start required services
+
+**Expected Results:**
+- ✅ **Consistent Messaging** all errors use formatError utility for consistency
+- ✅ **Clear Communication** error messages explain problem and solution
+- ✅ **Graceful Recovery** extension continues working after errors
+- ✅ **User Guidance** errors provide actionable steps for resolution
+- ✅ **No Crashes** error handling prevents extension failures
+- ✅ **Logging Integration** errors logged appropriately for debugging
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Validation Utilities Integration
+**Test Setup:**
+1. Test input validation across all extension features
+2. Verify consistent validation behavior and error messages
+3. Test validation in different contexts (settings, commands, API calls)
+
+**Validation Scenarios:**
+1. **Port Validation:**
+   - Input: 80 → Error: "Port must be between 1024 and 65535"
+   - Input: 70000 → Error: "Port must be between 1024 and 65535"
+   - Input: 3002 → Success: Valid port accepted
+
+2. **Timeout Validation:**
+   - Input: 500 → Error: "Timeout must be between 1000 and 60000 ms"
+   - Input: 100000 → Error: "Timeout must be between 1000 and 60000 ms"
+   - Input: 10000 → Success: Valid timeout accepted
+
+3. **Context Lines Validation:**
+   - Input: 3 → Error: "Context lines must be between 5 and 100"
+   - Input: 200 → Error: "Context lines must be between 5 and 100"
+   - Input: 25 → Success: Valid context lines accepted
+
+4. **Cache Size Validation:**
+   - Input: 5 → Error: "Cache size must be between 10 and 500"
+   - Input: 1000 → Error: "Cache size must be between 10 and 500"
+   - Input: 100 → Success: Valid cache size accepted
+
+**Validation Integration Tests:**
+1. **Settings UI Validation:**
+   - VS Code settings → validation prevents invalid values
+   - Configuration command → validation with immediate feedback
+   - Profile switching → validates all settings in profile
+
+2. **Command Validation:**
+   - AI requests → validates context parameters
+   - File operations → validates file paths and permissions
+   - Workspace operations → validates workspace requirements
+
+**Expected Results:**
+- ✅ **Consistent Validation** same rules applied across all features
+- ✅ **Clear Error Messages** validation errors explain requirements
+- ✅ **Early Prevention** invalid values prevented before causing issues
+- ✅ **Shared Logic** validation utilities eliminate duplicate code
+- ✅ **Type Safety** validation ensures type correctness
+- ✅ **Range Checking** numeric values validated against service constants
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ### Test Group: Interactive Chat Interface
 **Priority: High**
 
@@ -1904,6 +2289,289 @@ kill $NC_PID  # Clean up
 - ✅ **Unified Handling** - Same error patterns across all failure scenarios
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
+
+## 🔄 VCS Integration & Version Control Intelligence
+
+### Test Group: VCS Intelligence Core Features
+**Priority: Critical**
+
+#### Test: Repository Analysis and Metrics
+**Test Repository Setup:**
+- Initialize Git repository with multiple branches
+- Create commit history with various file types
+- Include both small and large commits
+- Add merge commits and conflict resolutions
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Analyze this repository's development patterns"
+./dist/src/cli-selector.js enhanced "Show me repository health metrics"
+./dist/src/cli-selector.js enhanced "Identify file hotspots and change patterns"
+```
+
+**Expected Results:**
+- Repository structure analysis with branch topology
+- Commit frequency and timing patterns identified
+- File change frequency and hotspot analysis
+- Developer activity patterns and contribution metrics
+- Code churn analysis and stability indicators
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: File Hotspot Detection
+**Test Scenarios:**
+1. Frequently modified configuration files
+2. Core business logic files with many changes
+3. Test files with regular updates
+4. Documentation files with sporadic changes
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Which files are changed most frequently?"
+./dist/src/cli-selector.js enhanced "Show me potential problem areas in the codebase"
+./dist/src/cli-selector.js enhanced "Analyze technical debt hotspots"
+```
+
+**Expected:**
+- Accurate identification of frequently changed files
+- Risk assessment based on change patterns
+- Correlation between file size and change frequency
+- Recommendations for refactoring high-risk areas
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: AI-Powered Commit Message Generation
+**Priority: High**
+
+#### Test: Conventional Commit Style
+**Test Setup:**
+- Stage various types of changes (feat, fix, docs, refactor)
+- Include both breaking and non-breaking changes
+- Test with different file types and scopes
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Generate conventional commit message for staged changes"
+./dist/src/cli-selector.js enhanced "Create commit message in conventional format"
+```
+
+**Expected Results:**
+- Proper conventional commit format: `type(scope): description`
+- Accurate classification of change types
+- Appropriate scope identification
+- Breaking change indicators when applicable
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Descriptive Commit Style
+**Test Scenarios:**
+- Complex refactoring changes
+- Bug fixes with multiple file modifications
+- Feature additions spanning multiple modules
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Generate descriptive commit message"
+./dist/src/cli-selector.js enhanced "Create detailed commit with explanation"
+```
+
+**Expected:**
+- Clear, descriptive commit messages
+- Explanation of why changes were made
+- Context about impact and reasoning
+- Professional tone and formatting
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Emoji-Enhanced Commit Style
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Generate commit message with emojis"
+./dist/src/cli-selector.js enhanced "Create fun commit message with appropriate emojis"
+```
+
+**Expected:**
+- Appropriate emoji selection for change types
+- Maintains readability and professionalism
+- Follows common emoji commit conventions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Pull Request Review Automation
+**Priority: High**
+
+#### Test: Multi-Platform PR Analysis
+**Test Platforms:**
+- GitHub pull requests
+- GitLab merge requests
+- Bitbucket pull requests
+- Azure DevOps pull requests
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Review pull request #123"
+./dist/src/cli-selector.js enhanced "Analyze this merge request for potential issues"
+./dist/src/cli-selector.js enhanced "Generate comprehensive PR review"
+```
+
+**Expected Results:**
+- Platform-specific API integration working
+- Accurate code change analysis
+- Security vulnerability detection
+- Performance impact assessment
+- Code quality and style feedback
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Automated Security Analysis
+**Test Security Scenarios:**
+- Hardcoded credentials or API keys
+- SQL injection vulnerabilities
+- XSS potential in web code
+- Insecure file operations
+- Dependency vulnerabilities
+
+**Expected:**
+- Detection of common security patterns
+- Risk severity classification
+- Specific remediation suggestions
+- Integration with security best practices
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Code Quality Assessment
+**Test Quality Metrics:**
+- Code complexity analysis
+- Test coverage implications
+- Documentation completeness
+- Architectural consistency
+- Performance impact evaluation
+
+**Expected:**
+- Accurate complexity calculations
+- Coverage gap identification
+- Documentation quality assessment
+- Architectural guideline compliance
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Regression Risk Analysis
+**Priority: Critical**
+
+#### Test: Historical Pattern Learning
+**Test Setup:**
+- Repository with extensive commit history
+- Past incidents and rollbacks documented
+- Various types of changes and their outcomes
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Assess regression risk for current changes"
+./dist/src/cli-selector.js enhanced "Analyze historical patterns for similar changes"
+./dist/src/cli-selector.js enhanced "Predict potential issues with this modification"
+```
+
+**Expected Results:**
+- Learning from past incident patterns
+- Risk scoring based on historical data
+- Identification of high-risk change patterns
+- Recommendations for risk mitigation
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Predictive Risk Modeling
+**Test Scenarios:**
+- Large refactoring operations
+- Core system modifications
+- Database schema changes
+- API interface modifications
+
+**Expected:**
+- Accurate risk assessment scoring
+- Specific risk factors identified
+- Mitigation strategy recommendations
+- Confidence levels for predictions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Code Quality Tracking & Trend Analysis
+**Priority: High**
+
+#### Test: Quality Metrics Collection
+**Test Metrics:**
+- Code complexity trends
+- Test coverage evolution
+- Technical debt accumulation
+- Documentation completeness
+- Performance indicators
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Show code quality trends over time"
+./dist/src/cli-selector.js enhanced "Generate quality improvement recommendations"
+./dist/src/cli-selector.js enhanced "Track technical debt progression"
+```
+
+**Expected Results:**
+- Comprehensive quality metric tracking
+- Trend analysis with visualizations
+- Actionable improvement recommendations
+- Integration with development workflow
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Quality Alerts and Notifications
+**Test Alert Scenarios:**
+- Quality regression detection
+- Coverage drop below thresholds
+- Complexity increase warnings
+- Technical debt accumulation alerts
+
+**Expected:**
+- Timely quality regression alerts
+- Configurable threshold settings
+- Clear actionable notifications
+- Integration with CI/CD pipelines
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Repository Intelligence Integration
+**Priority: Medium**
+
+#### Test: Cross-Repository Analysis
+**Test Setup:**
+- Multiple related repositories
+- Shared components and dependencies
+- Cross-repository refactoring scenarios
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Analyze impact across related repositories"
+./dist/src/cli-selector.js enhanced "Show cross-repo dependency changes"
+```
+
+**Expected:**
+- Multi-repository change impact analysis
+- Dependency tracking across repos
+- Coordinated refactoring recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Team Activity Insights
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Show team collaboration patterns"
+./dist/src/cli-selector.js enhanced "Generate development activity summary"
+```
+
+**Expected:**
+- Team collaboration pattern analysis
+- Individual contribution insights
+- Workflow optimization suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
 
 ## 🔄 Integration & System Features
 
@@ -4484,7 +5152,33 @@ Test that commands are only available in appropriate contexts:
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
-### Scenario N: VS Code Extension Real-World Development Workflow
+### Scenario N: Enhanced VS Code Extension Features Integration
+**Goal:** Validate comprehensive integration of advanced workspace analysis, progress tracking, configuration management, and error handling in VS Code extension
+
+**Steps:**
+1. **Workspace Intelligence:** Open complex multi-language project → run comprehensive workspace analysis → verify project type, dependencies, and structure detection
+2. **Configuration Management:** Open configuration interface → test profiles (Minimal, Balanced, Full-Featured) → verify workspace-aware recommendations → test validation
+3. **Progress Tracking:** Initiate large batch operations → monitor multi-modal progress indicators → test cancellation and error recovery
+4. **Context Intelligence:** Position cursor in various code contexts → test context-aware completions and explanations → verify symbol detection
+5. **Error Handling:** Trigger various error conditions → verify consistent error messaging and recovery → test graceful degradation
+6. **Validation Systems:** Input invalid configuration values → verify validation prevents issues → test error guidance
+7. **Performance Impact:** Monitor VS Code responsiveness during intensive operations → verify progress tracking doesn't slow extension
+8. **Resource Management:** Test concurrent operations → verify resource limits respected → check memory usage optimization
+
+**Success Criteria:**
+- Workspace analysis accurately detects project types, languages, frameworks, and dependencies
+- Configuration management provides intelligent profiles with validation and real-time updates
+- Progress tracking shows accurate status across multiple UI locations with cancellation support
+- Context intelligence adapts to cursor position and provides relevant code insights
+- Error handling provides consistent, helpful messages with recovery guidance
+- Validation prevents invalid configurations with clear error explanations
+- Extension maintains VS Code performance during all operations
+- Resource management prevents memory leaks and respects concurrent operation limits
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
+### Scenario O: VS Code Extension Real-World Development Workflow
 **Goal:** Test extension capabilities in realistic development scenarios
 
 **Steps:**
@@ -4570,6 +5264,11 @@ Test that commands are only available in appropriate contexts:
 - [ ] **FIXED:** WebSocket client connection race condition prevention
 - [ ] **NEW:** Intent-based context prioritization for code review accuracy
 - [ ] **NEW:** Complete analysis result saving with task plan capture
+- [ ] **NEW:** VCS Intelligence repository analysis with development pattern recognition
+- [ ] **NEW:** AI-powered commit message generation with multiple style support
+- [ ] **NEW:** Automated pull request review with multi-platform integration
+- [ ] **NEW:** Regression risk analysis with historical pattern learning
+- [ ] **NEW:** Code quality tracking with trend analysis and alerting
 - [ ] Git repository analysis and insights
 - [ ] Code quality assessment
 - [ ] Test generation and strategy
@@ -4615,6 +5314,11 @@ Test that commands are only available in appropriate contexts:
 - [ ] **NEW:** Cross-platform compatibility for VS Code extension
 - [ ] **NEW:** AI request processing and streaming responses
 - [ ] **NEW:** Workspace analysis integration with IDE context
+- [ ] **NEW:** File hotspot detection and technical debt analysis
+- [ ] **NEW:** Cross-repository impact analysis and dependency tracking
+- [ ] **NEW:** Team collaboration pattern analysis and workflow insights
+- [ ] **NEW:** Security vulnerability detection in pull request reviews
+- [ ] **NEW:** Predictive risk modeling for change impact assessment
 - [ ] Distributed processing performance
 - [ ] Memory optimization and caching
 - [ ] Real-time file watching and updates
@@ -4652,7 +5356,7 @@ Test that commands are only available in appropriate contexts:
 
 **Test Plan Version:** 18.4 (Added CodeActionProvider, Enhanced ChatViewProvider, StatusBarProvider, and Command Palette Integration Testing)
 **Created:** September 21, 2025
-**Last Updated:** September 24, 2025 (Added CodeActionProvider, Enhanced ChatViewProvider, StatusBarProvider, and Command Palette Integration testing to complete Phase 8.1 Advanced IDE Features with AI-powered quick fixes, comprehensive chat interface, real-time status monitoring, and command palette integration)
+**Last Updated:** September 25, 2025 (Added Advanced Workspace Analysis, Enhanced Progress Tracking, Configuration Management, and Centralized Error Handling testing to complete comprehensive IDE integration with context intelligence, multi-modal progress indicators, configuration profiles with validation, and shared utilities for consistent behavior)
 **Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.3.0
 **Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, interactive development workflow, **CodeLens Provider** with AI-powered complexity analysis and code insights, **DocumentSymbol Provider** with enhanced multi-language navigation, **InlineCompletionProvider** with contextual AI-powered code suggestions, **HoverProvider** with AI-generated documentation and explanations, **DiagnosticProvider** with multi-layer static analysis, complexity detection, and AI-powered code analysis, **Enhanced CodeActionProvider** with AI-powered quick fixes and refactoring suggestions, **Enhanced ChatViewProvider** with comprehensive AI sidebar panel and workspace context tracking, **StatusBarProvider** with real-time connection monitoring and operation progress display, and **Command Palette Integration** with 15+ AI commands and context-conditional availability
 **Tested By:** _____________
@@ -4720,7 +5424,19 @@ Test that commands are only available in appropriate contexts:
 - Updated critical and high priority features to include IDE integration capabilities
 - Enhanced test coverage with WebSocket communication, AI assistance, and development workflow testing
 
-**Key New Test Coverage (v18.3):**
+**Key New Test Coverage (v18.4):**
+- 🧠 **Advanced Workspace Analysis** with context-aware intelligence and comprehensive project detection
+- 🎯 **Context Intelligence** with cursor position analysis, multi-file relationships, and symbol detection
+- 📊 **Enhanced Progress Tracking** with multi-modal indicators, real-time updates, and cancellation support
+- 🔄 **Batch Operation Management** with file processing, error isolation, and resource management
+- ⚙️ **Configuration Management** with profiles, validation, and workspace-aware recommendations
+- 🛠️ **Configuration Helper Integration** with type safety, intelligent defaults, and consistent access
+- 🚨 **Centralized Error Management** with shared utilities, consistent formatting, and graceful recovery
+- ✅ **Validation Utilities Integration** with consistent validation, clear error messages, and early prevention
+- 🔧 **Service Constants Management** with elimination of hardcoded values and centralized configuration
+- 🎨 **Progress Utilities** with status bar integration, step-by-step tracking, and performance optimization
+
+**Previous Test Coverage (v18.3):**
 - 💡 **InlineCompletionProvider** with contextual AI-powered code suggestions and smart filtering
 - 📝 **Intelligent Code Completion** with method/property completion, parameter suggestions, and type intelligence
 - 🔄 **Multi-line Support** with complex completion scenarios, indentation preservation, and cancellation handling
@@ -4800,6 +5516,20 @@ Test that commands are only available in appropriate contexts:
 - 🧪 **Test Generation Integration** with automated testing strategies
 - 🎯 **End-to-End Workflows** with autonomous development integration (Scenario K)
 - 💪 **Stress Testing** for autonomous capabilities under complex scenarios (Scenario L)
+
+**Latest Updates (v18.4):**
+- Added Advanced Workspace Analysis testing with comprehensive project detection and context intelligence
+- Added Enhanced Progress Tracking testing with multi-modal indicators, real-time updates, and cancellation support
+- Added Configuration Management testing with profiles, validation, and workspace-aware recommendations
+- Added Centralized Error Management testing with shared utilities, consistent formatting, and graceful recovery
+- Added Validation Utilities Integration testing with consistent validation and early error prevention
+- Added Service Constants Management testing with elimination of hardcoded values and centralized configuration
+- Added Progress Utilities testing with status bar integration, step-by-step tracking, and performance optimization
+- Added Configuration Helper Integration testing with type safety, intelligent defaults, and consistent access
+- Enhanced VS Code extension testing with comprehensive workspace intelligence and configuration management
+- Added new integration test scenario (Scenario N) for advanced extension features validation
+- Updated test coverage to include context-aware intelligence, batch operation management, and error handling utilities
+- Enhanced test plan with comprehensive validation of shared utilities and centralized resource management
 
 **Previous Updates (v15.0):**
 - Added Multi-Provider AI Integration testing with 4 providers (Ollama, OpenAI, Anthropic, Google)

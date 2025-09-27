@@ -7,7 +7,7 @@
 import { OllamaClient } from './ollama-client.js';
 import { ProjectContext } from './context.js';
 export interface UserIntent {
-    type: 'task_request' | 'question' | 'command' | 'clarification' | 'conversation';
+    type: 'task_request' | 'question' | 'command' | 'clarification' | 'conversation' | 'task_execution';
     action: string;
     entities: {
         files: string[];

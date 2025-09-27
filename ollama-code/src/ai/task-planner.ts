@@ -9,6 +9,7 @@ import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
 import { EnhancedClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
+import { safeStringify } from '../utils/safe-json.js';
 
 export interface Task {
   id: string;
@@ -1273,8 +1274,8 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
       } else if (typeof response === 'string') {
         task.result = response;
       } else {
-        task.result = JSON.stringify(response);
-        logger.warn('Unexpected AI response structure, storing as JSON string');
+        task.result = safeStringify(response, { maxDepth: 5 });
+        logger.warn('Unexpected AI response structure, storing as safe JSON string');
       }
 
       task.status = 'completed';

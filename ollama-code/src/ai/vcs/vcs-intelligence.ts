@@ -660,7 +660,11 @@ export class VCSIntelligence {
 
   private isCacheValid(analysis: RepositoryAnalysis): boolean {
     // Simple cache validation - in practice, this would be more sophisticated
-    return Date.now() - analysis.repository.lastCommit?.date.getTime()! < this.cacheExpiry;
+    const lastCommitTime = analysis.repository.lastCommit?.date?.getTime();
+    if (!lastCommitTime) {
+      return false; // Invalid cache if no last commit time
+    }
+    return Date.now() - lastCommitTime < this.cacheExpiry;
   }
 
   /**

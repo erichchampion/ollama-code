@@ -70,6 +70,7 @@ export declare class EnhancedClient {
     private sessionState;
     private sessionMetrics;
     private responseCache;
+    private sessionStateMutex;
     constructor(ollamaClient: any, projectContext?: ProjectContext, config?: Partial<EnhancedClientConfig>);
     /**
      * Initialize all components
@@ -83,6 +84,10 @@ export declare class EnhancedClient {
      * Process a user message with full enhanced capabilities
      */
     processMessage(message: string): Promise<ProcessingResult>;
+    /**
+     * Internal message processing logic
+     */
+    private processMessageInternal;
     /**
      * Create and potentially execute a plan for the intent
      */
@@ -180,4 +185,16 @@ export declare class EnhancedClient {
             averageProgress: number;
         };
     };
+    /**
+     * Check if user message is a confirmation for pending task plan
+     */
+    private checkForTaskPlanConfirmation;
+    /**
+     * Handle task plan confirmation response
+     */
+    private handleTaskPlanConfirmation;
+    /**
+     * Generate detailed description of task plan
+     */
+    private generateTaskPlanDetails;
 }

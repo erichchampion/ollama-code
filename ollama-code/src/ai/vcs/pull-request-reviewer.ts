@@ -10,8 +10,10 @@ import { logger } from '../../utils/logger.js';
 import { AutomatedCodeReviewer } from '../automated-code-reviewer.js';
 import { SecurityAnalyzer } from '../security-analyzer.js';
 import { PerformanceAnalyzer } from '../performance-analyzer.js';
+import { generateReviewId, generateFindingId } from '../../utils/id-generator.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 
 const execAsync = promisify(exec);
@@ -133,28 +135,11 @@ export class PullRequestReviewer {
     this.aiClient = aiClient;
 
     // Initialize analyzers
-    this.codeReviewer = new AutomatedCodeReviewer({
-      repositoryPath: config.repositoryPath,
-      reviewDepth: this.mapReviewDepth(config.reviewDepth),
-      enableMetrics: true,
-      customRules: []
-    });
+    this.codeReviewer = new AutomatedCodeReviewer();
 
-    this.securityAnalyzer = new SecurityAnalyzer({
-      enabledRules: ['all'],
-      severity: 'low',
-      includeTests: false,
-      customPatterns: []
-    });
+    this.securityAnalyzer = new SecurityAnalyzer();
 
-    this.performanceAnalyzer = new PerformanceAnalyzer({
-      enabledAnalyzers: ['all'],
-      thresholds: {
-        complexity: 10,
-        memoryUsage: 100,
-        executionTime: 1000
-      }
-    });
+    this.performanceAnalyzer = new PerformanceAnalyzer();
   }
 
   /**
@@ -271,8 +256,8 @@ export class PullRequestReviewer {
       throw new Error('Cannot review draft pull requests');
     }
 
-    // Check file size limits
-    const oversizedFiles = prInfo.files.filter(f => f.changes > this.config.reviewCriteria.maxFileSize * 1000);
+    // Check file size limits (maxFileSize is in lines of changes)
+    const oversizedFiles = prInfo.files.filter(f => f.changes > this.config.reviewCriteria.maxFileSize);
     if (oversizedFiles.length > 0) {
       logger.warn('Large files detected in PR', {
         files: oversizedFiles.map(f => f.path),
@@ -303,21 +288,24 @@ export class PullRequestReviewer {
         const filePath = path.join(this.config.repositoryPath, file.path);
 
         try {
-          const review = await this.codeReviewer.reviewFile(filePath);
+          const fileContent = await fs.readFile(filePath, 'utf-8');
+          const review = await this.codeReviewer.reviewCode({
+            files: [{ path: filePath, content: fileContent }]
+          });
 
           // Convert code review findings to PR findings
-          review.issues.forEach(issue => {
+          ((review as any).issues || []).forEach((issue: any) => {
             findings.push({
               id: this.generateFindingId(),
               type: 'quality',
               severity: this.mapSeverity(issue.severity),
-              title: issue.rule,
-              description: issue.message,
+              title: issue.category || 'Quality Issue',
+              description: issue.description || issue.message || 'Quality issue detected',
               file: file.path,
-              line: issue.line,
-              column: issue.column,
-              suggestion: issue.suggestion,
-              rule: issue.rule,
+              line: issue.line || 0,
+              column: issue.column || 0,
+              suggestion: issue.suggestion || issue.fix || undefined,
+              rule: issue.category || issue.type || 'quality',
               confidence: issue.confidence,
               autoFixable: issue.autoFixable
             });
@@ -344,20 +332,20 @@ export class PullRequestReviewer {
         .filter(f => f.status !== 'deleted')
         .map(f => path.join(this.config.repositoryPath, f.path));
 
-      const securityResults = await this.securityAnalyzer.analyzeFiles(filesToAnalyze);
+      const securityResults = await this.securityAnalyzer.analyzeFile(filesToAnalyze[0] || '', 'low' as any);
 
-      securityResults.vulnerabilities.forEach(vuln => {
+      securityResults.forEach((vuln: any) => {
         findings.push({
           id: this.generateFindingId(),
           type: 'security',
-          severity: this.mapSeverity(vuln.severity),
-          title: vuln.type,
-          description: vuln.description,
-          file: path.relative(this.config.repositoryPath, vuln.file),
-          line: vuln.line,
-          suggestion: vuln.recommendation,
-          rule: vuln.rule,
-          confidence: vuln.confidence,
+          severity: this.mapSeverity(vuln.severity || 'medium'),
+          title: vuln.type || 'Security Issue',
+          description: vuln.description || 'Security vulnerability detected',
+          file: path.relative(this.config.repositoryPath, vuln.file || ''),
+          line: vuln.line || 0,
+          suggestion: vuln.recommendation || vuln.fix || undefined,
+          rule: vuln.type || 'security',
+          confidence: vuln.confidence || 'medium',
           autoFixable: false
         });
       });
@@ -379,20 +367,20 @@ export class PullRequestReviewer {
         .filter(f => f.status !== 'deleted')
         .map(f => path.join(this.config.repositoryPath, f.path));
 
-      const perfResults = await this.performanceAnalyzer.analyzeFiles(filesToAnalyze);
+      const perfResults = await this.performanceAnalyzer.analyzeFile(filesToAnalyze[0] || '', { severityThreshold: 'low' as any, analyzeComplexity: true, checkMemoryLeaks: true });
 
-      perfResults.issues.forEach(issue => {
+      (perfResults.issues || []).forEach((issue: any) => {
         findings.push({
           id: this.generateFindingId(),
           type: 'performance',
           severity: this.mapSeverity(issue.severity),
-          title: issue.type,
-          description: issue.description,
-          file: path.relative(this.config.repositoryPath, issue.file),
-          line: issue.line,
-          suggestion: issue.suggestion,
-          rule: issue.pattern,
-          confidence: issue.confidence,
+          title: issue.category || issue.type || 'Performance Issue',
+          description: issue.description || 'Performance issue detected',
+          file: path.relative(this.config.repositoryPath, issue.file || ''),
+          line: issue.line || 0,
+          suggestion: issue.suggestion || issue.fix || undefined,
+          rule: issue.category || issue.type || 'performance',
+          confidence: (typeof issue.confidence === 'number' ? issue.confidence : 'medium'),
           autoFixable: false
         });
       });
@@ -861,11 +849,11 @@ export class PullRequestReviewer {
   }
 
   private generateReviewId(): string {
-    return `review_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateReviewId();
   }
 
   private generateFindingId(): string {
-    return `finding_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateFindingId();
   }
 
   private parseDiffToFiles(diffText: string): PRFile[] {

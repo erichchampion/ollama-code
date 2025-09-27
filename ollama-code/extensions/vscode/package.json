@@ -137,6 +137,16 @@
         "command": "ollama-code.showProgress",
         "title": "Show AI Operation Progress",
         "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.showConfiguration",
+        "title": "Open Configuration",
+        "category": "Ollama Code"
+      },
+      {
+        "command": "ollama-code.resetConfiguration",
+        "title": "Reset Configuration",
+        "category": "Ollama Code"
       }
     ],
     "menus": {
@@ -239,6 +249,14 @@
         {
           "command": "ollama-code.showQuickActions",
           "when": "true"
+        },
+        {
+          "command": "ollama-code.showConfiguration",
+          "when": "true"
+        },
+        {
+          "command": "ollama-code.resetConfiguration",
+          "when": "true"
         }
       ]
     },
@@ -311,7 +329,12 @@
         },
         "ollama-code.logLevel": {
           "type": "string",
-          "enum": ["debug", "info", "warn", "error"],
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
           "default": "info",
           "description": "Logging level for the extension"
         }
@@ -354,13 +377,17 @@
     "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
     "@types/ws": "^8.5.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vscode/test-electron": "^2.3.0",
     "eslint": "^8.0.0",
+    "glob": "^11.0.3",
+    "mocha": "^11.7.2",
     "typescript": "^5.0.0",
     "vsce": "^2.15.0"
   },

@@ -45,6 +45,7 @@ export interface TaskPlan {
         confidence: number;
         adaptations: number;
     };
+    riskLevel: 'low' | 'medium' | 'high';
 }
 export interface PlanningContext {
     projectRoot: string;
@@ -248,4 +249,8 @@ export declare class TaskPlanner {
      * Cancel plan execution
      */
     cancelPlan(planId: string): void;
+    /**
+     * Assess risk level based on tasks and complexity
+     */
+    private assessRiskLevel;
 }

@@ -6,6 +6,7 @@
  */
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
+import { safeStringify } from '../utils/safe-json.js';
 export class TaskPlanner {
     aiClient;
     projectContext;
@@ -43,7 +44,8 @@ export class TaskPlanner {
                     complexity,
                     confidence: planData.confidence,
                     adaptations: 0
-                }
+                },
+                riskLevel: this.assessRiskLevel(planData.tasks, complexity)
             };
             // Validate and optimize plan
             await this.validatePlan(plan);
@@ -1020,8 +1022,8 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
                 task.result = response;
             }
             else {
-                task.result = JSON.stringify(response);
-                logger.warn('Unexpected AI response structure, storing as JSON string');
+                task.result = safeStringify(response, { maxDepth: 5 });
+                logger.warn('Unexpected AI response structure, storing as safe JSON string');
             }
             task.status = 'completed';
             task.completed = new Date();
@@ -1196,6 +1198,25 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
             }
             logger.info(`Plan cancelled: ${plan.title}`);
         }
+    }
+    /**
+     * Assess risk level based on tasks and complexity
+     */
+    assessRiskLevel(tasks, complexity) {
+        // Base risk on complexity
+        if (complexity === 'expert')
+            return 'high';
+        if (complexity === 'complex')
+            return 'medium';
+        // Check for risky task types
+        const riskyTasks = tasks.filter(task => task.type === 'implementation' ||
+            task.type === 'refactoring' ||
+            task.filesInvolved.length > 5);
+        if (riskyTasks.length > tasks.length * 0.7)
+            return 'high';
+        if (riskyTasks.length > tasks.length * 0.3)
+            return 'medium';
+        return 'low';
     }
 }
 //# sourceMappingURL=task-planner.js.map

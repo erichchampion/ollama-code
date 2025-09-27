@@ -105,7 +105,7 @@ class DocumentSymbolProvider {
             pattern.lastIndex = 0; // Reset regex state
             let match;
             while ((match = pattern.exec(text)) !== null) {
-                const position = document.positionAt(match.index);
+                const position = document.positionAt(match.index || 0);
                 const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
                 symbols.push({
                     name: match[1],
@@ -278,7 +278,7 @@ class DocumentSymbolProvider {
             pattern.lastIndex = 0;
             let match;
             while ((match = pattern.exec(text)) !== null) {
-                const position = document.positionAt(match.index);
+                const position = document.positionAt(match.index || 0);
                 const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
                 symbols.push({
                     name: match[1],
@@ -295,7 +295,7 @@ class DocumentSymbolProvider {
             pattern.lastIndex = 0;
             let match;
             while ((match = pattern.exec(text)) !== null) {
-                const position = document.positionAt(match.index);
+                const position = document.positionAt(match.index || 0);
                 const range = codeAnalysisUtils_1.CodeAnalysisUtils.findBlockRange(lines, position.line);
                 symbols.push({
                     name: match[1],

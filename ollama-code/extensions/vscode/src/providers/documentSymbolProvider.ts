@@ -84,7 +84,7 @@ export class DocumentSymbolProvider implements vscode.DocumentSymbolProvider {
       pattern.lastIndex = 0; // Reset regex state
       let match;
       while ((match = pattern.exec(text)) !== null) {
-        const position = document.positionAt(match.index!);
+        const position = document.positionAt(match.index || 0);
         const range = CodeAnalysisUtils.findBlockRange(lines, position.line);
 
         symbols.push({
@@ -282,7 +282,7 @@ export class DocumentSymbolProvider implements vscode.DocumentSymbolProvider {
       pattern.lastIndex = 0;
       let match;
       while ((match = pattern.exec(text)) !== null) {
-        const position = document.positionAt(match.index!);
+        const position = document.positionAt(match.index || 0);
         const range = CodeAnalysisUtils.findBlockRange(lines, position.line);
 
         symbols.push({
@@ -301,7 +301,7 @@ export class DocumentSymbolProvider implements vscode.DocumentSymbolProvider {
       pattern.lastIndex = 0;
       let match;
       while ((match = pattern.exec(text)) !== null) {
-        const position = document.positionAt(match.index!);
+        const position = document.positionAt(match.index || 0);
         const range = CodeAnalysisUtils.findBlockRange(lines, position.line);
 
         symbols.push({

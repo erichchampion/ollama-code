@@ -11,6 +11,7 @@ import { GitChangeTracker, GitCommitInfo } from '../git-change-tracker.js';
 import { AutomatedCodeReviewer } from '../automated-code-reviewer.js';
 import { SecurityAnalyzer } from '../security-analyzer.js';
 import { PerformanceAnalyzer } from '../performance-analyzer.js';
+import { generateSnapshotId } from '../../utils/id-generator.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
@@ -285,28 +286,11 @@ export class CodeQualityTracker {
       maxCommits: 100
     });
 
-    this.codeReviewer = new AutomatedCodeReviewer({
-      repositoryPath: config.repositoryPath,
-      reviewDepth: 'moderate',
-      enableMetrics: true,
-      customRules: []
-    });
+    this.codeReviewer = new AutomatedCodeReviewer();
 
-    this.securityAnalyzer = new SecurityAnalyzer({
-      enabledRules: ['all'],
-      severity: 'low',
-      includeTests: false,
-      customPatterns: []
-    });
+    this.securityAnalyzer = new SecurityAnalyzer();
 
-    this.performanceAnalyzer = new PerformanceAnalyzer({
-      enabledAnalyzers: ['all'],
-      thresholds: {
-        complexity: 10,
-        memoryUsage: 100,
-        executionTime: 1000
-      }
-    });
+    this.performanceAnalyzer = new PerformanceAnalyzer();
   }
 
   /**
@@ -401,7 +385,7 @@ export class CodeQualityTracker {
     try {
       logger.info('Tracking quality over period', { startDate, endDate });
 
-      const commits = await this.gitChangeTracker.getCommitHistory(startDate);
+      const commits = await this.gitChangeTracker.getRecentCommits(100);
       const filteredCommits = commits.filter(c => c.date <= endDate);
 
       const snapshots: QualitySnapshot[] = [];
@@ -524,18 +508,23 @@ export class CodeQualityTracker {
 
     for (const file of sourceFiles) {
       try {
-        const review = await this.codeReviewer.reviewFile(file);
         const content = await fs.readFile(file, 'utf-8');
+        const review = await this.codeReviewer.reviewCode({
+          files: [{
+            path: file,
+            content: content
+          }]
+        });
         const lines = content.split('\n').filter(line => line.trim().length > 0).length;
 
         totalLoc += lines;
         totalComplexity += this.calculateFileComplexity(content);
-        totalIssues += review.issues.length;
+        totalIssues += (review as any).issues?.length || 0;
 
         // Categorize issues
-        review.issues.forEach(issue => {
-          if (issue.severity === 'error') bugs++;
-          else if (issue.rule.includes('security')) vulnerabilities++;
+        ((review as any).issues || []).forEach((issue: any) => {
+          if (issue.severity === 'critical' || issue.severity === 'major') bugs++;
+          else if (issue.category === 'security') vulnerabilities++;
           else codeSmells++;
         });
       } catch (error) {
@@ -561,9 +550,15 @@ export class CodeQualityTracker {
   /**
    * Analyze security metrics
    */
-  private async analyizeSecurityMetrics(sourceFiles: string[]): Promise<SecurityMetrics> {
+  private async analyzeSecurityMetrics(sourceFiles: string[]): Promise<SecurityMetrics> {
     try {
-      const results = await this.securityAnalyzer.analyzeFiles(sourceFiles);
+      const allVulnerabilities: any[] = [];
+
+      // Analyze each file individually since analyzeFile only accepts single file
+      for (const file of sourceFiles) {
+        const results = await this.securityAnalyzer.analyzeFile(file);
+        allVulnerabilities.push(...results);
+      }
 
       const vulnerabilities: VulnerabilityBreakdown = {
         critical: 0,
@@ -573,7 +568,7 @@ export class CodeQualityTracker {
         info: 0
       };
 
-      results.vulnerabilities.forEach(vuln => {
+      allVulnerabilities.forEach(vuln => {
         switch (vuln.severity) {
           case 'critical':
             vulnerabilities.critical++;
@@ -621,31 +616,35 @@ export class CodeQualityTracker {
     }
   }
 
-  /**
-   * Fix typo in method name
-   */
-  private async analyzeSecurityMetrics(sourceFiles: string[]): Promise<SecurityMetrics> {
-    return this.analyizeSecurityMetrics(sourceFiles);
-  }
 
   /**
    * Analyze performance metrics
    */
   private async analyzePerformanceMetrics(sourceFiles: string[]): Promise<PerformanceMetrics> {
     try {
-      const results = await this.performanceAnalyzer.analyzeFiles(sourceFiles);
+      const allIssues: any[] = [];
+
+      // Analyze each file individually since analyzeFile only accepts single file
+      for (const file of sourceFiles) {
+        const results = await this.performanceAnalyzer.analyzeFile(file, {
+          severityThreshold: 'info',
+          analyzeComplexity: true,
+          checkMemoryLeaks: true
+        });
+        allIssues.push(...results.issues);
+      }
 
       const issuesByType = new Map<string, number>();
-      results.issues.forEach(issue => {
-        const count = issuesByType.get(issue.type) || 0;
-        issuesByType.set(issue.type, count + 1);
+      allIssues.forEach(issue => {
+        const count = issuesByType.get(issue.type || 'unknown') || 0;
+        issuesByType.set(issue.type || 'unknown', count + 1);
       });
 
-      const score = Math.max(0, 100 - (results.issues.length * 5));
+      const score = Math.max(0, 100 - (allIssues.length * 5));
 
       return {
         score: Math.round(score),
-        performanceIssues: results.issues.length,
+        performanceIssues: allIssues.length,
         memoryLeaks: issuesByType.get('memory') || 0,
         inefficientAlgorithms: issuesByType.get('algorithm') || 0,
         databaseIssues: issuesByType.get('database') || 0,
@@ -1017,12 +1016,12 @@ export class CodeQualityTracker {
   // More helper methods would be implemented here...
 
   private generateSnapshotId(): string {
-    return `snapshot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateSnapshotId();
   }
 
   private async getCommitInfo(commitHash: string): Promise<GitCommitInfo | null> {
     try {
-      const commits = await this.gitChangeTracker.getCommitHistory(new Date(0), 1);
+      const commits = await this.gitChangeTracker.getRecentCommits(1);
       return commits.find(c => c.hash === commitHash) || null;
     } catch (error) {
       logger.error('Failed to get commit info', error);

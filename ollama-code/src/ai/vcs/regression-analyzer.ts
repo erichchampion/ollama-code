@@ -8,12 +8,15 @@
 
 import { logger } from '../../utils/logger.js';
 import { GitChangeTracker, GitCommitInfo, GitFileChange } from '../git-change-tracker.js';
+import { GitCommandExecutor } from '../../utils/git-command-executor.js';
+import { generateRegressionId } from '../../utils/id-generator.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
 const execAsync = promisify(exec);
+
 
 export interface RegressionConfig {
   repositoryPath: string;
@@ -410,7 +413,24 @@ export class RegressionAnalyzer {
   private async getRecentCommits(limit?: number): Promise<GitCommitInfo[]> {
     try {
       const sinceDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
-      const commits = await this.gitChangeTracker.getCommitHistory(sinceDate, limit || this.config.analysisDepth);
+      // Get recent commits using git log
+      const { stdout } = await execAsync(
+        `git log --oneline -n ${limit || this.config.analysisDepth} --since=\"${sinceDate.toISOString()}\"`,
+        { cwd: this.config.repositoryPath }
+      );
+      const commits: GitCommitInfo[] = stdout.trim().split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          const [hash, ...messageParts] = line.split(' ');
+          return {
+            hash,
+            message: messageParts.join(' '),
+            author: 'unknown',
+            email: 'unknown@unknown.com',
+            date: new Date(),
+            files: []
+          };
+        });
       return commits;
     } catch (error) {
       logger.error('Failed to get recent commits', error);
@@ -508,12 +528,16 @@ export class RegressionAnalyzer {
    */
   private async getFilesForCommit(commitHash: string): Promise<GitFileChange[]> {
     try {
-      const { stdout } = await execAsync(`git show --name-status --format="" ${commitHash}`, {
+      const result = await GitCommandExecutor.showCommit(commitHash, {
         cwd: this.config.repositoryPath
       });
 
+      if (result.exitCode !== 0) {
+        throw new Error(`Git command failed: ${result.stderr}`);
+      }
+
       const files: GitFileChange[] = [];
-      const lines = stdout.trim().split('\n').filter(line => line.length > 0);
+      const lines = result.stdout.trim().split('\n').filter(line => line.length > 0);
 
       for (const line of lines) {
         const [status, ...pathParts] = line.split('\t');
@@ -676,7 +700,7 @@ export class RegressionAnalyzer {
       file.path.match(new RegExp(pattern))
     );
 
-    if (!isTestFile && file.status === 'added') {
+    if (!isTestFile && file.status === 'A') {
       factors.push({
         type: 'testing',
         severity: 'medium',
@@ -696,12 +720,16 @@ export class RegressionAnalyzer {
    */
   private async getFileHistoricalPattern(filePath: string): Promise<FileHistoricalPattern> {
     try {
-      // Get file history from git
-      const { stdout } = await execAsync(`git log --oneline --follow -- "${filePath}"`, {
+      // Get file history from git using secure executor
+      const result = await GitCommandExecutor.getFileHistory(filePath, {
         cwd: this.config.repositoryPath
       });
 
-      const commits = stdout.trim().split('\n').filter(line => line.length > 0);
+      if (result.exitCode !== 0) {
+        throw new Error(`Git command failed: ${result.stderr}`);
+      }
+
+      const commits = result.stdout.trim().split('\n').filter(line => line.length > 0);
       const changeFrequency = commits.length;
 
       // Simple pattern analysis (in practice, this would be more sophisticated)
@@ -1255,7 +1283,7 @@ export class RegressionAnalyzer {
   }
 
   private generateAnalysisId(): string {
-    return `regression_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return generateRegressionId();
   }
 
   /**

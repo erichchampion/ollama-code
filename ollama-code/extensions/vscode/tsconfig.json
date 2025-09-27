@@ -16,7 +16,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vscode", "node"]
+    "types": ["vscode", "node", "mocha"]
   },
   "include": [
     "src/**/*"

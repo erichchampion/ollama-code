@@ -51,10 +51,22 @@ const diagnosticProvider_1 = require("./providers/diagnosticProvider");
 const codeLensProvider_1 = require("./providers/codeLensProvider");
 const documentSymbolProvider_1 = require("./providers/documentSymbolProvider");
 const chatViewProvider_1 = require("./views/chatViewProvider");
+const statusBarProvider_1 = require("./views/statusBarProvider");
+const workspaceAnalyzer_1 = require("./services/workspaceAnalyzer");
+const notificationService_1 = require("./services/notificationService");
+const configurationUIService_1 = require("./services/configurationUIService");
+const progressIndicatorService_1 = require("./services/progressIndicatorService");
 const logger_1 = require("./utils/logger");
+const errorUtils_1 = require("./utils/errorUtils");
+const configurationHelper_1 = require("./utils/configurationHelper");
 let client;
 let logger;
 let diagnosticProvider;
+let statusBarProvider;
+let workspaceAnalyzer;
+let notificationService;
+let configurationUIService;
+let progressIndicatorService;
 /**
  * Extension activation function
  */
@@ -62,14 +74,15 @@ async function activate(context) {
     logger = new logger_1.Logger('Ollama Code');
     logger.info('Activating Ollama Code extension...');
     try {
-        // Initialize the client
-        const config = vscode.workspace.getConfiguration('ollama-code');
+        // Initialize the client using ConfigurationHelper
         client = new ollamaCodeClient_1.OllamaCodeClient({
-            port: config.get('serverPort', 3002), // IDE_SERVER_DEFAULTS.PORT
-            autoStart: config.get('autoStart', true),
-            connectionTimeout: config.get('connectionTimeout', 10000),
-            logLevel: config.get('logLevel', 'info')
+            port: configurationHelper_1.ConfigurationHelper.get('serverPort'),
+            autoStart: configurationHelper_1.ConfigurationHelper.get('autoStart'),
+            connectionTimeout: configurationHelper_1.ConfigurationHelper.get('connectionTimeout'),
+            logLevel: configurationHelper_1.ConfigurationHelper.get('logLevel')
         });
+        // Initialize services
+        await initializeServices(context);
         // Initialize providers
         await initializeProviders(context);
         // Register commands
@@ -77,7 +90,7 @@ async function activate(context) {
         // Set up event listeners
         setupEventListeners(context);
         // Attempt connection if auto-start is enabled
-        if (config.get('autoStart', true)) {
+        if (configurationHelper_1.ConfigurationHelper.get('autoStart')) {
             await client.connect();
             vscode.commands.executeCommand('setContext', 'ollama-code.connected', true);
         }
@@ -86,7 +99,7 @@ async function activate(context) {
     }
     catch (error) {
         logger.error('Failed to activate extension:', error);
-        vscode.window.showErrorMessage(`Failed to activate Ollama Code: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        vscode.window.showErrorMessage(`Failed to activate Ollama Code: ${(0, errorUtils_1.formatError)(error)}`);
         throw error;
     }
 }
@@ -100,15 +113,57 @@ async function deactivate() {
         if (client) {
             await client.disconnect();
         }
-        // Dispose diagnostic provider
+        // Dispose providers
         if (diagnosticProvider) {
             diagnosticProvider.dispose();
+        }
+        // Dispose services
+        if (statusBarProvider) {
+            statusBarProvider.dispose();
+        }
+        if (workspaceAnalyzer) {
+            workspaceAnalyzer.dispose();
+        }
+        if (notificationService) {
+            notificationService.dispose();
+        }
+        if (configurationUIService) {
+            configurationUIService.dispose();
+        }
+        if (progressIndicatorService) {
+            progressIndicatorService.dispose();
         }
         logger?.info('Ollama Code extension deactivated');
     }
     catch (error) {
         logger?.error('Error during deactivation:', error);
     }
+}
+/**
+ * Initialize core services
+ */
+async function initializeServices(context) {
+    // Initialize workspace analyzer
+    workspaceAnalyzer = new workspaceAnalyzer_1.WorkspaceAnalyzer();
+    context.subscriptions.push(workspaceAnalyzer);
+    logger.info('Workspace analyzer initialized');
+    // Initialize notification service
+    notificationService = new notificationService_1.NotificationService();
+    context.subscriptions.push(notificationService);
+    logger.info('Notification service initialized');
+    // Initialize progress indicator service
+    progressIndicatorService = new progressIndicatorService_1.ProgressIndicatorService(notificationService);
+    context.subscriptions.push(progressIndicatorService);
+    logger.info('Progress indicator service initialized');
+    // Initialize configuration UI service
+    configurationUIService = new configurationUIService_1.ConfigurationUIService(context, workspaceAnalyzer, notificationService);
+    context.subscriptions.push(configurationUIService);
+    logger.info('Configuration UI service initialized');
+    // Initialize status bar provider
+    statusBarProvider = new statusBarProvider_1.StatusBarProvider(client, logger);
+    context.subscriptions.push(statusBarProvider);
+    statusBarProvider.setupContextTracking();
+    logger.info('Status bar provider initialized');
 }
 /**
  * Initialize language feature providers
@@ -178,7 +233,86 @@ function registerCommands(context) {
         { name: 'ollama-code.analyze', handler: commandHandler.handleAnalyze.bind(commandHandler) },
         { name: 'ollama-code.startServer', handler: commandHandler.handleStartServer.bind(commandHandler) },
         { name: 'ollama-code.stopServer', handler: commandHandler.handleStopServer.bind(commandHandler) },
-        { name: 'ollama-code.showOutput', handler: commandHandler.handleShowOutput.bind(commandHandler) }
+        { name: 'ollama-code.showOutput', handler: commandHandler.handleShowOutput.bind(commandHandler) },
+        // Configuration commands
+        { name: 'ollama-code.showConfiguration', handler: async () => {
+                await configurationUIService.showConfigurationUI();
+            } },
+        { name: 'ollama-code.resetConfiguration', handler: async () => {
+                const result = await vscode.window.showWarningMessage('Are you sure you want to reset all Ollama Code settings to default values?', 'Reset', 'Cancel');
+                if (result === 'Reset') {
+                    const config = vscode.workspace.getConfiguration('ollama-code');
+                    const defaultSettings = {
+                        'serverPort': 3002,
+                        'autoStart': true,
+                        'showChatView': true,
+                        'inlineCompletions': true,
+                        'codeActions': true,
+                        'diagnostics': true,
+                        'contextLines': 20,
+                        'connectionTimeout': 10000,
+                        'logLevel': 'info'
+                    };
+                    for (const [key, value] of Object.entries(defaultSettings)) {
+                        await config.update(`ollama-code.${key}`, value, vscode.ConfigurationTarget.Workspace);
+                    }
+                    vscode.window.showInformationMessage('Configuration reset to default values');
+                }
+            } },
+        // Status bar commands
+        { name: 'ollama-code.toggleConnection', handler: async () => {
+                const status = client.getConnectionStatus();
+                if (status.connected) {
+                    await client.disconnect();
+                    vscode.window.showInformationMessage('Disconnected from Ollama Code server');
+                }
+                else {
+                    try {
+                        await client.connect();
+                        vscode.window.showInformationMessage('Connected to Ollama Code server');
+                    }
+                    catch (error) {
+                        vscode.window.showErrorMessage(`Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    }
+                }
+            } },
+        { name: 'ollama-code.showQuickActions', handler: async () => {
+                const items = [
+                    { label: 'Ask AI', description: 'Ask a general AI question', command: 'ollama-code.ask' },
+                    { label: 'Explain Code', description: 'Explain selected code', command: 'ollama-code.explain' },
+                    { label: 'Refactor Code', description: 'Refactor selected code', command: 'ollama-code.refactor' },
+                    { label: 'Fix Code', description: 'Fix issues in selected code', command: 'ollama-code.fix' },
+                    { label: 'Generate Code', description: 'Generate new code', command: 'ollama-code.generate' },
+                    { label: 'Analyze File', description: 'Analyze current file', command: 'ollama-code.analyze' },
+                    { label: 'Configuration', description: 'Open configuration', command: 'ollama-code.showConfiguration' }
+                ];
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: 'Select an AI action'
+                });
+                if (selected) {
+                    vscode.commands.executeCommand(selected.command);
+                }
+            } },
+        { name: 'ollama-code.showProgress', handler: async () => {
+                const activeTasks = progressIndicatorService.getActiveProgressTasks();
+                if (activeTasks.size === 0) {
+                    vscode.window.showInformationMessage('No active operations');
+                    return;
+                }
+                const items = Array.from(activeTasks.entries()).map(([id, task]) => ({
+                    label: task.task.title,
+                    description: `${Math.round(task.currentProgress)}% complete`,
+                    detail: task.task.description,
+                    id
+                }));
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: 'Active AI operations'
+                });
+                if (selected) {
+                    // Show detailed progress for selected task
+                    vscode.window.showInformationMessage(`${selected.label}: ${selected.description}`);
+                }
+            } }
     ];
     for (const { name, handler } of commands) {
         context.subscriptions.push(vscode.commands.registerCommand(name, handler));

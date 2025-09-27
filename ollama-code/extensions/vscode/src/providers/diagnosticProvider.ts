@@ -447,7 +447,10 @@ export class DiagnosticProvider {
    */
   public clearDiagnostics(uri: vscode.Uri): void {
     this.diagnostics.set(uri, []);
-    this.analysisCache.delete(this.createCacheKey(vscode.workspace.textDocuments.find(doc => doc.uri === uri)!));
+    const document = vscode.workspace.textDocuments.find(doc => doc.uri === uri);
+    if (document) {
+      this.analysisCache.delete(this.createCacheKey(document));
+    }
   }
 
   /**

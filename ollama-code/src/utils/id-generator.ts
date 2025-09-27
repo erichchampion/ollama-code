@@ -57,3 +57,35 @@ export function generateTelemetryClientId(): string {
 export function generateRequestId(): string {
   return generateSecureId('req', 8);
 }
+
+/**
+ * VCS-specific ID generators (replaces deprecated substr() calls)
+ */
+
+/**
+ * Generate a review ID for pull request reviews
+ */
+export function generateReviewId(): string {
+  return generateSecureId('review', 9);
+}
+
+/**
+ * Generate a finding ID for review findings
+ */
+export function generateFindingId(): string {
+  return generateSecureId('finding', 9);
+}
+
+/**
+ * Generate a regression analysis ID
+ */
+export function generateRegressionId(): string {
+  return generateSecureId('regression', 9);
+}
+
+/**
+ * Generate a quality snapshot ID
+ */
+export function generateSnapshotId(): string {
+  return generateSecureId('snapshot', 9);
+}
