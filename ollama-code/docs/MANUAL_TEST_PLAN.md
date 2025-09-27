@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.4.0
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced Workspace Analysis, Progress Tracking, Configuration Management, Code Quality Improvements & AI-Powered VCS Integration*
+# Manual Test Plan - Ollama Code CLI v0.5.0
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced Workspace Analysis, Progress Tracking, Configuration Management, Code Quality Improvements, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration & Security Enhancements*
 
 ## Overview
 
@@ -34,6 +34,15 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** File hotspot identification and change pattern analysis
 - **NEW:** Historical pattern learning for risk assessment
 - **NEW:** Technical debt tracking with automated recommendations
+- **NEW:** Git hooks management with automated installation and configuration
+- **NEW:** Pre-commit quality gates with AI-powered analysis
+- **NEW:** Commit message enhancement with conventional format support
+- **NEW:** Pre-push risk analysis with historical pattern learning
+- **NEW:** CI/CD pipeline integration with quality gates (GitHub Actions, GitLab, etc.)
+- **NEW:** Multi-platform CI/CD support with platform-specific configurations
+- **NEW:** Parallel analysis execution for enterprise-scale performance
+- **NEW:** Centralized configuration management eliminating hardcoded values
+- **NEW:** Security input validation preventing path traversal and injection attacks
 
 ### 📊 **Knowledge & Analysis**
 - Code knowledge graph with semantic understanding
@@ -75,6 +84,10 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** Centralized validation utilities for consistent behavior
 - **NEW:** Transactional rollback mechanisms for safe operations
 - **NEW:** Shared language detection eliminating code duplication
+- **NEW:** Security input sanitization with path traversal protection
+- **NEW:** Safe numeric parsing preventing NaN/undefined runtime errors
+- **NEW:** Type-safe enum validation with fallback mechanisms
+- **NEW:** Centralized configuration constants eliminating DRY violations
 - **NEW:** Configuration validation with initialization checks
 - **ENHANCED:** Service constants management eliminating hardcoded values
 - **ENHANCED:** Progress tracking utilities with status bar integration
@@ -2568,6 +2581,235 @@ kill $NC_PID  # Clean up
 - Team collaboration pattern analysis
 - Individual contribution insights
 - Workflow optimization suggestions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Git Hooks Management & Automation
+**Priority: High**
+
+#### Test: Git Hooks Installation and Configuration
+**Test Setup:**
+- Fresh Git repository without existing hooks
+- Repository with existing custom hooks
+- Various hook types (pre-commit, commit-msg, pre-push, post-merge)
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Install git hooks for AI-powered analysis"
+./dist/src/cli-selector.js enhanced "Configure git hooks with quality gates"
+./dist/src/cli-selector.js enhanced "Show git hooks status and configuration"
+```
+
+**Expected Results:**
+- Successful installation of all configured hook types
+- Backup of existing hooks when present
+- Proper hook execution permissions and scripts
+- Configuration file validation and error handling
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Pre-Commit Analysis and Quality Gates
+**Test Scenarios:**
+1. Commit with code quality issues (high complexity, style violations)
+2. Commit with security vulnerabilities (hardcoded secrets, injection risks)
+3. Commit with large file changes exceeding thresholds
+4. Commit with missing test coverage for new code
+
+**Commands:**
+```bash
+# Stage problematic changes and attempt commit
+git add problematic-file.js
+git commit -m "Test commit with quality issues"
+
+# Stage changes that pass quality gates
+git add clean-file.js
+git commit -m "Test commit that should pass"
+```
+
+**Expected Results:**
+- Pre-commit hook executes AI-powered analysis
+- Quality gate failures prevent commits with clear error messages
+- Bypass mechanism works when explicitly requested
+- Performance within acceptable timeout limits (< 30 seconds)
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Commit Message Enhancement
+**Test Scenarios:**
+- Empty or minimal commit messages
+- Messages that don't follow project conventions
+- Messages lacking scope or context information
+
+**Commands:**
+```bash
+# Test with minimal commit message
+git commit -m "fix"
+
+# Test with detailed but unconventional message
+git commit -m "Updated some files and fixed issues"
+```
+
+**Expected Results:**
+- Commit-msg hook enhances messages with AI suggestions
+- Conventional commit format applied when appropriate
+- Scope detection based on changed files
+- Original message preserved when already well-formed
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Pre-Push Risk Analysis
+**Test Setup:**
+- Branch with high-risk changes (core system modifications)
+- Branch with low-risk changes (documentation, tests)
+- Branch with mixed risk levels
+
+**Commands:**
+```bash
+# Attempt to push high-risk changes
+git push origin feature/high-risk-refactor
+
+# Push low-risk changes
+git push origin feature/documentation-update
+```
+
+**Expected Results:**
+- Pre-push hook analyzes cumulative branch changes
+- Risk assessment considers historical patterns
+- High-risk pushes prompt confirmation or block with warnings
+- Low-risk pushes proceed without interruption
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: CI/CD Pipeline Integration & Quality Gates
+**Priority: Critical**
+
+#### Test: GitHub Actions Integration
+**Test Setup:**
+- GitHub repository with ollama-code analysis action configured
+- Various PR scenarios (small, large, security-sensitive changes)
+- Different quality gate threshold configurations
+
+**Test Files:**
+- `.github/workflows/ollama-code-analysis.yml`
+- `.github/actions/ollama-code-analysis/action.yml`
+
+**Expected Results:**
+- Action executes successfully on PR creation/updates
+- Comprehensive analysis reports generated in JSON/SARIF formats
+- Quality gates properly evaluated with pass/fail decisions
+- PR comments added with analysis summary and recommendations
+- Artifacts uploaded with detailed reports for review
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Multi-Platform CI/CD Support
+**Test Platforms:**
+- GitHub Actions
+- GitLab CI/CD
+- Azure DevOps Pipelines
+- Bitbucket Pipelines
+- CircleCI
+- Jenkins
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Generate CI/CD configuration for platform X"
+./dist/src/cli-selector.js enhanced "Analyze CI pipeline integration options"
+```
+
+**Expected Results:**
+- Platform-specific configuration files generated
+- Appropriate quality gate configurations for each platform
+- Integration with platform-native features (artifacts, comments, etc.)
+- Consistent behavior across all supported platforms
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Quality Gate Evaluation and Reporting
+**Test Quality Gate Scenarios:**
+1. All gates pass - high quality code
+2. Security gates fail - vulnerabilities detected
+3. Performance gates fail - regression detected
+4. Coverage gates fail - insufficient test coverage
+5. Complexity gates fail - overly complex code
+
+**Expected Results:**
+- Accurate evaluation of each quality gate criterion
+- Clear pass/fail status with specific metrics
+- Detailed recommendations for failing gates
+- Configurable thresholds and gate combinations
+- Integration with CI/CD pipeline decision making
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Parallel Analysis Execution
+**Test Setup:**
+- Large codebase with multiple analysis types enabled
+- Configuration for parallel execution with resource limits
+
+**Expected Results:**
+- Security, performance, architecture, and regression analyses run in parallel
+- Resource usage stays within configured limits
+- Total execution time significantly reduced compared to sequential
+- Proper error handling when individual analyses fail
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Configuration Management & Validation
+**Priority: Medium**
+
+#### Test: Centralized Configuration Constants
+**Test Setup:**
+- Multiple VCS components using shared configuration
+- Configuration overrides at different levels
+- Invalid configuration values
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Validate VCS configuration settings"
+./dist/src/cli-selector.js enhanced "Show configuration defaults and overrides"
+```
+
+**Expected Results:**
+- Consistent configuration values across all VCS components
+- Proper validation with clear error messages for invalid values
+- Configuration inheritance and override mechanisms working
+- No hardcoded values remaining in component implementations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Security Input Validation
+**Test Security Scenarios:**
+1. Repository path with directory traversal attempts (`../../../etc/passwd`)
+2. Malformed numeric inputs for thresholds (negative values, NaN)
+3. Invalid enum values for configuration options
+4. Extremely large timeout values or configuration limits
+
+**Expected Results:**
+- Path traversal attempts blocked with sanitization
+- Numeric validation prevents NaN/undefined errors
+- Enum validation with fallback to safe defaults
+- Resource limits prevent denial of service attacks
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Configuration Factory Methods
+**Test Factory Scenarios:**
+- Creating VCS intelligence with minimal configuration
+- Creating complete suite with all features enabled
+- Creating specialized configurations for different team workflows
+
+**Commands:**
+```bash
+./dist/src/cli-selector.js enhanced "Initialize VCS intelligence with default settings"
+./dist/src/cli-selector.js enhanced "Create custom VCS configuration for security-focused workflow"
+```
+
+**Expected Results:**
+- Factory methods create properly configured instances
+- Default values applied consistently across components
+- Custom configurations override defaults appropriately
+- All created instances pass validation checks
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 

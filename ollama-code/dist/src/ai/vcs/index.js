@@ -10,11 +10,15 @@ import { CommitMessageGenerator } from './commit-message-generator.js';
 import { PullRequestReviewer } from './pull-request-reviewer.js';
 import { RegressionAnalyzer } from './regression-analyzer.js';
 import { CodeQualityTracker } from './code-quality-tracker.js';
+import { GitHooksManager } from './git-hooks-manager.js';
+import { CIPipelineIntegrator } from './ci-pipeline-integrator.js';
 export { VCSIntelligence } from './vcs-intelligence.js';
 export { CommitMessageGenerator } from './commit-message-generator.js';
 export { PullRequestReviewer } from './pull-request-reviewer.js';
 export { RegressionAnalyzer } from './regression-analyzer.js';
 export { CodeQualityTracker } from './code-quality-tracker.js';
+export { GitHooksManager } from './git-hooks-manager.js';
+export { CIPipelineIntegrator } from './ci-pipeline-integrator.js';
 /**
  * VCS Integration Factory
  *
@@ -137,6 +141,61 @@ export class VCSIntegrationFactory {
         return new CodeQualityTracker(qualityConfig);
     }
     /**
+     * Create a git hooks manager with default configuration
+     */
+    static createGitHooksManager(config) {
+        const hooksConfig = {
+            repositoryPath: config.repositoryPath,
+            enablePreCommit: config.enableAllHooks ?? true,
+            enableCommitMsg: config.enableAllHooks ?? true,
+            enablePrePush: config.enableAllHooks ?? true,
+            enablePostMerge: config.enableAllHooks ?? true,
+            enableQualityGates: config.enableQualityGates ?? true,
+            bypassEnabled: true,
+            analysisTimeout: config.analysisTimeout || 30000,
+            failOnAnalysisError: false,
+            backupExistingHooks: true
+        };
+        return new GitHooksManager(hooksConfig);
+    }
+    /**
+     * Create a CI/CD pipeline integrator with default configuration
+     */
+    static createCIPipelineIntegrator(config) {
+        const pipelineConfig = {
+            repositoryPath: config.repositoryPath,
+            platform: config.platform || 'github',
+            enableSecurityAnalysis: config.enableAllAnalysis ?? true,
+            enablePerformanceAnalysis: config.enableAllAnalysis ?? true,
+            enableArchitecturalAnalysis: config.enableAllAnalysis ?? true,
+            enableRegressionAnalysis: config.enableAllAnalysis ?? true,
+            enableQualityGates: true,
+            analysisTimeout: 300000, // 5 minutes
+            reportFormat: 'json',
+            outputPath: './reports',
+            qualityGates: {
+                minQualityScore: config.qualityGateThresholds?.minQualityScore || 80,
+                maxCriticalIssues: config.qualityGateThresholds?.maxCriticalIssues || 0,
+                maxSecurityIssues: config.qualityGateThresholds?.maxSecurityIssues || 5,
+                maxPerformanceIssues: 3,
+                minTestCoverage: config.qualityGateThresholds?.minTestCoverage || 80,
+                maxComplexityIncrease: 20,
+                maxTechnicalDebtIncrease: 10,
+                regressionThreshold: 'medium',
+                blockOnFailure: true
+            },
+            notifications: {
+                enableSlack: false,
+                enableEmail: false,
+                enableGitHubComments: config.platform === 'github',
+                enableMergeRequestComments: config.platform === 'gitlab',
+                webhookUrls: [],
+                emailRecipients: []
+            }
+        };
+        return new CIPipelineIntegrator(pipelineConfig);
+    }
+    /**
      * Create a complete VCS intelligence suite with all components
      */
     static createCompleteSuite(config, aiClient) {
@@ -145,7 +204,13 @@ export class VCSIntegrationFactory {
             commitGenerator: this.createCommitMessageGenerator(config, aiClient),
             pullRequestReviewer: this.createPullRequestReviewer(config, aiClient),
             regressionAnalyzer: this.createRegressionAnalyzer(config, aiClient),
-            qualityTracker: this.createCodeQualityTracker(config)
+            qualityTracker: this.createCodeQualityTracker(config),
+            ...(config.enableGitHooks && {
+                gitHooksManager: this.createGitHooksManager(config)
+            }),
+            ...(config.enableCIPipeline && {
+                ciPipelineIntegrator: this.createCIPipelineIntegrator(config)
+            })
         };
         return suite;
     }

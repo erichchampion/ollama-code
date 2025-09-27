@@ -1,0 +1,117 @@
+name: 'Ollama Code Analysis'
+description: 'AI-powered code analysis with comprehensive quality gates and security scanning'
+author: 'Ollama Code Team'
+
+branding:
+  icon: 'code'
+  color: 'blue'
+
+inputs:
+  # Analysis Configuration
+  enable-security:
+    description: 'Enable security vulnerability analysis'
+    required: false
+    default: 'true'
+
+  enable-performance:
+    description: 'Enable performance analysis'
+    required: false
+    default: 'true'
+
+  enable-architecture:
+    description: 'Enable architectural analysis'
+    required: false
+    default: 'true'
+
+  enable-regression:
+    description: 'Enable regression risk analysis'
+    required: false
+    default: 'true'
+
+  # Quality Gates
+  min-quality-score:
+    description: 'Minimum overall quality score (0-100)'
+    required: false
+    default: '80'
+
+  max-critical-issues:
+    description: 'Maximum number of critical issues allowed'
+    required: false
+    default: '0'
+
+  max-security-issues:
+    description: 'Maximum number of security issues allowed'
+    required: false
+    default: '5'
+
+  max-performance-issues:
+    description: 'Maximum number of performance issues allowed'
+    required: false
+    default: '3'
+
+  min-test-coverage:
+    description: 'Minimum test coverage percentage'
+    required: false
+    default: '80'
+
+  regression-threshold:
+    description: 'Regression risk threshold (low|medium|high)'
+    required: false
+    default: 'medium'
+
+  # Reporting
+  report-format:
+    description: 'Report format (json|markdown|junit|sarif)'
+    required: false
+    default: 'json'
+
+  output-path:
+    description: 'Path to save analysis reports'
+    required: false
+    default: './reports'
+
+  # CI Configuration
+  fail-on-quality-gate:
+    description: 'Fail the build if quality gates are not met'
+    required: false
+    default: 'true'
+
+  analysis-timeout:
+    description: 'Analysis timeout in seconds'
+    required: false
+    default: '300'
+
+  # Notifications
+  enable-pr-comments:
+    description: 'Enable pull request comments with results'
+    required: false
+    default: 'true'
+
+  webhook-url:
+    description: 'Webhook URL for notifications'
+    required: false
+    default: ''
+
+outputs:
+  quality-score:
+    description: 'Overall quality score (0-100)'
+
+  quality-gates-passed:
+    description: 'Whether all quality gates passed (true/false)'
+
+  security-issues:
+    description: 'Number of security issues found'
+
+  performance-issues:
+    description: 'Number of performance issues found'
+
+  regression-risk:
+    description: 'Regression risk level (low|medium|high)'
+
+  report-url:
+    description: 'URL to the generated analysis report'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+  post: 'dist/cleanup.js'
