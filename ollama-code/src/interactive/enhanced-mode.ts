@@ -269,9 +269,18 @@ export class EnhancedInteractiveMode {
     };
 
     try {
-      // Route the request
+      // Route the request with timeout protection
       processSpinner.setText('Analyzing request...');
-      const routingResult = await this.nlRouter.route(userInput, routingContext);
+
+      // Add timeout to prevent hanging on routing
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request processing timeout after 30 seconds')), 30000);
+      });
+
+      const routingResult = await Promise.race([
+        this.nlRouter.route(userInput, routingContext),
+        timeoutPromise
+      ]) as any;
 
       processSpinner.succeed('Request processed');
 

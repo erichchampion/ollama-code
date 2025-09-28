@@ -104,14 +104,27 @@ export class NaturalLanguageRouter {
                     estimatedTime: 2, // Very fast execution
                     riskLevel: 'low'
                 };
-                // Cache fast-path results too
+                // Cache fast-path results too (with timeout protection)
                 if (this.cacheManager !== null && this.cacheManager !== false) {
-                    const cacheContext = {
-                        workingDirectory: context.workingDirectory,
-                        projectPath: context.workingDirectory,
-                        hasEnhancedContext: !!context.enhancedContext
-                    };
-                    await this.cacheManager.cacheResponse(input, JSON.stringify(fastPathRoutingResult), cacheContext, 'router');
+                    try {
+                        const cacheContext = {
+                            workingDirectory: context.workingDirectory,
+                            projectPath: context.workingDirectory,
+                            hasEnhancedContext: !!context.enhancedContext
+                        };
+                        // Add timeout to prevent hanging on cache operations
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('Cache operation timeout')), 3000);
+                        });
+                        await Promise.race([
+                            this.cacheManager.cacheResponse(input, JSON.stringify(fastPathRoutingResult), cacheContext, 'router'),
+                            timeoutPromise
+                        ]);
+                    }
+                    catch (error) {
+                        logger.debug('Cache operation failed or timed out:', error);
+                        // Continue without caching - don't fail the entire request
+                    }
                 }
                 return fastPathRoutingResult;
             }

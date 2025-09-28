@@ -237,9 +237,16 @@ export class EnhancedInteractiveMode {
             enhancedContext // Add enhanced context to routing context
         };
         try {
-            // Route the request
+            // Route the request with timeout protection
             processSpinner.setText('Analyzing request...');
-            const routingResult = await this.nlRouter.route(userInput, routingContext);
+            // Add timeout to prevent hanging on routing
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Request processing timeout after 30 seconds')), 30000);
+            });
+            const routingResult = await Promise.race([
+                this.nlRouter.route(userInput, routingContext),
+                timeoutPromise
+            ]);
             processSpinner.succeed('Request processed');
             // Add enhanced context to routing result for handlers
             if (enhancedContext) {
