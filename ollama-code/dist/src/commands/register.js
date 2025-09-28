@@ -435,24 +435,29 @@ function registerGenerateCommand() {
                 const spinner = createSpinner(`Generating ${language} code...`);
                 spinner.start();
                 try {
-                    // Use enhanced AI client if available for better context awareness
-                    let responseText;
-                    if (isEnhancedAIInitialized()) {
-                        const enhancedClient = getEnhancedClient();
-                        const processingResult = await enhancedClient.processMessage(fullPrompt);
-                        responseText = processingResult.response;
-                    }
-                    else {
-                        // Fall back to basic client
-                        const aiClient = getAIClient();
-                        const result = await aiClient.complete(fullPrompt);
-                        responseText = result.message?.content || 'No code generated';
-                    }
+                    // Use basic AI client for code generation to avoid hanging
+                    const aiClient = getAIClient();
+                    // Add timeout to prevent hanging
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('Code generation timeout after 30 seconds')), 30000);
+                    });
+                    const result = await Promise.race([
+                        aiClient.complete(fullPrompt),
+                        timeoutPromise
+                    ]);
+                    const responseText = result.message?.content || 'No code generated';
                     spinner.succeed('Code generated');
                     console.log(responseText);
                 }
                 catch (error) {
                     spinner.fail('Generation failed');
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    if (errorMessage.includes('timeout')) {
+                        console.error('The request timed out. Please check that Ollama is running and try again.');
+                    }
+                    else {
+                        console.error('Error details:', errorMessage);
+                    }
                     throw error;
                 }
             }

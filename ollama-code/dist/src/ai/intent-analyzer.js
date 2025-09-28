@@ -167,9 +167,16 @@ Extract and return ONLY a JSON object with these fields:
 
 Be precise and only include entities that are clearly referenced.`;
         try {
-            const response = await this.aiClient.complete(prompt, {
-                temperature: 0.1
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('AI entity extraction timeout')), 8000);
             });
+            const response = await Promise.race([
+                this.aiClient.complete(prompt, {
+                    temperature: 0.1
+                }),
+                timeoutPromise
+            ]);
             if (response.message?.content) {
                 const aiEntities = this.parseAIEntityResponse(response.message.content);
                 this.mergeEntities(entities, aiEntities);
@@ -263,9 +270,16 @@ Context: ${context.conversationHistory.length > 0 ? `Previous: ${context.convers
 
 Return ONLY the category name.`;
         try {
-            const response = await this.aiClient.complete(prompt, {
-                temperature: 0.1
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('AI classification timeout')), 10000);
             });
+            const response = await Promise.race([
+                this.aiClient.complete(prompt, {
+                    temperature: 0.1
+                }),
+                timeoutPromise
+            ]);
             const classification = response.message?.content?.trim().toLowerCase();
             const validTypes = [
                 'task_request', 'question', 'command', 'clarification', 'conversation'
