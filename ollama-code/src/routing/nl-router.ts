@@ -437,13 +437,12 @@ export class NaturalLanguageRouter {
   private mapDirectCommand(intent: UserIntent): { commandName: string; args: string[] } | null {
     const action = intent.action.toLowerCase();
 
-    // Direct action mappings
+    // Direct action mappings (only for actions that don't need context checking)
     const actionMappings: Record<string, string> = {
       'list': 'list-models',
       'show': 'list-models',
       'search': 'search',
       'find': 'search',
-      'explain': 'explain',
       'help': 'help',
       'run': 'run',
       'execute': 'run',
@@ -452,6 +451,7 @@ export class NaturalLanguageRouter {
       'status': 'git-status'
     };
 
+    // Skip direct mapping for 'explain' - it needs context checking for files
     const commandName = actionMappings[action];
     if (commandName && commandRegistry.exists(commandName)) {
       return {
@@ -690,6 +690,21 @@ If no command matches, respond with:
     const args: string[] = [];
 
     switch (commandName) {
+      case 'ask':
+        // For ask command, extract the question from the original action
+        // Handle both "ask question" and "ask 'quoted question'" formats
+        const askMatch = intent.action.match(/^ask\s+(.+)$/i);
+        if (askMatch) {
+          let question = askMatch[1].trim();
+          // Remove surrounding quotes if present
+          if ((question.startsWith('"') && question.endsWith('"')) ||
+              (question.startsWith("'") && question.endsWith("'"))) {
+            question = question.slice(1, -1);
+          }
+          args.push(question);
+        }
+        break;
+
       case 'explain':
         if (intent.entities.files.length > 0) {
           args.push(intent.entities.files[0]);

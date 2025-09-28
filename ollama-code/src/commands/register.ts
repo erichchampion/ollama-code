@@ -136,12 +136,17 @@ function registerAskCommand(): void {
           spinner.start();
 
           try {
-            const enhancedClient = getEnhancedClient();
-            const processingResult = await enhancedClient.processMessage(question);
+            // For the ask command, we should directly generate a response
+            // rather than going through the full routing pipeline again
+            const aiClient = getAIClient();
+
+            // Get direct AI response without routing overhead
+            const responseText = await aiClient.complete(question, {
+              temperature: 0.7,
+              model: args.model
+            });
 
             spinner.succeed('Response ready');
-
-            const responseText = processingResult.response;
             console.log(responseText);
 
             if (responseText) {
