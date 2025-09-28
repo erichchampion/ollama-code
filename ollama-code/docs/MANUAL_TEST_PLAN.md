@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.6.0
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration & Security Enhancements*
+# Manual Test Plan - Ollama Code CLI v0.7.0
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration, TypeDoc API Documentation Generation & Security Enhancements*
 
 ## Overview
 
@@ -97,6 +97,9 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** Safe numeric parsing preventing NaN/undefined runtime errors
 - **NEW:** Type-safe enum validation with fallback mechanisms
 - **NEW:** Centralized configuration constants eliminating DRY violations
+- **NEW:** TypeDoc automated API documentation generation from JSDoc comments
+- **NEW:** GitHub Actions workflow for automatic documentation updates
+- **NEW:** Comprehensive documentation coverage with 118+ generated markdown files
 - **NEW:** Configuration validation with initialization checks
 - **ENHANCED:** Service constants management eliminating hardcoded values
 - **ENHANCED:** Progress tracking utilities with status bar integration
@@ -3483,6 +3486,131 @@ yarn test
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+#### Test: TypeDoc API Documentation Generation
+**Commands:**
+```bash
+# Test documentation generation
+yarn docs:generate
+
+# Verify documentation output
+ls -la docs/api/
+find docs/api -name "*.md" | wc -l
+
+# Test watch mode (development)
+yarn docs:watch &
+WATCH_PID=$!
+
+# Make a change to a TypeScript file
+echo "// Added test comment" >> src/utils/configuration-merger.ts
+sleep 3
+
+# Check if documentation was regenerated
+ls -la docs/api/utils/
+
+# Clean up watch process
+kill $WATCH_PID
+```
+
+**Expected Results:**
+- TypeDoc generates documentation successfully without errors
+- Documentation files created in `docs/api/` directory with proper structure
+- **Advanced AI Provider Features documented:**
+  - LocalFineTuningManager class with all methods
+  - ModelDeploymentManager with deployment strategies
+  - ResponseFusionEngine with conflict resolution
+  - UniversalCIAPI with platform detection
+- **Shared utilities documented:**
+  - DirectoryManager with workspace operations
+  - ConfigurationMerger with type-safe merging
+  - MetricsCalculator with statistical functions
+- **Documentation structure:**
+  - Module-specific directories (ai/providers/, utils/, etc.)
+  - Class documentation with constructors, methods, and properties
+  - Interface documentation with type definitions
+  - Cross-references and navigation links work correctly
+- **Documentation quality:**
+  - JSDoc comments properly extracted and formatted
+  - Code examples and parameter descriptions included
+  - Inheritance relationships shown correctly
+  - GitHub source links functional
+- Watch mode detects changes and regenerates documentation
+- Generated markdown files are well-formatted and complete
+- **Coverage metrics:** Documentation generated for 60%+ of TypeScript source files
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: GitHub Actions Documentation Automation
+**Test Setup:**
+```bash
+# Verify GitHub Action workflow exists
+cat .github/workflows/update-documentation.yml
+
+# Test local simulation of the workflow
+git add src/ai/providers/local-fine-tuning.ts
+git commit -m "test: Update TypeScript comments for documentation testing"
+
+# Check if workflow would trigger (simulation)
+echo "Simulating GitHub Actions documentation workflow..."
+```
+
+**Expected Results:**
+- GitHub Actions workflow file exists and is properly configured
+- Workflow triggers on TypeScript file changes in src/ directory
+- Workflow includes documentation generation and validation steps
+- **Automated workflow features:**
+  - Installs dependencies and generates documentation
+  - Commits documentation updates automatically
+  - Validates documentation links and quality
+  - Comments on PRs with documentation previews
+  - Uploads documentation artifacts
+- Workflow permissions are correctly configured for writing
+- Documentation validation includes link checking and coverage analysis
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Documentation Integration and Quality Validation
+**Commands:**
+```bash
+# Test documentation scripts
+yarn docs:generate
+yarn docs:generate-all
+
+# Validate generated documentation structure
+find docs/api -type f -name "*.md" | head -10
+cat docs/api/README.md | head -20
+
+# Check specific advanced features documentation
+ls -la docs/api/ai/providers/local-fine-tuning/
+cat docs/api/ai/providers/local-fine-tuning/classes/LocalFineTuningManager.md | head -30
+
+# Verify cross-references and links
+grep -r "\[.*\](.*\.md)" docs/api/ | head -5
+
+# Test documentation for new shared utilities
+ls -la docs/api/utils/
+cat docs/api/utils/classes/ConfigurationMerger.md | head -20
+```
+
+**Expected Results:**
+- All documentation scripts execute successfully
+- **Documentation completeness:**
+  - README.md provides comprehensive API overview
+  - Module structure matches source code organization
+  - Advanced AI features fully documented with examples
+  - Shared utilities documented with usage patterns
+- **Quality indicators:**
+  - Cross-references between related classes work correctly
+  - Method signatures and parameters documented accurately
+  - Return types and interfaces properly linked
+  - JSDoc comments rendered with proper formatting
+- **Navigation structure:**
+  - Hierarchical module organization maintained
+  - Index files provide clear entry points
+  - Breadcrumb navigation functional
+- Generated documentation integrates well with existing docs/
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ---
 
 ## ⚡ Performance Optimization & Enterprise Features
@@ -5824,6 +5952,8 @@ Test that commands are only available in appropriate contexts:
 - [ ] Configuration consistency across all systems
 - [ ] Memory leak prevention and detection
 - [ ] TypeScript compilation and build system reliability
+- [ ] **NEW:** TypeDoc API documentation generation and automation
+- [ ] **NEW:** GitHub Actions documentation workflow validation
 - [ ] Test infrastructure stability and execution
 
 ### Medium Priority Features
@@ -5849,16 +5979,26 @@ Test that commands are only available in appropriate contexts:
 
 ---
 
-**Test Plan Version:** 18.4 (Added CodeActionProvider, Enhanced ChatViewProvider, StatusBarProvider, and Command Palette Integration Testing)
+**Test Plan Version:** 18.5 (Added TypeDoc API Documentation Generation and GitHub Actions Automation Testing)
 **Created:** September 21, 2025
-**Last Updated:** September 25, 2025 (Added Advanced Workspace Analysis, Enhanced Progress Tracking, Configuration Management, and Centralized Error Handling testing to complete comprehensive IDE integration with context intelligence, multi-modal progress indicators, configuration profiles with validation, and shared utilities for consistent behavior)
+**Last Updated:** September 27, 2025 (Added TypeDoc API documentation generation testing with automated GitHub Actions workflow, documentation quality validation, and comprehensive coverage testing for Advanced AI Provider Features and shared utilities)
 **Environment:** macOS Darwin 25.0.0, Node.js 24.2.0, Ollama Code CLI v0.3.0
-**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, interactive development workflow, **CodeLens Provider** with AI-powered complexity analysis and code insights, **DocumentSymbol Provider** with enhanced multi-language navigation, **InlineCompletionProvider** with contextual AI-powered code suggestions, **HoverProvider** with AI-generated documentation and explanations, **DiagnosticProvider** with multi-layer static analysis, complexity detection, and AI-powered code analysis, **Enhanced CodeActionProvider** with AI-powered quick fixes and refactoring suggestions, **Enhanced ChatViewProvider** with comprehensive AI sidebar panel and workspace context tracking, **StatusBarProvider** with real-time connection monitoring and operation progress display, and **Command Palette Integration** with 15+ AI commands and context-conditional availability
+**Coverage:** Comprehensive functional testing covering multi-provider AI integration, autonomous development assistant capabilities, advanced security and performance analysis, natural language AI capabilities, advanced development tools with smart file filtering, knowledge graph integration, system integration features, complete Phase 6 performance optimization implementation, infrastructure reliability improvements with error handling and rollback mechanisms, centralized validation utilities, shared language detection, configuration management, **TypeDoc API documentation generation with automated GitHub Actions workflow**, and **NEW:** comprehensive IDE integration with VS Code extension, WebSocket communication, real-time AI assistance, interactive development workflow, **CodeLens Provider** with AI-powered complexity analysis and code insights, **DocumentSymbol Provider** with enhanced multi-language navigation, **InlineCompletionProvider** with contextual AI-powered code suggestions, **HoverProvider** with AI-generated documentation and explanations, **DiagnosticProvider** with multi-layer static analysis, complexity detection, and AI-powered code analysis, **Enhanced CodeActionProvider** with AI-powered quick fixes and refactoring suggestions, **Enhanced ChatViewProvider** with comprehensive AI sidebar panel and workspace context tracking, **StatusBarProvider** with real-time connection monitoring and operation progress display, and **Command Palette Integration** with 15+ AI commands and context-conditional availability
 **Tested By:** _____________
 **Date Executed:** _____________
 **Notes:** This test plan is organized around the functional capabilities that users interact with, rather than implementation phases. It provides a user-centric view of testing that aligns with actual usage patterns and feature sets. All major capabilities are covered with both individual feature tests and integrated workflow scenarios, including comprehensive autonomous development assistant testing.
 
-**Latest Updates (v18.4):**
+**Latest Updates (v18.5 - TypeDoc Documentation Integration):**
+- **Added TypeDoc API Documentation Generation testing** with comprehensive automation workflow
+- Added documentation generation testing for Advanced AI Provider Features (LocalFineTuningManager, ModelDeploymentManager, ResponseFusionEngine)
+- Added shared utilities documentation testing (DirectoryManager, ConfigurationMerger, MetricsCalculator)
+- Added GitHub Actions documentation workflow testing with automatic updates and validation
+- Added documentation quality validation testing with coverage metrics and link checking
+- Enhanced Infrastructure & System Reliability testing section with documentation automation
+- Updated version to v0.7.0 to reflect documentation capabilities integration
+- Added documentation features to critical testing checklist (TypeDoc generation, GitHub Actions workflow)
+
+**Previous Updates (v18.4):**
 - Added Enhanced CodeActionProvider test group with AI-powered quick fixes and refactoring suggestions
 - Added AI quick fix testing for style improvements, performance optimizations, security fixes, and error handling
 - Added refactoring action testing for method extraction, code deduplication, complexity reduction, and type safety

@@ -31,9 +31,11 @@
         "docs:lint": "markdownlint '**/*.md' --config .markdownlint.json",
         "docs:check-links": "markdown-link-check '**/*.md' --config .markdownlinkcheck.json",
         "docs:check-all": "npm run docs:lint && npm run docs:check-links && npm run docs:validate",
-        "docs:generate": "node scripts/generate-docs.js",
+        "docs:generate": "typedoc",
+        "docs:generate-legacy": "node scripts/generate-docs.js",
         "docs:generate-readme": "node scripts/generate-readme.js",
         "docs:generate-all": "npm run docs:generate && npm run docs:generate-readme",
+        "docs:watch": "typedoc --watch",
         "docs:maintain": "node scripts/maintain-docs.js",
         "docs:update": "node scripts/update-docs.js",
         "docs:verify-examples": "node scripts/verify-examples.js",
@@ -146,6 +148,8 @@
         "remark-validate-links": "^13.1.0",
         "ts-jest": "^29.4.2",
         "ts-node": "^10.9.1",
+        "typedoc": "^0.28.13",
+        "typedoc-plugin-markdown": "^4.9.0",
         "typescript": "^5.9.2"
     },
     "engines": {
