@@ -1,0 +1,58 @@
+version: 2.1
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:20.0
+    working_directory: ~/ollama-code
+jobs:
+  analyze:
+    executor: node-executor
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |-
+            echo "📦 Installing dependencies..."
+            yarn install --frozen-lockfile
+      - run:
+          name: Build Project
+          command: |-
+            echo "🔨 Building project..."
+            yarn build
+      - run:
+          name: Run Analysis
+          command: >-
+            echo "🔍 Running Ollama Code Analysis..."
+
+            node dist/src/ai/vcs/ci-pipeline-integrator.js --platform circleci
+            --repository-path . --enable-security true --enable-performance true
+            --enable-architecture true --enable-regression true
+            --min-quality-score 80 --max-critical-issues 0 --max-security-issues
+            5 --max-performance-issues 3 --min-test-coverage 80
+            --regression-threshold medium --report-format json --output-path
+            ./reports
+      - run:
+          name: Validate Quality Gates
+          command: |-
+            if [ -f "reports/ollama-code-report.json" ]; then
+              QUALITY_GATES=$(jq -r '.qualityGatePassed' reports/ollama-code-report.json)
+              QUALITY_SCORE=$(jq -r '.overallScore' reports/ollama-code-report.json)
+              echo "Quality Score: ${QUALITY_SCORE}/100"
+              if [ "$QUALITY_GATES" = "true" ]; then
+                echo "✅ All quality gates passed"
+              else
+                echo "❌ Quality gates failed - review required"
+                exit 1
+              fi
+            else
+              echo "Analysis report not found"
+              exit 1
+            fi
+      - store_artifacts:
+          path: reports
+workflows:
+  version: 2
+  analyze-and-report:
+    jobs:
+      - analyze
+

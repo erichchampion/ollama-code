@@ -47,8 +47,8 @@ export class EnhancedFastPathRouter {
             }
             // Try different matching strategies in order of speed/accuracy
             const strategies = [
-                () => this.exactMatch(normalizedInput),
-                () => this.aliasMatch(normalizedInput),
+                () => this.exactMatch(normalizedInput, input),
+                () => this.aliasMatch(normalizedInput, input),
                 () => this.patternMatch(normalizedInput),
                 () => this.config.enableFuzzyMatching ? this.fuzzyMatch(normalizedInput) : null
             ];
@@ -82,14 +82,31 @@ export class EnhancedFastPathRouter {
     /**
      * Exact command name matching
      */
-    exactMatch(input) {
-        const trimmed = input.trim();
+    exactMatch(normalizedInput, originalInput) {
+        const trimmed = normalizedInput.trim();
         const parts = trimmed.split(/\s+/);
         const commandName = parts[0];
         if (commandRegistry.exists(commandName)) {
+            let args = parts.slice(1);
+            // Special handling for 'explain' command - only match if files are present
+            if (commandName === 'explain') {
+                // Check if any argument looks like a file path
+                const hasFileArgs = args.some(arg => arg.includes('.') || arg.includes('/') || arg.includes('\\'));
+                if (!hasFileArgs) {
+                    // This is probably a general explanation request, not a file explanation
+                    return null;
+                }
+            }
+            // Special handling for 'ask' command - preserve quoted arguments
+            if (commandName === 'ask' && originalInput && originalInput.includes('"')) {
+                const quoteMatch = originalInput.match(/^ask\s+"([^"]+)"/i);
+                if (quoteMatch) {
+                    args = [quoteMatch[1]];
+                }
+            }
             return {
                 commandName,
-                args: parts.slice(1),
+                args,
                 confidence: 1.0,
                 method: 'exact'
             };
@@ -99,17 +116,25 @@ export class EnhancedFastPathRouter {
     /**
      * Alias-based matching
      */
-    aliasMatch(input) {
+    aliasMatch(normalizedInput, originalInput) {
         if (!this.config.enableAliases)
             return null;
-        const trimmed = input.trim().toLowerCase();
+        const trimmed = normalizedInput.trim().toLowerCase();
         const parts = trimmed.split(/\s+/);
         const potential = parts[0];
         const commandName = this.aliasMap.get(potential);
         if (commandName && commandRegistry.exists(commandName)) {
+            let args = parts.slice(1);
+            // Special handling for 'ask' command - preserve quoted arguments
+            if (commandName === 'ask' && originalInput && originalInput.includes('"')) {
+                const quoteMatch = originalInput.match(/^ask\s+"([^"]+)"/i);
+                if (quoteMatch) {
+                    args = [quoteMatch[1]];
+                }
+            }
             return {
                 commandName,
-                args: parts.slice(1),
+                args,
                 confidence: 0.95,
                 method: 'alias'
             };

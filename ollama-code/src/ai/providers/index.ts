@@ -14,6 +14,11 @@ export { OpenAIProvider } from './openai-provider.js';
 export { AnthropicProvider } from './anthropic-provider.js';
 export { GoogleProvider } from './google-provider.js';
 
+// Advanced features
+export { LocalFineTuningManager, CustomLocalProvider } from './local-fine-tuning.js';
+export { ModelDeploymentManager } from './model-deployment-manager.js';
+export { ResponseFusionEngine } from './response-fusion.js';
+
 // Intelligent router
 export { IntelligentAIRouter } from './intelligent-router.js';
 export type {
@@ -30,6 +35,7 @@ import { OllamaProvider } from './ollama-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
 import { AnthropicProvider } from './anthropic-provider.js';
 import { GoogleProvider, GoogleConfig } from './google-provider.js';
+import { CustomLocalProvider } from './local-fine-tuning.js';
 
 /**
  * Factory function to create providers based on configuration
@@ -50,6 +56,8 @@ export function createProvider(type: string, config: ProviderConfig): BaseAIProv
         ...config,
         apiKey: config.apiKey
       } as GoogleConfig);
+    case 'custom-local':
+      return new CustomLocalProvider(config);
     default:
       throw new Error(`Unknown provider type: ${type}`);
   }
@@ -59,7 +67,7 @@ export function createProvider(type: string, config: ProviderConfig): BaseAIProv
  * Get list of available provider types
  */
 export function getAvailableProviderTypes(): string[] {
-  return ['ollama', 'openai', 'anthropic', 'google'];
+  return ['ollama', 'openai', 'anthropic', 'google', 'custom-local'];
 }
 
 /**
@@ -82,6 +90,9 @@ export function validateProviderConfig(type: string, config: ProviderConfig): bo
     case 'google':
       // Google requires API key
       return !!(config.apiKey || process.env.GOOGLE_API_KEY);
+    case 'custom-local':
+      // Custom local provider is always valid
+      return true;
     default:
       return false;
   }

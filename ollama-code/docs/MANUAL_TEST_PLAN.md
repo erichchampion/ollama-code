@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.5.0
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced Workspace Analysis, Progress Tracking, Configuration Management, Code Quality Improvements, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration & Security Enhancements*
+# Manual Test Plan - Ollama Code CLI v0.6.0
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration & Security Enhancements*
 
 ## Overview
 
@@ -11,6 +11,11 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Context-aware conversation management
 - Multi-step query handling and session management
 - Advanced AI provider benchmarking and optimization
+- **NEW:** Local model fine-tuning with automated dataset generation
+- **NEW:** Custom model deployment and scaling with load balancing
+- **NEW:** Multi-provider response fusion with conflict resolution
+- **NEW:** Real-time streaming responses with cancellation support
+- **NEW:** Quality validation and consistency checking across providers
 
 ### 🔧 **Development Tools**
 - Advanced Git repository analysis and insights
@@ -65,6 +70,10 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **ENHANCED:** Multi-modal progress tracking with cancellation support
 - **ENHANCED:** Comprehensive configuration management with profiles and validation
 - **ENHANCED:** Centralized error handling with shared utilities
+- **NEW:** DRY-compliant shared utility system (DirectoryManager, ConfigurationMerger, MetricsCalculator)
+- **NEW:** Type-safe configuration merging with validation rules
+- **NEW:** Statistical metrics calculation with moving averages and correlation analysis
+- **NEW:** Centralized directory management with workspace setup and cleanup
 
 ### ⚡ **Performance & Scalability**
 - Enterprise-scale distributed processing for large codebases
@@ -721,6 +730,214 @@ EOF
 - Cost controls working with budget alerts
 - Workflow optimization improving productivity
 - Configuration persistence across sessions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## 🚀 Advanced AI Provider Features
+**Priority: High** - *New functionality for fine-tuning, deployment, and response fusion*
+
+### Test Group: Local Model Fine-Tuning System
+**Priority: High**
+
+#### Test: Dataset Creation and Processing
+**Test Commands:**
+1. `"Create a fine-tuning dataset from this codebase for code completion"`
+2. `"Generate documentation training samples from the README files"`
+3. `"Extract code analysis samples from TypeScript files"`
+
+**Expected Results:**
+- Automated dataset generation with proper sample extraction
+- Multiple sample types: code completion, analysis, documentation
+- Quality assessment with sample count thresholds
+- Proper file format support (JSONL, CSV)
+- Configuration-driven processing parameters
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Model Fine-Tuning Configuration
+**Test Commands:**
+1. `"Configure fine-tuning with custom hyperparameters"`
+2. `"Start fine-tuning job with validation split"`
+3. `"Monitor fine-tuning progress and metrics"`
+
+**Expected:**
+- Configurable training parameters (epochs, learning rate, batch size)
+- LoRA and quantization support
+- Real-time progress tracking with metrics
+- Early stopping and validation monitoring
+- Resource usage optimization
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Fine-Tuning Job Management
+**Test Commands:**
+1. `"List all fine-tuning jobs with status"`
+2. `"Pause and resume active training"`
+3. `"Cancel failed training job"`
+
+**Expected:**
+- Job status tracking (pending, running, completed, failed)
+- Resource management and cleanup
+- Progress persistence across restarts
+- Error handling and recovery
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Model Deployment and Management
+**Priority: High**
+
+#### Test: Model Registration and Deployment
+**Test Commands:**
+1. `"Register a new model for deployment"`
+2. `"Deploy model with custom resource limits"`
+3. `"Scale deployment to multiple instances"`
+
+**Expected Results:**
+- Model registry with versioning support
+- Configurable resource allocation (CPU, memory, GPU)
+- Auto-scaling based on load thresholds
+- Health monitoring and recovery
+- Load balancing across instances
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Load Balancing Strategies
+**Test Commands:**
+1. `"Configure round-robin load balancing"`
+2. `"Switch to least-connections strategy"`
+3. `"Set up weighted instance routing"`
+
+**Expected:**
+- Multiple balancing algorithms (round-robin, least-connections, weighted, random)
+- Performance-based routing decisions
+- Health-aware instance selection
+- Metrics collection and monitoring
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Instance Health Monitoring
+**Test Commands:**
+1. `"Check deployment health status"`
+2. `"View instance performance metrics"`
+3. `"Handle unhealthy instance recovery"`
+
+**Expected:**
+- Real-time health checks with configurable intervals
+- Performance metrics (latency, throughput, error rates)
+- Automatic instance replacement on failure
+- Resource usage monitoring
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Response Fusion System
+**Priority: High**
+
+#### Test: Multi-Provider Response Fusion
+**Test Commands:**
+1. `"Generate response using consensus voting strategy"`
+2. `"Compare expert ensemble vs diverse perspectives"`
+3. `"Use quality ranking for response selection"`
+
+**Expected Results:**
+- Multiple fusion strategies with configurable parameters
+- Provider-specific strength identification
+- Conflict detection and resolution
+- Quality scoring and consensus measurement
+- Response synthesis with source attribution
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Conflict Resolution and Analysis
+**Test Commands:**
+1. `"Analyze response conflicts across providers"`
+2. `"Generate follow-up questions for clarification"`
+3. `"Show provider strengths for different query types"`
+
+**Expected:**
+- Automatic conflict point identification
+- Contradictory statement detection
+- Numerical disagreement analysis
+- Contextual follow-up suggestions
+- Provider capability mapping
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Response Quality Validation
+**Test Commands:**
+1. `"Validate response for logical consistency"`
+2. `"Check factual accuracy across sources"`
+3. `"Assess completeness and relevance"`
+
+**Expected:**
+- Multi-layer validation (logical, factual, consistency)
+- Confidence scoring with reliability metrics
+- Issue classification by type and severity
+- Validation suggestions and recommendations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Streaming and Real-Time Features
+**Priority: Medium**
+
+#### Test: Streaming Response Generation
+**Test Commands:**
+1. `"Generate long response with streaming updates"`
+2. `"Cancel streaming operation mid-generation"`
+3. `"Monitor streaming performance metrics"`
+
+**Expected Results:**
+- Real-time token streaming with configurable chunk sizes
+- Graceful cancellation and cleanup
+- Progress tracking with metadata
+- Performance metrics (tokens/second, latency)
+- Abort signal support
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Custom Local Provider Integration
+**Test Commands:**
+1. `"Connect custom local model provider"`
+2. `"Test provider capabilities and features"`
+3. `"Benchmark against standard providers"`
+
+**Expected:**
+- Custom provider registration and configuration
+- Capability detection and feature mapping
+- Performance benchmarking and comparison
+- Error handling and failover support
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Configuration and Utilities
+**Priority: Medium**
+
+#### Test: Centralized Configuration Management
+**Test Commands:**
+1. `"Show current provider configuration"`
+2. `"Update timeout and threshold settings"`
+3. `"Validate configuration consistency"`
+
+**Expected Results:**
+- Environment-specific configuration overrides
+- Validation rules for all settings
+- Configuration hot-reloading without restart
+- Default value management and merging
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Shared Utility Functions
+**Test Commands:**
+1. `"Test directory management operations"`
+2. `"Validate metrics calculation accuracy"`
+3. `"Verify error handling patterns"`
+
+**Expected:**
+- Directory creation and cleanup utilities
+- Statistical calculations and moving averages
+- Consistent error handling across components
+- Type-safe configuration merging
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -5478,6 +5695,34 @@ Test that commands are only available in appropriate contexts:
 **Status:** [ ] Pass [ ] Fail
 **Notes:** _____________
 
+### Scenario P: Advanced AI Provider Features End-to-End Integration
+**Goal:** Validate comprehensive integration of fine-tuning, deployment, response fusion, and shared utilities in production workflow
+
+**Steps:**
+1. **Dataset Generation:** Create fine-tuning dataset from existing codebase → validate sample extraction quality → test multiple sample types
+2. **Model Fine-Tuning:** Configure custom hyperparameters → start training job → monitor progress and metrics → validate early stopping
+3. **Model Deployment:** Register fine-tuned model → deploy with resource limits → test auto-scaling → validate health monitoring
+4. **Load Balancing:** Configure multiple balancing strategies → test failover → validate performance-based routing
+5. **Response Fusion:** Use multiple providers for same query → test conflict detection → validate quality scoring → check provider strengths
+6. **Streaming Integration:** Test streaming from custom deployed model → validate cancellation → check performance metrics
+7. **Configuration Management:** Test centralized config updates → validate environment overrides → test validation rules
+8. **Utility Integration:** Test directory management → validate metrics calculations → check error handling patterns
+9. **Performance Validation:** Monitor resource usage → test concurrent operations → validate shared utility efficiency
+
+**Success Criteria:**
+- Dataset generation produces quality training samples with proper format and metadata
+- Fine-tuning completes successfully with progress tracking and configurable parameters
+- Model deployment scales automatically based on load with health monitoring
+- Load balancing distributes requests efficiently across multiple strategies
+- Response fusion identifies conflicts and provides quality scoring across providers
+- Streaming responses work reliably with chunked delivery and cancellation support
+- Configuration management maintains consistency with validation and environment support
+- Shared utilities eliminate code duplication while maintaining performance
+- System handles concurrent operations without resource leaks or performance degradation
+
+**Status:** [ ] Pass [ ] Fail
+**Notes:** _____________
+
 ---
 
 ## ✅ Test Execution Summary
@@ -5486,6 +5731,10 @@ Test that commands are only available in appropriate contexts:
 - [ ] Natural language understanding and intent recognition
 - [ ] **NEW:** Multi-provider AI integration (Ollama, OpenAI, Anthropic, Google)
 - [ ] **NEW:** Intelligent AI provider routing and fallback mechanisms
+- [ ] **NEW:** Local model fine-tuning with automated dataset generation
+- [ ] **NEW:** Custom model deployment and scaling with load balancing
+- [ ] **NEW:** Multi-provider response fusion with conflict resolution
+- [ ] **NEW:** Real-time streaming responses with cancellation support
 - [ ] **NEW:** Autonomous feature implementation from specifications
 - [ ] **NEW:** Automated code review with human-quality analysis
 - [ ] **NEW:** Intelligent debugging with root cause analysis
@@ -5536,6 +5785,10 @@ Test that commands are only available in appropriate contexts:
 - [ ] Tool routing and integration
 - [ ] **NEW:** AI provider performance benchmarking and quality comparison
 - [ ] **NEW:** Provider health monitoring and circuit breakers
+- [ ] **NEW:** Fine-tuning dataset processing with quality validation
+- [ ] **NEW:** Model deployment management with auto-scaling
+- [ ] **NEW:** Response quality validation and consistency checking
+- [ ] **NEW:** Shared utility system with DRY compliance (DirectoryManager, ConfigurationMerger, MetricsCalculator)
 - [ ] **NEW:** Specification parsing and feature planning with risk assessment
 - [ ] **NEW:** Code generation with safety validation and rollback mechanisms
 - [ ] **NEW:** Multi-category code review (8 analysis categories)
@@ -5749,7 +6002,7 @@ Test that commands are only available in appropriate contexts:
 - 📊 **Centralized Configuration Management** with consistent thresholds and no hardcoded values
 - 🔧 **Infrastructure Reliability** with comprehensive error handling and system stability
 
-**Key Test Coverage (v16.0):**
+**Key Test Coverage (v19.0):**
 - 🤖 **Autonomous Feature Implementation** with specification parsing and multi-phase planning
 - 🔍 **Automated Code Review** with 8 analysis categories (quality, security, performance, maintainability, testing, documentation, architecture, best practices)
 - 🐛 **Intelligent Debugging** with root cause analysis and solution generation (60% issue resolution target)
@@ -5758,6 +6011,12 @@ Test that commands are only available in appropriate contexts:
 - 🧪 **Test Generation Integration** with automated testing strategies
 - 🎯 **End-to-End Workflows** with autonomous development integration (Scenario K)
 - 💪 **Stress Testing** for autonomous capabilities under complex scenarios (Scenario L)
+- 🚀 **Advanced AI Provider Features** with fine-tuning, deployment, and response fusion (NEW)
+- 🔄 **Model Fine-Tuning System** with automated dataset generation and quality validation
+- 📊 **Model Deployment Management** with auto-scaling, load balancing, and health monitoring
+- 🔗 **Multi-Provider Response Fusion** with conflict resolution and quality scoring
+- 📡 **Real-Time Streaming** with chunked delivery, cancellation, and performance metrics
+- 🛠️ **Shared Utility System** with DRY compliance and centralized configuration management
 
 **Latest Updates (v18.4):**
 - Added Advanced Workspace Analysis testing with comprehensive project detection and context intelligence
