@@ -1,367 +1,615 @@
-# Architecture Documentation
+# System Architecture Documentation
 
-This document provides a comprehensive overview of the Ollama Code CLI architecture, including system components, data flow, and design patterns.
+This document provides a comprehensive overview of the Ollama Code CLI advanced architecture, including multi-provider AI integration, VCS intelligence, IDE integration, and enterprise-scale features.
 
 ## Table of Contents
 
 - [System Overview](#system-overview)
 - [Core Architecture](#core-architecture)
-- [Module Structure](#module-structure)
-- [Data Flow](#data-flow)
+- [Multi-Provider AI System](#multi-provider-ai-system)
+- [VCS Intelligence Layer](#vcs-intelligence-layer)
+- [IDE Integration Architecture](#ide-integration-architecture)
+- [Performance & Scalability Infrastructure](#performance--scalability-infrastructure)
+- [Shared Utility System](#shared-utility-system)
+- [Documentation Generation System](#documentation-generation-system)
+- [CLI Entry Points](#cli-entry-points)
+- [Data Flow Diagrams](#data-flow-diagrams)
 - [Design Patterns](#design-patterns)
 - [Dependencies](#dependencies)
-- [Error Handling](#error-handling)
-- [Performance Considerations](#performance-considerations)
+- [Security Architecture](#security-architecture)
+- [Testing Strategy](#testing-strategy)
+- [Performance Optimization](#performance-optimization)
 
 ## System Overview
 
-The Ollama Code CLI is built as a modular, event-driven application with the following key characteristics:
+The Ollama Code CLI is built as a distributed, enterprise-scale application with the following advanced characteristics:
 
-- **Modular Design**: Clear separation of concerns across specialized modules
-- **Type Safety**: Full TypeScript implementation with strict type checking
-- **Async/Await**: Modern asynchronous programming patterns throughout
-- **Dependency Injection**: Loose coupling between modules
-- **Error Handling**: Comprehensive error classification and recovery
-- **Local Processing**: All AI processing happens locally via Ollama
+- **Multi-Provider AI Integration**: Intelligent routing across Ollama, OpenAI, Anthropic, Google providers
+- **VCS Intelligence**: Git hooks, CI/CD integration, regression analysis, and code quality tracking
+- **IDE Integration**: Real-time VS Code extension with WebSocket communication and 8+ AI providers
+- **Enterprise Scalability**: Distributed processing, advanced caching, and resource optimization
+- **Type Safety**: Full TypeScript implementation with comprehensive error handling
+- **Local-First**: Privacy-focused with local processing and optional cloud provider integration
+- **Documentation Automation**: TypeDoc integration with GitHub Actions workflows
 
 ## Core Architecture
 
-### Application Lifecycle
+### Application Lifecycle with Multi-Mode Support
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Bootstrap     │───▶│  Initialize     │───▶│     Run         │
-│                 │    │   Subsystems    │    │   Main Loop     │
+│   CLI Mode      │    │  Interactive    │    │  IDE Server     │
+│   Selector      │───▶│     Mode        │───▶│     Mode        │
+│                 │    │   Selection     │    │   WebSocket     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Load Config    │    │  Setup Error    │    │  Command        │
-│  Parse Args     │    │  Handling       │    │  Processing     │
-│  Setup Logging  │    │  Initialize AI  │    │  User Input     │
+│  Simple CLI     │    │  Advanced CLI   │    │  Real-time AI   │
+│  Basic Commands │    │  Full Features  │    │  Integration    │
+│  Direct Exec    │    │  AI Routing     │    │  Live Analysis  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### Entry Points
+### Entry Points Architecture
 
-1. **`simple-cli.ts`**: Basic CLI with core commands
-2. **`cli.ts`**: Full-featured CLI with complete command set
-3. **`index.ts`**: Main application initialization and lifecycle management
-
-## Module Structure
-
-### Core Modules
-
-#### AI Module (`src/ai/`)
-**Purpose**: AI integration and Ollama client functionality
-
-**Key Components**:
-- `OllamaClient`: Core AI interface
-- `initAI()`: AI subsystem initialization
-- `getAIClient()`: Client instance access
-
-**Interfaces**:
 ```typescript
-interface OllamaMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-interface OllamaCompletionOptions {
-  model?: string;
-  temperature?: number;
-  top_p?: number;
-  top_k?: number;
-}
+// CLI Mode Selection with Enhanced Routing
+const CLI_MODES = {
+  SIMPLE: 'simple-cli.js',        // Basic commands, direct execution
+  ADVANCED: 'cli.js',             // Full feature set with AI routing
+  INTERACTIVE: 'cli-selector.js', // Interactive mode selection
+  IDE_SERVER: 'ide-server.js'     // WebSocket server for VS Code
+} as const;
 ```
 
-#### Authentication Module (`src/auth/`)
-**Purpose**: Authentication and connection management
+## Multi-Provider AI System
 
-**Key Components**:
-- `OllamaAuthManager`: Connection management
-- `initialize()`: Auth subsystem initialization
-- `isAuthenticated()`: Authentication status
+### Provider Architecture
 
-**Interfaces**:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Intelligent Router                          │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Performance   │  │      Cost       │  │     Quality     │  │
+│  │    Routing      │  │   Management    │  │   Assessment    │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │             │
+    ▼             ▼             ▼             ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│ Ollama  │  │ OpenAI  │  │Anthropic│  │ Google  │
+│Provider │  │Provider │  │Provider │  │Provider │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘
+    │             │             │             │
+    ▼             ▼             ▼             ▼
+┌─────────────────────────────────────────────────┐
+│           Response Fusion Engine                │
+│  ┌─────────────────┐  ┌─────────────────────┐   │
+│  │   Consensus     │  │  Conflict Resolution│   │
+│  │   Building      │  │   & Quality Merge   │   │
+│  └─────────────────┘  └─────────────────────┘   │
+└─────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+#### Intelligent Router (`src/ai/providers/intelligent-router.ts`)
+- **Multi-Strategy Routing**: Performance, cost, quality, capability-based routing
+- **Circuit Breaker Pattern**: Automatic fallback when providers fail
+- **Health Monitoring**: Real-time provider health assessment
+- **Load Balancing**: Round-robin and weighted distribution strategies
+
 ```typescript
-interface OllamaAuthState {
-  isConnected: boolean;
-  serverUrl: string;
-  lastError?: string;
-}
+export const ROUTING_STRATEGIES = {
+  PERFORMANCE: 'Route to fastest provider',
+  COST: 'Route to most cost-effective provider',
+  QUALITY: 'Route to highest quality provider',
+  CAPABILITY: 'Route based on required capabilities',
+  ROUND_ROBIN: 'Distribute load evenly',
+  STICKY: 'Prefer same provider for session'
+} as const;
 ```
 
-#### Commands Module (`src/commands/`)
-**Purpose**: Command system and registration
+#### Provider Implementations
+- **OllamaProvider**: Local model integration with fine-tuning support
+- **OpenAIProvider**: GPT models with cost optimization
+- **AnthropicProvider**: Claude models with enterprise features
+- **GoogleProvider**: Gemini integration with multimodal capabilities
 
-**Key Components**:
-- `CommandRegistry`: Command registration and lookup
-- `executeCommand()`: Command execution
-- `registerCommands()`: Command registration
+#### Advanced Features
+- **Local Fine-Tuning** (`src/ai/providers/local-fine-tuning.ts`): Custom model training
+- **Model Deployment Manager** (`src/ai/providers/model-deployment-manager.ts`): Automated deployment
+- **Response Fusion** (`src/ai/providers/response-fusion.ts`): Multi-provider consensus
+- **A/B Testing** (`src/ai/providers/ab-testing.ts`): Provider performance testing
 
-**Interfaces**:
+## VCS Intelligence Layer
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    VCS Intelligence Engine                      │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Git Hooks     │  │   CI/CD         │  │   Regression    │  │
+│  │   Manager       │  │   Integration   │  │   Analysis      │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │             │
+    ▼             ▼             ▼             ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│Commit   │  │Quality  │  │Pull     │  │Universal│
+│Message  │  │Tracker  │  │Request  │  │CI API   │
+│Gen      │  │         │  │Reviewer │  │         │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘
+```
+
+### Key Components
+
+#### VCS Intelligence Core (`src/ai/vcs/vcs-intelligence.ts`)
+- **Repository Analysis**: Comprehensive codebase health assessment
+- **Change Impact Analysis**: AI-powered impact prediction
+- **Quality Metrics**: Code complexity, test coverage, maintainability scores
+- **Risk Assessment**: Security and stability risk evaluation
+
+#### Git Hooks Management (`src/ai/vcs/git-hooks-manager.ts`)
+- **Automated Hook Installation**: Pre-commit, post-commit, pre-push hooks
+- **Quality Gates**: Automated code quality enforcement
+- **AI-Powered Validation**: Intelligent commit message and code validation
+
+#### CI/CD Pipeline Integration (`src/ai/vcs/ci-pipeline-integrator.ts`)
+- **Universal CI API**: Multi-platform CI/CD integration (GitHub, GitLab, Azure, etc.)
+- **Pipeline Generation**: Automated CI/CD configuration generation
+- **Quality Gate Integration**: Automated quality threshold enforcement
+
+#### Code Quality Tracking (`src/ai/vcs/code-quality-tracker.ts`)
+- **Metrics Collection**: Code complexity, duplication, maintainability
+- **Trend Analysis**: Historical quality trend tracking
+- **Alert System**: Quality degradation notifications
+
+## IDE Integration Architecture
+
+### VS Code Extension Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    VS Code Extension                            │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   8 AI          │  │   WebSocket     │  │   Real-time     │  │
+│  │   Providers     │  │   Client        │  │   Analysis      │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │ WebSocket Communication
+                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 Ollama Code CLI Backend                         │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   AI Provider   │  │   Workspace     │  │   Context       │  │
+│  │   Manager       │  │   Analyzer      │  │   Intelligence  │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Extension Components (`extensions/vscode/src/`)
+
+#### Core Providers
+- **InlineCompletionProvider**: Real-time code completion
+- **CodeActionProvider**: AI-powered quick fixes and refactoring
+- **HoverProvider**: Intelligent hover information
+- **DiagnosticProvider**: AI-enhanced error detection
+- **CodeLensProvider**: Contextual code lens integration
+- **DocumentSymbolProvider**: Enhanced symbol navigation
+
+#### Services
+- **WorkspaceAnalyzer**: Real-time workspace analysis
+- **NotificationService**: User notification management
+- **ConfigurationUIService**: Extension configuration interface
+- **ProgressIndicatorService**: Operation progress tracking
+
+#### Communication Layer
+- **OllamaCodeClient** (`src/client/ollamaCodeClient.ts`): WebSocket client for backend communication
+- **Real-time Updates**: Live analysis and suggestions
+- **Context Synchronization**: Automatic workspace context sharing
+
+## Performance & Scalability Infrastructure
+
+### Distributed Processing Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  Performance Optimization Layer                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Distributed   │  │   Advanced      │  │   Memory        │  │
+│  │   Analyzer      │  │   Caching       │  │   Optimizer     │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │             │
+    ▼             ▼             ▼             ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+│Knowledge│  │Startup  │  │Real-time│  │Predictive│
+│Graph    │  │Optimizer│  │Updates  │  │AI Cache │
+│System   │  │         │  │Engine   │  │         │
+└─────────┘  └─────────┘  └─────────┘  └─────────┘
+```
+
+### Key Performance Components
+
+#### Distributed Analyzer (`src/ai/distributed-analyzer.ts`)
+- **Partition-Based Processing**: Intelligent workload distribution
+- **Parallel Execution**: Multi-threaded analysis for large codebases
+- **Resource Management**: Automatic resource allocation and monitoring
+
+#### Advanced Caching System
+- **Predictive AI Cache** (`src/ai/predictive-ai-cache.ts`): AI-powered cache optimization
+- **Multi-Tier Strategy**: L1 (memory), L2 (disk), L3 (distributed) caching
+- **LRU Policies**: Intelligent cache eviction strategies
+
+#### Knowledge Graph System (`src/ai/optimized-knowledge-graph.ts`)
+- **Code Relationship Mapping**: Comprehensive codebase understanding
+- **Incremental Updates**: Real-time graph updates with file watching
+- **Query Optimization**: Advanced query performance for code analysis
+
+#### Memory Optimization (`src/ai/memory-optimizer.ts`)
+- **Automatic Cleanup**: Resource cleanup and memory management
+- **Stream Processing**: Efficient handling of large files
+- **Background Processing**: Non-blocking operations for better UX
+
+## Shared Utility System
+
+### DRY-Compliant Utilities (`src/utils/`)
+
+#### Core Utilities
+- **DirectoryManager** (`directory-manager.ts`): Centralized directory operations
+- **ConfigurationMerger** (`configuration-merger.ts`): Hierarchical configuration management
+- **MetricsCalculator** (`metrics-calculator.ts`): Code metrics and analysis
+- **ValidationUtils** (`validation-utils.ts`): Input validation and sanitization
+- **ErrorUtils** (`error-utils.ts`): Comprehensive error handling patterns
+
+#### Performance Utilities
+- **CacheManager** (`cache-manager.ts`): Unified caching interface
+- **AsyncMutex** (`async-mutex.ts`): Concurrency control
+- **TimerManager** (`timer-manager.ts`): Performance monitoring
+- **PerformanceRollback** (`performance-rollback.ts`): Automatic performance regression handling
+
+#### Git Integration Utilities
+- **GitCommandExecutor** (`git-command-executor.ts`): Safe git command execution
+- **GitignoreParser** (`gitignore-parser.ts`): Gitignore pattern processing
+- **ComplexityCalculator** (`complexity-calculator.ts`): Code complexity analysis
+
+## Documentation Generation System
+
+### TypeDoc Integration Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                 Documentation Generation                        │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   TypeDoc       │  │   GitHub        │  │   Quality       │  │
+│  │   Generator     │  │   Actions       │  │   Validation    │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Automated Documentation Workflow                  │
+│  Source Changes → TypeDoc Generation → Quality Check →         │
+│  GitHub Commit → PR Comments → Artifact Upload                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Components
+
+#### TypeDoc Configuration (`typedoc.json`)
+- **Comprehensive Coverage**: All TypeScript interfaces and classes
+- **Cross-Reference Generation**: Automatic linking between modules
+- **JSON Output**: Machine-readable documentation format
+
+#### GitHub Actions Workflow (`.github/workflows/update-documentation.yml`)
+- **Automatic Triggers**: Triggered on TypeScript file changes
+- **Quality Validation**: Link checking and coverage analysis
+- **PR Integration**: Automatic documentation preview in pull requests
+
+## CLI Entry Points
+
+### Multi-Mode Architecture
+
 ```typescript
-interface CommandDef {
-  name: string;
-  description: string;
-  category: string;
-  handler: CommandHandler;
-  args: CommandArgDef[];
-  examples: string[];
-  requiresAuth: boolean;
+// Entry Point Selection System
+export const CLI_ENTRY_POINTS = {
+  // Basic CLI mode - essential commands only
+  simple: {
+    entry: 'dist/src/simple-cli.js',
+    features: ['ask', 'explain', 'fix', 'basic-config'],
+    startup: 'fast',
+    memory: 'low'
+  },
+
+  // Advanced CLI mode - full feature set
+  advanced: {
+    entry: 'dist/src/cli.js',
+    features: ['multi-provider', 'vcs-intelligence', 'fine-tuning', 'enterprise'],
+    startup: 'standard',
+    memory: 'standard'
+  },
+
+  // Interactive mode selector
+  interactive: {
+    entry: 'dist/src/cli-selector.js',
+    features: ['mode-selection', 'guided-setup', 'feature-discovery'],
+    startup: 'guided',
+    memory: 'minimal'
+  },
+
+  // IDE server mode
+  ide: {
+    entry: 'dist/src/ide-server.js',
+    features: ['websocket', 'real-time-analysis', 'vscode-integration'],
+    startup: 'service',
+    memory: 'high'
+  }
+} as const;
+```
+
+### Package.json CLI Integration
+```json
+{
+  "bin": {
+    "ollama-code": "dist/src/cli-selector.js",
+    "ollama-code-simple": "dist/src/simple-cli.js",
+    "ollama-code-advanced": "dist/src/cli.js",
+    "ollama-code-ide": "dist/src/ide-server.js"
+  }
 }
 ```
 
-#### Configuration Module (`src/config/`)
-**Purpose**: Configuration management and validation
+## Data Flow Diagrams
 
-**Key Components**:
-- `loadConfig()`: Configuration loading
-- `configSchema`: Zod validation schema
-- `defaults.ts`: Default configuration values
-
-**Interfaces**:
-```typescript
-interface ConfigType {
-  workspace?: string;
-  logLevel: LogLevel;
-  ai: AiConfig;
-  ollama: OllamaConfig;
-  terminal: TerminalConfig;
-  // ... other config sections
-}
-```
-
-#### Error Handling Module (`src/errors/`)
-**Purpose**: Error handling and user-friendly messaging
-
-**Key Components**:
-- `formatErrorForDisplay()`: Error formatting
-- `UserError`: User-correctable errors
-- `SystemError`: Technical errors
-
-**Error Types**:
-```typescript
-class UserError extends Error {
-  constructor(message: string, suggestion?: string);
-}
-
-class SystemError extends Error {
-  constructor(message: string, code?: string);
-}
-```
-
-#### Terminal Module (`src/terminal/`)
-**Purpose**: Terminal interface and formatting
-
-**Key Components**:
-- `Terminal`: Terminal interface implementation
-- `formatting.ts`: Output formatting utilities
-- `prompt.ts`: Interactive prompts
-
-**Interfaces**:
-```typescript
-interface TerminalInterface {
-  displayWelcome(): void;
-  clear(): void;
-  detectCapabilities(): Promise<void>;
-}
-```
-
-#### Utilities Module (`src/utils/`)
-**Purpose**: Shared utilities and helper functions
-
-**Key Components**:
-- `logger.ts`: Logging system
-- `ollama-server.ts`: Ollama server management
-- `async.ts`: Async utilities
-- `validation.ts`: Input validation
-
-## Data Flow
-
-### Command Execution Flow
+### Multi-Provider AI Request Flow
 
 ```
-User Input → CLI Parser → Command Registry → Command Handler → AI Client → Ollama Server
+User Request → Intent Analysis → Provider Selection → Request Routing
+     │              │                    │                  │
+     ▼              ▼                    ▼                  ▼
+CLI Parser    AI Context         Intelligent        Provider API
+             Building           Router             Integration
+     │              │                    │                  │
+     ▼              ▼                    ▼                  ▼
+Command       Enhanced          Health Check        AI Response
+Validation    Prompts          & Fallback         Processing
+     │              │                    │                  │
+     ▼              ▼                    ▼                  ▼
+Parameter     Context            Circuit Breaker    Response Fusion
+Resolution   Optimization        Pattern           (if enabled)
+     │              │                    │                  │
+     ▼              ▼                    ▼                  ▼
+Execution     Final Request      Provider          Final Response
+Context      Preparation        Communication      Formatting
+```
+
+### VCS Intelligence Workflow
+
+```
+Git Operation → Hook Trigger → AI Analysis → Quality Check → Action Decision
      │              │              │              │              │
      ▼              ▼              ▼              ▼              ▼
-Arguments    Command Lookup    Validation    Processing    Response
+Repository     Pre/Post        Code Quality    Threshold      Allow/Block
+State         Commit/Push      Assessment      Validation     Operation
+     │              │              │              │              │
+     ▼              ▼              ▼              ▼              ▼
+Change        Hook            Regression       Quality        Notification
+Detection     Execution       Analysis         Gates          System
+     │              │              │              │              │
+     ▼              ▼              ▼              ▼              ▼
+Impact        AI-Powered       Risk             CI/CD          User
+Analysis      Validation       Scoring          Integration    Feedback
 ```
 
-### Configuration Flow
+### IDE Integration Communication Flow
 
 ```
-Default Config → File Config → Env Variables → Runtime Updates → Validation
-       │              │              │              │              │
-       ▼              ▼              ▼              ▼              ▼
-   Built-in      ollama-code    OLLAMA_CODE_   config command   Zod Schema
-   Defaults      .config.json   Variables      Updates         Validation
-```
-
-### Error Handling Flow
-
-```
-Error Occurrence → Error Classification → Error Formatting → User Display
-        │                    │                    │              │
-        ▼                    ▼                    ▼              ▼
-   Exception           UserError/           formatErrorFor    Console
-   Thrown             SystemError           Display()        Output
+VS Code Event → Extension Handler → WebSocket Message → CLI Backend
+     │              │                      │                   │
+     ▼              ▼                      ▼                   ▼
+Editor        Provider           Real-time          AI Provider
+Action        Processing         Communication      Selection
+     │              │                      │                   │
+     ▼              ▼                      ▼                   ▼
+Context       Context            Message            AI Request
+Collection    Serialization      Queue             Processing
+     │              │                      │                   │
+     ▼              ▼                      ▼                   ▼
+Real-time     WebSocket          Response           Response
+Analysis      Transport          Processing         Formatting
+     │              │                      │                   │
+     ▼              ▼                      ▼                   ▼
+UI Update     Extension          Result             Editor
+Integration   Response           Delivery           Integration
 ```
 
 ## Design Patterns
 
-### Singleton Pattern
-Used for core services that need global access:
-- `OllamaClient`: AI client instance
-- `AuthManager`: Authentication state
-- `Logger`: Logging system
+### Advanced Patterns Used
 
-### Dependency Injection
-Services are injected rather than tightly coupled:
+#### Circuit Breaker Pattern (AI Providers)
 ```typescript
-const commands = await initCommandProcessor(config, {
-  terminal,
-  auth,
-  ai,
-  codebase,
-  fileOps,
-  execution,
-  errors
-});
-```
+class CircuitBreaker {
+  private failureCount = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
 
-### Command Pattern
-Commands are encapsulated as objects with consistent interfaces:
-```typescript
-interface CommandHandler {
-  (args: string[], context: CommandContext): Promise<void>;
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      throw new Error('Circuit breaker is open');
+    }
+    // Implementation...
+  }
 }
 ```
 
-### Factory Pattern
-Used for creating instances of services:
+#### Strategy Pattern (Routing Strategies)
 ```typescript
-export async function initAI(config: any = {}): Promise<OllamaClient> {
-  // Factory method for AI client
+interface RoutingStrategy {
+  selectProvider(context: RoutingContext): Promise<BaseAIProvider>;
+}
+
+class PerformanceRoutingStrategy implements RoutingStrategy {
+  async selectProvider(context: RoutingContext): Promise<BaseAIProvider> {
+    // Select fastest provider based on metrics
+  }
 }
 ```
 
-### Observer Pattern
-Used for event handling and notifications:
+#### Observer Pattern (Real-time Updates)
 ```typescript
-// Error handling with observers
-errors.on('error', (error) => {
-  // Handle error
-});
+class WorkspaceWatcher extends EventEmitter {
+  private fileWatcher: FSWatcher;
+
+  onFileChange(callback: (file: string) => void) {
+    this.on('file-changed', callback);
+  }
+}
+```
+
+#### Factory Pattern (Provider Creation)
+```typescript
+class ProviderFactory {
+  static createProvider(type: ProviderType, config: ProviderConfig): BaseAIProvider {
+    switch (type) {
+      case 'ollama': return new OllamaProvider(config);
+      case 'openai': return new OpenAIProvider(config);
+      // ...
+    }
+  }
+}
+```
+
+#### Chain of Responsibility (Command Processing)
+```typescript
+abstract class CommandHandler {
+  protected next?: CommandHandler;
+
+  setNext(handler: CommandHandler): CommandHandler {
+    this.next = handler;
+    return handler;
+  }
+
+  abstract handle(command: Command): Promise<void>;
+}
 ```
 
 ## Dependencies
 
-### Core Dependencies
-- **inquirer**: Interactive prompts and user input
-- **node-fetch**: HTTP client for Ollama API
-- **ora**: Terminal spinners and progress indicators
-- **zod**: Schema validation and type safety
-- **uuid**: Unique identifier generation
+### Core Production Dependencies
+- **Multi-Provider Integration**: `openai`, `@anthropic-ai/sdk`, `@google-ai/generativelanguage`
+- **WebSocket Communication**: `ws`, `socket.io`
+- **Git Integration**: `simple-git`, `isomorphic-git`
+- **Performance**: `node-cache`, `lru-cache`, `bull` (job queues)
+- **Validation**: `zod`, `joi`
+- **Utilities**: `lodash`, `rxjs`, `uuid`
 
-### Development Dependencies
-- **TypeScript**: Type safety and modern JavaScript features
-- **ESLint**: Code linting and quality enforcement
-- **Jest**: Testing framework
-- **Babel**: JavaScript transpilation for testing
+### Development & Documentation Dependencies
+- **TypeScript**: `typescript`, `@types/node`, `ts-node`
+- **Testing**: `jest`, `@types/jest`, `supertest`
+- **Documentation**: `typedoc`, `@typedoc/plugin-markdown`
+- **Code Quality**: `eslint`, `prettier`, `husky`
 
-### External Services
-- **Ollama Server**: Local AI model server
-- **Git**: Version control integration
-- **File System**: Local file operations
+### VS Code Extension Dependencies
+- **VS Code API**: `@types/vscode`
+- **Communication**: `ws`, `axios`
+- **Testing**: `@vscode/test-electron`
 
-## Error Handling
+## Security Architecture
 
-### Error Classification
-1. **UserError**: User-correctable errors with clear resolution steps
-2. **SystemError**: Technical errors requiring system-level fixes
-3. **NetworkError**: Network-related errors with retry suggestions
-4. **ValidationError**: Input validation errors with correction guidance
+### Multi-Layer Security Approach
 
-### Error Recovery
-- **Automatic Retry**: Built-in retry logic for transient failures
-- **Graceful Degradation**: Continued operation when non-critical features fail
-- **User Guidance**: Clear error messages with suggested actions
-- **Fallback Options**: Alternative approaches when primary solutions fail
+#### Input Validation & Sanitization
+- **Zod Schema Validation**: All inputs validated using comprehensive schemas
+- **Command Injection Prevention**: Parameterized command execution
+- **Path Traversal Protection**: Secure file path validation
+- **XSS Prevention**: Output sanitization for web interfaces
 
-### Error Flow
-```
-Exception → Error Classification → Error Formatting → User Display → Recovery Action
-```
+#### API Key Management
+- **Environment Variable Storage**: Secure API key storage
+- **Key Rotation Support**: Automatic key rotation capabilities
+- **Scope Limitation**: Minimal required permissions
+- **Audit Logging**: Comprehensive access logging
 
-## Performance Considerations
+#### Provider Security
+- **TLS/SSL Enforcement**: Encrypted communications with all providers
+- **Request Signing**: Cryptographic request verification
+- **Rate Limiting**: Protection against abuse
+- **Circuit Breakers**: Automatic failure protection
 
-### Async/Await Pattern
-All I/O operations use async/await for non-blocking execution:
-```typescript
-async function processFile(filePath: string): Promise<string> {
-  const content = await readFile(filePath, 'utf8');
-  return await processContent(content);
-}
-```
-
-### Memory Management
-- **Streaming**: Large responses are streamed to avoid memory issues
-- **Caching**: Intelligent caching of frequently accessed data
-- **Cleanup**: Proper cleanup of resources and event listeners
-
-### Optimization Strategies
-- **Lazy Loading**: Modules are loaded only when needed
-- **Connection Pooling**: Reuse of HTTP connections
-- **Batch Processing**: Multiple operations batched together
-- **Parallel Processing**: Concurrent execution where possible
-
-## Security Considerations
-
-### Input Validation
-- **Zod Schemas**: All inputs validated using Zod schemas
-- **Path Traversal Protection**: Prevention of unauthorized file access
-- **Command Sanitization**: Validation of commands before execution
-
-### Data Privacy
-- **Local Processing**: All AI processing happens locally
-- **No Data Transmission**: No code or data sent to external services
-- **Local Storage**: All data stored locally on user's machine
-
-### Security Best Practices
-- **Principle of Least Privilege**: Minimal required permissions
-- **Input Sanitization**: All inputs validated and sanitized
-- **Error Handling**: Secure error messages without sensitive information
+#### Local Data Protection
+- **Encryption at Rest**: Local cache and configuration encryption
+- **Secure Deletion**: Proper cleanup of sensitive data
+- **Access Control**: File permission management
+- **Privacy Mode**: Local-only processing options
 
 ## Testing Strategy
 
-### Test Categories
-1. **Unit Tests**: Individual function and module testing
-2. **Integration Tests**: Cross-module functionality testing
-3. **Documentation Tests**: Documentation validation and consistency
-4. **End-to-End Tests**: Complete workflow testing
+### Comprehensive Testing Approach
 
-### Test Structure
+#### Test Categories
 ```
 tests/
-├── unit/           # Unit tests for individual modules
-├── integration/    # Integration tests for module interactions
-├── docs/          # Documentation validation tests
-└── e2e/           # End-to-end workflow tests
+├── unit/                  # Unit tests (90%+ coverage target)
+│   ├── ai/               # AI provider and routing tests
+│   ├── vcs/              # VCS intelligence tests
+│   ├── utils/            # Utility function tests
+│   └── providers/        # Individual provider tests
+├── integration/          # Integration tests
+│   ├── multi-provider/   # Cross-provider integration
+│   ├── vcs-integration/ # Git hooks and CI/CD tests
+│   ├── ide-extension/   # VS Code extension tests
+│   └── performance/     # Performance integration tests
+├── e2e/                 # End-to-end tests
+│   ├── cli-workflows/   # Complete CLI workflows
+│   ├── ide-scenarios/   # VS Code integration scenarios
+│   └── enterprise/      # Enterprise feature tests
+└── docs/                # Documentation tests
+    ├── api-validation/  # API documentation validation
+    ├── link-checking/   # Documentation link verification
+    └── example-testing/ # Code example validation
 ```
 
-## Future Enhancements
+#### Testing Infrastructure
+- **Automated Testing**: GitHub Actions integration
+- **Performance Testing**: Benchmark tracking and regression detection
+- **Load Testing**: Multi-provider load testing
+- **Security Testing**: Automated security vulnerability scanning
 
-### Planned Architecture Improvements
-- **Plugin System**: Extensible plugin architecture
-- **Microservices**: Break down into smaller, independent services
-- **Event Bus**: Centralized event handling system
-- **Caching Layer**: Advanced caching for improved performance
+## Performance Optimization
 
-### Scalability Considerations
-- **Horizontal Scaling**: Support for multiple Ollama instances
-- **Load Balancing**: Distribution of AI requests across multiple models
-- **Resource Management**: Better resource allocation and monitoring
+### Multi-Tier Optimization Strategy
 
-This architecture documentation provides a comprehensive understanding of the Ollama Code CLI system, enabling developers to contribute effectively and maintain the codebase.
+#### Startup Optimization (`src/ai/startup-optimizer.ts`)
+- **Lazy Loading**: Modules loaded on demand
+- **Background Initialization**: Non-blocking service startup
+- **Cache Preloading**: Intelligent cache warming
+- **Resource Pooling**: Connection and resource reuse
+
+#### Runtime Performance
+- **Predictive Caching**: AI-powered cache optimization
+- **Request Batching**: Multiple operations batched together
+- **Parallel Processing**: Concurrent execution where possible
+- **Memory Management**: Automatic cleanup and optimization
+
+#### Large Codebase Handling
+- **Distributed Processing**: Workload distribution across multiple processes
+- **Incremental Analysis**: Only analyze changed files
+- **Streaming Processing**: Handle large files without memory issues
+- **Background Services**: Non-blocking background operations
+
+#### Provider Optimization
+- **Connection Pooling**: Reuse HTTP connections
+- **Request Deduplication**: Avoid duplicate requests
+- **Response Caching**: Cache provider responses
+- **Circuit Breakers**: Automatic failure recovery
+
+This comprehensive architecture provides a robust foundation for the Ollama Code CLI system, enabling advanced AI integration, enterprise scalability, and seamless developer experience across multiple platforms and use cases.

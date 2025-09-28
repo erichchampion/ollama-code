@@ -1,603 +1,1157 @@
-# Configuration Guide
+# Configuration Guide - Ollama Code CLI v0.7.0
 
-This document provides comprehensive information about configuring the Ollama Code CLI tool.
+This document provides comprehensive information about configuring the Ollama Code CLI tool, including all advanced features, multi-provider settings, and enterprise configurations.
+
+## Table of Contents
+
+- [Configuration Overview](#configuration-overview)
+- [Configuration Sources and Precedence](#configuration-sources-and-precedence)
+- [Core AI Configuration](#core-ai-configuration)
+- [Multi-Provider AI Configuration](#multi-provider-ai-configuration)
+- [VCS Intelligence Configuration](#vcs-intelligence-configuration)
+- [IDE Integration Configuration](#ide-integration-configuration)
+- [Performance and Enterprise Configuration](#performance-and-enterprise-configuration)
+- [Documentation Configuration](#documentation-configuration)
+- [Security and Authentication](#security-and-authentication)
+- [Environment-Specific Configuration](#environment-specific-configuration)
+- [Configuration Validation and Troubleshooting](#configuration-validation-and-troubleshooting)
+
+---
 
 ## Configuration Overview
 
 The Ollama Code CLI uses a hierarchical configuration system with:
-- Type safety using Zod schemas
-- Sensible defaults for all options
-- Environment variable overrides
-- Runtime configuration updates
+- **Type safety** using Zod schemas for runtime validation
+- **Sensible defaults** for all options to work out of the box
+- **Environment variable overrides** for CI/CD and deployment flexibility
+- **Runtime configuration updates** through CLI commands
+- **Multi-environment support** with profiles and inheritance
 
-## Configuration Sources
+### Configuration Architecture
 
-Configuration is loaded in this order:
-1. Default values
-2. Configuration file (`ollama-code.config.json`)
-3. Environment variables (`OLLAMA_CODE_*`)
-4. Command line arguments
-
-## Key Configuration Sections
-
-### AI Configuration
-- `ai.defaultModel`: Default AI model (default: "qwen2.5-coder:latest")
-- `ai.defaultTemperature`: Response creativity (0-2, default: 0.7)
-- `ai.defaultTopP`: Top-p sampling (0-1, default: 0.9)
-- `ai.defaultTopK`: Top-k sampling (default: 40)
-
-### Ollama Configuration
-- `ollama.baseUrl`: Server URL (default: "http://localhost:11434")
-- `ollama.timeout`: Request timeout (default: 120000ms)
-- `ollama.retryOptions.maxRetries`: Max retries (default: 3)
-
-### Terminal Configuration
-- `terminal.theme`: Theme (dark/light/system, default: system)
-- `terminal.useColors`: Colored output (default: true)
-- `terminal.codeHighlighting`: Syntax highlighting (default: true)
-
-### Code Analysis Configuration
-- `codeAnalysis.excludePatterns`: Files to exclude from analysis
-- `codeAnalysis.maxFileSize`: Max file size to analyze (default: 1MB)
-- `codeAnalysis.indexDepth`: Max directory depth (default: 3)
-
-### MCP Server Configuration
-- `mcp.server.enabled`: Enable MCP server integration (default: false)
-- `mcp.server.port`: Server port (default: 3001)
-- `mcp.server.autoStart`: Start server automatically (default: false)
-- `mcp.server.tools.enabled`: Enable tool exposure (default: true)
-- `mcp.server.resources.enabled`: Enable resource exposure (default: true)
-- `mcp.server.logging.enabled`: Enable MCP request logging (default: false)
-
-### MCP Client Configuration
-- `mcp.client.enabled`: Enable MCP client integration (default: false)
-- `mcp.client.globalTimeout`: Global timeout for all connections (default: 60000ms)
-- `mcp.client.maxConcurrentConnections`: Max concurrent connections (default: 3)
-- `mcp.client.connections`: Array of MCP server connections to establish
-- `mcp.client.logging.enabled`: Enable MCP client request logging (default: false)
-
-## Environment Variables
-
-Use `OLLAMA_CODE_` prefix:
-- `OLLAMA_CODE_AI_DEFAULT_MODEL`
-- `OLLAMA_CODE_TERMINAL_THEME`
-- `OLLAMA_CODE_OLLAMA_BASE_URL`
-- `OLLAMA_CODE_MCP_SERVER_ENABLED`
-- `OLLAMA_CODE_MCP_SERVER_PORT`
-- `OLLAMA_CODE_MCP_SERVER_AUTO_START`
-- `OLLAMA_CODE_MCP_CLIENT_ENABLED`
-- `OLLAMA_CODE_MCP_CLIENT_GLOBAL_TIMEOUT`
-
-## Command Line Usage
-
-```bash
-# View configuration
-ollama-code config
-
-# Set values
-ollama-code config ai.defaultModel llama3.2
-ollama-code config terminal.theme dark
-
-# View specific section
-ollama-code config ai
-
-# MCP server commands
-ollama-code mcp-start
-ollama-code mcp-start 3002
-ollama-code mcp-status
-ollama-code mcp-tools
-ollama-code mcp-stop
-
-# MCP client commands
-ollama-code mcp-list-connections
-ollama-code mcp-add-connection <name> <command> [args...]
-ollama-code mcp-remove-connection <name>
-ollama-code mcp-client-status
-ollama-code mcp-client-tools
-ollama-code mcp-call-tool <tool-name> [args-json]
-ollama-code mcp-get-resource <resource-uri>
+```
+Configuration Hierarchy (highest to lowest precedence):
+1. Command line arguments          (--temperature 0.8)
+2. Environment variables          (OLLAMA_CODE_TEMPERATURE=0.8)
+3. Project configuration file     (./ollama-code.config.json)
+4. Global configuration file      (~/.ollama-code/config.json)
+5. Default values                 (built-in defaults)
 ```
 
-## Configuration File Example
+---
 
-```json
+## Configuration Sources and Precedence
+
+### 1. Configuration Files
+
+#### Project Configuration (Highest Priority)
+```bash
+# Project root: ./ollama-code.config.json
 {
-  "logLevel": "debug",
   "ai": {
-    "defaultModel": "llama3.2",
-    "defaultTemperature": 0.5
+    "defaultProvider": "ollama",
+    "defaultModel": "qwen2.5-coder:latest"
+  },
+  "vcs": {
+    "enableHooks": true,
+    "qualityThreshold": 85
+  }
+}
+```
+
+#### Global Configuration
+```bash
+# User home: ~/.ollama-code/config.json
+{
+  "ai": {
+    "providers": {
+      "openai": {
+        "apiKey": "sk-...",
+        "model": "gpt-4"
+      }
+    }
   },
   "terminal": {
     "theme": "dark",
     "useColors": true
-  },
-  "codeAnalysis": {
-    "excludePatterns": [
-      "node_modules/**",
-      "coverage/**",
-      "**/*.test.js"
-    ]
-  },
-  "mcp": {
-    "server": {
+  }
+}
+```
+
+### 2. Environment Variables
+
+All configuration keys can be set via environment variables using the `OLLAMA_CODE_` prefix:
+
+```bash
+# AI Configuration
+export OLLAMA_CODE_AI_DEFAULT_PROVIDER=openai
+export OLLAMA_CODE_AI_DEFAULT_MODEL=gpt-4
+export OLLAMA_CODE_AI_DEFAULT_TEMPERATURE=0.8
+
+# Provider Configuration
+export OLLAMA_CODE_PROVIDERS_OPENAI_API_KEY=sk-...
+export OLLAMA_CODE_PROVIDERS_ANTHROPIC_API_KEY=sk-ant-...
+export OLLAMA_CODE_PROVIDERS_GOOGLE_API_KEY=AIza...
+
+# VCS Configuration
+export OLLAMA_CODE_VCS_ENABLE_HOOKS=true
+export OLLAMA_CODE_VCS_QUALITY_THRESHOLD=80
+
+# IDE Configuration
+export OLLAMA_CODE_IDE_SERVER_PORT=3002
+export OLLAMA_CODE_IDE_SERVER_AUTO_START=true
+```
+
+### 3. Command Line Arguments
+
+```bash
+# Override any configuration via CLI
+ollama-code ask "question" --provider openai --temperature 0.9
+ollama-code config set ai.defaultProvider anthropic --global
+```
+
+---
+
+## Core AI Configuration
+
+### AI Provider Settings
+
+```json
+{
+  "ai": {
+    "defaultProvider": "ollama",
+    "defaultModel": "qwen2.5-coder:latest",
+    "defaultTemperature": 0.7,
+    "defaultTopP": 0.9,
+    "defaultTopK": 40,
+    "maxTokens": 4096,
+    "contextWindow": 8192,
+    "streaming": {
       "enabled": true,
-      "port": 3001,
-      "autoStart": false,
-      "tools": {
-        "enabled": true,
-        "allowedTools": ["*"],
-        "maxConcurrent": 5
-      },
-      "resources": {
-        "enabled": true,
-        "allowedResources": ["*"],
-        "cacheTTL": 300000
-      },
-      "security": {
-        "requireAuth": false,
-        "allowedHosts": ["*"],
-        "maxRequestSize": 10485760
-      },
-      "logging": {
-        "enabled": false,
-        "level": "info",
-        "logFile": "mcp-server.log"
+      "chunkSize": 1024,
+      "timeout": 30000
+    },
+    "fallback": {
+      "enabled": true,
+      "providers": ["ollama", "openai"],
+      "maxRetries": 3
+    }
+  }
+}
+```
+
+#### Configuration Options
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `ai.defaultProvider` | string | `"ollama"` | Default AI provider to use |
+| `ai.defaultModel` | string | `"qwen2.5-coder:latest"` | Default model for AI operations |
+| `ai.defaultTemperature` | number | `0.7` | Response creativity (0-2) |
+| `ai.defaultTopP` | number | `0.9` | Top-p sampling parameter |
+| `ai.defaultTopK` | number | `40` | Top-k sampling parameter |
+| `ai.maxTokens` | number | `4096` | Maximum tokens per response |
+| `ai.contextWindow` | number | `8192` | Context window size |
+| `ai.streaming.enabled` | boolean | `true` | Enable streaming responses |
+| `ai.streaming.chunkSize` | number | `1024` | Streaming chunk size |
+| `ai.fallback.enabled` | boolean | `true` | Enable provider fallback |
+| `ai.fallback.maxRetries` | number | `3` | Maximum retry attempts |
+
+### Ollama Configuration
+
+```json
+{
+  "ollama": {
+    "baseUrl": "http://localhost:11434",
+    "timeout": 120000,
+    "retryOptions": {
+      "maxRetries": 3,
+      "initialDelayMs": 1000,
+      "maxDelayMs": 10000
+    },
+    "models": {
+      "preload": ["qwen2.5-coder:latest", "codellama:7b"],
+      "autoUpdate": false,
+      "cleanupOld": true
+    },
+    "performance": {
+      "concurrentRequests": 5,
+      "requestQueue": 100,
+      "memoryLimit": "8GB"
+    }
+  }
+}
+```
+
+---
+
+## Multi-Provider AI Configuration
+
+### Provider Definitions
+
+```json
+{
+  "providers": {
+    "ollama": {
+      "type": "ollama",
+      "enabled": true,
+      "baseUrl": "http://localhost:11434",
+      "models": ["qwen2.5-coder:latest", "codellama:7b"],
+      "capabilities": ["code", "chat", "completion"],
+      "priority": 1,
+      "costPerToken": 0.0,
+      "rateLimits": {
+        "requestsPerMinute": 60,
+        "tokensPerMinute": 100000
       }
     },
-    "client": {
+    "openai": {
+      "type": "openai",
       "enabled": true,
-      "connections": [
-        {
-          "name": "filesystem-server",
-          "enabled": true,
-          "command": "npx",
-          "args": ["@modelcontextprotocol/server-filesystem", "/path/to/workspace"],
-          "env": {},
-          "timeout": 30000,
-          "retryCount": 3,
-          "retryDelay": 1000
+      "apiKey": "${OPENAI_API_KEY}",
+      "baseUrl": "https://api.openai.com/v1",
+      "models": ["gpt-4", "gpt-3.5-turbo"],
+      "capabilities": ["code", "chat", "completion", "function-calling"],
+      "priority": 2,
+      "costPerToken": 0.00003,
+      "rateLimits": {
+        "requestsPerMinute": 3500,
+        "tokensPerMinute": 90000
+      }
+    },
+    "anthropic": {
+      "type": "anthropic",
+      "enabled": true,
+      "apiKey": "${ANTHROPIC_API_KEY}",
+      "baseUrl": "https://api.anthropic.com",
+      "models": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
+      "capabilities": ["code", "chat", "completion", "analysis"],
+      "priority": 3,
+      "costPerToken": 0.000015,
+      "rateLimits": {
+        "requestsPerMinute": 50,
+        "tokensPerMinute": 40000
+      }
+    },
+    "google": {
+      "type": "google",
+      "enabled": false,
+      "apiKey": "${GOOGLE_API_KEY}",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "models": ["gemini-1.5-pro", "gemini-1.5-flash"],
+      "capabilities": ["code", "chat", "completion"],
+      "priority": 4,
+      "costPerToken": 0.0000125,
+      "rateLimits": {
+        "requestsPerMinute": 30,
+        "tokensPerMinute": 32000
+      }
+    }
+  }
+}
+```
+
+### Intelligent Routing Configuration
+
+```json
+{
+  "routing": {
+    "strategy": "intelligent",
+    "strategies": {
+      "cost-optimized": {
+        "primaryCriteria": "cost",
+        "fallbackCriteria": ["availability", "speed"]
+      },
+      "speed-optimized": {
+        "primaryCriteria": "latency",
+        "fallbackCriteria": ["availability", "cost"]
+      },
+      "quality-optimized": {
+        "primaryCriteria": "capability",
+        "fallbackCriteria": ["availability", "speed"]
+      },
+      "intelligent": {
+        "weights": {
+          "cost": 0.3,
+          "speed": 0.3,
+          "quality": 0.4
         },
-        {
-          "name": "git-server",
-          "enabled": true,
-          "command": "mcp-server-git",
-          "args": ["--repository", "/path/to/repo"],
-          "env": {
-            "GIT_CONFIG_GLOBAL": "/dev/null"
-          },
-          "cwd": "/path/to/repo",
-          "timeout": 30000,
-          "retryCount": 3,
-          "retryDelay": 1000
-        }
-      ],
-      "globalTimeout": 60000,
-      "maxConcurrentConnections": 3,
-      "logging": {
-        "enabled": false,
-        "level": "info",
-        "logFile": "mcp-client.log"
+        "contextAware": true,
+        "learningEnabled": true
+      }
+    },
+    "fallback": {
+      "enabled": true,
+      "order": ["ollama", "openai", "anthropic"],
+      "circuitBreaker": {
+        "enabled": true,
+        "errorThreshold": 5,
+        "timeoutThreshold": 30000,
+        "recoveryTime": 60000
       }
     }
   }
 }
 ```
 
-## Validation
-
-All configuration is validated using Zod schemas. Invalid values are replaced with defaults and warnings are shown.
-
-## MCP Server Integration
-
-The Model Context Protocol (MCP) server integration allows ollama-code to expose its tools and resources to other MCP clients, enabling powerful AI assistants like Claude Desktop to use ollama-code's capabilities.
-
-### What is MCP?
-
-MCP is a protocol that allows AI assistants to:
-- Access external tools and resources
-- Execute code operations
-- Retrieve file contents and project information
-- Perform Git operations
-- Generate and analyze code
-
-### MCP Server Features
-
-When enabled, the ollama-code MCP server exposes:
-
-**Tools:**
-- `analyze_code` - Analyze code for quality, patterns, and potential issues
-- `generate_code` - Generate code based on natural language description
-- `refactor_code` - Refactor code for better quality and maintainability
-- `explain_code` - Explain what code does and how it works
-- `fix_code` - Fix bugs or issues in code
-- `search_codebase` - Search for patterns or code in the codebase
-- `git_status` - Get current git repository status
-- `run_tests` - Run tests in the project
-
-**Resources:**
-- `project://info` - General information about the current project
-- `config://current` - Current ollama-code configuration
-
-### Starting the MCP Server
-
-```bash
-# Start server on default port (3001)
-ollama-code mcp-start
-
-# Start server on custom port
-ollama-code mcp-start 3002
-
-# Check server status
-ollama-code mcp-status
-
-# List available tools
-ollama-code mcp-tools
-
-# List available resources
-ollama-code mcp-resources
-
-# Stop the server
-ollama-code mcp-stop
-```
-
-### Connecting Claude Desktop
-
-To use ollama-code tools in Claude Desktop:
-
-1. Start the MCP server:
-   ```bash
-   ollama-code mcp-start
-   ```
-
-2. Add to your Claude Desktop configuration file:
-   ```json
-   {
-     "mcpServers": {
-       "ollama-code": {
-         "command": "node",
-         "args": ["path/to/ollama-code/dist/src/mcp-server.js"],
-         "env": {
-           "OLLAMA_CODE_PROJECT_PATH": "/path/to/your/project"
-         }
-       }
-     }
-   }
-   ```
-
-3. Restart Claude Desktop to load the new server
-
-### MCP Server Configuration Options
+### Fine-Tuning Configuration
 
 ```json
 {
-  "mcp": {
-    "enabled": true,              // Enable MCP server integration
-    "port": 3001,                 // Server port
-    "autoStart": false,           // Start server automatically with CLI
-    "tools": {
-      "enabled": true,            // Enable tool exposure
-      "allowedTools": ["*"],      // Which tools to expose ("*" for all)
-      "maxConcurrent": 5          // Max concurrent tool executions
+  "fineTuning": {
+    "defaultConfig": {
+      "epochs": 3,
+      "learningRate": 0.0001,
+      "batchSize": 4,
+      "validationSplit": 0.2,
+      "maxSequenceLength": 2048,
+      "temperature": 0.1,
+      "dropout": 0.1,
+      "gradientClipping": 1.0,
+      "weightDecay": 0.01,
+      "warmupSteps": 100,
+      "saveSteps": 500,
+      "evaluationSteps": 100,
+      "earlyStopping": {
+        "enabled": true,
+        "patience": 3,
+        "minDelta": 0.001
+      },
+      "quantization": {
+        "enabled": true,
+        "type": "int8"
+      },
+      "lora": {
+        "enabled": true,
+        "rank": 16,
+        "alpha": 32,
+        "dropout": 0.1
+      }
     },
-    "resources": {
-      "enabled": true,            // Enable resource exposure
-      "allowedResources": ["*"],  // Which resources to expose
-      "cacheTTL": 300000          // Resource cache TTL in ms
-    },
-    "security": {
-      "requireAuth": false,       // Require authentication
-      "allowedHosts": ["*"],      // Allowed client hosts
-      "maxRequestSize": 10485760  // Max request size in bytes (10MB)
-    },
-    "logging": {
-      "enabled": false,           // Enable request/response logging
-      "level": "info",            // Log level (debug, info, warn, error)
-      "logFile": "mcp-server.log" // Log file path
-    }
-  }
-}
-```
-
-### Security Considerations
-
-- The MCP server exposes powerful code manipulation tools
-- Only run on trusted networks or with proper authentication
-- Consider restricting `allowedHosts` in production environments
-- Monitor server logs for unusual activity
-- Use firewall rules to restrict port access
-
-### Troubleshooting
-
-**Server won't start:**
-- Check if port is already in use: `lsof -i :3001`
-- Verify Ollama is running: `ollama list`
-- Check logs for error messages
-
-**Claude Desktop can't connect:**
-- Verify server is running: `ollama-code mcp-status`
-- Check Claude Desktop configuration
-- Restart Claude Desktop after configuration changes
-
-**Tools not working:**
-- Ensure project path is correctly set
-- Verify file permissions
-- Check Ollama model availability
-
-## MCP Client Integration
-
-The MCP client integration allows ollama-code to connect to external MCP servers and use their tools and resources as part of its workflow. This enables integration with filesystem servers, database servers, API servers, and other specialized MCP servers.
-
-### What is MCP Client?
-
-MCP client functionality allows ollama-code to:
-- Connect to external MCP servers
-- Use tools exposed by other servers
-- Access resources from other servers
-- Integrate multiple specialized servers into a single workflow
-- Chain operations across different MCP servers
-
-### Available MCP Servers
-
-There are many community MCP servers available:
-
-**Filesystem Servers:**
-- `@modelcontextprotocol/server-filesystem` - File system operations
-- `@modelcontextprotocol/server-git` - Git repository management
-
-**Database Servers:**
-- `@modelcontextprotocol/server-sqlite` - SQLite database operations
-- `@modelcontextprotocol/server-postgres` - PostgreSQL operations
-
-**API Servers:**
-- `@modelcontextprotocol/server-fetch` - HTTP request operations
-- Custom API servers for specific services
-
-### Configuring MCP Client Connections
-
-#### Adding Connections via Command Line
-
-```bash
-# Add a filesystem server connection
-ollama-code mcp-add-connection filesystem-server npx @modelcontextprotocol/server-filesystem /path/to/workspace
-
-# Add a git server connection
-ollama-code mcp-add-connection git-server mcp-server-git --repository /path/to/repo
-
-# List all connections
-ollama-code mcp-list-connections
-
-# Check connection status
-ollama-code mcp-client-status
-```
-
-#### Connection Configuration Options
-
-Each MCP client connection supports:
-
-```json
-{
-  "name": "unique-connection-name",     // Unique identifier
-  "enabled": true,                      // Enable/disable this connection
-  "command": "command-to-run",          // Command to start the MCP server
-  "args": ["arg1", "arg2"],            // Command arguments
-  "env": {                             // Environment variables
-    "VAR1": "value1",
-    "VAR2": "value2"
-  },
-  "cwd": "/working/directory",         // Working directory (optional)
-  "timeout": 30000,                    // Connection timeout in ms
-  "retryCount": 3,                     // Number of retry attempts
-  "retryDelay": 1000                   // Delay between retries in ms
-}
-```
-
-### Using MCP Client Tools
-
-#### List Available Tools
-
-```bash
-# List all tools from connected servers
-ollama-code mcp-client-tools
-```
-
-#### Call External Tools
-
-```bash
-# Call a tool without arguments
-ollama-code mcp-call-tool list_files
-
-# Call a tool with arguments (JSON format)
-ollama-code mcp-call-tool read_file '{"path": "/path/to/file.txt"}'
-
-# Call a database query tool
-ollama-code mcp-call-tool execute_query '{"query": "SELECT * FROM users"}'
-```
-
-### Using MCP Client Resources
-
-#### List Available Resources
-
-```bash
-# List all resources from connected servers
-ollama-code mcp-client-resources
-```
-
-#### Get Resources
-
-```bash
-# Get a file resource
-ollama-code mcp-get-resource file:///path/to/file.txt
-
-# Get a database schema resource
-ollama-code mcp-get-resource postgres://localhost/mydb/schema
-```
-
-### Connection Management
-
-#### Connection Lifecycle
-
-```bash
-# Remove a connection
-ollama-code mcp-remove-connection filesystem-server
-
-# Reconnect to a specific server
-ollama-code mcp-reconnect git-server
-
-# Check status of all connections
-ollama-code mcp-client-status
-```
-
-#### Enable/Disable Client
-
-```bash
-# Enable MCP client functionality
-ollama-code config mcp.client.enabled true
-
-# Set global timeout
-ollama-code config mcp.client.globalTimeout 120000
-
-# Set max concurrent connections
-ollama-code config mcp.client.maxConcurrentConnections 5
-```
-
-### Integration Examples
-
-#### Filesystem Integration
-
-```json
-{
-  "mcp": {
-    "client": {
-      "enabled": true,
-      "connections": [
-        {
-          "name": "workspace-fs",
-          "enabled": true,
-          "command": "npx",
-          "args": ["@modelcontextprotocol/server-filesystem", "/workspace"],
-          "timeout": 30000
+    "datasetGeneration": {
+      "types": ["code_completion", "code_analysis", "documentation"],
+      "qualityThresholds": {
+        "minCommentLength": 20,
+        "maxTopImports": 15,
+        "complexityThresholds": {
+          "moderateLines": 20,
+          "complexLines": 50
         }
-      ]
+      },
+      "sampling": {
+        "contextLines": 5,
+        "chunkSize": 10,
+        "maxSamples": 10000
+      }
     }
   }
 }
 ```
 
-Available filesystem tools:
-- `list_files` - List files in a directory
-- `read_file` - Read file contents
-- `write_file` - Write file contents
-- `create_directory` - Create directories
-- `move_file` - Move/rename files
-
-#### Git Integration
+### Model Deployment Configuration
 
 ```json
 {
-  "mcp": {
-    "client": {
-      "enabled": true,
-      "connections": [
-        {
-          "name": "project-git",
+  "deployment": {
+    "defaultStrategy": "round-robin",
+    "loadBalancing": {
+      "strategies": {
+        "round-robin": {
           "enabled": true,
-          "command": "mcp-server-git",
-          "args": ["--repository", "/project"],
-          "cwd": "/project",
-          "env": {
-            "GIT_CONFIG_GLOBAL": "/dev/null"
+          "healthCheckInterval": 30000
+        },
+        "least-connections": {
+          "enabled": true,
+          "connectionWeight": 1.0
+        },
+        "weighted": {
+          "enabled": true,
+          "weights": {
+            "instance-1": 1.0,
+            "instance-2": 1.5,
+            "instance-3": 0.8
           }
         }
-      ]
+      }
+    },
+    "scaling": {
+      "minInstances": 1,
+      "maxInstances": 5,
+      "targetConcurrency": 10,
+      "scaleUpThreshold": 0.8,
+      "scaleDownThreshold": 0.3,
+      "cooldownPeriod": 300000
+    },
+    "resources": {
+      "maxMemoryMB": 4096,
+      "maxCpuCores": 2,
+      "diskSpaceGB": 20
+    },
+    "networking": {
+      "timeout": 30000,
+      "keepAlive": true,
+      "compression": true
     }
   }
 }
 ```
 
-Available git tools:
-- `git_status` - Get repository status
-- `git_log` - Get commit history
-- `git_diff` - Get diff information
-- `git_add` - Stage files
-- `git_commit` - Create commits
-
-#### Database Integration
+### Response Fusion Configuration
 
 ```json
 {
-  "mcp": {
-    "client": {
-      "enabled": true,
-      "connections": [
-        {
-          "name": "app-database",
-          "enabled": true,
-          "command": "mcp-server-sqlite",
-          "args": ["--database", "/app/database.db"],
-          "timeout": 60000
+  "responseFusion": {
+    "defaultStrategy": "consensus",
+    "strategies": {
+      "consensus": {
+        "minProviders": 2,
+        "agreementThreshold": 0.7,
+        "conflictResolution": "majority"
+      },
+      "weighted": {
+        "weights": {
+          "ollama": 0.3,
+          "openai": 0.4,
+          "anthropic": 0.3
         }
-      ]
+      },
+      "best-quality": {
+        "qualityMetrics": ["consistency", "completeness", "accuracy"],
+        "scoringAlgorithm": "composite"
+      }
+    },
+    "qualityValidation": {
+      "enabled": true,
+      "checks": ["logicalConsistency", "factualAccuracy", "coherence"],
+      "confidenceThreshold": 0.8
     }
   }
 }
 ```
 
-Available database tools:
-- `execute_query` - Execute SQL queries
-- `list_tables` - List database tables
-- `describe_table` - Get table schema
-- `create_table` - Create new tables
+---
 
-### Security Considerations
+## VCS Intelligence Configuration
 
-- **Command Execution**: MCP client spawns external processes - only use trusted MCP servers
-- **File Access**: Filesystem servers can access local files - limit scope with proper paths
-- **Network Access**: Some servers may make network requests - monitor outbound connections
-- **Resource Limits**: Set appropriate timeouts and connection limits
-- **Environment Variables**: Be careful with environment variables containing secrets
+### Git Hooks Configuration
 
-### Troubleshooting MCP Client
-
-**Connection Issues:**
-```bash
-# Check if MCP client is enabled
-ollama-code config mcp.client.enabled
-
-# Check connection status
-ollama-code mcp-client-status
-
-# Check configuration
-ollama-code config mcp.client
+```json
+{
+  "vcs": {
+    "enableHooks": true,
+    "hooks": {
+      "preCommit": {
+        "enabled": true,
+        "qualityThreshold": 80,
+        "securityLevel": "medium",
+        "checks": ["syntax", "style", "security", "complexity"],
+        "autoFix": {
+          "enabled": true,
+          "safeOnly": true,
+          "createBackup": true
+        }
+      },
+      "commitMsg": {
+        "enabled": true,
+        "style": "conventional",
+        "validation": {
+          "enforceFormat": true,
+          "minLength": 10,
+          "maxLength": 72
+        },
+        "enhancement": {
+          "enabled": true,
+          "addScope": true,
+          "improveClarity": true
+        }
+      },
+      "prePush": {
+        "enabled": true,
+        "regressionAnalysis": true,
+        "riskThreshold": "medium",
+        "blockOnHighRisk": true
+      }
+    },
+    "commitMessageGeneration": {
+      "styles": {
+        "conventional": {
+          "types": ["feat", "fix", "docs", "style", "refactor", "test", "chore"],
+          "includeScope": true,
+          "includeBreakingChange": true
+        },
+        "descriptive": {
+          "maxLength": 72,
+          "includeContext": true,
+          "includeImpact": true
+        },
+        "emoji": {
+          "mapping": {
+            "feat": "✨",
+            "fix": "🐛",
+            "docs": "📚",
+            "style": "💎",
+            "refactor": "♻️",
+            "test": "🧪",
+            "chore": "🔧"
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
-**Server Not Starting:**
-- Verify the command and arguments are correct
-- Check that the MCP server package is installed
-- Verify file permissions and paths
-- Check environment variables
+### CI/CD Pipeline Configuration
 
-**Tool Call Failures:**
-- Ensure the tool name is correct (`mcp-client-tools`)
-- Verify argument format (must be valid JSON)
-- Check server logs if logging is enabled
-- Verify connection is active (`mcp-client-status`)
+```json
+{
+  "cicd": {
+    "platforms": {
+      "github": {
+        "enabled": true,
+        "workflowPath": ".github/workflows",
+        "qualityGates": {
+          "minQualityScore": 80,
+          "maxCriticalIssues": 0,
+          "maxSecurityIssues": 5,
+          "minTestCoverage": 80
+        }
+      },
+      "gitlab": {
+        "enabled": false,
+        "configPath": ".gitlab-ci.yml",
+        "qualityGates": {
+          "minQualityScore": 85,
+          "maxCriticalIssues": 0,
+          "maxSecurityIssues": 3
+        }
+      }
+    },
+    "universalApi": {
+      "autoDetect": true,
+      "enableSecurityAnalysis": true,
+      "enablePerformanceAnalysis": true,
+      "enableArchitecturalAnalysis": true,
+      "reportFormat": "json",
+      "outputPath": "./reports"
+    }
+  }
+}
+```
 
-**Performance Issues:**
-- Adjust timeout values for slow servers
-- Limit concurrent connections
-- Enable logging to identify bottlenecks
-- Monitor resource usage
+### Regression Analysis Configuration
 
-## Best Practices
+```json
+{
+  "regressionAnalysis": {
+    "enabled": true,
+    "models": {
+      "historical": {
+        "enabled": true,
+        "windowSize": 100,
+        "weightDecay": 0.95
+      },
+      "filePattern": {
+        "enabled": true,
+        "patterns": {
+          "core": 2.0,
+          "api": 1.5,
+          "config": 1.8,
+          "test": 0.5
+        }
+      }
+    },
+    "thresholds": {
+      "low": 0.3,
+      "medium": 0.6,
+      "high": 0.8
+    },
+    "reporting": {
+      "enabled": true,
+      "formats": ["json", "html"],
+      "includeRecommendations": true
+    }
+  }
+}
+```
 
-1. Use configuration files for complex setups
-2. Use environment variables for sensitive data
-3. Document custom configuration choices
-4. Validate configuration before deployment
-5. Enable MCP logging during development for debugging
-6. Use specific tool/resource allowlists in production
-7. Regularly update ollama-code for latest MCP features
-8. Test MCP client connections before deploying
-9. Use descriptive connection names for clarity
-10. Set appropriate timeouts based on server capabilities
-11. Monitor MCP client performance and adjust limits as needed
+---
+
+## IDE Integration Configuration
+
+### VS Code Extension Configuration
+
+```json
+{
+  "ide": {
+    "vscode": {
+      "enabled": true,
+      "features": {
+        "inlineCompletion": {
+          "enabled": true,
+          "provider": "ollama",
+          "model": "qwen2.5-coder:latest",
+          "triggerCharacters": [".", "(", "["],
+          "debounceMs": 300,
+          "maxSuggestions": 5
+        },
+        "codeActions": {
+          "enabled": true,
+          "quickFixes": true,
+          "refactoring": true,
+          "organizeImports": true
+        },
+        "diagnostics": {
+          "enabled": true,
+          "severity": "warning",
+          "categories": ["syntax", "style", "security", "performance"],
+          "updateInterval": 5000
+        },
+        "hover": {
+          "enabled": true,
+          "includeExamples": true,
+          "includeLinks": true,
+          "maxLength": 500
+        },
+        "chatPanel": {
+          "enabled": true,
+          "defaultProvider": "ollama",
+          "persistHistory": true,
+          "maxHistorySize": 100
+        }
+      },
+      "workspace": {
+        "analysisDepth": 3,
+        "indexInBackground": true,
+        "excludePatterns": ["node_modules", "dist", ".git"],
+        "maxFileSize": 1048576
+      }
+    }
+  }
+}
+```
+
+### Integration Server Configuration
+
+```json
+{
+  "integrationServer": {
+    "enabled": false,
+    "port": 3002,
+    "host": "localhost",
+    "auth": {
+      "required": false,
+      "token": "${IDE_AUTH_TOKEN}",
+      "tokenExpiry": 86400000
+    },
+    "websocket": {
+      "pingInterval": 30000,
+      "pongTimeout": 5000,
+      "maxConnections": 10,
+      "compression": true
+    },
+    "features": {
+      "workspaceAnalysis": true,
+      "realTimeUpdates": true,
+      "progressTracking": true,
+      "errorReporting": true
+    },
+    "logging": {
+      "enabled": true,
+      "level": "info",
+      "logConnections": true,
+      "logRequests": false
+    }
+  }
+}
+```
+
+---
+
+## Performance and Enterprise Configuration
+
+### Caching Configuration
+
+```json
+{
+  "caching": {
+    "enabled": true,
+    "strategies": {
+      "memory": {
+        "enabled": true,
+        "maxSize": 100,
+        "ttl": 3600000,
+        "algorithm": "LRU"
+      },
+      "disk": {
+        "enabled": true,
+        "path": "~/.ollama-code/cache",
+        "maxSize": "1GB",
+        "compression": true
+      },
+      "redis": {
+        "enabled": false,
+        "url": "redis://localhost:6379",
+        "keyPrefix": "ollama-code:",
+        "ttl": 7200000
+      }
+    },
+    "invalidation": {
+      "onModelChange": true,
+      "onConfigChange": true,
+      "maxAge": 86400000
+    }
+  }
+}
+```
+
+### Performance Optimization
+
+```json
+{
+  "performance": {
+    "startup": {
+      "lazyLoading": true,
+      "preloadCommonComponents": true,
+      "componentCache": true,
+      "optimizeImports": true
+    },
+    "concurrency": {
+      "maxConcurrentRequests": 5,
+      "requestQueueSize": 100,
+      "workerThreads": {
+        "enabled": true,
+        "poolSize": 4
+      }
+    },
+    "memory": {
+      "maxHeapSize": "2GB",
+      "garbageCollection": {
+        "strategy": "incremental",
+        "threshold": 0.8
+      },
+      "monitoring": {
+        "enabled": true,
+        "interval": 30000,
+        "alertThreshold": 0.9
+      }
+    }
+  }
+}
+```
+
+### Enterprise Features
+
+```json
+{
+  "enterprise": {
+    "distributedProcessing": {
+      "enabled": false,
+      "nodes": [
+        {
+          "host": "worker1.company.com",
+          "port": 3003,
+          "weight": 1.0
+        },
+        {
+          "host": "worker2.company.com",
+          "port": 3003,
+          "weight": 1.5
+        }
+      ],
+      "loadBalancing": "weighted",
+      "healthChecks": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 5000
+      }
+    },
+    "audit": {
+      "enabled": false,
+      "logAllRequests": true,
+      "logSensitiveData": false,
+      "retentionDays": 90,
+      "outputPath": "/var/log/ollama-code/audit.log"
+    },
+    "compliance": {
+      "dataResidency": "US",
+      "encryptionAtRest": true,
+      "encryptionInTransit": true,
+      "accessControl": {
+        "enabled": false,
+        "roles": ["admin", "developer", "viewer"],
+        "permissions": {
+          "admin": ["*"],
+          "developer": ["read", "write", "execute"],
+          "viewer": ["read"]
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Documentation Configuration
+
+### TypeDoc Configuration
+
+```json
+{
+  "documentation": {
+    "typedoc": {
+      "enabled": true,
+      "configPath": "./typedoc.json",
+      "outputPath": "./docs/api",
+      "formats": ["markdown", "html"],
+      "watch": false,
+      "coverage": {
+        "threshold": 80,
+        "reportMissing": true
+      }
+    },
+    "automation": {
+      "githubActions": {
+        "enabled": true,
+        "workflowPath": ".github/workflows/update-documentation.yml",
+        "triggerOnPush": true,
+        "triggerOnPR": true,
+        "autoCommit": true
+      },
+      "validation": {
+        "enabled": true,
+        "checkLinks": true,
+        "checkCoverage": true,
+        "failOnErrors": false
+      }
+    },
+    "generation": {
+      "includePrivate": false,
+      "includeProtected": true,
+      "includeInternal": false,
+      "generateSearchIndex": true,
+      "customCSS": null
+    }
+  }
+}
+```
+
+---
+
+## Security and Authentication
+
+### API Keys and Secrets
+
+```json
+{
+  "security": {
+    "apiKeys": {
+      "encryption": {
+        "enabled": true,
+        "algorithm": "aes-256-gcm",
+        "keyDerivation": "pbkdf2"
+      },
+      "storage": {
+        "method": "keychain",
+        "fallback": "encrypted-file",
+        "path": "~/.ollama-code/secrets"
+      }
+    },
+    "validation": {
+      "enableInputSanitization": true,
+      "maxInputLength": 100000,
+      "allowedFileExtensions": [".ts", ".js", ".py", ".go", ".rs", ".java"],
+      "blockSensitivePatterns": true
+    },
+    "audit": {
+      "logSensitiveOperations": true,
+      "logFailedAuthentication": true,
+      "maxLogSize": "10MB",
+      "rotateDaily": true
+    }
+  }
+}
+```
+
+### Authentication Configuration
+
+```bash
+# Environment variables for API keys (recommended)
+export OPENAI_API_KEY=sk-...
+export ANTHROPIC_API_KEY=sk-ant-...
+export GOOGLE_API_KEY=AIza...
+
+# Or use configuration
+ollama-code config set providers.openai.apiKey sk-... --global
+ollama-code config set providers.anthropic.apiKey sk-ant-... --global
+```
+
+---
+
+## Environment-Specific Configuration
+
+### Development Environment
+
+```json
+{
+  "environment": "development",
+  "ai": {
+    "defaultProvider": "ollama",
+    "streaming": {
+      "enabled": true
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "verbose": true
+  },
+  "caching": {
+    "enabled": false
+  },
+  "performance": {
+    "startup": {
+      "lazyLoading": false
+    }
+  }
+}
+```
+
+### Production Environment
+
+```json
+{
+  "environment": "production",
+  "ai": {
+    "defaultProvider": "openai",
+    "fallback": {
+      "enabled": true,
+      "providers": ["openai", "anthropic", "ollama"]
+    }
+  },
+  "logging": {
+    "level": "info",
+    "verbose": false
+  },
+  "caching": {
+    "enabled": true,
+    "strategies": {
+      "redis": {
+        "enabled": true
+      }
+    }
+  },
+  "security": {
+    "audit": {
+      "enabled": true
+    }
+  }
+}
+```
+
+### CI/CD Environment
+
+```json
+{
+  "environment": "ci",
+  "ai": {
+    "defaultProvider": "ollama",
+    "timeout": 60000
+  },
+  "logging": {
+    "level": "warn",
+    "format": "json"
+  },
+  "caching": {
+    "enabled": false
+  },
+  "terminal": {
+    "useColors": false,
+    "interactive": false
+  }
+}
+```
+
+---
+
+## Configuration Validation and Troubleshooting
+
+### Configuration Validation
+
+```bash
+# Validate current configuration
+ollama-code config validate
+
+# Validate with detailed output
+ollama-code config validate --verbose
+
+# Fix common configuration issues
+ollama-code config validate --fix-issues
+
+# Check specific configuration section
+ollama-code config validate --section ai.providers
+```
+
+### Common Configuration Issues
+
+#### 1. API Key Issues
+```bash
+# Check if API keys are properly set
+ollama-code config get providers.openai.apiKey
+
+# Test API key validity
+ollama-code provider list --detailed
+
+# Set API key securely
+ollama-code config set providers.openai.apiKey sk-... --global
+```
+
+#### 2. Provider Connection Issues
+```bash
+# Test provider connectivity
+ollama-code provider benchmark --provider ollama --duration 10
+
+# Check provider configuration
+ollama-code config get providers.ollama
+
+# Reset provider configuration
+ollama-code config reset --key providers.ollama --confirm
+```
+
+#### 3. Performance Issues
+```bash
+# Check performance configuration
+ollama-code config get performance
+
+# Enable caching
+ollama-code config set caching.enabled true
+
+# Optimize startup performance
+ollama-code config set performance.startup.lazyLoading true
+```
+
+### Configuration Debugging
+
+```bash
+# Show all configuration with sources
+ollama-code config list --show-sources
+
+# Export configuration for review
+ollama-code config export debug-config.json --include-secrets
+
+# Compare configurations
+diff <(ollama-code config list --format json) expected-config.json
+```
+
+### Environment Variable Reference
+
+```bash
+# Core AI Settings
+OLLAMA_CODE_AI_DEFAULT_PROVIDER=ollama
+OLLAMA_CODE_AI_DEFAULT_MODEL=qwen2.5-coder:latest
+OLLAMA_CODE_AI_DEFAULT_TEMPERATURE=0.7
+
+# Provider Settings
+OLLAMA_CODE_PROVIDERS_OPENAI_API_KEY=sk-...
+OLLAMA_CODE_PROVIDERS_ANTHROPIC_API_KEY=sk-ant-...
+OLLAMA_CODE_PROVIDERS_GOOGLE_API_KEY=AIza...
+
+# VCS Settings
+OLLAMA_CODE_VCS_ENABLE_HOOKS=true
+OLLAMA_CODE_VCS_QUALITY_THRESHOLD=80
+
+# IDE Settings
+OLLAMA_CODE_IDE_SERVER_PORT=3002
+OLLAMA_CODE_IDE_SERVER_AUTO_START=true
+
+# Performance Settings
+OLLAMA_CODE_CACHING_ENABLED=true
+OLLAMA_CODE_PERFORMANCE_CONCURRENCY_MAX_CONCURRENT_REQUESTS=5
+
+# Security Settings
+OLLAMA_CODE_SECURITY_VALIDATION_ENABLE_INPUT_SANITIZATION=true
+```
+
+---
+
+## Configuration Examples
+
+### Complete Configuration Example
+
+```json
+{
+  "environment": "development",
+  "ai": {
+    "defaultProvider": "ollama",
+    "defaultModel": "qwen2.5-coder:latest",
+    "defaultTemperature": 0.7,
+    "streaming": {
+      "enabled": true,
+      "chunkSize": 1024
+    },
+    "fallback": {
+      "enabled": true,
+      "providers": ["ollama", "openai"]
+    }
+  },
+  "providers": {
+    "ollama": {
+      "enabled": true,
+      "baseUrl": "http://localhost:11434",
+      "models": ["qwen2.5-coder:latest", "codellama:7b"]
+    },
+    "openai": {
+      "enabled": true,
+      "apiKey": "${OPENAI_API_KEY}",
+      "models": ["gpt-4", "gpt-3.5-turbo"]
+    }
+  },
+  "vcs": {
+    "enableHooks": true,
+    "hooks": {
+      "preCommit": {
+        "enabled": true,
+        "qualityThreshold": 80
+      },
+      "commitMsg": {
+        "enabled": true,
+        "style": "conventional"
+      }
+    }
+  },
+  "ide": {
+    "vscode": {
+      "enabled": true,
+      "features": {
+        "inlineCompletion": {
+          "enabled": true
+        },
+        "chatPanel": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "documentation": {
+    "typedoc": {
+      "enabled": true,
+      "outputPath": "./docs/api"
+    }
+  },
+  "performance": {
+    "caching": {
+      "enabled": true
+    },
+    "startup": {
+      "lazyLoading": true
+    }
+  },
+  "logging": {
+    "level": "info",
+    "verbose": false
+  }
+}
+```
+
+---
+
+This comprehensive configuration guide covers all aspects of the Ollama Code CLI v0.7.0. For specific implementation details and usage examples, refer to the [API Reference](API_REFERENCE.md) and [Architecture Documentation](ARCHITECTURE.md).
