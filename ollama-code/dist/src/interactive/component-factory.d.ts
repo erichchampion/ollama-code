@@ -23,6 +23,7 @@ export declare class ComponentFactory extends BaseComponentFactory {
     private components;
     private initPromises;
     private loadProgress;
+    private creationStack;
     /**
      * Get a component, lazy loading if necessary
      */
@@ -56,6 +57,10 @@ export declare class ComponentFactory extends BaseComponentFactory {
      */
     private createComponentInternal;
     /**
+     * Internal component creation logic (without circular dependency protection)
+     */
+    private createComponentInternalUnsafe;
+    /**
      * Update component loading progress
      */
     private updateProgress;
@@ -67,6 +72,10 @@ export declare class ComponentFactory extends BaseComponentFactory {
      * Get factory type identifier
      */
     getFactoryType(): 'basic' | 'enhanced';
+    /**
+     * Create fallback component when circular dependency detected
+     */
+    private createFallbackComponent;
 }
 export declare function getComponentFactory(): ComponentFactory;
 export declare function resetComponentFactory(): void;

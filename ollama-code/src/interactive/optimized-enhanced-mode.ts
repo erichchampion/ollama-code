@@ -264,13 +264,22 @@ export class OptimizedEnhancedMode {
       throw new Error('Terminal not available');
     }
 
-    // FUNDAMENTAL FIX: Skip naturalLanguageRouter creation to avoid circular dependency
-    // The router has complex dependencies (TaskPlanner, etc.) that cause stack overflow
-    // For now, we'll process requests directly with basic AI assistance
+    // Try to get natural language router now that circular dependencies are resolved
     if (!this.nlRouter) {
-      logger.debug('Skipping naturalLanguageRouter creation to avoid circular dependency');
-      logger.debug('Using direct AI assistance mode without advanced routing');
-      // Note: nlRouter remains undefined to indicate it was intentionally skipped
+      try {
+        logger.debug('Attempting to load naturalLanguageRouter now that circular dependencies are resolved');
+        this.nlRouter = await this.componentFactory.getComponent('naturalLanguageRouter', {
+          timeout: 15000,
+          fallback: () => null
+        });
+        if (this.nlRouter) {
+          logger.debug('Natural language router loaded successfully');
+        } else {
+          logger.debug('Natural language router not available, using direct AI assistance mode');
+        }
+      } catch (error) {
+        logger.warn('Failed to load natural language router, using direct AI assistance:', error);
+      }
     }
 
     // Analyze what components we need for this request
@@ -458,6 +467,29 @@ export class OptimizedEnhancedMode {
           context.workingDirectory = process.cwd();
           context.recentFiles = sourceFiles.slice(0, 20).map((f: any) => f.path) || [];
 
+          // Add enhanced context if available
+          if (this.isComponentReady('advancedContextManager')) {
+            try {
+              const advancedContextManager = await this.componentFactory.getComponent<any>('advancedContextManager', {
+                timeout: 5000
+              });
+
+              // Get enhanced context for the user input
+              const enhancedContext = await advancedContextManager.getEnhancedContext(userInput, {
+                includeSemanticMatches: true,
+                includeRelatedCode: true,
+                maxResults: 10
+              });
+
+              context.enhancedContext = enhancedContext;
+              context.capabilities.push('semantic-analysis', 'enhanced-context');
+
+              logger.debug(`Added enhanced context with ${enhancedContext.semanticMatches?.length || 0} semantic matches`);
+            } catch (error) {
+              logger.debug('Failed to get enhanced context:', error);
+            }
+          }
+
           logger.debug(`Added ${context.recentFiles.length} source files to routing context`);
         }
       } catch (error) {
@@ -472,6 +504,14 @@ export class OptimizedEnhancedMode {
     if (this.isComponentReady('advancedContextManager')) {
       context.capabilities.push('advanced-analysis', 'semantic-search');
     }
+
+    // Add conversation manager and user preferences for routing
+    context.conversationManager = this.conversationManager;
+    context.userPreferences = {
+      autoApprove: this.options.autoApprove,
+      confirmHighRisk: this.options.confirmHighRisk,
+      preferredApproach: this.options.preferredApproach
+    };
 
     return context;
   }
@@ -646,7 +686,43 @@ export class OptimizedEnhancedMode {
       // For direct responses from simple AI requests, the response is already streamed
       // so we don't need to display it again
       return;
+    } else if (result.type === 'command') {
+      // Handle command execution from fast-path router
+      try {
+        logger.debug(`Executing command: ${result.action} with args:`, result.data.args);
+        const { executeCommand } = await import('../commands/index.js');
+        await executeCommand(result.action, result.data.args);
+        return;
+      } catch (error) {
+        this.terminal.error(`Command execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return;
+      }
+    } else if (result.type === 'conversation') {
+      // Handle conversation/AI response requests
+      try {
+        logger.debug('Processing conversation response');
+
+        // Use the contextual prompt from the routing data
+        const prompt = result.data.contextualPrompt || userInput;
+
+        // Process with AI using enhanced context if available
+        const aiResponse = await this.handleSimpleAIRequest(prompt);
+
+        // The response is already streamed in handleSimpleAIRequest, so we're done
+        return;
+      } catch (error) {
+        this.terminal.error(`Conversation processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return;
+      }
     }
+
+    // Log unhandled result types for debugging
+    logger.warn('Unhandled routing result type:', {
+      type: result.type,
+      action: result.action,
+      hasData: !!result.data,
+      hasResponse: !!result.response
+    });
 
     // Display result for other types (task plans, etc.)
     if (result.needsApproval) {

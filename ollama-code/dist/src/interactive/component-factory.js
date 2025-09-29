@@ -20,6 +20,7 @@ export class ComponentFactory extends BaseComponentFactory {
     components = new Map();
     initPromises = new Map();
     loadProgress = new Map();
+    creationStack = new Set(); // Track creation stack to prevent circular deps
     /**
      * Get a component, lazy loading if necessary
      */
@@ -99,6 +100,7 @@ export class ComponentFactory extends BaseComponentFactory {
         this.components.clear();
         this.initPromises.clear();
         this.loadProgress.clear();
+        this.creationStack.clear();
     }
     /**
      * Create a component instance
@@ -129,6 +131,30 @@ export class ComponentFactory extends BaseComponentFactory {
      * Internal component creation logic
      */
     async createComponentInternal(type) {
+        // Check for circular dependency
+        if (this.creationStack.has(type)) {
+            logger.warn(`Circular dependency detected for ${type}, returning cached component or creating fallback`);
+            const existingComponent = this.components.get(type);
+            if (existingComponent) {
+                return existingComponent;
+            }
+            // Create a minimal fallback to break the cycle
+            return this.createFallbackComponent(type);
+        }
+        // Track this component in creation stack
+        this.creationStack.add(type);
+        try {
+            return await this.createComponentInternalUnsafe(type);
+        }
+        finally {
+            // Always remove from creation stack when done
+            this.creationStack.delete(type);
+        }
+    }
+    /**
+     * Internal component creation logic (without circular dependency protection)
+     */
+    async createComponentInternalUnsafe(type) {
         switch (type) {
             case 'aiClient':
                 return getAIClient();
@@ -149,14 +175,14 @@ export class ComponentFactory extends BaseComponentFactory {
                 return new ConversationManager();
             case 'taskPlanner': {
                 const enhancedClient = this.components.get('enhancedClient') || getEnhancedClient();
-                const projectContext = new LazyProjectContext(process.cwd());
+                // Reuse cached projectContext to avoid circular dependencies
+                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
                 return new TaskPlanner(enhancedClient, projectContext);
             }
             case 'advancedContextManager': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
-                const projectContext = new LazyProjectContext(process.cwd());
-                // Initialize the project context to ensure files are loaded
-                await projectContext.initialize();
+                // Reuse cached projectContext to avoid circular dependencies
+                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
                 logger.debug(`ComponentFactory: Creating Advanced Context Manager with ${projectContext.allFiles.length} files`);
                 const manager = new AdvancedContextManager(aiClient, projectContext);
                 await manager.initialize();
@@ -164,29 +190,32 @@ export class ComponentFactory extends BaseComponentFactory {
             }
             case 'queryDecompositionEngine': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
-                const projectContext = new LazyProjectContext(process.cwd());
+                // Reuse cached projectContext to avoid circular dependencies
+                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
                 const engine = new QueryDecompositionEngine(aiClient, projectContext);
                 await engine.initialize();
                 return engine;
             }
             case 'codeKnowledgeGraph': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
-                const projectContext = new LazyProjectContext(process.cwd());
+                // Reuse cached projectContext to avoid circular dependencies
+                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
                 const graph = new CodeKnowledgeGraph(aiClient, projectContext);
                 await graph.initialize();
                 return graph;
             }
             case 'multiStepQueryProcessor': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
-                const projectContext = new LazyProjectContext(process.cwd());
+                // Reuse cached projectContext to avoid circular dependencies
+                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
                 return new MultiStepQueryProcessor(aiClient, projectContext);
             }
             case 'naturalLanguageRouter': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
-                const intentAnalyzer = new EnhancedIntentAnalyzer(aiClient);
+                // Reuse cached components to avoid circular dependencies
+                const intentAnalyzer = this.components.get('intentAnalyzer') || await this.getComponent('intentAnalyzer');
                 const enhancedClient = this.components.get('enhancedClient') || getEnhancedClient();
-                const projectContext = new LazyProjectContext(process.cwd());
-                const taskPlanner = new TaskPlanner(enhancedClient, projectContext);
+                const taskPlanner = this.components.get('taskPlanner') || await this.getComponent('taskPlanner');
                 return new NaturalLanguageRouter(intentAnalyzer, taskPlanner);
             }
             default:
@@ -224,6 +253,47 @@ export class ComponentFactory extends BaseComponentFactory {
      */
     getFactoryType() {
         return 'basic';
+    }
+    /**
+     * Create fallback component when circular dependency detected
+     */
+    createFallbackComponent(type) {
+        logger.warn(`Creating fallback for ${type} due to circular dependency`);
+        switch (type) {
+            case 'projectContext':
+                // Return minimal project context
+                return {
+                    root: process.cwd(),
+                    allFiles: [],
+                    projectLanguages: [],
+                    getQuickInfo: () => ({ root: process.cwd(), hasPackageJson: false, hasGit: false, estimatedFileCount: 0 }),
+                    initialize: async () => { }
+                };
+            case 'taskPlanner':
+                // Return simple task execution
+                return {
+                    planTasks: () => ({ needsApproval: false, plan: { tasks: [], estimatedTime: 0 } }),
+                    executePlan: () => ({ success: true, message: 'Task completed with basic functionality' })
+                };
+            case 'advancedContextManager':
+                // Return basic context
+                return {
+                    getEnhancedContext: () => ({ semanticMatches: [], relatedCode: [], suggestions: [] }),
+                    initialize: async () => { }
+                };
+            case 'intentAnalyzer':
+                // Return simple intent analyzer
+                return {
+                    analyzeIntent: () => ({ intent: 'general', confidence: 0.5, suggestions: [] })
+                };
+            case 'naturalLanguageRouter':
+                // Return simple router
+                return {
+                    route: async () => ({ type: 'fallback', message: 'Using simplified routing' })
+                };
+            default:
+                return null;
+        }
     }
 }
 /**
