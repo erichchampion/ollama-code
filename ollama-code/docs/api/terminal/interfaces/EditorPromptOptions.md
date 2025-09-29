@@ -6,7 +6,7 @@
 
 # Interface: EditorPromptOptions
 
-Defined in: [terminal/types.ts:172](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L172)
+Defined in: [terminal/types.ts:172](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L172)
 
 Editor prompt options
 
@@ -20,7 +20,7 @@ Editor prompt options
 
 > **name**: `string`
 
-Defined in: [terminal/types.ts:104](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L104)
+Defined in: [terminal/types.ts:104](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L104)
 
 Name of the value in the returned object
 
@@ -34,7 +34,7 @@ Name of the value in the returned object
 
 > **message**: `string`
 
-Defined in: [terminal/types.ts:109](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L109)
+Defined in: [terminal/types.ts:109](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L109)
 
 Message to display to the user
 
@@ -48,7 +48,7 @@ Message to display to the user
 
 > `optional` **default**: `any`
 
-Defined in: [terminal/types.ts:114](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L114)
+Defined in: [terminal/types.ts:114](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L114)
 
 Default value
 
@@ -62,7 +62,7 @@ Default value
 
 > `optional` **validate**: (`input`) => `string` \| `boolean` \| `Promise`\<`string` \| `boolean`\>
 
-Defined in: [terminal/types.ts:119](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L119)
+Defined in: [terminal/types.ts:119](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L119)
 
 Validation function
 
@@ -86,7 +86,7 @@ Validation function
 
 > `optional` **required**: `boolean`
 
-Defined in: [terminal/types.ts:124](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L124)
+Defined in: [terminal/types.ts:124](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L124)
 
 Whether the prompt is required
 
@@ -100,7 +100,7 @@ Whether the prompt is required
 
 > **type**: `"editor"`
 
-Defined in: [terminal/types.ts:173](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L173)
+Defined in: [terminal/types.ts:173](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L173)
 
 Prompt type
 
@@ -114,4 +114,4 @@ Prompt type
 
 > `optional` **postfix**: `string`
 
-Defined in: [terminal/types.ts:174](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/terminal/types.ts#L174)
+Defined in: [terminal/types.ts:174](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/terminal/types.ts#L174)

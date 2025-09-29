@@ -12,6 +12,8 @@ import { initAI } from './ai/index.js';
 import { registerCommands } from './commands/register.js';
 import { UserError } from './errors/types.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
+import { initializeLazyLoading, executeCommandOptimized, preloadCommonComponents } from './optimization/startup-optimizer.js';
+import { registerServices, disposeServices } from './core/services.js';
 import pkg from '../package.json' with { type: 'json' };
 // Get version from package.json
 const version = pkg.version;
@@ -108,31 +110,67 @@ function parseCommandLineArgs() {
     return { commandName, args: args.slice(1) };
 }
 /**
- * Initialize the CLI
+ * Global cleanup function
+ */
+async function cleanup() {
+    logger.debug('Performing global cleanup');
+    try {
+        await disposeServices();
+    }
+    catch (error) {
+        logger.error('Error during cleanup:', error);
+    }
+}
+/**
+ * Initialize the CLI with optimized startup
  */
 async function initCLI() {
     try {
-        // Register commands
-        registerCommands();
+        // Register all services with dependency injection container
+        await registerServices();
         // Parse command-line arguments
         const { commandName, args } = parseCommandLineArgs();
-        // Get the command
-        const command = commandRegistry.get(commandName);
-        if (!command) {
-            console.error(`Unknown command: ${commandName}`);
-            console.error('Use "ollama-code help" to see available commands.');
-            process.exit(1);
+        // Initialize lazy loading system
+        await initializeLazyLoading();
+        // Start background preloading of common components
+        preloadCommonComponents();
+        // Use optimized execution that only loads what's needed
+        if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
+            // Fallback to original method for tests
+            logger.info('Using legacy execution mode for testing');
+            await initCLILegacy(commandName, args);
         }
-        // Ensure Ollama server is running before initializing AI
-        logger.info('Ensuring Ollama server is running...');
-        await ensureOllamaServerRunning();
-        await initAI();
-        // Execute the command
-        await executeCommand(commandName, args);
+        else {
+            await executeCommandOptimized(commandName, args);
+        }
     }
     catch (error) {
         handleError(error);
     }
+    finally {
+        // Cleanup resources after standalone command execution
+        await cleanup();
+    }
+}
+/**
+ * Legacy CLI initialization for backward compatibility (tests)
+ */
+async function initCLILegacy(commandName, args) {
+    // Register commands
+    registerCommands();
+    // Get the command
+    const command = commandRegistry.get(commandName);
+    if (!command) {
+        console.error(`Unknown command: ${commandName}`);
+        console.error('Use "ollama-code help" to see available commands.');
+        process.exit(1);
+    }
+    // Ensure Ollama server is running before initializing AI
+    logger.info('Ensuring Ollama server is running...');
+    await ensureOllamaServerRunning();
+    await initAI();
+    // Execute the command
+    await executeCommand(commandName, args);
 }
 /**
  * Handle errors

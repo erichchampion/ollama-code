@@ -6,7 +6,7 @@
 
 # Interface: ValidationResult
 
-Defined in: [ai/providers/response-fusion.ts:76](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/response-fusion.ts#L76)
+Defined in: [ai/providers/response-fusion.ts:76](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/response-fusion.ts#L76)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/response-fusion.ts:76](https://github.com/erichchampio
 
 > **isValid**: `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:77](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/response-fusion.ts#L77)
+Defined in: [ai/providers/response-fusion.ts:77](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/response-fusion.ts#L77)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/response-fusion.ts:77](https://github.com/erichchampio
 
 > **confidence**: `number`
 
-Defined in: [ai/providers/response-fusion.ts:78](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/response-fusion.ts#L78)
+Defined in: [ai/providers/response-fusion.ts:78](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/response-fusion.ts#L78)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/response-fusion.ts:78](https://github.com/erichchampio
 
 > **issues**: `object`[]
 
-Defined in: [ai/providers/response-fusion.ts:79](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/response-fusion.ts#L79)
+Defined in: [ai/providers/response-fusion.ts:79](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/response-fusion.ts#L79)
 
 #### type
 
@@ -54,4 +54,4 @@ Defined in: [ai/providers/response-fusion.ts:79](https://github.com/erichchampio
 
 > **suggestions**: `string`[]
 
-Defined in: [ai/providers/response-fusion.ts:85](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/response-fusion.ts#L85)
+Defined in: [ai/providers/response-fusion.ts:85](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/response-fusion.ts#L85)

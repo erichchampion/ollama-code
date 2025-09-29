@@ -15,6 +15,7 @@
 - [commands](commands/README.md)
 - [config](config/README.md)
 - [errors](errors/README.md)
+- [fs](fs/README.md)
 - [telemetry](telemetry/README.md)
 - [terminal](terminal/README.md)
 - [utils/configuration-merger](utils/configuration-merger/README.md)

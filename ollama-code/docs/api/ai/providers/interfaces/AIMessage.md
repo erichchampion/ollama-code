@@ -6,7 +6,7 @@
 
 # Interface: AIMessage
 
-Defined in: [ai/providers/base-provider.ts:10](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/base-provider.ts#L10)
+Defined in: [ai/providers/base-provider.ts:10](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/base-provider.ts#L10)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/base-provider.ts:10](https://github.com/erichchampion/
 
 > **role**: `"user"` \| `"assistant"` \| `"system"`
 
-Defined in: [ai/providers/base-provider.ts:11](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/base-provider.ts#L11)
+Defined in: [ai/providers/base-provider.ts:11](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/base-provider.ts#L11)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/base-provider.ts:11](https://github.com/erichchampion/
 
 > **content**: `string`
 
-Defined in: [ai/providers/base-provider.ts:12](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/base-provider.ts#L12)
+Defined in: [ai/providers/base-provider.ts:12](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/base-provider.ts#L12)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [ai/providers/base-provider.ts:12](https://github.com/erichchampion/
 
 > `optional` **metadata**: `Record`\<`string`, `any`\>
 
-Defined in: [ai/providers/base-provider.ts:13](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/providers/base-provider.ts#L13)
+Defined in: [ai/providers/base-provider.ts:13](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/base-provider.ts#L13)

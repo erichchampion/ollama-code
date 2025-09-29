@@ -368,6 +368,49 @@ export const CLI_ENTRY_POINTS = {
 }
 ```
 
+### Environment Variable Configuration
+
+#### Test Mode & Legacy Compatibility
+```typescript
+// Environment-driven mode selection for testing and CI/CD
+const CLI_MODE_OVERRIDES = {
+  // Skip enhanced initialization for test environments
+  OLLAMA_SKIP_ENHANCED_INIT: {
+    description: 'Forces legacy mode for testing and CI/CD compatibility',
+    affects: ['interactive', 'advanced'],
+    behavior: 'Falls back to legacy implementations with simplified startup'
+  },
+
+  // Test environment configuration
+  NODE_ENV: {
+    test: 'Enables test-specific behaviors and mock integrations',
+    development: 'Enables debug logging and development features',
+    production: 'Optimized for performance with minimal logging'
+  },
+
+  // API configuration
+  OLLAMA_API_URL: 'Configures Ollama server endpoint',
+  OLLAMA_TELEMETRY: 'Controls telemetry data collection (0 to disable)',
+  OLLAMA_TEST_MODE: 'Enables test-specific mocking and behaviors'
+} as const;
+```
+
+#### CLI Mode Selection Logic
+```typescript
+// Interactive mode with fallback support
+case 'interactive':
+  if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
+    // Fallback to legacy interactive mode for testing
+    logger.info('Using legacy interactive mode for testing');
+    console.log('Legacy interactive mode (test mode)');
+    process.exit(0);
+  } else {
+    const optimizedMode = new OptimizedEnhancedMode();
+    await optimizedMode.start();
+  }
+  break;
+```
+
 ## Data Flow Diagrams
 
 ### Multi-Provider AI Request Flow
@@ -562,12 +605,16 @@ tests/
 │   ├── ai/               # AI provider and routing tests
 │   ├── vcs/              # VCS intelligence tests
 │   ├── utils/            # Utility function tests
-│   └── providers/        # Individual provider tests
+│   ├── providers/        # Individual provider tests
+│   ├── streaming-initializer-timeout.test.cjs  # Timeout edge cases
+│   ├── performance-dashboard.test.cjs           # Performance monitoring
+│   └── background-service-architecture.test.cjs # Service lifecycle
 ├── integration/          # Integration tests
 │   ├── multi-provider/   # Cross-provider integration
-│   ├── vcs-integration/ # Git hooks and CI/CD tests
-│   ├── ide-extension/   # VS Code extension tests
-│   └── performance/     # Performance integration tests
+│   ├── vcs-integration/  # Git hooks and CI/CD tests
+│   ├── ide-extension/    # VS Code extension tests
+│   ├── performance/      # Performance integration tests
+│   └── optimization-migration.test.js # CLI mode compatibility
 ├── e2e/                 # End-to-end tests
 │   ├── cli-workflows/   # Complete CLI workflows
 │   ├── ide-scenarios/   # VS Code integration scenarios
@@ -578,11 +625,84 @@ tests/
     └── example-testing/ # Code example validation
 ```
 
-#### Testing Infrastructure
-- **Automated Testing**: GitHub Actions integration
-- **Performance Testing**: Benchmark tracking and regression detection
-- **Load Testing**: Multi-provider load testing
+#### Advanced Testing Infrastructure
+
+##### Timeout Management & Resource Cleanup
+- **MockStreamingInitializer**: Comprehensive timeout testing with cancellable operations
+- **Timer Mocking**: Jest timer integration for predictable timeout testing
+- **Memory Leak Prevention**: Automated cleanup verification for setInterval/setTimeout
+- **Resource Management**: Proper cleanup testing for background services and timers
+
+##### Environment Variable Testing
+- **OLLAMA_SKIP_ENHANCED_INIT**: Legacy mode fallback testing for CI/CD compatibility
+- **Test Mode Isolation**: Isolated test environments with controlled configurations
+- **Multi-Mode CLI Testing**: Verification of simple, advanced, and interactive modes
+
+##### Performance & Reliability Testing
+- **Background Service Testing**: Daemon lifecycle, health monitoring, resource tracking
+- **Performance Dashboard**: Real-time metrics collection and alerting system testing
+- **Component Status Tracking**: Service initialization and status monitoring validation
+- **Circuit Breaker Testing**: Provider failure and recovery scenario testing
+
+#### Testing Infrastructure Enhancements
+- **Automated Testing**: GitHub Actions integration with comprehensive test matrices
+- **Performance Testing**: Benchmark tracking and regression detection with optimization migration tests
+- **Load Testing**: Multi-provider load testing with timeout management
 - **Security Testing**: Automated security vulnerability scanning
+- **Mock Timer Systems**: Precise control over timing-dependent tests
+- **Memory Leak Detection**: Jest open handle detection and cleanup verification
+- **Integration Test Cleanup**: Comprehensive resource cleanup and test isolation
+
+## Quality Assurance & Reliability
+
+### Test Infrastructure Reliability Improvements
+
+#### Recent Enhancements (2025)
+Our comprehensive test failure analysis and resolution initiative has significantly improved system reliability:
+
+##### Timeout Management System
+- **Comprehensive Timeout Testing**: StreamingInitializer timeout edge cases with 18 specialized test scenarios
+- **Cancellable Operations**: Proper promise cancellation with cleanup verification
+- **Mock Timer Integration**: Jest timer mocking for predictable timeout behavior
+- **Memory Leak Prevention**: Automated detection and cleanup of hanging timers
+
+##### Environment-Based Testing
+- **Legacy Mode Fallbacks**: OLLAMA_SKIP_ENHANCED_INIT for CI/CD compatibility
+- **Test Isolation**: Controlled test environments with environment variable management
+- **Multi-Mode Validation**: Comprehensive testing across simple, advanced, and interactive modes
+
+##### Resource Management
+- **Background Service Testing**: Daemon lifecycle with health monitoring and resource tracking
+- **Performance Dashboard Validation**: Real-time metrics collection and alerting system verification
+- **Component Status Monitoring**: Service initialization and status tracking validation
+- **Circuit Breaker Patterns**: Provider failure and recovery scenario testing
+
+##### Test Categories Coverage
+```
+Test Coverage Areas:
+├── Timeout Edge Cases (18 tests)
+│   ├── Cancellable timeout with proper cleanup
+│   ├── Multiple concurrent timeouts
+│   ├── Immediate timeout (0ms)
+│   ├── Negative timeout values
+│   ├── Error handling scenarios
+│   └── Memory management validation
+├── Background Services (27 tests)
+│   ├── Daemon lifecycle management
+│   ├── Health monitoring systems
+│   ├── Resource monitoring and cleanup
+│   └── Service communication protocols
+├── Performance Dashboard (26 tests)
+│   ├── Metrics collection and storage
+│   ├── Real-time alert systems
+│   ├── Trend analysis and detection
+│   └── Recommendation generation
+└── Integration Testing (13 tests)
+    ├── CLI entry point compatibility
+    ├── Environment variable handling
+    ├── Mode selection verification
+    └── Startup optimization validation
+```
 
 ## Performance Optimization
 

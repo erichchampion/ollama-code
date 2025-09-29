@@ -6,7 +6,7 @@
 
 # Interface: PlatformCapabilities
 
-Defined in: [ai/vcs/universal-ci-api.ts:51](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L51)
+Defined in: [ai/vcs/universal-ci-api.ts:51](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L51)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:51](https://github.com/erichchampion/oll
 
 > **supportsComments**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:52](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L52)
+Defined in: [ai/vcs/universal-ci-api.ts:52](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L52)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:52](https://github.com/erichchampion/oll
 
 > **supportsArtifacts**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:53](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L53)
+Defined in: [ai/vcs/universal-ci-api.ts:53](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L53)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:53](https://github.com/erichchampion/oll
 
 > **supportsSARIF**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:54](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L54)
+Defined in: [ai/vcs/universal-ci-api.ts:54](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L54)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:54](https://github.com/erichchampion/oll
 
 > **supportsQualityGates**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:55](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L55)
+Defined in: [ai/vcs/universal-ci-api.ts:55](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L55)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:55](https://github.com/erichchampion/oll
 
 > **supportsParallelExecution**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:56](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L56)
+Defined in: [ai/vcs/universal-ci-api.ts:56](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L56)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:56](https://github.com/erichchampion/oll
 
 > **supportsSecrets**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:57](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L57)
+Defined in: [ai/vcs/universal-ci-api.ts:57](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L57)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:57](https://github.com/erichchampion/oll
 
 > **supportsEnvironments**: `boolean`
 
-Defined in: [ai/vcs/universal-ci-api.ts:58](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L58)
+Defined in: [ai/vcs/universal-ci-api.ts:58](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L58)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:58](https://github.com/erichchampion/oll
 
 > **maxConcurrentJobs**: `number`
 
-Defined in: [ai/vcs/universal-ci-api.ts:59](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L59)
+Defined in: [ai/vcs/universal-ci-api.ts:59](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L59)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:59](https://github.com/erichchampion/oll
 
 > **timeoutLimits**: `object`
 
-Defined in: [ai/vcs/universal-ci-api.ts:60](https://github.com/erichchampion/ollama-code/blob/ca3d01d6583b7059317fc460806efc2977c21eee/ollama-code/src/ai/vcs/universal-ci-api.ts#L60)
+Defined in: [ai/vcs/universal-ci-api.ts:60](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/universal-ci-api.ts#L60)
 
 #### perJob
 

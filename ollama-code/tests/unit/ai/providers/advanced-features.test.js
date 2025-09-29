@@ -70,10 +70,13 @@ describe('Advanced AI Provider Features - Basic Validation', () => {
         const content = await fs.readFile(filePath, 'utf-8');
 
         // Should not contain TypeScript-specific syntax that wasn't compiled
-        expect(content).not.toContain('interface ');
-        expect(content).not.toContain('export interface');
-        expect(content).not.toContain(': string');
-        expect(content).not.toContain(': number');
+        // Check for actual TypeScript interface declarations, not just the word "interface" in comments
+        expect(content).not.toMatch(/^\s*interface\s+\w+/m);
+        expect(content).not.toMatch(/^\s*export\s+interface\s+\w+/m);
+        expect(content).not.toMatch(/\w+\s*:\s*string[,;}\]]/);
+        expect(content).not.toMatch(/\w+\s*:\s*number[,;}\]]/);
+        expect(content).not.toMatch(/\w+\s*:\s*boolean[,;}\]]/);
+        expect(content).not.toMatch(/\w+\s*:\s*\w+\[\][,;}\]]/); // arrays
 
         // Should contain compiled JavaScript
         expect(content).toContain('export class');
@@ -271,7 +274,7 @@ describe('Advanced AI Provider Features - Basic Validation', () => {
 
       // Check for shared utility functions (basic heuristic)
       const commonPatterns = [
-        'generateId',
+        'generateSecureId',
         'cleanup',
         'initialize'
       ];
