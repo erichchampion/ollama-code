@@ -105,11 +105,51 @@ function registerAskCommand() {
                     const spinner = createSpinner('Thinking...');
                     spinner.start();
                     try {
-                        // For the ask command, we should directly generate a response
-                        // rather than going through the full routing pipeline again
+                        // Get enhanced client to access project context
+                        const enhancedClient = getEnhancedClient();
+                        const projectContext = enhancedClient.projectContext;
+                        // Create context-enriched prompt
+                        let contextualQuestion = question;
+                        if (projectContext && projectContext.allFiles && projectContext.allFiles.length > 0) {
+                            // Prioritize source code files over config files
+                            const allFiles = projectContext.allFiles;
+                            const sourceFiles = allFiles.filter((f) => {
+                                // Use relativePath if available, otherwise use path
+                                const filePath = f.relativePath || f.path;
+                                const ext = filePath.split('.').pop()?.toLowerCase();
+                                return ['ts', 'js', 'tsx', 'jsx', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb'].includes(ext || '');
+                            });
+                            // Prioritize main source files over extension files
+                            const mainSrcFiles = sourceFiles.filter((f) => {
+                                const filePath = f.relativePath || f.path;
+                                return filePath.startsWith('src/') && !filePath.includes('extensions/');
+                            });
+                            const extensionFiles = sourceFiles.filter((f) => {
+                                const filePath = f.relativePath || f.path;
+                                return filePath.includes('extensions/');
+                            });
+                            const otherSourceFiles = sourceFiles.filter((f) => {
+                                const filePath = f.relativePath || f.path;
+                                return !filePath.startsWith('src/') && !filePath.includes('extensions/');
+                            });
+                            // Combine in priority order: main src files first, then others, then extensions
+                            const prioritizedSourceFiles = [
+                                ...mainSrcFiles.slice(0, 10), // First 10 main source files
+                                ...otherSourceFiles.slice(0, 3), // 3 other source files
+                                ...extensionFiles.slice(0, 2) // 2 extension files
+                            ];
+                            // Include both source files and some config files for context
+                            const prioritizedFiles = [
+                                ...prioritizedSourceFiles,
+                                ...allFiles.filter((f) => f.path.includes('package.json') || f.path.includes('tsconfig.json') || f.path.includes('README')).slice(0, 3) // Key config files
+                            ];
+                            const fileList = prioritizedFiles.map((f) => f.relativePath || f.path).join(', ');
+                            const packageInfo = projectContext.packageJson ? `\nPackage: ${projectContext.packageJson.name} (${projectContext.packageJson.description || 'No description'})` : '';
+                            contextualQuestion = `Context: This is a ${projectContext.projectLanguages?.join('/')} project with source files: ${fileList}${packageInfo}\n\nQuestion: ${question}`;
+                        }
+                        // Get direct AI response with context
                         const aiClient = getAIClient();
-                        // Get direct AI response without routing overhead
-                        const responseText = await aiClient.complete(question, {
+                        const responseText = await aiClient.complete(contextualQuestion, {
                             temperature: 0.7,
                             model: args.model
                         });

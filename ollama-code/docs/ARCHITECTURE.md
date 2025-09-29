@@ -18,6 +18,7 @@ This document provides a comprehensive overview of the Ollama Code CLI advanced 
 - [Dependencies](#dependencies)
 - [Security Architecture](#security-architecture)
 - [Testing Strategy](#testing-strategy)
+- [Interactive Mode Architecture & Project Context Management](#interactive-mode-architecture--project-context-management)
 - [Performance Optimization](#performance-optimization)
 
 ## System Overview
@@ -652,6 +653,137 @@ tests/
 - **Mock Timer Systems**: Precise control over timing-dependent tests
 - **Memory Leak Detection**: Jest open handle detection and cleanup verification
 - **Integration Test Cleanup**: Comprehensive resource cleanup and test isolation
+
+## Interactive Mode Architecture & Project Context Management
+
+### Enhanced Interactive Mode System
+
+The interactive mode has been significantly enhanced to address project context isolation issues and circular dependency problems that were preventing proper file analysis in background components.
+
+#### Project Context Management Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  Interactive Mode Components                    │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Component     │  │   Streaming     │  │   Optimized     │  │
+│  │   Factory       │  │   Initializer   │  │   Enhanced      │  │
+│  │   (Fixed)       │  │                 │  │   Mode          │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+    ▼             ▼             ▼
+┌─────────┐  ┌─────────┐  ┌─────────┐
+│LazyProject│ │Advanced │ │Background│
+│Context  │  │Context  │ │Component │
+│(Properly│  │Manager  │ │Loading   │
+│Init'd)  │  │         │ │          │
+└─────────┘  └─────────┘  └─────────┘
+```
+
+#### Key Architectural Improvements (2025)
+
+##### 1. Fixed Circular Dependency Issue in Component Factory
+
+**Problem**: The Advanced Context Manager creation was causing "Maximum call stack size exceeded" errors due to circular dependencies in the component factory's dependency resolution system.
+
+**Solution**: Modified the component factory to create and properly initialize LazyProjectContext instances directly for components that need project context, avoiding circular reference chains.
+
+```typescript
+// src/interactive/component-factory.ts (Fixed Implementation)
+case 'advancedContextManager': {
+  const aiClient = this.components.get('aiClient') || getAIClient();
+  const projectContext = new LazyProjectContext(process.cwd());
+  // Initialize the project context to ensure files are loaded
+  await projectContext.initialize();
+  logger.debug(`ComponentFactory: Creating Advanced Context Manager with ${projectContext.allFiles.length} files`);
+  const manager = new AdvancedContextManager(aiClient, projectContext);
+  await manager.initialize();
+  return manager as T;
+}
+```
+
+##### 2. Project Context Initialization Guarantee
+
+**Problem**: Interactive mode components were receiving LazyProjectContext instances that weren't properly initialized, leading to "Analyzing 0 source files" issues.
+
+**Solution**: Added explicit initialization calls and proper sequencing to ensure project context is fully populated before being used by AI components.
+
+```typescript
+// Ensured LazyProjectContext initialization in both cases:
+case 'projectContext': {
+  const lazyContext = new LazyProjectContext(process.cwd());
+  // Initialize project context immediately to ensure files are available
+  await lazyContext.initialize();
+  logger.debug(`ComponentFactory: LazyProjectContext initialized with ${lazyContext.allFiles.length} files`);
+  return lazyContext as T;
+}
+```
+
+##### 3. Enhanced Diagnostic Logging
+
+**Enhancement**: Added strategic diagnostic logging to track project context initialization and file loading, making it easier to diagnose similar issues in the future.
+
+```typescript
+// Advanced Context Manager diagnostics
+logger.info(`Analyzing ${analyzableFiles.length} source files (filtered from ${files.length} total files)`);
+if (files.length === 0) {
+  logger.warn('Advanced Context Manager: Project context has 0 files - this indicates the project context was not properly initialized');
+  // Debug info only when there's an issue
+  logger.debug('Project context type:', this.projectContext.constructor.name);
+  logger.debug('Project context root:', this.projectContext.root);
+}
+```
+
+#### Component Factory Pattern Improvements
+
+##### Lazy Initialization with Guaranteed State
+The component factory now ensures that components requiring project context receive fully initialized instances:
+
+1. **LazyProjectContext Creation**: New instance created with current working directory
+2. **Explicit Initialization**: `await projectContext.initialize()` called before use
+3. **File Count Validation**: Diagnostic logging shows actual file count for verification
+4. **Proper Error Handling**: Maintains existing error handling while adding context information
+
+##### Circular Dependency Prevention
+The architecture now avoids circular dependencies by:
+
+1. **Direct Instantiation**: Creating LazyProjectContext directly instead of through component resolution
+2. **Independent Initialization**: Each component gets its own properly initialized context
+3. **Sequenced Loading**: Ensuring dependencies are resolved in correct order
+
+#### Streaming Initializer Integration
+
+The streaming initializer remains compatible with the enhanced component factory:
+
+```typescript
+// Background component loading with enhanced safety
+const backgroundSteps = [
+  {
+    name: 'projectContext',
+    componentType: 'projectContext',
+    factory: async () => {
+      // Direct creation ensures no circular dependencies
+      const { LazyProjectContext } = await import('./lazy-project-context.js');
+      return new LazyProjectContext(process.cwd());
+    },
+    essential: false,
+    timeout: 20000,
+    background: true,
+    description: 'Analyzing project context...'
+  }
+];
+```
+
+#### Benefits of the Enhanced Architecture
+
+1. **Reliable Project Context**: Interactive mode now consistently has access to project files
+2. **No Circular Dependencies**: Eliminated "Maximum call stack size exceeded" errors
+3. **Better Diagnostics**: Clear logging shows when and how project context is initialized
+4. **Maintained Performance**: Background loading and lazy initialization preserved
+5. **Backward Compatibility**: Existing code paths continue to work as expected
 
 ## Quality Assurance & Reliability
 

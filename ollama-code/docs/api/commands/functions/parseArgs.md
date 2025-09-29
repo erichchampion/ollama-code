@@ -8,7 +8,7 @@
 
 > **parseArgs**(`args`, `command`): `Record`\<`string`, `any`\>
 
-Defined in: [commands/index.ts:211](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/commands/index.ts#L211)
+Defined in: [commands/index.ts:211](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/commands/index.ts#L211)
 
 Parse command-line arguments
 

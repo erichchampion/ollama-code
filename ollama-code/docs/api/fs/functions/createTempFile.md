@@ -8,7 +8,7 @@
 
 > **createTempFile**(`options`): `Promise`\<`string`\>
 
-Defined in: [fs/operations.ts:521](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/fs/operations.ts#L521)
+Defined in: [fs/operations.ts:521](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/fs/operations.ts#L521)
 
 Create a temporary file
 

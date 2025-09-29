@@ -6,7 +6,7 @@
 
 # Interface: CITemplateConfig
 
-Defined in: [ai/vcs/ci-template-generator.ts:11](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L11)
+Defined in: [ai/vcs/ci-template-generator.ts:11](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L11)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:11](https://github.com/erichchampio
 
 > **platform**: `"github"` \| `"gitlab"` \| `"bitbucket"` \| `"azure"` \| `"circleci"` \| `"jenkins"`
 
-Defined in: [ai/vcs/ci-template-generator.ts:12](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L12)
+Defined in: [ai/vcs/ci-template-generator.ts:12](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L12)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:12](https://github.com/erichchampio
 
 > `optional` **branches**: `string`[]
 
-Defined in: [ai/vcs/ci-template-generator.ts:13](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L13)
+Defined in: [ai/vcs/ci-template-generator.ts:13](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L13)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:13](https://github.com/erichchampio
 
 > `optional` **enableParallel**: `boolean`
 
-Defined in: [ai/vcs/ci-template-generator.ts:14](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L14)
+Defined in: [ai/vcs/ci-template-generator.ts:14](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L14)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:14](https://github.com/erichchampio
 
 > `optional` **enableCaching**: `boolean`
 
-Defined in: [ai/vcs/ci-template-generator.ts:15](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L15)
+Defined in: [ai/vcs/ci-template-generator.ts:15](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L15)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:15](https://github.com/erichchampio
 
 > `optional` **enableArtifacts**: `boolean`
 
-Defined in: [ai/vcs/ci-template-generator.ts:16](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L16)
+Defined in: [ai/vcs/ci-template-generator.ts:16](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L16)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:16](https://github.com/erichchampio
 
 > `optional` **enableSchedule**: `boolean`
 
-Defined in: [ai/vcs/ci-template-generator.ts:17](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L17)
+Defined in: [ai/vcs/ci-template-generator.ts:17](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L17)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [ai/vcs/ci-template-generator.ts:17](https://github.com/erichchampio
 
 > `optional` **customConfig**: `Record`\<`string`, `any`\>
 
-Defined in: [ai/vcs/ci-template-generator.ts:18](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/vcs/ci-template-generator.ts#L18)
+Defined in: [ai/vcs/ci-template-generator.ts:18](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/vcs/ci-template-generator.ts#L18)

@@ -191,7 +191,9 @@ export class ComponentFactory extends BaseComponentFactory {
 
       case 'projectContext': {
         const lazyContext = new LazyProjectContext(process.cwd());
-        // Don't initialize immediately - let it be lazy
+        // Initialize project context immediately to ensure files are available
+        await lazyContext.initialize();
+        logger.debug(`ComponentFactory: LazyProjectContext initialized with ${lazyContext.allFiles.length} files`);
         return lazyContext as T;
       }
 
@@ -212,6 +214,9 @@ export class ComponentFactory extends BaseComponentFactory {
       case 'advancedContextManager': {
         const aiClient = this.components.get('aiClient') || getAIClient();
         const projectContext = new LazyProjectContext(process.cwd());
+        // Initialize the project context to ensure files are loaded
+        await projectContext.initialize();
+        logger.debug(`ComponentFactory: Creating Advanced Context Manager with ${projectContext.allFiles.length} files`);
         const manager = new AdvancedContextManager(aiClient, projectContext);
         await manager.initialize();
         return manager as T;

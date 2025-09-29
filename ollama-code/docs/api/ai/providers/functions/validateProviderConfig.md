@@ -8,7 +8,7 @@
 
 > **validateProviderConfig**(`type`, `config`): `boolean`
 
-Defined in: [ai/providers/index.ts:76](https://github.com/erichchampion/ollama-code/blob/a6ec53910f51a174af1f2c4fb981760e5f53805f/ollama-code/src/ai/providers/index.ts#L76)
+Defined in: [ai/providers/index.ts:76](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/index.ts#L76)
 
 Validate provider configuration
 

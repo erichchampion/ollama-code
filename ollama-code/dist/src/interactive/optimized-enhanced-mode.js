@@ -250,7 +250,7 @@ export class OptimizedEnhancedMode {
         }
         // Process with natural language router
         try {
-            const routingContext = this.buildRoutingContext(userInput);
+            const routingContext = await this.buildRoutingContext(userInput);
             // FUNDAMENTAL FIX: Use simple AI assistance when router is unavailable
             let routingResult;
             if (this.nlRouter) {
@@ -344,7 +344,7 @@ export class OptimizedEnhancedMode {
     /**
      * Build routing context with available components
      */
-    buildRoutingContext(userInput) {
+    async buildRoutingContext(userInput) {
         const context = {
             userInput,
             availableComponents: Array.from(this.componentsReady),
@@ -355,6 +355,27 @@ export class OptimizedEnhancedMode {
         // Add capabilities based on ready components
         if (this.isComponentReady('projectContext')) {
             context.capabilities.push('file-analysis', 'project-context');
+            // Add actual project context data
+            try {
+                const projectContext = await this.componentFactory.getComponent('projectContext', {
+                    timeout: 5000
+                });
+                if (projectContext && projectContext.allFiles && projectContext.allFiles.length > 0) {
+                    // Prioritize source code files for the routing context
+                    const allFiles = projectContext.allFiles;
+                    const sourceFiles = allFiles.filter((f) => {
+                        const ext = f.path.split('.').pop()?.toLowerCase();
+                        return ['ts', 'js', 'tsx', 'jsx', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb'].includes(ext || '');
+                    });
+                    context.projectContext = projectContext;
+                    context.workingDirectory = process.cwd();
+                    context.recentFiles = sourceFiles.slice(0, 20).map((f) => f.path) || [];
+                    logger.debug(`Added ${context.recentFiles.length} source files to routing context`);
+                }
+            }
+            catch (error) {
+                logger.debug('Failed to add project context to routing context:', error);
+            }
         }
         if (this.isComponentReady('taskPlanner')) {
             context.capabilities.push('task-planning', 'execution-planning');
@@ -387,6 +408,33 @@ export class OptimizedEnhancedMode {
             // Simple streaming response without complex planning or routing
             this.terminal?.info('🤖 Thinking...');
             let responseText = '';
+            // Create context-enriched prompt (same logic as command-line ask)
+            let contextualInput = userInput;
+            try {
+                const projectContext = await this.componentFactory.getComponent('projectContext', {
+                    timeout: 5000
+                });
+                if (projectContext && projectContext.allFiles && projectContext.allFiles.length > 0) {
+                    // Prioritize source code files over config files
+                    const allFiles = projectContext.allFiles;
+                    const sourceFiles = allFiles.filter((f) => {
+                        const ext = f.path.split('.').pop()?.toLowerCase();
+                        return ['ts', 'js', 'tsx', 'jsx', 'py', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb'].includes(ext || '');
+                    });
+                    // Include both source files and some config files for context
+                    const prioritizedFiles = [
+                        ...sourceFiles.slice(0, 15), // First 15 source files
+                        ...allFiles.filter((f) => f.path.includes('package.json') || f.path.includes('tsconfig.json') || f.path.includes('README')).slice(0, 3) // Key config files
+                    ];
+                    const fileList = prioritizedFiles.map((f) => f.relativePath || f.path).join(', ');
+                    const packageInfo = projectContext.packageJson ? `\nPackage: ${projectContext.packageJson.name} (${projectContext.packageJson.description || 'No description'})` : '';
+                    contextualInput = `Context: This is a ${projectContext.projectLanguages?.join('/')} project with source files: ${fileList}${packageInfo}\n\nQuestion: ${userInput}`;
+                }
+            }
+            catch (error) {
+                // If project context fails, continue with original input
+                logger.debug('Failed to get project context for interactive mode:', error);
+            }
             // Add timeout protection for the streaming request
             const timeout = TIMEOUT_CONFIG.AI_STREAMING; // Use dedicated streaming timeout
             const timeoutPromise = new Promise((_, reject) => {
@@ -397,7 +445,7 @@ export class OptimizedEnhancedMode {
             });
             // Race between streaming completion and timeout
             await Promise.race([
-                aiClient.completeStream(userInput, {}, (event) => {
+                aiClient.completeStream(contextualInput, {}, (event) => {
                     if (abortController.signal.aborted) {
                         return; // Stop processing events if cancelled
                     }

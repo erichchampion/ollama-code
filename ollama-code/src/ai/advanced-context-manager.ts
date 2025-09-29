@@ -216,6 +216,12 @@ export class AdvancedContextManager {
     const analyzableFiles = files.filter(file => this.isAnalyzableFile(file));
 
     logger.info(`Analyzing ${analyzableFiles.length} source files (filtered from ${files.length} total files)`);
+    if (files.length === 0) {
+      logger.warn('Advanced Context Manager: Project context has 0 files - this indicates the project context was not properly initialized');
+      // Debug info only when there's an issue
+      logger.debug('Project context type:', this.projectContext.constructor.name);
+      logger.debug('Project context root:', this.projectContext.root);
+    }
 
     const analysisPromises = analyzableFiles
       .map(file => this.analyzeFile(file));
@@ -297,15 +303,20 @@ export class AdvancedContextManager {
    */
   private async analyzeFile(file: FileInfo): Promise<SemanticAnalysis> {
     try {
-      const filePath = path.join(this.projectContext.root, file.path);
+      // Use relativePath if available, otherwise assume path is relative
+      const relativePath = file.relativePath || file.path;
+      const filePath = path.isAbsolute(relativePath)
+        ? relativePath
+        : path.join(this.projectContext.root, relativePath);
       const content = await fs.readFile(filePath, 'utf-8');
 
-      return this.analyzeCodeSemantics(content, file.path);
+      return this.analyzeCodeSemantics(content, relativePath);
     } catch (error) {
       // Use debug level since we now filter files and this is expected for some cases
-      logger.debug(`Could not read file ${file.path} for analysis:`, error);
+      const relativePath = file.relativePath || file.path;
+      logger.debug(`Could not read file ${relativePath} for analysis:`, error);
       // Return empty analysis for missing files
-      return this.createEmptyAnalysis(file.path);
+      return this.createEmptyAnalysis(relativePath);
     }
   }
 
