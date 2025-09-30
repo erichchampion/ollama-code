@@ -28,9 +28,11 @@ import {
   HELP_OUTPUT_WIDTH,
   INTERACTIVE_MODE_HELP,
   HELP_COMMAND_SUGGESTION,
-  EXIT_COMMANDS
+  EXIT_COMMANDS,
+  SAFETY_MODE_ENV_VAR
 } from './constants.js';
 import { OptimizedEnhancedMode } from './interactive/optimized-enhanced-mode.js';
+import { SafetyEnhancedMode } from './interactive/safety-enhanced-mode.js';
 import pkg from '../package.json' with { type: 'json' };
 
 // Get version from package.json
@@ -126,7 +128,7 @@ Usage:
 Modes:
   --mode simple      Simple mode - Basic commands only
   --mode advanced    Advanced mode (default) - Full command registry
-  --mode interactive Interactive mode - Command loop interface
+  --mode interactive Interactive mode - Command loop interface with safety features
 
 Available Commands:`);
   
@@ -446,8 +448,19 @@ async function initCLI(): Promise<void> {
           console.log('Legacy interactive mode (test mode)');
           process.exit(0);
         } else {
-          const optimizedMode = new OptimizedEnhancedMode();
-          await optimizedMode.start();
+          // Use safety-enhanced mode by default for interactive sessions
+          // This can be controlled via environment variable for compatibility
+          const useSafetyMode = process.env[SAFETY_MODE_ENV_VAR] !== 'false';
+
+          if (useSafetyMode) {
+            logger.info('Starting interactive mode with safety features');
+            const safetyEnhancedMode = new SafetyEnhancedMode();
+            await safetyEnhancedMode.start();
+          } else {
+            logger.info('Starting interactive mode without safety features');
+            const optimizedMode = new OptimizedEnhancedMode();
+            await optimizedMode.start();
+          }
         }
         break;
       default:

@@ -165,4 +165,20 @@ export const APP_NAME = 'ollama-code';
 export const CLI_COMMAND = 'ollama-code';
 /** Default shell for command execution */
 export const DEFAULT_SHELL = process.env.SHELL || 'bash';
+// =============================================================================
+// SAFETY & SECURITY CONSTANTS
+// =============================================================================
+/**
+ * Environment variable to control safety mode in interactive sessions
+ * Set to 'false' to disable safety features
+ * @default true (safety enabled)
+ */
+export const SAFETY_MODE_ENV_VAR = 'OLLAMA_SAFETY_MODE';
+/** Default safety mode settings for interactive mode */
+export const SAFETY_MODE_DEFAULTS = {
+    /** Always confirm high-risk operations in safety mode */
+    confirmHighRisk: true,
+    /** Never auto-approve operations in safety mode */
+    autoApprove: false
+};
 //# sourceMappingURL=constants.js.map

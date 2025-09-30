@@ -17,8 +17,9 @@ import { ensureOllamaServerRunning } from './utils/ollama-server.js';
 import { initializeToolSystem } from './tools/index.js';
 import { initializeLazyLoading, executeCommandOptimized, preloadCommonComponents } from './optimization/startup-optimizer.js';
 import { registerServices, disposeServices } from './core/services.js';
-import { HELP_COMMAND_SUGGESTION } from './constants.js';
+import { HELP_COMMAND_SUGGESTION, SAFETY_MODE_ENV_VAR } from './constants.js';
 import { OptimizedEnhancedMode } from './interactive/optimized-enhanced-mode.js';
+import { SafetyEnhancedMode } from './interactive/safety-enhanced-mode.js';
 import pkg from '../package.json' with { type: 'json' };
 // Get version from package.json
 const version = pkg.version;
@@ -101,7 +102,7 @@ Usage:
 Modes:
   --mode simple      Simple mode - Basic commands only
   --mode advanced    Advanced mode (default) - Full command registry
-  --mode interactive Interactive mode - Command loop interface
+  --mode interactive Interactive mode - Command loop interface with safety features
 
 Available Commands:`);
     // Group commands by category
@@ -368,8 +369,19 @@ async function initCLI() {
                     process.exit(0);
                 }
                 else {
-                    const optimizedMode = new OptimizedEnhancedMode();
-                    await optimizedMode.start();
+                    // Use safety-enhanced mode by default for interactive sessions
+                    // This can be controlled via environment variable for compatibility
+                    const useSafetyMode = process.env[SAFETY_MODE_ENV_VAR] !== 'false';
+                    if (useSafetyMode) {
+                        logger.info('Starting interactive mode with safety features');
+                        const safetyEnhancedMode = new SafetyEnhancedMode();
+                        await safetyEnhancedMode.start();
+                    }
+                    else {
+                        logger.info('Starting interactive mode without safety features');
+                        const optimizedMode = new OptimizedEnhancedMode();
+                        await optimizedMode.start();
+                    }
                 }
                 break;
             default:

@@ -8,7 +8,7 @@
 
 > **default**: `object`
 
-Defined in: [commands/index.ts:621](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L621)
+Defined in: [commands/index.ts:621](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L621)
 
 ## Type Declaration
 

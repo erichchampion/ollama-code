@@ -6,7 +6,7 @@
 
 # Interface: CommandDef
 
-Defined in: [commands/index.ts:23](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L23)
+Defined in: [commands/index.ts:23](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L23)
 
 Command definition
 
@@ -16,7 +16,7 @@ Command definition
 
 > **name**: `string`
 
-Defined in: [commands/index.ts:27](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L27)
+Defined in: [commands/index.ts:27](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L27)
 
 Command name
 
@@ -26,7 +26,7 @@ Command name
 
 > **description**: `string`
 
-Defined in: [commands/index.ts:32](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L32)
+Defined in: [commands/index.ts:32](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L32)
 
 Command description
 
@@ -36,7 +36,7 @@ Command description
 
 > `optional` **examples**: `string`[]
 
-Defined in: [commands/index.ts:37](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L37)
+Defined in: [commands/index.ts:37](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L37)
 
 Command usage examples
 
@@ -46,7 +46,7 @@ Command usage examples
 
 > `optional` **args**: [`CommandArgDef`](CommandArgDef.md)[]
 
-Defined in: [commands/index.ts:42](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L42)
+Defined in: [commands/index.ts:42](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L42)
 
 Command arguments
 
@@ -56,7 +56,7 @@ Command arguments
 
 > **handler**: (`args`) => `Promise`\<`any`\>
 
-Defined in: [commands/index.ts:47](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L47)
+Defined in: [commands/index.ts:47](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L47)
 
 Command handler function
 
@@ -76,7 +76,7 @@ Command handler function
 
 > `optional` **aliases**: `string`[]
 
-Defined in: [commands/index.ts:52](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L52)
+Defined in: [commands/index.ts:52](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L52)
 
 Command aliases
 
@@ -86,7 +86,7 @@ Command aliases
 
 > `optional` **category**: `string`
 
-Defined in: [commands/index.ts:57](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L57)
+Defined in: [commands/index.ts:57](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L57)
 
 Command category for grouping in help
 
@@ -96,7 +96,7 @@ Command category for grouping in help
 
 > `optional` **interactive**: `boolean`
 
-Defined in: [commands/index.ts:63](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L63)
+Defined in: [commands/index.ts:63](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L63)
 
 Whether the command can be used in interactive mode
 
@@ -106,6 +106,6 @@ Whether the command can be used in interactive mode
 
 > `optional` **hidden**: `boolean`
 
-Defined in: [commands/index.ts:68](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/commands/index.ts#L68)
+Defined in: [commands/index.ts:68](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/commands/index.ts#L68)
 
 Whether to hide from help

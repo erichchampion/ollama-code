@@ -8,6 +8,6 @@
 
 > **PromptType** = `"input"` \| `"password"` \| `"confirm"` \| `"list"` \| `"rawlist"` \| `"checkbox"` \| `"editor"`
 
-Defined in: [terminal/types.ts:90](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/terminal/types.ts#L90)
+Defined in: [terminal/types.ts:90](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/terminal/types.ts#L90)
 
 Prompt option types
