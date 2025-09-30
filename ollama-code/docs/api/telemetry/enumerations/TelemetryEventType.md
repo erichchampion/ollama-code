@@ -6,7 +6,7 @@
 
 # Enumeration: TelemetryEventType
 
-Defined in: [telemetry/index.ts:16](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L16)
+Defined in: [telemetry/index.ts:16](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L16)
 
 Telemetry event types
 
@@ -16,7 +16,7 @@ Telemetry event types
 
 > **CLI\_START**: `"cli_start"`
 
-Defined in: [telemetry/index.ts:17](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L17)
+Defined in: [telemetry/index.ts:17](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L17)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [telemetry/index.ts:17](https://github.com/erichchampion/ollama-code
 
 > **CLI\_EXIT**: `"cli_exit"`
 
-Defined in: [telemetry/index.ts:18](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L18)
+Defined in: [telemetry/index.ts:18](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L18)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [telemetry/index.ts:18](https://github.com/erichchampion/ollama-code
 
 > **COMMAND\_EXECUTE**: `"command_execute"`
 
-Defined in: [telemetry/index.ts:19](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L19)
+Defined in: [telemetry/index.ts:19](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L19)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [telemetry/index.ts:19](https://github.com/erichchampion/ollama-code
 
 > **COMMAND\_SUCCESS**: `"command_success"`
 
-Defined in: [telemetry/index.ts:20](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L20)
+Defined in: [telemetry/index.ts:20](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L20)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [telemetry/index.ts:20](https://github.com/erichchampion/ollama-code
 
 > **COMMAND\_ERROR**: `"command_error"`
 
-Defined in: [telemetry/index.ts:21](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L21)
+Defined in: [telemetry/index.ts:21](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L21)
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: [telemetry/index.ts:21](https://github.com/erichchampion/ollama-code
 
 > **AI\_REQUEST**: `"ai_request"`
 
-Defined in: [telemetry/index.ts:22](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L22)
+Defined in: [telemetry/index.ts:22](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L22)
 
 ***
 
@@ -64,7 +64,7 @@ Defined in: [telemetry/index.ts:22](https://github.com/erichchampion/ollama-code
 
 > **AI\_RESPONSE**: `"ai_response"`
 
-Defined in: [telemetry/index.ts:23](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L23)
+Defined in: [telemetry/index.ts:23](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L23)
 
 ***
 
@@ -72,4 +72,4 @@ Defined in: [telemetry/index.ts:23](https://github.com/erichchampion/ollama-code
 
 > **AI\_ERROR**: `"ai_error"`
 
-Defined in: [telemetry/index.ts:24](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/telemetry/index.ts#L24)
+Defined in: [telemetry/index.ts:24](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/telemetry/index.ts#L24)

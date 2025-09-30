@@ -6,7 +6,7 @@
 
 # Interface: ListPromptOptions
 
-Defined in: [terminal/types.ts:154](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L154)
+Defined in: [terminal/types.ts:154](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L154)
 
 List prompt options
 
@@ -20,7 +20,7 @@ List prompt options
 
 > **name**: `string`
 
-Defined in: [terminal/types.ts:104](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L104)
+Defined in: [terminal/types.ts:104](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L104)
 
 Name of the value in the returned object
 
@@ -34,7 +34,7 @@ Name of the value in the returned object
 
 > **message**: `string`
 
-Defined in: [terminal/types.ts:109](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L109)
+Defined in: [terminal/types.ts:109](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L109)
 
 Message to display to the user
 
@@ -48,7 +48,7 @@ Message to display to the user
 
 > `optional` **default**: `any`
 
-Defined in: [terminal/types.ts:114](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L114)
+Defined in: [terminal/types.ts:114](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L114)
 
 Default value
 
@@ -62,7 +62,7 @@ Default value
 
 > `optional` **validate**: (`input`) => `string` \| `boolean` \| `Promise`\<`string` \| `boolean`\>
 
-Defined in: [terminal/types.ts:119](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L119)
+Defined in: [terminal/types.ts:119](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L119)
 
 Validation function
 
@@ -86,7 +86,7 @@ Validation function
 
 > `optional` **required**: `boolean`
 
-Defined in: [terminal/types.ts:124](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L124)
+Defined in: [terminal/types.ts:124](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L124)
 
 Whether the prompt is required
 
@@ -100,7 +100,7 @@ Whether the prompt is required
 
 > **type**: `"list"` \| `"rawlist"`
 
-Defined in: [terminal/types.ts:155](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L155)
+Defined in: [terminal/types.ts:155](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L155)
 
 Prompt type
 
@@ -114,7 +114,7 @@ Prompt type
 
 > **choices**: (`string` \| \{ `name`: `string`; `value`: `any`; `short?`: `string`; \})[]
 
-Defined in: [terminal/types.ts:156](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L156)
+Defined in: [terminal/types.ts:156](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L156)
 
 ***
 
@@ -122,4 +122,4 @@ Defined in: [terminal/types.ts:156](https://github.com/erichchampion/ollama-code
 
 > `optional` **pageSize**: `number`
 
-Defined in: [terminal/types.ts:157](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/terminal/types.ts#L157)
+Defined in: [terminal/types.ts:157](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L157)

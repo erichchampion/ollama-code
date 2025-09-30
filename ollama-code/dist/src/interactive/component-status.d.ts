@@ -6,7 +6,8 @@
  */
 import { ComponentType, LoadProgress } from './component-factory.js';
 import { EventEmitter } from 'events';
-export type ComponentStatus = 'not-loaded' | 'loading' | 'ready' | 'failed' | 'degraded';
+import { ComponentStatusValue } from '../constants/component-status.js';
+export type ComponentStatus = ComponentStatusValue;
 export interface ComponentHealth {
     component: ComponentType;
     status: ComponentStatus;

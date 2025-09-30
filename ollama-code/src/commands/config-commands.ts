@@ -10,6 +10,8 @@ import { configManager } from '../config/manager.js';
 import { validateNonEmptyString, validateFileExists } from '../utils/command-helpers.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
+import { getStatusTracker, StatusDisplayOptions } from '../interactive/component-status.js';
+import { COMPONENT_STATUS_VALUES } from '../constants/component-status.js';
 
 /**
  * Register configuration commands
@@ -24,6 +26,7 @@ export function registerConfigCommands(): void {
   registerConfigExportCommand();
   registerConfigImportCommand();
   registerConfigInitCommand();
+  registerStatusCommand();
 }
 
 /**
@@ -518,6 +521,107 @@ function registerConfigInitCommand(): void {
       'config-init',
       'config-init --project',
       'config-init --project --force'
+    ]
+  };
+
+  commandRegistry.register(command);
+}
+
+/**
+ * Show system component status
+ */
+function registerStatusCommand(): void {
+  const command = {
+    name: 'status',
+    description: 'Show system and component health status',
+    category: 'System',
+    async handler(args: Record<string, any>): Promise<void> {
+      try {
+        const { format = 'summary', components = false, metrics = false, deps = false, filter = '' } = args;
+
+        const statusTracker = getStatusTracker();
+
+        // Build display options
+        const displayOptions: StatusDisplayOptions = {
+          format: format as 'table' | 'list' | 'summary' | 'json',
+          showMetrics: metrics,
+          showDependencies: deps,
+          sortBy: 'status' as const
+        };
+
+        // Add filter if specified
+        if (filter) {
+          const filterStatuses = filter.split(',').filter((s: string) => COMPONENT_STATUS_VALUES.includes(s.trim() as any));
+          if (filterStatuses.length > 0) {
+            displayOptions.filterStatus = filterStatuses as any;
+          }
+        }
+
+        if (components) {
+          // Show detailed component information
+          console.log('🔧 Component Status\n');
+          console.log(statusTracker.getStatusDisplay(displayOptions));
+        } else {
+          // Show system summary
+          const systemHealth = statusTracker.getSystemHealth();
+          console.log('🔧 System Health Summary\n');
+          console.log(statusTracker.getStatusDisplay({ format: 'summary', showMetrics: false, showDependencies: false }));
+
+          if (systemHealth.overallStatus !== 'healthy') {
+            console.log('\n💡 Use "status --components" for detailed component information');
+            console.log('💡 Use "status --format table --metrics" for performance details');
+          }
+        }
+
+      } catch (error) {
+        logger.error('Status command failed:', error);
+        throw error;
+      }
+    },
+    args: [
+      {
+        name: 'format',
+        description: 'Output format (summary, table, list, json)',
+        type: ArgType.STRING,
+        position: -1,
+        required: false
+      },
+      {
+        name: 'components',
+        description: 'Show detailed component status',
+        type: ArgType.BOOLEAN,
+        position: -1,
+        required: false
+      },
+      {
+        name: 'metrics',
+        description: 'Include performance metrics',
+        type: ArgType.BOOLEAN,
+        position: -1,
+        required: false
+      },
+      {
+        name: 'deps',
+        description: 'Show component dependencies',
+        type: ArgType.BOOLEAN,
+        position: -1,
+        required: false
+      },
+      {
+        name: 'filter',
+        description: 'Filter by status (ready,loading,failed,degraded)',
+        type: ArgType.STRING,
+        position: -1,
+        required: false
+      }
+    ],
+    examples: [
+      'status',
+      'status --components',
+      'status --format table --metrics',
+      'status --components --deps',
+      'status --filter failed,degraded',
+      'status --format json > system-status.json'
     ]
   };
 

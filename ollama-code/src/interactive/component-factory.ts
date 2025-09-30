@@ -18,6 +18,7 @@ import { NaturalLanguageRouter } from '../routing/nl-router.js';
 import { getAIClient, getEnhancedClient } from '../ai/index.js';
 import { LazyProjectContext } from './lazy-project-context.js';
 import { BaseComponentFactory, IComponentFactory } from './component-factory-interface.js';
+import { getStatusTracker } from './component-status.js';
 
 export type ComponentType =
   | 'aiClient'
@@ -326,6 +327,15 @@ export class ComponentFactory extends BaseComponentFactory {
     };
 
     this.loadProgress.set(component, progress);
+
+    // Update global status tracker for real-time monitoring
+    try {
+      const statusTracker = getStatusTracker();
+      statusTracker.updateFromProgress(progress);
+    } catch (error) {
+      // Don't let status tracking errors break component loading
+      logger.debug('Status tracker update failed:', error);
+    }
 
     // Re-enabled with async event queuing to prevent circular dependency
     this.notifyProgress(progress);

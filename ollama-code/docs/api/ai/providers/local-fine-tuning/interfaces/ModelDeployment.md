@@ -6,7 +6,7 @@
 
 # Interface: ModelDeployment
 
-Defined in: [ai/providers/local-fine-tuning.ts:102](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L102)
+Defined in: [ai/providers/local-fine-tuning.ts:102](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L102)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:102](https://github.com/erichcham
 
 > **id**: `string`
 
-Defined in: [ai/providers/local-fine-tuning.ts:103](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L103)
+Defined in: [ai/providers/local-fine-tuning.ts:103](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L103)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:103](https://github.com/erichcham
 
 > **name**: `string`
 
-Defined in: [ai/providers/local-fine-tuning.ts:104](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L104)
+Defined in: [ai/providers/local-fine-tuning.ts:104](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L104)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:104](https://github.com/erichcham
 
 > **modelPath**: `string`
 
-Defined in: [ai/providers/local-fine-tuning.ts:105](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L105)
+Defined in: [ai/providers/local-fine-tuning.ts:105](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L105)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:105](https://github.com/erichcham
 
 > **status**: `"error"` \| `"deployed"` \| `"deploying"` \| `"stopped"`
 
-Defined in: [ai/providers/local-fine-tuning.ts:106](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L106)
+Defined in: [ai/providers/local-fine-tuning.ts:106](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L106)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:106](https://github.com/erichcham
 
 > `optional` **endpoint**: `string`
 
-Defined in: [ai/providers/local-fine-tuning.ts:107](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L107)
+Defined in: [ai/providers/local-fine-tuning.ts:107](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L107)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:107](https://github.com/erichcham
 
 > `optional` **port**: `number`
 
-Defined in: [ai/providers/local-fine-tuning.ts:108](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L108)
+Defined in: [ai/providers/local-fine-tuning.ts:108](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L108)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:108](https://github.com/erichcham
 
 > **resources**: `object`
 
-Defined in: [ai/providers/local-fine-tuning.ts:109](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L109)
+Defined in: [ai/providers/local-fine-tuning.ts:109](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L109)
 
 #### memoryUsage
 
@@ -82,7 +82,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:109](https://github.com/erichcham
 
 > **performance**: `object`
 
-Defined in: [ai/providers/local-fine-tuning.ts:114](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L114)
+Defined in: [ai/providers/local-fine-tuning.ts:114](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L114)
 
 #### requestsPerSecond
 
@@ -102,7 +102,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:114](https://github.com/erichcham
 
 > **createdAt**: `Date`
 
-Defined in: [ai/providers/local-fine-tuning.ts:119](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L119)
+Defined in: [ai/providers/local-fine-tuning.ts:119](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L119)
 
 ***
 
@@ -110,4 +110,4 @@ Defined in: [ai/providers/local-fine-tuning.ts:119](https://github.com/erichcham
 
 > `optional` **lastAccessed**: `Date`
 
-Defined in: [ai/providers/local-fine-tuning.ts:120](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/ai/providers/local-fine-tuning.ts#L120)
+Defined in: [ai/providers/local-fine-tuning.ts:120](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/local-fine-tuning.ts#L120)

@@ -6,6 +6,7 @@
  */
 import { logger } from '../utils/logger.js';
 import { EventEmitter } from 'events';
+import { COMPONENT_STATUSES, COMPONENT_STATUS_CONFIG, DEFAULT_COMPONENT_MEMORY, DEFAULT_FALLBACK_MEMORY } from '../constants/component-status.js';
 /**
  * Real-time component status tracking and health monitoring
  */
@@ -14,7 +15,7 @@ export class ComponentStatusTracker extends EventEmitter {
     startTime = Date.now();
     criticalComponents = new Set(['aiClient', 'intentAnalyzer', 'conversationManager']);
     healthCheckInterval;
-    HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
+    HEALTH_CHECK_INTERVAL = COMPONENT_STATUS_CONFIG.HEALTH_CHECK_INTERVAL;
     constructor() {
         super();
         this.initializeHealthChecks();
@@ -27,16 +28,16 @@ export class ComponentStatusTracker extends EventEmitter {
         const existing = this.componentHealth.get(component) || this.createEmptyHealth(component);
         // Update status
         switch (progress.status) {
-            case 'loading':
-                existing.status = 'loading';
+            case COMPONENT_STATUSES.LOADING:
+                existing.status = COMPONENT_STATUSES.LOADING;
                 break;
-            case 'ready':
-                existing.status = 'ready';
+            case COMPONENT_STATUSES.READY:
+                existing.status = COMPONENT_STATUSES.READY;
                 existing.metrics.initTime = progress.endTime - progress.startTime;
                 existing.metrics.successfulOperations++;
                 break;
-            case 'failed':
-                existing.status = 'failed';
+            case COMPONENT_STATUSES.FAILED:
+                existing.status = COMPONENT_STATUSES.FAILED;
                 existing.errorCount++;
                 existing.lastError = progress.error;
                 existing.metrics.failedOperations++;
@@ -54,7 +55,7 @@ export class ComponentStatusTracker extends EventEmitter {
      */
     markDegraded(component, reason) {
         const health = this.getOrCreateHealth(component);
-        health.status = 'degraded';
+        health.status = COMPONENT_STATUSES.DEGRADED;
         health.lastCheck = new Date();
         health.lastError = new Error(`Degraded: ${reason}`);
         this.componentHealth.set(component, health);
@@ -85,8 +86,8 @@ export class ComponentStatusTracker extends EventEmitter {
         health.lastError = error;
         health.metrics.lastOperationTime = new Date();
         // Consider component degraded after multiple failures
-        if (health.errorCount >= 3 && health.status === 'ready') {
-            health.status = 'degraded';
+        if (health.errorCount >= COMPONENT_STATUS_CONFIG.DEGRADATION_THRESHOLD && health.status === COMPONENT_STATUSES.READY) {
+            health.status = COMPONENT_STATUSES.DEGRADED;
             this.emit('componentDegraded', component, health);
         }
         this.componentHealth.set(component, health);
@@ -103,18 +104,18 @@ export class ComponentStatusTracker extends EventEmitter {
      */
     getSystemHealth() {
         const components = Array.from(this.componentHealth.values());
-        const readyComponents = components.filter(c => c.status === 'ready').length;
+        const readyComponents = components.filter(c => c.status === COMPONENT_STATUSES.READY).length;
         const totalComponents = components.length;
         const criticalReady = Array.from(this.criticalComponents).every(component => {
             const health = this.componentHealth.get(component);
-            return health && (health.status === 'ready' || health.status === 'degraded');
+            return health && (health.status === COMPONENT_STATUSES.READY || health.status === COMPONENT_STATUSES.DEGRADED);
         });
         const totalMemory = components.reduce((sum, c) => sum + c.metrics.memoryUsage, 0);
         let overallStatus;
         if (!criticalReady) {
             overallStatus = 'critical';
         }
-        else if (readyComponents < totalComponents * 0.8) {
+        else if (readyComponents < totalComponents * COMPONENT_STATUS_CONFIG.SYSTEM_HEALTH_THRESHOLD) {
             overallStatus = 'degraded';
         }
         else {
@@ -178,7 +179,7 @@ export class ComponentStatusTracker extends EventEmitter {
     areCriticalComponentsReady() {
         return Array.from(this.criticalComponents).every(component => {
             const health = this.componentHealth.get(component);
-            return health && health.status === 'ready';
+            return health && health.status === COMPONENT_STATUSES.READY;
         });
     }
     /**
@@ -209,7 +210,7 @@ export class ComponentStatusTracker extends EventEmitter {
         }
         return health.dependencies.every(dep => {
             const depHealth = this.componentHealth.get(dep);
-            return depHealth && (depHealth.status === 'ready' || depHealth.status === 'degraded');
+            return depHealth && (depHealth.status === COMPONENT_STATUSES.READY || depHealth.status === COMPONENT_STATUSES.DEGRADED);
         });
     }
     /**
@@ -247,11 +248,11 @@ export class ComponentStatusTracker extends EventEmitter {
         // Start health checks after a short delay
         setTimeout(() => {
             this.startHealthChecks();
-        }, 5000);
+        }, COMPONENT_STATUS_CONFIG.HEALTH_CHECK_DELAY);
     }
     performHealthCheck() {
         for (const [component, health] of this.componentHealth) {
-            if (health.status === 'ready' || health.status === 'degraded') {
+            if (health.status === COMPONENT_STATUSES.READY || health.status === COMPONENT_STATUSES.DEGRADED) {
                 // Update memory usage (simplified estimation)
                 health.metrics.memoryUsage = this.estimateComponentMemoryUsage(component);
                 health.lastCheck = new Date();
@@ -260,26 +261,13 @@ export class ComponentStatusTracker extends EventEmitter {
         this.emit('healthCheckCompleted', this.getSystemHealth());
     }
     estimateComponentMemoryUsage(component) {
-        // Simplified memory estimation based on component type
-        const baseMemory = {
-            aiClient: 20,
-            enhancedClient: 50,
-            projectContext: 30,
-            intentAnalyzer: 15,
-            taskPlanner: 25,
-            conversationManager: 10,
-            advancedContextManager: 40,
-            queryDecompositionEngine: 35,
-            codeKnowledgeGraph: 60,
-            multiStepQueryProcessor: 20,
-            naturalLanguageRouter: 15
-        };
-        return baseMemory[component] || 10; // MB
+        // Use configurable memory estimates
+        return DEFAULT_COMPONENT_MEMORY[component] || DEFAULT_FALLBACK_MEMORY;
     }
     createEmptyHealth(component) {
         return {
             component,
-            status: 'not-loaded',
+            status: COMPONENT_STATUSES.NOT_LOADED,
             lastCheck: new Date(),
             responseTime: 0,
             errorCount: 0,
