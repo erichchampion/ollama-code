@@ -51,6 +51,7 @@ export declare class ComponentFactory extends BaseComponentFactory {
     /**
      * Helper method to get or create a component with caching
      * Eliminates DRY violation of repeated "components.get() || await getComponent()" pattern
+     * FIXED: Prevents infinite recursion by checking creation stack before calling getComponent
      */
     private getOrCreateComponent;
     /**

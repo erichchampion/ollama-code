@@ -6,7 +6,7 @@
 
 # Class: CommonValidationRules
 
-Defined in: [utils/configuration-merger.ts:181](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/utils/configuration-merger.ts#L181)
+Defined in: [utils/configuration-merger.ts:181](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/utils/configuration-merger.ts#L181)
 
 Common validation rules for AI provider configurations
 
@@ -26,7 +26,7 @@ Common validation rules for AI provider configurations
 
 > `static` **positiveNumber**\<`T`\>(`getter`, `fieldName`): [`ConfigValidationRule`](../interfaces/ConfigValidationRule.md)\<`T`\>
 
-Defined in: [utils/configuration-merger.ts:182](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/utils/configuration-merger.ts#L182)
+Defined in: [utils/configuration-merger.ts:182](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/utils/configuration-merger.ts#L182)
 
 #### Type Parameters
 
@@ -54,7 +54,7 @@ Defined in: [utils/configuration-merger.ts:182](https://github.com/erichchampion
 
 > `static` **requiredString**\<`T`\>(`getter`, `fieldName`): [`ConfigValidationRule`](../interfaces/ConfigValidationRule.md)\<`T`\>
 
-Defined in: [utils/configuration-merger.ts:195](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/utils/configuration-merger.ts#L195)
+Defined in: [utils/configuration-merger.ts:195](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/utils/configuration-merger.ts#L195)
 
 #### Type Parameters
 
@@ -82,7 +82,7 @@ Defined in: [utils/configuration-merger.ts:195](https://github.com/erichchampion
 
 > `static` **portRange**\<`T`\>(`getter`, `fieldName`): [`ConfigValidationRule`](../interfaces/ConfigValidationRule.md)\<`T`\>
 
-Defined in: [utils/configuration-merger.ts:208](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/utils/configuration-merger.ts#L208)
+Defined in: [utils/configuration-merger.ts:208](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/utils/configuration-merger.ts#L208)
 
 #### Type Parameters
 
@@ -110,7 +110,7 @@ Defined in: [utils/configuration-merger.ts:208](https://github.com/erichchampion
 
 > `static` **percentageRange**\<`T`\>(`getter`, `fieldName`): [`ConfigValidationRule`](../interfaces/ConfigValidationRule.md)\<`T`\>
 
-Defined in: [utils/configuration-merger.ts:221](https://github.com/erichchampion/ollama-code/blob/5f12b416589e9f978f73e54f8bfc9efaaaa273d1/ollama-code/src/utils/configuration-merger.ts#L221)
+Defined in: [utils/configuration-merger.ts:221](https://github.com/erichchampion/ollama-code/blob/586a37c3b5ca4898110458ba6693f528259f1a2d/ollama-code/src/utils/configuration-merger.ts#L221)
 
 #### Type Parameters
 

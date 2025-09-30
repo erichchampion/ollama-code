@@ -105,11 +105,17 @@ export class ComponentFactory extends BaseComponentFactory {
     /**
      * Helper method to get or create a component with caching
      * Eliminates DRY violation of repeated "components.get() || await getComponent()" pattern
+     * FIXED: Prevents infinite recursion by checking creation stack before calling getComponent
      */
     async getOrCreateComponent(type) {
         const cached = this.components.get(type);
         if (cached) {
             return cached;
+        }
+        // Prevent infinite recursion if component is already being created
+        if (this.creationStack.has(type)) {
+            logger.warn(`Breaking circular dependency for ${type}, returning fallback`);
+            return this.createFallbackComponent(type);
         }
         return await this.getComponent(type);
     }
@@ -296,6 +302,24 @@ export class ComponentFactory extends BaseComponentFactory {
                 // Return simple intent analyzer
                 return {
                     analyzeIntent: () => ({ intent: 'general', confidence: 0.5, suggestions: [] })
+                };
+            case 'codeKnowledgeGraph':
+                // Return basic knowledge graph
+                return {
+                    getRelatedCode: () => ({ related: [], suggestions: [] }),
+                    analyzeCodeStructure: () => ({ structure: {}, insights: [] }),
+                    initialize: async () => { }
+                };
+            case 'queryDecompositionEngine':
+                // Return basic query engine
+                return {
+                    decomposeQuery: () => ({ steps: [], confidence: 0.5 }),
+                    initialize: async () => { }
+                };
+            case 'multiStepQueryProcessor':
+                // Return basic processor
+                return {
+                    processQuery: async () => ({ result: 'Query processed with basic functionality', steps: [] })
                 };
             case 'naturalLanguageRouter':
                 // Return simple router

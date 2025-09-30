@@ -1,5 +1,5 @@
-# Manual Test Plan - Ollama Code CLI v0.7.0
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration, TypeDoc API Documentation Generation & Security Enhancements*
+# Manual Test Plan - Ollama Code CLI v0.7.1
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration, TypeDoc API Documentation Generation, Security Enhancements & Safety-Enhanced Interactive Mode (Phase 2.4)*
 
 ## Overview
 
@@ -78,6 +78,11 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** Type-safe configuration merging with validation rules
 - **NEW:** Statistical metrics calculation with moving averages and correlation analysis
 - **NEW:** Centralized directory management with workspace setup and cleanup
+- **NEW:** Safety-Enhanced Interactive Mode (Phase 2.4) with file operation protection
+- **NEW:** Component Factory circular dependency resolution for stable initialization
+- **NEW:** Environment variable control for safety mode (`OLLAMA_SAFETY_MODE`)
+- **NEW:** Fallback component system preventing system crashes during initialization
+- **NEW:** Composition-based safety integration avoiding TypeScript inheritance issues
 
 ### ⚡ **Performance & Scalability**
 - Enterprise-scale distributed processing for large codebases
@@ -442,6 +447,8 @@ dd if=/dev/zero of=large-file.js bs=1024 count=200  # Large file >100KB
 
 ### Test Group: File Operation Safety & Approval (Phase 2.3)
 **Priority: Critical**
+
+> **Note:** For testing Safety-Enhanced Interactive Mode (Phase 2.4) integration with file operations, see the dedicated "Safety-Enhanced Interactive Mode (Phase 2.4)" test section.
 
 #### Test: Backup and Rollback System
 **Test Setup:**
@@ -3502,6 +3509,83 @@ git push origin feature/documentation-update
 - Fallback to conversation mode when routing is uncertain
 - Clear indication of which tools are being used
 - Seamless integration between different capabilities
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Safety-Enhanced Interactive Mode (Phase 2.4)
+**Priority: Critical**
+
+#### Test: Safety Mode Activation
+**Test Commands:**
+```bash
+# Test default safety mode (enabled by default)
+./dist/src/cli-selector.js --mode interactive
+
+# Test safety mode explicitly enabled
+OLLAMA_SAFETY_MODE=true ./dist/src/cli-selector.js --mode interactive
+
+# Test safety mode disabled
+OLLAMA_SAFETY_MODE=false ./dist/src/cli-selector.js --mode interactive
+```
+
+**Expected Results:**
+- ✅ **Default Safety Mode:** Interactive mode starts with safety features enabled by default
+- ✅ **Safety Notification:** Clear display of "🛡️ Safety-Enhanced Interactive Mode" message
+- ✅ **File Operation Protection:** Message indicates "File operations will be analyzed for safety"
+- ✅ **Environment Variable Control:** `OLLAMA_SAFETY_MODE=false` disables safety features
+- ✅ **Graceful Fallback:** When safety disabled, falls back to standard interactive mode
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Component Factory Stability
+**Test Scenario:** Verify component initialization doesn't crash with stack overflow errors
+
+**Test Commands:**
+```bash
+# Test multiple interactive mode startups to verify stability
+for i in {1..3}; do
+  echo "Testing startup $i..."
+  timeout 10 bash -c 'echo "exit" | ./dist/src/cli-selector.js --mode interactive'
+  echo "Startup $i completed"
+done
+```
+
+**Expected Results:**
+- ✅ **No Stack Overflow:** No "Maximum call stack size exceeded" errors
+- ✅ **Stable Initialization:** All components initialize without circular dependency issues
+- ✅ **Background Loading:** taskPlanner, advancedContextManager, codeKnowledgeGraph load successfully
+- ✅ **Fallback Components:** If component loading fails, fallback components prevent crashes
+- ✅ **Consistent Behavior:** Multiple startups produce consistent results
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Safety Configuration Integration
+**Test Commands:**
+1. Start safety-enhanced mode: `./dist/src/cli-selector.js --mode interactive`
+2. Test file operation request: `"Create a new JavaScript file with user validation"`
+3. Test configuration query: `"What safety settings are currently active?"`
+
+**Expected Results:**
+- ✅ **Safety Settings Applied:** `confirmHighRisk: true` and `autoApprove: false` from SAFETY_MODE_DEFAULTS
+- ✅ **Composition Pattern:** SafetyEnhancedMode properly wraps OptimizedEnhancedMode
+- ✅ **No Inheritance Issues:** No private member access errors from TypeScript
+- ✅ **Configuration Transparency:** Safety settings are properly communicated to user
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Component Factory Circular Dependency Prevention
+**Test Scenario:** Verify circular dependency detection and fallback system
+
+**Internal Test (for developers):**
+- Monitor component loading with debug logs enabled
+- Verify `getOrCreateComponent` doesn't cause infinite recursion
+- Confirm fallback components are used when circular dependencies detected
+
+**Expected Internal Behavior:**
+- ✅ **Circular Detection:** Creation stack prevents infinite recursion loops
+- ✅ **Fallback Creation:** When circular dependency detected, fallback components created
+- ✅ **Graceful Degradation:** System continues functioning with reduced features rather than crashing
+- ✅ **Clean Recovery:** After initial startup, full components can be loaded later
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
