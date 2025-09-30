@@ -7,15 +7,31 @@ export default {
     '**/tests/**/*.test.ts',
     '**/tests/**/*.spec.ts',
     '**/tests/**/*.test.cjs',
-    '**/tests/**/*.spec.cjs'
+    '**/tests/**/*.spec.cjs',
+    '**/__tests__/**/*.test.ts',
+    '**/__tests__/**/*.test.js'
   ],
   projects: [
     {
       displayName: 'unit',
-      testMatch: ['**/tests/*.test.js', '**/tests/unit/**/*.test.js', '**/tests/unit/**/*.test.cjs'],
+      testMatch: [
+        '**/tests/*.test.js',
+        '**/tests/unit/**/*.test.js',
+        '**/tests/unit/**/*.test.cjs',
+        '**/__tests__/**/*.test.ts',
+        '**/__tests__/**/*.test.js'
+      ],
       testEnvironment: 'node',
+      preset: 'ts-jest/presets/default-esm',
+      extensionsToTreatAsEsm: ['.ts'],
       transform: {
-        '^.+\\.js$': 'babel-jest'
+        '^.+\\.js$': 'babel-jest',
+        '^.+\\.ts$': ['ts-jest', {
+          useESM: true
+        }]
+      },
+      moduleNameMapper: {
+        '^(\\.{1,2}/.*)\\.js$': '$1'
       }
     },
     {

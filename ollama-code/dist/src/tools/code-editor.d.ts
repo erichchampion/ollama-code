@@ -27,6 +27,12 @@ export interface ValidationResult {
     errors: string[];
     warnings: string[];
 }
+export declare enum ValidationLevel {
+    SYNTAX = "syntax",
+    SEMANTIC = "semantic",
+    FULL = "full",
+    AI_ENHANCED = "ai-enhanced"
+}
 export declare class CodeEditor {
     private pendingEdits;
     private appliedEdits;
@@ -53,9 +59,9 @@ export declare class CodeEditor {
      */
     rollbackEdit(editId: string): Promise<EditResult>;
     /**
-     * Validate code content before applying
+     * Validate code content with specified validation level
      */
-    private validateContent;
+    validateContent(filePath: string, content: string, level?: ValidationLevel): Promise<ValidationResult>;
     /**
      * Validate JavaScript content
      */

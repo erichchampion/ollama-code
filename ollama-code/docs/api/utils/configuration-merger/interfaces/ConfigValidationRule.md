@@ -6,7 +6,7 @@
 
 # Interface: ConfigValidationRule\<T\>
 
-Defined in: [utils/configuration-merger.ts:8](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L8)
+Defined in: [utils/configuration-merger.ts:8](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L8)
 
 Configuration Merging Utility
 
@@ -25,7 +25,7 @@ to eliminate duplicate config handling logic across providers.
 
 > **validate**: (`config`) => `boolean`
 
-Defined in: [utils/configuration-merger.ts:9](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L9)
+Defined in: [utils/configuration-merger.ts:9](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L9)
 
 #### Parameters
 
@@ -43,4 +43,4 @@ Defined in: [utils/configuration-merger.ts:9](https://github.com/erichchampion/o
 
 > **message**: `string`
 
-Defined in: [utils/configuration-merger.ts:10](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L10)
+Defined in: [utils/configuration-merger.ts:10](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L10)

@@ -8,7 +8,7 @@
 
 > **loadConfig**(`options`): `Promise`\<`any`\>
 
-Defined in: [config/index.ts:211](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/config/index.ts#L211)
+Defined in: [config/index.ts:211](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/config/index.ts#L211)
 
 Load configuration
 

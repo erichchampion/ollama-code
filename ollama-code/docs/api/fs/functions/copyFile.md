@@ -8,7 +8,7 @@
 
 > **copyFile**(`sourcePath`, `destPath`, `options`): `Promise`\<`void`\>
 
-Defined in: [fs/operations.ts:278](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/fs/operations.ts#L278)
+Defined in: [fs/operations.ts:278](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/fs/operations.ts#L278)
 
 Copy a file
 

@@ -36,6 +36,13 @@ export interface ValidationResult {
   warnings: string[];
 }
 
+export enum ValidationLevel {
+  SYNTAX = 'syntax',
+  SEMANTIC = 'semantic',
+  FULL = 'full',
+  AI_ENHANCED = 'ai-enhanced'
+}
+
 export class CodeEditor {
   private pendingEdits = new Map<string, CodeEdit>();
   private appliedEdits = new Map<string, CodeEdit>();
@@ -279,9 +286,9 @@ export class CodeEditor {
   }
 
   /**
-   * Validate code content before applying
+   * Validate code content with specified validation level
    */
-  private async validateContent(filePath: string, content: string): Promise<ValidationResult> {
+  async validateContent(filePath: string, content: string, level: ValidationLevel = ValidationLevel.SYNTAX): Promise<ValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
 

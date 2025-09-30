@@ -6,7 +6,7 @@
 
 # Interface: MergeOptions
 
-Defined in: [utils/configuration-merger.ts:13](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L13)
+Defined in: [utils/configuration-merger.ts:13](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L13)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [utils/configuration-merger.ts:13](https://github.com/erichchampion/
 
 > `optional` **deepMerge**: `boolean`
 
-Defined in: [utils/configuration-merger.ts:14](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L14)
+Defined in: [utils/configuration-merger.ts:14](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L14)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [utils/configuration-merger.ts:14](https://github.com/erichchampion/
 
 > `optional` **allowUndefined**: `boolean`
 
-Defined in: [utils/configuration-merger.ts:15](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L15)
+Defined in: [utils/configuration-merger.ts:15](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L15)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [utils/configuration-merger.ts:15](https://github.com/erichchampion/
 
 > `optional` **validateAfterMerge**: `boolean`
 
-Defined in: [utils/configuration-merger.ts:16](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/configuration-merger.ts#L16)
+Defined in: [utils/configuration-merger.ts:16](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/utils/configuration-merger.ts#L16)

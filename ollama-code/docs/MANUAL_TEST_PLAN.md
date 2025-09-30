@@ -1206,6 +1206,222 @@ EOF
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
+### Test Group: Enhanced Code Editor & File Operations
+**Priority: Critical**
+
+#### Test: Basic File Creation and Modification
+**Test Setup:**
+```bash
+# Create test directory for file operations
+mkdir enhanced-editor-test && cd enhanced-editor-test
+```
+
+**Commands:**
+1. `"Create a new TypeScript file called 'UserService.ts' with a basic class structure"`
+2. `"Modify the UserService class to add a method called 'createUser'"`
+3. `"Add proper TypeScript interfaces for the UserService"`
+
+**Expected Results:**
+- ✅ **File Creation** - New files created with proper extension and content
+- ✅ **Content Validation** - Generated code follows TypeScript syntax and conventions
+- ✅ **Modification Accuracy** - Changes applied precisely without breaking existing code
+- ✅ **Interface Generation** - Type definitions created with proper TypeScript syntax
+- ✅ **Code Quality** - Generated code includes proper documentation and typing
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Multi-File Atomic Operations
+**Test Setup:**
+```bash
+# Setup project structure for multi-file operations
+mkdir multi-file-test && cd multi-file-test
+cat > package.json << 'EOF'
+{
+  "name": "test-project",
+  "version": "1.0.0",
+  "type": "module"
+}
+EOF
+```
+
+**Commands:**
+1. `"Create a complete TypeScript module with types, service, and index files"`
+2. `"Refactor the User interface across all related files simultaneously"`
+3. `"Generate a React component library with Button, Input, and Modal components"`
+
+**Expected Results:**
+- ✅ **Atomic Operations** - All files created/modified together or none at all
+- ✅ **Cross-File Consistency** - References between files remain valid after changes
+- ✅ **Dependency Management** - Import/export statements correctly updated
+- ✅ **Rollback Capability** - Failed operations cleanly restore original state
+- ✅ **Progress Tracking** - Clear feedback on multi-file operation progress
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Template-Based Code Generation
+**Commands:**
+1. `"Generate a REST API endpoint for user management using Express.js"`
+2. `"Create a React component with TypeScript props and proper styling"`
+3. `"Generate unit tests for the UserService class"`
+4. `"Create a database model with Prisma schema"`
+
+**Expected Results:**
+- ✅ **Template Recognition** - Appropriate templates selected based on context
+- ✅ **Framework Integration** - Generated code follows framework conventions
+- ✅ **Test Generation** - Comprehensive test cases with proper mocking
+- ✅ **Database Schema** - Valid schema definitions with relationships
+- ✅ **Code Completeness** - Generated code includes imports, exports, and documentation
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: AST-Aware Code Editing
+**Test Setup:**
+```bash
+# Create TypeScript files for AST manipulation testing
+cat > complex-class.ts << 'EOF'
+export class UserManager {
+  private users: User[] = [];
+
+  async addUser(userData: Partial<User>): Promise<User> {
+    const user = { id: generateId(), ...userData };
+    this.users.push(user);
+    return user;
+  }
+
+  findUser(id: string): User | undefined {
+    return this.users.find(user => user.id === id);
+  }
+}
+EOF
+```
+
+**Commands:**
+1. `"Add a new method 'updateUser' to the UserManager class"`
+2. `"Refactor the addUser method to include validation"`
+3. `"Extract the user finding logic into a separate utility function"`
+4. `"Add proper JSDoc documentation to all methods"`
+
+**Expected Results:**
+- ✅ **AST Preservation** - Code structure and formatting maintained
+- ✅ **Method Insertion** - New methods added in logical locations
+- ✅ **Refactoring Accuracy** - Code changes preserve functionality
+- ✅ **Documentation Generation** - JSDoc comments follow TypeScript conventions
+- ✅ **Import Management** - Required imports automatically added
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Validation and Safety Features
+**Test Setup:**
+```bash
+# Create files with potential issues
+cat > unsafe-code.js << 'EOF'
+function processData(data) {
+  return eval(data.expression);  // Security issue
+}
+
+class BuggyClass {
+  method1() {
+    return undefined.property;  // Runtime error
+  }
+}
+EOF
+```
+
+**Commands:**
+1. `"Analyze and fix security issues in unsafe-code.js"`
+2. `"Validate code quality and suggest improvements"`
+3. `"Preview changes before applying modifications"`
+4. `"Check for TypeScript compilation errors"`
+
+**Expected Results:**
+- ✅ **Security Detection** - Dangerous patterns identified and flagged
+- ✅ **Quality Assessment** - Code quality scores and improvement suggestions
+- ✅ **Preview Mode** - Changes shown before application with diff view
+- ✅ **Compilation Validation** - TypeScript errors detected and prevented
+- ✅ **Safe Operations** - Backup creation before destructive changes
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Large Project Performance
+**Test Setup:**
+```bash
+# Create a large project structure for performance testing
+mkdir large-project && cd large-project
+for i in {1..50}; do
+  mkdir -p "src/module$i"
+  cat > "src/module$i/index.ts" << EOF
+export interface Module${i}Interface {
+  id: number;
+  name: string;
+  process(): Promise<string>;
+}
+
+export class Module${i}Service implements Module${i}Interface {
+  id = $i;
+  name = "Module $i";
+
+  async process(): Promise<string> {
+    return \`Processing module \${this.id}\`;
+  }
+}
+EOF
+done
+```
+
+**Commands:**
+1. `"Refactor all Module interfaces to extend a base interface"`
+2. `"Add error handling to all service classes"`
+3. `"Generate barrel exports for all modules"`
+
+**Expected Results:**
+- ✅ **Performance** - Operations complete within reasonable time (<30 seconds)
+- ✅ **Memory Management** - No memory leaks during large operations
+- ✅ **Progress Feedback** - Clear progress indication for long-running operations
+- ✅ **Incremental Processing** - Large operations broken into manageable chunks
+- ✅ **Operation Continuation** - Ability to resume interrupted operations
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Error Handling and Recovery
+**Test Setup:**
+```bash
+# Create scenarios that should trigger various error conditions
+mkdir error-test && cd error-test
+chmod 000 readonly-dir  # Read-only directory
+echo "invalid syntax here" > broken.js
+```
+
+**Commands:**
+1. `"Create a file in the readonly-dir directory"` (permission error)
+2. `"Modify the broken.js file to fix syntax errors"` (parsing error)
+3. `"Generate code for a non-existent framework"` (template error)
+4. `"Apply changes to a file that's been modified externally"` (conflict error)
+
+**Expected Results:**
+- ✅ **Permission Errors** - Clear error messages for file system issues
+- ✅ **Syntax Errors** - Graceful handling of unparseable code
+- ✅ **Template Errors** - Appropriate fallbacks for missing templates
+- ✅ **Conflict Resolution** - Detection and handling of external file changes
+- ✅ **Partial Success** - Some operations succeed even when others fail
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Interactive File Operation Workflow
+**Commands:**
+1. `"I want to create a complete REST API for user management"`
+2. `"Add authentication middleware to protect the API endpoints"`
+3. `"Generate comprehensive tests for the entire API"`
+4. `"Set up database migrations for the user model"`
+
+**Expected Results:**
+- ✅ **Intent Recognition** - Natural language requests properly understood
+- ✅ **Task Planning** - Complex requests broken down into actionable steps
+- ✅ **User Approval** - Confirmation requested for significant changes
+- ✅ **Step-by-Step Execution** - Operations performed in logical sequence
+- ✅ **Progress Communication** - Clear updates on operation status
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
 ---
 
 ## 📊 Knowledge Graph & Semantic Analysis

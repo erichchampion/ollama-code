@@ -6,7 +6,7 @@
 
 # Enumeration: ErrorLevel
 
-Defined in: [errors/types.ts:10](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L10)
+Defined in: [errors/types.ts:10](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L10)
 
 Error severity levels
 
@@ -16,7 +16,7 @@ Error severity levels
 
 > **DEBUG**: `0`
 
-Defined in: [errors/types.ts:14](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L14)
+Defined in: [errors/types.ts:14](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L14)
 
 Debug level for detailed information
 
@@ -26,7 +26,7 @@ Debug level for detailed information
 
 > **INFO**: `1`
 
-Defined in: [errors/types.ts:19](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L19)
+Defined in: [errors/types.ts:19](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L19)
 
 Informational messages
 
@@ -36,7 +36,7 @@ Informational messages
 
 > **WARNING**: `2`
 
-Defined in: [errors/types.ts:24](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L24)
+Defined in: [errors/types.ts:24](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L24)
 
 Warning messages
 
@@ -46,7 +46,7 @@ Warning messages
 
 > **ERROR**: `3`
 
-Defined in: [errors/types.ts:29](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L29)
+Defined in: [errors/types.ts:29](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L29)
 
 Error messages
 
@@ -56,7 +56,7 @@ Error messages
 
 > **CRITICAL**: `4`
 
-Defined in: [errors/types.ts:34](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L34)
+Defined in: [errors/types.ts:34](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L34)
 
 Critical errors that prevent the application from functioning
 
@@ -66,6 +66,6 @@ Critical errors that prevent the application from functioning
 
 > **FATAL**: `5`
 
-Defined in: [errors/types.ts:39](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/errors/types.ts#L39)
+Defined in: [errors/types.ts:39](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/errors/types.ts#L39)
 
 Fatal errors that cause application termination

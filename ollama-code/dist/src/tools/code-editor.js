@@ -8,6 +8,13 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
+export var ValidationLevel;
+(function (ValidationLevel) {
+    ValidationLevel["SYNTAX"] = "syntax";
+    ValidationLevel["SEMANTIC"] = "semantic";
+    ValidationLevel["FULL"] = "full";
+    ValidationLevel["AI_ENHANCED"] = "ai-enhanced";
+})(ValidationLevel || (ValidationLevel = {}));
 export class CodeEditor {
     pendingEdits = new Map();
     appliedEdits = new Map();
@@ -219,9 +226,9 @@ export class CodeEditor {
         }
     }
     /**
-     * Validate code content before applying
+     * Validate code content with specified validation level
      */
-    async validateContent(filePath, content) {
+    async validateContent(filePath, content, level = ValidationLevel.SYNTAX) {
         const errors = [];
         const warnings = [];
         try {
