@@ -38,6 +38,9 @@ export const TIMEOUT_CONFIG = {
   DEPENDENCY_CHECK_INTERVAL: 100,   // 100ms between dependency checks
   DEPENDENCY_WAIT_DEFAULT: 10000,   // 10 seconds default dependency wait
 
+  // UI Delays
+  INITIALIZATION_DELAY: 100,        // 100ms for initialization delays
+
   // Health Checks
   HEALTH_CHECK_INTERVAL: 30000,     // 30 seconds between health checks
   HEALTH_CHECK_TIMEOUT: 5000,       // 5 seconds per health check

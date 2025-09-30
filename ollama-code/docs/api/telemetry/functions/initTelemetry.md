@@ -8,7 +8,7 @@
 
 > **initTelemetry**(`config`): `Promise`\<`any`\>
 
-Defined in: [telemetry/index.ts:477](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/telemetry/index.ts#L477)
+Defined in: [telemetry/index.ts:477](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/telemetry/index.ts#L477)
 
 Initialize the telemetry system
 

@@ -6,7 +6,7 @@
 
 # Interface: StatisticalSummary
 
-Defined in: [utils/metrics-calculator.ts:19](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L19)
+Defined in: [utils/metrics-calculator.ts:19](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L19)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [utils/metrics-calculator.ts:19](https://github.com/erichchampion/ol
 
 > **mean**: `number`
 
-Defined in: [utils/metrics-calculator.ts:20](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L20)
+Defined in: [utils/metrics-calculator.ts:20](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L20)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [utils/metrics-calculator.ts:20](https://github.com/erichchampion/ol
 
 > **median**: `number`
 
-Defined in: [utils/metrics-calculator.ts:21](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L21)
+Defined in: [utils/metrics-calculator.ts:21](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L21)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [utils/metrics-calculator.ts:21](https://github.com/erichchampion/ol
 
 > **standardDeviation**: `number`
 
-Defined in: [utils/metrics-calculator.ts:22](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L22)
+Defined in: [utils/metrics-calculator.ts:22](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L22)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [utils/metrics-calculator.ts:22](https://github.com/erichchampion/ol
 
 > **min**: `number`
 
-Defined in: [utils/metrics-calculator.ts:23](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L23)
+Defined in: [utils/metrics-calculator.ts:23](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L23)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [utils/metrics-calculator.ts:23](https://github.com/erichchampion/ol
 
 > **max**: `number`
 
-Defined in: [utils/metrics-calculator.ts:24](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L24)
+Defined in: [utils/metrics-calculator.ts:24](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L24)
 
 ***
 
@@ -54,4 +54,4 @@ Defined in: [utils/metrics-calculator.ts:24](https://github.com/erichchampion/ol
 
 > **count**: `number`
 
-Defined in: [utils/metrics-calculator.ts:25](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/utils/metrics-calculator.ts#L25)
+Defined in: [utils/metrics-calculator.ts:25](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/utils/metrics-calculator.ts#L25)

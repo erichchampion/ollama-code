@@ -103,6 +103,17 @@ export class ComponentFactory extends BaseComponentFactory {
         this.creationStack.clear();
     }
     /**
+     * Helper method to get or create a component with caching
+     * Eliminates DRY violation of repeated "components.get() || await getComponent()" pattern
+     */
+    async getOrCreateComponent(type) {
+        const cached = this.components.get(type);
+        if (cached) {
+            return cached;
+        }
+        return await this.getComponent(type);
+    }
+    /**
      * Create a component instance
      */
     async createComponent(type, config) {
@@ -176,13 +187,13 @@ export class ComponentFactory extends BaseComponentFactory {
             case 'taskPlanner': {
                 const enhancedClient = this.components.get('enhancedClient') || getEnhancedClient();
                 // Reuse cached projectContext to avoid circular dependencies
-                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
+                const projectContext = await this.getOrCreateComponent('projectContext');
                 return new TaskPlanner(enhancedClient, projectContext);
             }
             case 'advancedContextManager': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
                 // Reuse cached projectContext to avoid circular dependencies
-                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
+                const projectContext = await this.getOrCreateComponent('projectContext');
                 logger.debug(`ComponentFactory: Creating Advanced Context Manager with ${projectContext.allFiles.length} files`);
                 const manager = new AdvancedContextManager(aiClient, projectContext);
                 await manager.initialize();
@@ -191,7 +202,7 @@ export class ComponentFactory extends BaseComponentFactory {
             case 'queryDecompositionEngine': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
                 // Reuse cached projectContext to avoid circular dependencies
-                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
+                const projectContext = await this.getOrCreateComponent('projectContext');
                 const engine = new QueryDecompositionEngine(aiClient, projectContext);
                 await engine.initialize();
                 return engine;
@@ -199,7 +210,7 @@ export class ComponentFactory extends BaseComponentFactory {
             case 'codeKnowledgeGraph': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
                 // Reuse cached projectContext to avoid circular dependencies
-                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
+                const projectContext = await this.getOrCreateComponent('projectContext');
                 const graph = new CodeKnowledgeGraph(aiClient, projectContext);
                 await graph.initialize();
                 return graph;
@@ -207,15 +218,15 @@ export class ComponentFactory extends BaseComponentFactory {
             case 'multiStepQueryProcessor': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
                 // Reuse cached projectContext to avoid circular dependencies
-                const projectContext = this.components.get('projectContext') || await this.getComponent('projectContext');
+                const projectContext = await this.getOrCreateComponent('projectContext');
                 return new MultiStepQueryProcessor(aiClient, projectContext);
             }
             case 'naturalLanguageRouter': {
                 const aiClient = this.components.get('aiClient') || getAIClient();
                 // Reuse cached components to avoid circular dependencies
-                const intentAnalyzer = this.components.get('intentAnalyzer') || await this.getComponent('intentAnalyzer');
+                const intentAnalyzer = await this.getOrCreateComponent('intentAnalyzer');
                 const enhancedClient = this.components.get('enhancedClient') || getEnhancedClient();
-                const taskPlanner = this.components.get('taskPlanner') || await this.getComponent('taskPlanner');
+                const taskPlanner = await this.getOrCreateComponent('taskPlanner');
                 return new NaturalLanguageRouter(intentAnalyzer, taskPlanner);
             }
             default:

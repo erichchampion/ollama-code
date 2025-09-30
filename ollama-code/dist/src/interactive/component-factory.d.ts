@@ -49,6 +49,11 @@ export declare class ComponentFactory extends BaseComponentFactory {
      */
     clear(): void;
     /**
+     * Helper method to get or create a component with caching
+     * Eliminates DRY violation of repeated "components.get() || await getComponent()" pattern
+     */
+    private getOrCreateComponent;
+    /**
      * Create a component instance
      */
     private createComponent;

@@ -188,7 +188,7 @@ export class OptimizedEnhancedMode {
                 // Process the input with smart component loading
                 await this.processUserInputOptimized(userInput);
                 // Add a small delay to allow terminal to stabilize after streaming output
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, TIMEOUT_CONFIG.INITIALIZATION_DELAY));
             }
             catch (error) {
                 await this.handleError(error);
@@ -208,7 +208,7 @@ export class OptimizedEnhancedMode {
             try {
                 logger.debug('Attempting to load naturalLanguageRouter now that circular dependencies are resolved');
                 this.nlRouter = await this.componentFactory.getComponent('naturalLanguageRouter', {
-                    timeout: 15000,
+                    timeout: TIMEOUT_CONFIG.NATURAL_LANGUAGE_ROUTER,
                     fallback: () => null
                 });
                 if (this.nlRouter) {
@@ -247,7 +247,7 @@ export class OptimizedEnhancedMode {
         // Wait for required components (with timeout)
         if (loadingPromises.length > 0) {
             const timeout = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Component loading timeout')), 30000);
+                setTimeout(() => reject(new Error('Component loading timeout')), TIMEOUT_CONFIG.COMPONENT_LOADING);
             });
             try {
                 await Promise.race([
@@ -369,7 +369,7 @@ export class OptimizedEnhancedMode {
             // Add actual project context data
             try {
                 const projectContext = await this.componentFactory.getComponent('projectContext', {
-                    timeout: 5000
+                    timeout: getComponentTimeout('projectContext')
                 });
                 if (projectContext && projectContext.allFiles && projectContext.allFiles.length > 0) {
                     // Prioritize source code files for the routing context
@@ -385,7 +385,7 @@ export class OptimizedEnhancedMode {
                     if (this.isComponentReady('advancedContextManager')) {
                         try {
                             const advancedContextManager = await this.componentFactory.getComponent('advancedContextManager', {
-                                timeout: 5000
+                                timeout: getComponentTimeout('advancedContextManager')
                             });
                             // Get enhanced context for the user input
                             const enhancedContext = await advancedContextManager.getEnhancedContext(userInput, {
@@ -450,7 +450,7 @@ export class OptimizedEnhancedMode {
             let contextualInput = userInput;
             try {
                 const projectContext = await this.componentFactory.getComponent('projectContext', {
-                    timeout: 5000
+                    timeout: getComponentTimeout('projectContext')
                 });
                 if (projectContext && projectContext.allFiles && projectContext.allFiles.length > 0) {
                     // Prioritize source code files over config files
@@ -582,9 +582,10 @@ export class OptimizedEnhancedMode {
         else if (result.type === 'command') {
             // Handle command execution from fast-path router
             try {
-                logger.debug(`Executing command: ${result.action} with args:`, result.data.args);
+                const args = result.data?.args || [];
+                logger.debug(`Executing command: ${result.action} with args:`, args);
                 const { executeCommand } = await import('../commands/index.js');
-                await executeCommand(result.action, result.data.args);
+                await executeCommand(result.action, args);
                 return;
             }
             catch (error) {
@@ -597,7 +598,7 @@ export class OptimizedEnhancedMode {
             try {
                 logger.debug('Processing conversation response');
                 // Use the contextual prompt from the routing data
-                const prompt = result.data.contextualPrompt || userInput;
+                const prompt = result.data?.contextualPrompt || userInput;
                 // Process with AI using enhanced context if available
                 const aiResponse = await this.handleSimpleAIRequest(prompt);
                 // The response is already streamed in handleSimpleAIRequest, so we're done
@@ -605,6 +606,80 @@ export class OptimizedEnhancedMode {
             }
             catch (error) {
                 this.terminal.error(`Conversation processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                return;
+            }
+        }
+        else if (result.type === 'task_plan') {
+            // Handle task planning requests (like creating applications, complex tasks)
+            try {
+                logger.debug('Processing task plan request');
+                // Check if task planner is available
+                if (this.isComponentReady('taskPlanner')) {
+                    const taskPlanner = await this.componentFactory.getComponent('taskPlanner', {
+                        timeout: getComponentTimeout('taskPlanner')
+                    });
+                    // Execute the task plan with the provided context
+                    await taskPlanner.executePlan(result.data);
+                    return;
+                }
+                else {
+                    // Fallback to conversation mode if task planner isn't available
+                    this.terminal.info('Task planner not available, processing as AI conversation...');
+                    const aiResponse = await this.handleSimpleAIRequest(userInput);
+                    return;
+                }
+            }
+            catch (error) {
+                this.terminal.error(`Task planning failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                // Fallback to simple AI assistance
+                try {
+                    this.terminal.info('Falling back to AI assistance...');
+                    await this.handleSimpleAIRequest(userInput);
+                }
+                catch (fallbackError) {
+                    this.terminal.error(`Fallback also failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+                }
+                return;
+            }
+        }
+        else if (result.type === 'clarification') {
+            // Handle clarification requests
+            try {
+                logger.debug('Processing clarification request');
+                if (result.data?.questions && result.data.questions.length > 0) {
+                    this.terminal.info('I need more information to help you:');
+                    result.data.questions.forEach((question, index) => {
+                        this.terminal.info(`${index + 1}. ${question}`);
+                    });
+                    if (result.data?.options && result.data.options.length > 0) {
+                        this.terminal.info('\nOptions:');
+                        result.data.options.forEach((option, index) => {
+                            this.terminal.info(`  ${String.fromCharCode(97 + index)}. ${option.label}: ${option.description}`);
+                        });
+                    }
+                    this.terminal.info('\nPlease provide more details in your next message.');
+                }
+                else {
+                    this.terminal.info('Could you please provide more details about what you want to do?');
+                }
+                return;
+            }
+            catch (error) {
+                this.terminal.error(`Clarification processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                return;
+            }
+        }
+        else if (result.type === 'tool') {
+            // Handle tool execution requests
+            try {
+                logger.debug('Processing tool request');
+                this.terminal.info('Tool execution is not yet implemented in interactive mode.');
+                this.terminal.info('Falling back to AI assistance...');
+                await this.handleSimpleAIRequest(userInput);
+                return;
+            }
+            catch (error) {
+                this.terminal.error(`Tool processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 return;
             }
         }
@@ -639,7 +714,7 @@ export class OptimizedEnhancedMode {
             try {
                 // Execute the plan with timeout protection
                 const executionTimeout = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Plan execution timeout')), 60000);
+                    setTimeout(() => reject(new Error('Plan execution timeout')), TIMEOUT_CONFIG.PLAN_EXECUTION);
                 });
                 const executionResult = await Promise.race([
                     this.executePendingPlan(),
@@ -668,7 +743,7 @@ export class OptimizedEnhancedMode {
         // Try to get task planner, fall back to simple execution
         try {
             const taskPlanner = await this.componentFactory.getComponent('taskPlanner', {
-                timeout: 5000,
+                timeout: getComponentTimeout('taskPlanner'),
                 fallback: () => this.createFallbackComponent('taskPlanner')
             });
             await taskPlanner.executePlan(this.pendingTaskPlan);

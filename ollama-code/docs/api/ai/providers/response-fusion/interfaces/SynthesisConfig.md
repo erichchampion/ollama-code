@@ -6,7 +6,7 @@
 
 # Interface: SynthesisConfig
 
-Defined in: [ai/providers/response-fusion.ts:88](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L88)
+Defined in: [ai/providers/response-fusion.ts:88](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L88)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/response-fusion.ts:88](https://github.com/erichchampio
 
 > **preserveMultiplePerspectives**: `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:89](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L89)
+Defined in: [ai/providers/response-fusion.ts:89](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L89)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/response-fusion.ts:89](https://github.com/erichchampio
 
 > **prioritizeAccuracy**: `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:90](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L90)
+Defined in: [ai/providers/response-fusion.ts:90](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L90)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/response-fusion.ts:90](https://github.com/erichchampio
 
 > **includeUncertainty**: `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:91](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L91)
+Defined in: [ai/providers/response-fusion.ts:91](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L91)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/response-fusion.ts:91](https://github.com/erichchampio
 
 > **maxResponseLength**: `number`
 
-Defined in: [ai/providers/response-fusion.ts:92](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L92)
+Defined in: [ai/providers/response-fusion.ts:92](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L92)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/response-fusion.ts:92](https://github.com/erichchampio
 
 > **includeSourceAttribution**: `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:93](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L93)
+Defined in: [ai/providers/response-fusion.ts:93](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L93)
 
 ***
 
@@ -54,4 +54,4 @@ Defined in: [ai/providers/response-fusion.ts:93](https://github.com/erichchampio
 
 > **conflictResolutionStrategy**: `"majority_vote"` \| `"expert_preference"` \| `"highest_confidence"` \| `"human_review"`
 
-Defined in: [ai/providers/response-fusion.ts:94](https://github.com/erichchampion/ollama-code/blob/00ee2a1c7aae90b38558806cf40c91c52edd65c9/ollama-code/src/ai/providers/response-fusion.ts#L94)
+Defined in: [ai/providers/response-fusion.ts:94](https://github.com/erichchampion/ollama-code/blob/9a797208bc9e993c86c1b8d84dd48ab6c5c7989f/ollama-code/src/ai/providers/response-fusion.ts#L94)
