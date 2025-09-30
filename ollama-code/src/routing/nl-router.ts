@@ -16,15 +16,19 @@ import { EnhancedFastPathRouter, FastPathResult } from './enhanced-fast-path-rou
 import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
 import { globalContainer } from '../core/container.js';
 import { AICacheManager } from '../optimization/ai-cache.js';
+import { FileOperationClassifier } from './file-operation-classifier.js';
+import { FileOperationIntent, FileOperationContext } from './file-operation-types.js';
+import { FILE_OPERATION_CONSTANTS } from '../constants/file-operations.js';
 
 export interface RoutingResult {
-  type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool';
+  type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool' | 'file_operation';
   action: string;
   data: any;
   requiresConfirmation: boolean;
   estimatedTime: number;
   riskLevel: 'low' | 'medium' | 'high';
   enhancedContext?: any; // Enhanced context from AdvancedContextManager
+  fileOperation?: FileOperationIntent; // Phase 2.2: File operation classification
 }
 
 export interface RoutingContext {
@@ -70,6 +74,7 @@ export class NaturalLanguageRouter {
   private config: NLRouterConfig;
   private enhancedFastPathRouter: EnhancedFastPathRouter;
   private cacheManager: AICacheManager | false | null = null;
+  private fileOperationClassifier?: FileOperationClassifier; // Phase 2.2: File operation classification
 
   constructor(
     intentAnalyzer: IntentAnalyzer | EnhancedIntentAnalyzer,
@@ -81,14 +86,14 @@ export class NaturalLanguageRouter {
     this.config = config;
 
     // Set configurable thresholds with defaults
-    this.commandConfidenceThreshold = config.commandConfidenceThreshold ?? 0.8;
-    this.taskConfidenceThreshold = config.taskConfidenceThreshold ?? 0.6;
+    this.commandConfidenceThreshold = config.commandConfidenceThreshold ?? FILE_OPERATION_CONSTANTS.COMMAND_CONFIDENCE_THRESHOLD;
+    this.taskConfidenceThreshold = config.taskConfidenceThreshold ?? FILE_OPERATION_CONSTANTS.TASK_CONFIDENCE_THRESHOLD;
     this.healthCheckInterval = config.healthCheckInterval ?? 2000;
 
     // Initialize enhanced fast-path router
     this.enhancedFastPathRouter = new EnhancedFastPathRouter({
       ...FAST_PATH_CONFIG_DEFAULTS,
-      fuzzyThreshold: 0.8
+      fuzzyThreshold: FILE_OPERATION_CONSTANTS.FUZZY_THRESHOLD
     });
 
     // Initialize cache manager lazily
@@ -388,6 +393,23 @@ export class NaturalLanguageRouter {
       };
     }
 
+    // Phase 2.2: Check for file operations first
+    const fileOperation = await this.classifyFileOperation(intent, context);
+    if (fileOperation) {
+      return {
+        type: 'file_operation',
+        action: `file_${fileOperation.operation}`,
+        data: {
+          intent,
+          fileOperation
+        },
+        requiresConfirmation: fileOperation.requiresApproval,
+        estimatedTime: this.estimateFileOperationTime(fileOperation),
+        riskLevel: this.mapSafetyToRisk(fileOperation.safetyLevel),
+        fileOperation
+      };
+    }
+
     // Check for direct command mapping
     const commandMapping = await this.checkCommandMapping(intent);
     if (commandMapping.isCommand) {
@@ -461,7 +483,10 @@ export class NaturalLanguageRouter {
       'execute': 'run',
       'test': 'run',
       'build': 'run',
-      'status': 'git-status'
+      'status': 'git-status',
+      // Phase 2.1: File operation commands (when context is clear)
+      'generate': 'generate-code',
+      'create': 'create-file'
     };
 
     // Skip direct mapping for 'explain' - it needs context checking for files
@@ -794,5 +819,73 @@ If no command matches, respond with:
   private getLastIntent(conversationManager: ConversationManager): UserIntent | undefined {
     const recentHistory = conversationManager.getRecentHistory(1);
     return recentHistory.length > 0 ? recentHistory[0].intent : undefined;
+  }
+
+  /**
+   * Phase 2.2: Classify file operation intent
+   */
+  private async classifyFileOperation(intent: UserIntent, context: RoutingContext): Promise<FileOperationIntent | null> {
+    try {
+      // Initialize file operation classifier lazily
+      if (!this.fileOperationClassifier) {
+        this.fileOperationClassifier = new FileOperationClassifier(context.workingDirectory);
+        await this.fileOperationClassifier.initialize();
+      }
+
+      // Build file operation context
+      const fileContext: FileOperationContext = {
+        workingDirectory: context.workingDirectory,
+        projectFiles: context.projectContext?.allFiles.map(f => f.path) || [],
+        recentFiles: await this.getRecentFiles(context.workingDirectory),
+        gitStatus: undefined, // TODO: Add git status if available
+        dependencies: undefined // TODO: Add dependency graph if available
+      };
+
+      // Classify the file operation
+      return await this.fileOperationClassifier.classifyFileOperation(intent, fileContext);
+
+    } catch (error) {
+      logger.error('Failed to classify file operation:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Phase 2.2: Estimate file operation time
+   */
+  private estimateFileOperationTime(fileOperation: FileOperationIntent): number {
+    const baseTime = {
+      'create': 5,
+      'edit': 10,
+      'delete': 2,
+      'move': 5,
+      'copy': 5,
+      'refactor': 20,
+      'generate': 15,
+      'test': 10
+    };
+
+    const operationTime = baseTime[fileOperation.operation] || 10;
+    const fileCountMultiplier = Math.min(fileOperation.targets.length * 0.5, 3);
+    const complexityMultiplier = fileOperation.safetyLevel === 'dangerous' ? 2 : 1;
+
+    return Math.ceil(operationTime * (1 + fileCountMultiplier) * complexityMultiplier);
+  }
+
+  /**
+   * Phase 2.2: Map safety level to risk level
+   */
+  private mapSafetyToRisk(safetyLevel: FileOperationIntent['safetyLevel']): RoutingResult['riskLevel'] {
+    switch (safetyLevel) {
+      case 'safe':
+      case 'cautious':
+        return 'low';
+      case 'risky':
+        return 'medium';
+      case 'dangerous':
+        return 'high';
+      default:
+        return 'medium';
+    }
   }
 }

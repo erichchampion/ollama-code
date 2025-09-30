@@ -9,14 +9,16 @@ import { EnhancedIntentAnalyzer } from '../ai/enhanced-intent-analyzer.js';
 import { ConversationManager } from '../ai/conversation-manager.js';
 import { TaskPlanner } from '../ai/task-planner.js';
 import { ProjectContext } from '../ai/context.js';
+import { FileOperationIntent } from './file-operation-types.js';
 export interface RoutingResult {
-    type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool';
+    type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool' | 'file_operation';
     action: string;
     data: any;
     requiresConfirmation: boolean;
     estimatedTime: number;
     riskLevel: 'low' | 'medium' | 'high';
     enhancedContext?: any;
+    fileOperation?: FileOperationIntent;
 }
 export interface RoutingContext {
     projectContext?: ProjectContext;
@@ -58,6 +60,7 @@ export declare class NaturalLanguageRouter {
     private config;
     private enhancedFastPathRouter;
     private cacheManager;
+    private fileOperationClassifier?;
     constructor(intentAnalyzer: IntentAnalyzer | EnhancedIntentAnalyzer, taskPlanner?: TaskPlanner, config?: NLRouterConfig);
     private ensureCacheManager;
     /**
@@ -130,4 +133,16 @@ export declare class NaturalLanguageRouter {
     private getConversationHistory;
     private getRecentFiles;
     private getLastIntent;
+    /**
+     * Phase 2.2: Classify file operation intent
+     */
+    private classifyFileOperation;
+    /**
+     * Phase 2.2: Estimate file operation time
+     */
+    private estimateFileOperationTime;
+    /**
+     * Phase 2.2: Map safety level to risk level
+     */
+    private mapSafetyToRisk;
 }

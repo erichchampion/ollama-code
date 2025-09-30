@@ -29,6 +29,10 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** Performance optimization with measurable improvements
 - Project structure analysis and recommendations
 - Smart file filtering with .gitignore integration
+- **NEW:** Natural language file operation commands (Phase 2.1)
+- **NEW:** Context-aware file targeting and safety assessment (Phase 2.2)
+- **NEW:** AI-powered file operation intent classification
+- **NEW:** Safety-first file modification with backup and rollback capabilities
 
 ### 🔄 **VCS Integration & Version Control Intelligence**
 - **NEW:** AI-powered commit message generation with multiple styles
@@ -170,11 +174,13 @@ git add . && git commit -m "Add project structure"
 2. **Task Request:** `"Create a function to calculate factorial"`
 3. **Command Intent:** `"Run the tests"`
 4. **Analysis Request:** `"Analyze this codebase structure"`
+5. **File Operation Intent:** `"Create a new React component for user login"` (Phase 2.2)
+6. **File Edit Intent:** `"Modify the UserService to add validation"` (Phase 2.2)
 
 **Expected Results:**
-- System correctly identifies intent type (question/task_request/command/analysis)
+- System correctly identifies intent type (question/task_request/command/analysis/file_operation)
 - Extracts relevant entities (files, technologies, concepts)
-- Routes to appropriate processing system
+- Routes to appropriate processing system (including Phase 2 file operation classifier)
 - Provides contextually appropriate responses
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
@@ -258,6 +264,220 @@ git add . && git commit -m "Add project structure"
 - Each step builds on previous context
 - Progressive complexity handled appropriately
 - Context maintained across multiple interactions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+---
+
+## 📁 Natural Language File Operations (Phase 2)
+
+### Test Group: File Operation Command Execution (Phase 2.1)
+**Priority: Critical**
+
+#### Test: Create File Command
+**Test Setup:**
+```bash
+# Create test directory for file operations
+mkdir phase2-file-test && cd phase2-file-test
+```
+
+**Commands:**
+1. `ollama-code create-file src/components/Button.tsx --description "React button component with TypeScript" --type typescript`
+2. `ollama-code create-file utils/validation.js --description "Form validation utilities"`
+3. `ollama-code create-file --path tests/unit/Button.test.ts --description "Unit tests for Button component"`
+
+**Expected Results:**
+- ✅ **File Creation** - Files created at specified paths with appropriate content
+- ✅ **AI Content Generation** - Generated code matches description and follows conventions
+- ✅ **Language Detection** - Correct file extensions and language-specific syntax
+- ✅ **Directory Creation** - Parent directories created automatically if needed
+- ✅ **Error Handling** - Clear error messages for invalid paths or permissions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Edit File Command
+**Test Setup:**
+```bash
+# Create test file to edit
+echo "export const greeting = 'Hello';" > greeting.js
+```
+
+**Commands:**
+1. `ollama-code edit-file greeting.js --instructions "Add a function that personalizes the greeting with a name parameter"`
+2. `ollama-code edit-file greeting.js --instructions "Add JSDoc comments" --preview`
+3. `ollama-code edit-file greeting.js --instructions "Convert to TypeScript"`
+
+**Expected Results:**
+- ✅ **Content Modification** - Existing file content updated according to instructions
+- ✅ **Preview Mode** - Changes shown without applying when --preview flag used
+- ✅ **AI Understanding** - Natural language instructions correctly interpreted
+- ✅ **Code Preservation** - Existing functionality maintained during edits
+- ✅ **Syntax Validation** - Generated code follows language conventions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Generate Code Command
+**Commands:**
+1. `ollama-code generate-code --description "REST API endpoint for user authentication" --language javascript --framework express`
+2. `ollama-code generate-code --description "React component for data table with sorting" --output components/DataTable.tsx --framework react`
+3. `ollama-code generate-code --description "Python class for database connection management" --language python`
+
+**Expected Results:**
+- ✅ **Code Generation** - Complete, functional code generated from description
+- ✅ **Framework Integration** - Generated code follows specified framework patterns
+- ✅ **Language Compliance** - Code follows specified language syntax and conventions
+- ✅ **Output Handling** - Code saved to file when --output specified, displayed otherwise
+- ✅ **Best Practices** - Generated code includes error handling and documentation
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Create Tests Command
+**Test Setup:**
+```bash
+# Create source file to test
+cat > math-utils.js << 'EOF'
+export function add(a, b) {
+  return a + b;
+}
+
+export function multiply(a, b) {
+  return a * b;
+}
+
+export function divide(a, b) {
+  if (b === 0) throw new Error('Division by zero');
+  return a / b;
+}
+EOF
+```
+
+**Commands:**
+1. `ollama-code create-tests math-utils.js --framework jest`
+2. `ollama-code create-tests math-utils.js --output tests/math-utils.spec.js --framework mocha`
+3. `ollama-code create-tests src/components/Button.tsx --framework jest`
+
+**Expected Results:**
+- ✅ **Test Generation** - Comprehensive test suites created for source code
+- ✅ **Framework Compliance** - Tests follow specified testing framework conventions
+- ✅ **Coverage Completeness** - All functions and edge cases covered in tests
+- ✅ **Naming Conventions** - Test files follow standard naming patterns
+- ✅ **Setup/Teardown** - Appropriate test setup and cleanup code included
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Enhanced Natural Language Router (Phase 2.2)
+**Priority: High**
+
+#### Test: File Operation Intent Classification
+**Test Setup:**
+```bash
+./dist/src/cli-selector.js --mode interactive
+```
+
+**Test Queries:**
+1. `"Create a new React component for user authentication"`
+2. `"Modify the existing UserService to add email validation"`
+3. `"Delete the old configuration files in the config directory"`
+4. `"Move the utility functions to a shared folder"`
+5. `"Generate tests for all the components in the src directory"`
+
+**Expected Results:**
+- ✅ **Intent Detection** - Correctly identifies file operation intents (create, edit, delete, move, test)
+- ✅ **Entity Extraction** - Identifies files, technologies, and concepts from natural language
+- ✅ **Action Classification** - Routes to appropriate file operation handlers
+- ✅ **Context Awareness** - Uses project context to understand relative references
+- ✅ **Confidence Scoring** - Provides confidence levels for intent classification
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Context-Aware File Targeting
+**Test Setup:**
+```bash
+# Create project structure for targeting tests
+mkdir -p src/{components,utils,services} tests
+touch src/components/{Button.tsx,Modal.tsx,Form.tsx}
+touch src/utils/{validation.js,formatting.js}
+touch src/services/{UserService.ts,ApiService.ts}
+```
+
+**Test Queries:**
+1. `"Update the React components to use the new styling system"`
+2. `"Add TypeScript types to the utility functions"`
+3. `"Refactor the service classes to use async/await"`
+4. `"Create tests for the validation utilities"`
+
+**Expected Results:**
+- ✅ **Pattern Matching** - Finds relevant files based on technology and concept patterns
+- ✅ **File Discovery** - Identifies target files without explicit paths
+- ✅ **Ambiguity Resolution** - Handles multiple potential targets appropriately
+- ✅ **Suggestion System** - Provides suggestions when targets are ambiguous
+- ✅ **Project Awareness** - Uses project structure knowledge for better targeting
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Safety Level Assessment
+**Test Setup:**
+```bash
+# Create files with different risk levels
+touch package.json tsconfig.json .gitignore
+touch src/index.ts src/App.tsx
+dd if=/dev/zero of=large-file.js bs=1024 count=200  # Large file >100KB
+```
+
+**Test Queries:**
+1. `"Modify package.json to add a new dependency"`  (System file - dangerous)
+2. `"Delete the old configuration files"`  (Delete operation - dangerous)
+3. `"Move src/utils to src/shared"`  (Move operation - risky)
+4. `"Create a new component in src/components"`  (Create operation - safe)
+5. `"Edit the large-file.js to add comments"`  (Large file - cautious)
+
+**Expected Results:**
+- ✅ **Risk Assessment** - Correctly identifies safety levels (safe, cautious, risky, dangerous)
+- ✅ **System File Detection** - Recognizes critical system files (package.json, config files)
+- ✅ **Operation Analysis** - Assesses risk based on operation type
+- ✅ **Impact Evaluation** - Considers file size and project importance
+- ✅ **Approval Requirements** - Correctly determines when user approval is needed
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: File Operation Safety & Approval (Phase 2.3)
+**Priority: Critical**
+
+#### Test: Backup and Rollback System
+**Test Setup:**
+```bash
+# Create test files for backup testing
+echo "Original content" > important-file.js
+echo "Configuration data" > config.json
+```
+
+**Commands:**
+1. `ollama-code edit-file important-file.js --instructions "Add error handling"`
+2. `"Modify the configuration to enable debug mode"`  (High-risk operation)
+3. `"Delete the temporary files in this directory"`  (Dangerous operation)
+
+**Expected Results:**
+- ✅ **Automatic Backup** - Backups created for risky/dangerous operations
+- ✅ **Rollback Capability** - Ability to restore original state if operation fails
+- ✅ **Backup Management** - Backup files properly named and organized
+- ✅ **Cleanup Process** - Old backups cleaned up appropriately
+- ✅ **Failure Recovery** - Failed operations cleanly restore original state
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: User Approval Workflow
+**Test Queries:**
+1. `"Delete all JavaScript files in this directory"`  (Should require approval)
+2. `"Modify package.json to update dependencies"`  (Should require approval)
+3. `"Create a new utility function"`  (Should not require approval)
+4. `"Move all components to a new directory structure"`  (Should require approval)
+
+**Expected Results:**
+- ✅ **Approval Prompts** - High-risk operations prompt for user confirmation
+- ✅ **Change Preview** - Shows what will be changed before approval
+- ✅ **Clear Descriptions** - Explains risks and impact of the operation
+- ✅ **Cancellation** - User can cancel operations at approval prompt
+- ✅ **Audit Trail** - Records what operations were approved/cancelled
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -1208,6 +1428,8 @@ EOF
 
 ### Test Group: Enhanced Code Editor & File Operations
 **Priority: Critical**
+
+> **Note:** This section covers AST-aware editing and advanced code manipulation. For natural language file operation commands (Phase 2), see the dedicated [Natural Language File Operations (Phase 2)](#-natural-language-file-operations-phase-2) section above.
 
 #### Test: Basic File Creation and Modification
 **Test Setup:**

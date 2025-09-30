@@ -25,6 +25,7 @@ import { registerTutorialCommands } from './tutorial-commands.js';
 import { registerMCPCommands } from './mcp-commands.js';
 import { registerMCPClientCommands } from './mcp-client-commands.js';
 import { registerIDECommands } from './ide-commands.js';
+import { registerFileOperationCommands } from './file-operations.js';
 /**
  * Register all commands
  */
@@ -79,6 +80,8 @@ export function registerCommands() {
     registerMCPClientCommands();
     // Register IDE commands
     registerIDECommands();
+    // Register file operation commands
+    registerFileOperationCommands();
     // Register tool system command - temporarily disabled due to import issues
     // commandRegistry.register(toolCommand);
     // Mark registry as initialized

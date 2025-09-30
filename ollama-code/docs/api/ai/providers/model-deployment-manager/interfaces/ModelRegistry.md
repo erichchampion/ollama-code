@@ -6,7 +6,7 @@
 
 # Interface: ModelRegistry
 
-Defined in: [ai/providers/model-deployment-manager.ts:98](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/ai/providers/model-deployment-manager.ts#L98)
+Defined in: [ai/providers/model-deployment-manager.ts:98](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/ai/providers/model-deployment-manager.ts#L98)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:98](https://github.com/eri
 
 > **models**: `Map`\<`string`, [`ModelRegistryEntry`](ModelRegistryEntry.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:99](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/ai/providers/model-deployment-manager.ts#L99)
+Defined in: [ai/providers/model-deployment-manager.ts:99](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/ai/providers/model-deployment-manager.ts#L99)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:99](https://github.com/eri
 
 > **deployments**: `Map`\<`string`, [`ModelDeployment`](../../local-fine-tuning/interfaces/ModelDeployment.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:100](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/ai/providers/model-deployment-manager.ts#L100)
+Defined in: [ai/providers/model-deployment-manager.ts:100](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/ai/providers/model-deployment-manager.ts#L100)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:100](https://github.com/er
 
 > **instances**: `Map`\<`string`, [`DeploymentInstance`](DeploymentInstance.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:101](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/ai/providers/model-deployment-manager.ts#L101)
+Defined in: [ai/providers/model-deployment-manager.ts:101](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/ai/providers/model-deployment-manager.ts#L101)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [ai/providers/model-deployment-manager.ts:101](https://github.com/er
 
 > **loadBalancers**: `Map`\<`string`, [`LoadBalancer`](LoadBalancer.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:102](https://github.com/erichchampion/ollama-code/blob/98a042c8536165fb6d83661d7bd5f5a513c67591/ollama-code/src/ai/providers/model-deployment-manager.ts#L102)
+Defined in: [ai/providers/model-deployment-manager.ts:102](https://github.com/erichchampion/ollama-code/blob/7cb16a799388255e370257cbe049454367b41fec/ollama-code/src/ai/providers/model-deployment-manager.ts#L102)
