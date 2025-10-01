@@ -144,3 +144,22 @@ export const EXPECTED_CONFIG_KEYS = [
   'logLevel',
   'enableTelemetry',
 ] as const;
+
+/**
+ * Provider test timeout constants (in milliseconds)
+ * Centralized timeout values for VS Code provider tests
+ */
+export const PROVIDER_TEST_TIMEOUTS = {
+  /** Setup/teardown timeout */
+  SETUP: 10000,
+  /** Standard test timeout */
+  STANDARD_TEST: 5000,
+  /** Timeout-specific test timeout */
+  TIMEOUT_TEST: 8000,
+  /** AI request test timeout */
+  AI_REQUEST: 3000,
+  /** Simulated slow AI response (triggers timeout) */
+  SIMULATED_SLOW_AI: 10000,
+  /** Simulated slow hover response (triggers timeout) */
+  SIMULATED_SLOW_HOVER: 5000,
+} as const;

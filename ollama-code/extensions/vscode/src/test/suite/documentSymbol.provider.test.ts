@@ -14,6 +14,8 @@ import {
   cleanupTestWorkspace,
   openDocument
 } from '../helpers/extensionTestHelper';
+import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import { createMockOllamaClient, createMockLogger, TEST_DATA_CONSTANTS } from '../helpers/providerTestHelper';
 
 suite('DocumentSymbol Provider Tests', () => {
   let symbolProvider: DocumentSymbolProvider;
@@ -23,20 +25,11 @@ suite('DocumentSymbol Provider Tests', () => {
   let cancellationToken: vscode.CancellationToken;
 
   setup(async function() {
-    this.timeout(10000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create mock client with connection status
-    mockClient = {
-      getConnectionStatus: () => ({ connected: true, model: 'test-model' })
-    } as OllamaCodeClient;
-
-    // Create mock logger
-    mockLogger = {
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {}
-    } as Logger;
+    // Create mock client and logger using shared helpers
+    mockClient = createMockOllamaClient();
+    mockLogger = createMockLogger();
 
     // Create provider
     symbolProvider = new DocumentSymbolProvider(mockClient, mockLogger);
@@ -50,13 +43,13 @@ suite('DocumentSymbol Provider Tests', () => {
   });
 
   teardown(async function() {
-    this.timeout(5000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
     await cleanupTestWorkspace(testWorkspacePath);
   });
 
   suite('TypeScript/JavaScript Symbol Extraction', () => {
     test('Should extract classes from TypeScript files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsCode = `
 export class UserService {
@@ -94,7 +87,7 @@ class InternalHelper {
     });
 
     test('Should extract functions from JavaScript files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const jsCode = `
 function calculateTotal(items) {
@@ -130,7 +123,7 @@ const processData = (data) => {
     });
 
     test('Should extract interfaces and enums from TypeScript', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsCode = `
 export interface User {
@@ -161,7 +154,7 @@ export enum UserRole {
     });
 
     test('Should extract constants and variables', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsCode = `
 export const API_URL = 'https://api.example.com';
@@ -194,7 +187,7 @@ var debugMode = false;
 
   suite('Multi-Language Support', () => {
     test('Should extract symbols from Python files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const pyCode = `
 class DataProcessor:
@@ -236,7 +229,7 @@ def test_processor():
     });
 
     test('Should extract symbols from Java files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const javaCode = `
 public class UserController {
@@ -267,7 +260,7 @@ public class UserController {
     });
 
     test('Should extract symbols from Go files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const goCode = `
 func ProcessData(data []byte) error {
@@ -300,7 +293,7 @@ func HandleRequest(req *Request) *Response {
 
   suite('Symbol Metadata and Enhancement', () => {
     test('Should detect async functions and add detail', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsCode = `
 export async function fetchUser(id: string) {
@@ -324,7 +317,7 @@ export async function fetchUser(id: string) {
     });
 
     test('Should detect test functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsCode = `
 function testUserCreation() {
@@ -350,7 +343,7 @@ function test_validation() {
     });
 
     test('Should detect exported symbols', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsCode = `
 export class PublicService {}
@@ -381,7 +374,7 @@ function internalUtil() {}
     });
 
     test('Should calculate complexity for functions when client is connected', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const complexFunc = `
 function complex(x) {
@@ -416,7 +409,7 @@ function complex(x) {
 
   suite('Error Handling and Edge Cases', () => {
     test('Should handle empty files gracefully', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const emptyFile = '';
 
@@ -429,7 +422,7 @@ function complex(x) {
     });
 
     test('Should handle cancellation token', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const largeFile = Array(100).fill(0).map((_, i) => `
 function func${i}() {
@@ -455,12 +448,10 @@ function func${i}() {
     });
 
     test('Should return empty array when disconnected from client', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      // Create disconnected client
-      const disconnectedClient = {
-        getConnectionStatus: () => ({ connected: false, model: null })
-      } as OllamaCodeClient;
+      // Create disconnected client using shared helper
+      const disconnectedClient = createMockOllamaClient(false);
 
       const provider = new DocumentSymbolProvider(disconnectedClient, mockLogger);
 

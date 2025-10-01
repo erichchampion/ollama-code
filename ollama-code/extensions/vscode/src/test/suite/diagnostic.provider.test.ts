@@ -15,6 +15,8 @@ import {
   openDocument,
   sleep
 } from '../helpers/extensionTestHelper';
+import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import { createMockOllamaClient, createMockLogger, TEST_DATA_CONSTANTS, createDiagnosticAIHandler } from '../helpers/providerTestHelper';
 
 suite('Diagnostic Provider Tests', () => {
   let diagnosticProvider: DiagnosticProvider;
@@ -23,29 +25,11 @@ suite('Diagnostic Provider Tests', () => {
   let testWorkspacePath: string;
 
   setup(async function() {
-    this.timeout(10000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create mock client
-    mockClient = {
-      getConnectionStatus: () => ({ connected: true, model: 'test-model' }),
-      sendAIRequest: async (request: any) => {
-        if (request.type === 'completion' && request.prompt.includes('Analyze')) {
-          // Simulate AI analysis result
-          return {
-            result: 'LINE 3: [WARNING] Potential null pointer exception\nLINE 5: [INFO] Consider using const instead of let'
-          };
-        }
-        return { result: '' };
-      }
-    } as any;
-
-    // Create mock logger
-    mockLogger = {
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {}
-    } as Logger;
+    // Create mock client and logger using shared helpers
+    mockClient = createMockOllamaClient(true, createDiagnosticAIHandler());
+    mockLogger = createMockLogger();
 
     // Create provider
     diagnosticProvider = new DiagnosticProvider(mockClient, mockLogger);
@@ -55,14 +39,14 @@ suite('Diagnostic Provider Tests', () => {
   });
 
   teardown(async function() {
-    this.timeout(5000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
     diagnosticProvider.dispose();
     await cleanupTestWorkspace(testWorkspacePath);
   });
 
   suite('Security Issue Detection', () => {
     test('Should detect eval() usage', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function processInput(userInput) {
@@ -97,7 +81,7 @@ function processInput(userInput) {
     });
 
     test('Should detect innerHTML assignment', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function updateContent(html) {
@@ -126,7 +110,7 @@ function updateContent(html) {
     });
 
     test('Should detect document.write() usage', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function render(content) {
@@ -152,7 +136,7 @@ function render(content) {
 
   suite('Performance Issue Detection', () => {
     test('Should detect console.log in production code', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function debugInfo(data) {
@@ -182,7 +166,7 @@ function debugInfo(data) {
     });
 
     test('Should suggest caching array length in loops', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function processArray(items) {
@@ -211,7 +195,7 @@ function processArray(items) {
 
   suite('Style Issue Detection', () => {
     test('Should suggest using let/const instead of var', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function oldStyle() {
@@ -243,7 +227,7 @@ function oldStyle() {
     });
 
     test('Should suggest using === instead of ==', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function compare(a, b) {
@@ -272,7 +256,7 @@ function compare(a, b) {
 
   suite('Logic Issue Detection', () => {
     test('Should detect always-true conditions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function alwaysTrue() {
@@ -303,7 +287,7 @@ function alwaysTrue() {
     });
 
     test('Should detect dead code (always-false conditions)', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function deadCode() {
@@ -337,7 +321,7 @@ function deadCode() {
 
   suite('Complexity-Based Diagnostics', () => {
     test('Should detect high complexity functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const complexCode = `
 function complex(x) {
@@ -387,7 +371,7 @@ function complex(x) {
     });
 
     test('Should detect long functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const lines = Array(35).fill('  console.log("line");').join('\n');
       const longCode = `function long() {\n${lines}\n}`;
@@ -414,7 +398,7 @@ function complex(x) {
     });
 
     test('Should detect too many parameters', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function manyParams(a, b, c, d, e, f, g) {
@@ -446,7 +430,7 @@ function manyParams(a, b, c, d, e, f, g) {
 
   suite('Diagnostic Management', () => {
     test('Should cache diagnostic results', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function test() { var x = 5; }';
       const filePath = await createTestFile(testWorkspacePath, 'cache.ts', code);
@@ -472,7 +456,7 @@ function manyParams(a, b, c, d, e, f, g) {
     });
 
     test('Should clear diagnostics for a specific document', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function test() { var x = 5; }';
       const filePath = await createTestFile(testWorkspacePath, 'clear.ts', code);
@@ -493,7 +477,7 @@ function manyParams(a, b, c, d, e, f, g) {
     });
 
     test('Should clear all diagnostics', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code1 = 'function test1() { var x = 5; }';
       const code2 = 'function test2() { var y = 10; }';
@@ -521,7 +505,7 @@ function manyParams(a, b, c, d, e, f, g) {
 
   suite('Language and File Type Filtering', () => {
     test('Should only apply language-specific rules to matching files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'var x = 5;';
 
@@ -541,7 +525,7 @@ function manyParams(a, b, c, d, e, f, g) {
     });
 
     test('Should skip analysis for unsupported languages', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'This is plain text with var keyword';
       const filePath = await createTestFile(testWorkspacePath, 'plain.txt', code);
@@ -557,7 +541,7 @@ function manyParams(a, b, c, d, e, f, g) {
     });
 
     test('Should skip analysis for minified files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function test(){var x=5;}';
       const filePath = await createTestFile(testWorkspacePath, 'bundle.min.js', code);
@@ -575,7 +559,7 @@ function manyParams(a, b, c, d, e, f, g) {
 
   suite('Error Handling', () => {
     test('Should handle disconnected client gracefully', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const disconnectedClient = {
         getConnectionStatus: () => ({ connected: false, model: null })
@@ -599,7 +583,7 @@ function manyParams(a, b, c, d, e, f, g) {
     });
 
     test('Should handle AI analysis errors gracefully', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const errorClient = {
         getConnectionStatus: () => ({ connected: true, model: 'test-model' }),

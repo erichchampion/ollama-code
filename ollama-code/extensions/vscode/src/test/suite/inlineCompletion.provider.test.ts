@@ -15,7 +15,8 @@ import {
   openDocument,
   sleep
 } from '../helpers/extensionTestHelper';
-import { EXTENSION_TEST_CONSTANTS } from '../helpers/test-constants';
+import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import { createMockOllamaClient, createMockLogger, TEST_DATA_CONSTANTS, createCompletionAIHandler, createHoverAIHandler, createDiagnosticAIHandler } from '../helpers/providerTestHelper';
 
 suite('InlineCompletion Provider Tests', () => {
   let completionProvider: InlineCompletionProvider;
@@ -25,41 +26,11 @@ suite('InlineCompletion Provider Tests', () => {
   let cancellationToken: vscode.CancellationToken;
 
   setup(async function() {
-    this.timeout(10000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create mock client that simulates AI responses
-    mockClient = {
-      getConnectionStatus: () => ({ connected: true, model: 'test-model' }),
-      sendAIRequest: async (request: any) => {
-        // Simulate AI completion based on request
-        if (request.type === 'completion') {
-          if (request.prompt.includes('const result =')) {
-            return { result: 'calculateSum(a, b);' };
-          } else if (request.prompt.includes('function add')) {
-            return { result: 'return a + b;' };
-          } else if (request.prompt.includes('user.')) {
-            return { result: 'getName()' };
-          } else if (request.prompt.includes('import')) {
-            return { result: "{ useState, useEffect } from 'react';" };
-          } else if (request.prompt.includes('if (')) {
-            return { result: 'x > 0) {\n  console.log(x);\n}' };
-          } else if (request.prompt.includes('for (')) {
-            return { result: 'let i = 0; i < arr.length; i++) {\n  process(arr[i]);\n}' };
-          } else {
-            return { result: '// AI completion' };
-          }
-        }
-        return { result: '' };
-      }
-    } as any;
-
-    // Create mock logger
-    mockLogger = {
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {}
-    } as Logger;
+    // Create mock client and logger using shared helpers
+    mockClient = createMockOllamaClient(true, createCompletionAIHandler());
+    mockLogger = createMockLogger();
 
     // Create provider
     completionProvider = new InlineCompletionProvider(mockClient, mockLogger);
@@ -73,14 +44,14 @@ suite('InlineCompletion Provider Tests', () => {
   });
 
   teardown(async function() {
-    this.timeout(5000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
     completionProvider.dispose();
     await cleanupTestWorkspace(testWorkspacePath);
   });
 
   suite('Completion Trigger Conditions', () => {
     test('Should trigger completion after method/property access (dot)', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const name = user.';
       const filePath = await createTestFile(testWorkspacePath, 'dot.ts', code);
@@ -104,7 +75,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should trigger completion after assignment operator', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const result = ';
       const filePath = await createTestFile(testWorkspacePath, 'assignment.ts', code);
@@ -128,7 +99,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should trigger completion for import statements', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'import ';
       const filePath = await createTestFile(testWorkspacePath, 'import.ts', code);
@@ -152,7 +123,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should NOT trigger completion for very short input (< 2 chars)', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'x';
       const filePath = await createTestFile(testWorkspacePath, 'short.ts', code);
@@ -175,7 +146,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should NOT trigger completion after semicolon', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const x = 5;';
       const filePath = await createTestFile(testWorkspacePath, 'semicolon.ts', code);
@@ -198,7 +169,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should NOT trigger completion inside string literals', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const msg = "Hello ';
       const filePath = await createTestFile(testWorkspacePath, 'string.ts', code);
@@ -221,7 +192,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should NOT trigger completion inside comments', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = '// This is a comment and ';
       const filePath = await createTestFile(testWorkspacePath, 'comment.ts', code);
@@ -246,7 +217,7 @@ suite('InlineCompletion Provider Tests', () => {
 
   suite('Multi-line Completion Support', () => {
     test('Should provide multi-line completion for function bodies', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function add(a, b) {\n  ';
       const filePath = await createTestFile(testWorkspacePath, 'multiline.ts', code);
@@ -277,7 +248,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should provide completion for control structures (if statements)', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'if (';
       const filePath = await createTestFile(testWorkspacePath, 'if.ts', code);
@@ -301,7 +272,7 @@ suite('InlineCompletion Provider Tests', () => {
     });
 
     test('Should provide completion for loops (for statements)', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'for (';
       const filePath = await createTestFile(testWorkspacePath, 'for.ts', code);
@@ -327,7 +298,7 @@ suite('InlineCompletion Provider Tests', () => {
 
   suite('Context Awareness', () => {
     test('Should use surrounding code for context-aware completions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function calculateSum(a, b) {
@@ -358,7 +329,7 @@ const result =
     });
 
     test('Should detect function context correctly', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 class Calculator {
@@ -388,7 +359,7 @@ class Calculator {
     });
 
     test('Should respect indentation level in completions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 class Service {
@@ -421,7 +392,7 @@ class Service {
 
   suite('Caching and Performance', () => {
     test('Should cache completion results', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const result = ';
       const filePath = await createTestFile(testWorkspacePath, 'cache.ts', code);
@@ -453,7 +424,7 @@ class Service {
     });
 
     test('Should handle timeout gracefully', async function() {
-      this.timeout(8000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.TIMEOUT_TEST);
 
       // Create client that simulates slow AI response
       const slowClient = {
@@ -492,7 +463,7 @@ class Service {
 
   suite('Language Support', () => {
     test('Should support TypeScript files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const value: number = ';
       const filePath = await createTestFile(testWorkspacePath, 'typescript.ts', code);
@@ -515,7 +486,7 @@ class Service {
     });
 
     test('Should support Python files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'def calculate():\n    result = ';
       const filePath = await createTestFile(testWorkspacePath, 'python.py', code);
@@ -538,7 +509,7 @@ class Service {
     });
 
     test('Should NOT support unsupported languages', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'This is plain text = ';
       const filePath = await createTestFile(testWorkspacePath, 'plain.txt', code);
@@ -563,7 +534,7 @@ class Service {
 
   suite('Error Handling', () => {
     test('Should return empty array when client is disconnected', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const disconnectedClient = {
         getConnectionStatus: () => ({ connected: false, model: null })
@@ -594,7 +565,7 @@ class Service {
     });
 
     test('Should handle cancellation token', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'const result = ';
       const filePath = await createTestFile(testWorkspacePath, 'cancel.ts', code);
@@ -623,7 +594,7 @@ class Service {
     });
 
     test('Should handle AI request errors gracefully', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const errorClient = {
         getConnectionStatus: () => ({ connected: true, model: 'test-model' }),

@@ -17,7 +17,8 @@ import {
   openDocument,
   sleep
 } from '../helpers/extensionTestHelper';
-import { EXTENSION_TEST_CONSTANTS } from '../helpers/test-constants';
+import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import { createMockOllamaClient, createMockLogger, TEST_DATA_CONSTANTS } from '../helpers/providerTestHelper';
 
 suite('CodeLens Provider Tests', () => {
   let codeLensProvider: CodeLensProvider;
@@ -27,20 +28,11 @@ suite('CodeLens Provider Tests', () => {
   let cancellationToken: vscode.CancellationToken;
 
   setup(async function() {
-    this.timeout(10000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create mock client with connection status
-    mockClient = {
-      getConnectionStatus: () => ({ connected: true, model: 'test-model' })
-    } as OllamaCodeClient;
-
-    // Create mock logger
-    mockLogger = {
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {}
-    } as Logger;
+    // Create mock client and logger using shared helpers
+    mockClient = createMockOllamaClient();
+    mockLogger = createMockLogger();
 
     // Create provider
     codeLensProvider = new CodeLensProvider(mockClient, mockLogger);
@@ -54,14 +46,14 @@ suite('CodeLens Provider Tests', () => {
   });
 
   teardown(async function() {
-    this.timeout(5000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
     codeLensProvider.dispose();
     await cleanupTestWorkspace(testWorkspacePath);
   });
 
   suite('Complexity Warning CodeLens', () => {
     test('Should show high complexity warning for complex functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create function with complexity > HIGH_COMPLEXITY (10)
       const complexFunction = `
@@ -108,7 +100,7 @@ function complexFunction(a, b, c) {
     });
 
     test('Should show medium complexity info for moderately complex functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create function with complexity between MEDIUM (5) and HIGH (10)
       const moderateFunction = `
@@ -145,7 +137,7 @@ function moderateFunction(x) {
     });
 
     test('Should not show complexity lens for simple functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const simpleFunction = `
 function simpleFunction(x) {
@@ -168,10 +160,10 @@ function simpleFunction(x) {
 
   suite('Function Size CodeLens', () => {
     test('Should show line count warning for long functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create function with > LONG_FUNCTION_LINES (30) lines
-      const lines = Array(35).fill('  console.log("line");').join('\n');
+      const lines = Array(TEST_DATA_CONSTANTS.LONG_FUNCTION_LINE_COUNT).fill('  console.log("line");').join('\n');
       const longFunction = `
 function longFunction() {
 ${lines}
@@ -197,7 +189,7 @@ ${lines}
     });
 
     test('Should show parameter count warning for functions with too many params', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create function with > TOO_MANY_PARAMS (5) parameters
       const manyParamsFunction = `
@@ -227,7 +219,7 @@ function manyParams(a, b, c, d, e, f, g) {
 
   suite('AI Insights CodeLens', () => {
     test('Should show AI insights lens for every function', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const multipleFunctions = `
 function first() {
@@ -267,7 +259,7 @@ function third() {
 
   suite('File-Level CodeLens', () => {
     test('Should show file complexity warning when average complexity is high', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create multiple complex functions to trigger file-level warning
       const complexFile = `
@@ -324,7 +316,7 @@ function complex2(y) {
     });
 
     test('Should show test generation lens for all files with functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const fileWithFunctions = `
 function add(a, b) {
@@ -351,7 +343,7 @@ function add(a, b) {
     });
 
     test('Should show security analysis lens for all files with functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const fileWithFunctions = `
 function processData(input) {
@@ -380,7 +372,7 @@ function processData(input) {
 
   suite('Multi-Language Support', () => {
     test('Should provide CodeLens for TypeScript files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const tsFunction = `
 function greet(name: string): string {
@@ -402,7 +394,7 @@ function greet(name: string): string {
     });
 
     test('Should provide CodeLens for Python files', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const pyFunction = `
 def calculate(x, y):
@@ -426,7 +418,7 @@ def calculate(x, y):
     });
 
     test('Should not provide CodeLens for unsupported languages', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const textFile = `
 This is just a plain text file.
@@ -444,12 +436,10 @@ It should not trigger any code lenses.
 
   suite('Connection and Error Handling', () => {
     test('Should return empty array when client is disconnected', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create disconnected client
-      const disconnectedClient = {
-        getConnectionStatus: () => ({ connected: false, model: null })
-      } as OllamaCodeClient;
+      const disconnectedClient = createMockOllamaClient(false);
 
       const provider = new CodeLensProvider(disconnectedClient, mockLogger);
 
@@ -470,9 +460,9 @@ function test() {
     });
 
     test('Should handle cancellation token gracefully', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const manyFunctions = Array(20).fill(0).map((_, i) => `
+      const manyFunctions = Array(TEST_DATA_CONSTANTS.STRESS_TEST_FUNCTION_COUNT).fill(0).map((_, i) => `
 function func${i}() {
   return ${i};
 }
@@ -499,7 +489,7 @@ function func${i}() {
 
   suite('CodeLens Refresh', () => {
     test('Should fire refresh event when refresh() is called', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       let refreshFired = false;
 

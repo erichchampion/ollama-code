@@ -15,6 +15,8 @@ import {
   openDocument,
   sleep
 } from '../helpers/extensionTestHelper';
+import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import { createMockOllamaClient, createMockLogger, TEST_DATA_CONSTANTS, createHoverAIHandler } from '../helpers/providerTestHelper';
 
 suite('Hover Provider Tests', () => {
   let hoverProvider: HoverProvider;
@@ -24,52 +26,11 @@ suite('Hover Provider Tests', () => {
   let cancellationToken: vscode.CancellationToken;
 
   setup(async function() {
-    this.timeout(10000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create mock client that simulates AI explanations
-    mockClient = {
-      getConnectionStatus: () => ({ connected: true, model: 'test-model' }),
-      sendAIRequest: async (request: any) => {
-        if (request.type === 'explanation') {
-          const prompt = request.prompt.toLowerCase();
-
-          if (prompt.includes('calculatesum')) {
-            return {
-              result: 'Adds two numbers together and returns the result. Takes parameters `a` and `b` (numbers) and returns their sum.'
-            };
-          } else if (prompt.includes('userservice')) {
-            return {
-              result: 'A service class that manages user-related operations. Provides methods for user CRUD operations and authentication.'
-            };
-          } else if (prompt.includes('api_url')) {
-            return {
-              result: 'Configuration constant that stores the base URL for the API endpoint.'
-            };
-          } else if (prompt.includes('getname')) {
-            return {
-              result: 'Returns the user\'s full name as a formatted string.'
-            };
-          } else if (prompt.includes('async')) {
-            return {
-              result: 'Asynchronous function that fetches data from a remote source. Returns a Promise that resolves with the data.'
-            };
-          } else {
-            return {
-              result: `Documentation for ${request.prompt.split('"')[1] || 'element'}: This is a code element.`
-            };
-          }
-        }
-        return { result: '' };
-      }
-    } as any;
-
-    // Create mock logger
-    mockLogger = {
-      info: () => {},
-      warn: () => {},
-      error: () => {},
-      debug: () => {}
-    } as Logger;
+    // Create mock client and logger using shared helpers
+    mockClient = createMockOllamaClient(true, createHoverAIHandler());
+    mockLogger = createMockLogger();
 
     // Create provider
     hoverProvider = new HoverProvider(mockClient, mockLogger);
@@ -83,13 +44,13 @@ suite('Hover Provider Tests', () => {
   });
 
   teardown(async function() {
-    this.timeout(5000);
+    this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
     await cleanupTestWorkspace(testWorkspacePath);
   });
 
   suite('Function Hover Information', () => {
     test('Should provide hover for function declarations', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function calculateSum(a, b) {
@@ -124,7 +85,7 @@ function calculateSum(a, b) {
     });
 
     test('Should show function signature in hover', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 export function calculateSum(a, b) {
@@ -149,7 +110,7 @@ export function calculateSum(a, b) {
     });
 
     test('Should identify async functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 async function fetchData(url) {
@@ -175,7 +136,7 @@ async function fetchData(url) {
     });
 
     test('Should show complexity warning for complex functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       // Create function with complexity > 10
       const code = `
@@ -218,7 +179,7 @@ function complex(x) {
 
   suite('Class and Method Hover', () => {
     test('Should provide hover for class declarations', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 export class UserService {
@@ -251,7 +212,7 @@ export class UserService {
     });
 
     test('Should provide hover for class methods', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 class Calculator {
@@ -281,7 +242,7 @@ class Calculator {
 
   suite('Variable and Property Hover', () => {
     test('Should provide hover for constants', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 const API_URL = 'https://api.example.com';
@@ -305,7 +266,7 @@ const data = fetchData(API_URL);
     });
 
     test('Should provide hover for object properties', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 const user = {
@@ -331,7 +292,7 @@ user.getName();
 
   suite('Export and Modifier Detection', () => {
     test('Should detect exported symbols', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 export function publicApi() {
@@ -356,7 +317,7 @@ export function publicApi() {
     });
 
     test('Should detect test functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 function testCalculation() {
@@ -384,7 +345,7 @@ function testCalculation() {
 
   suite('Multi-Language Support', () => {
     test('Should provide hover for Python functions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = `
 def calculate_total(items):
@@ -402,7 +363,7 @@ def calculate_total(items):
     });
 
     test('Should not provide hover for unsupported languages', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'This is plain text';
 
@@ -419,7 +380,7 @@ def calculate_total(items):
 
   suite('Caching and Performance', () => {
     test('Should cache hover results', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function test() { return 42; }';
 
@@ -446,7 +407,7 @@ def calculate_total(items):
     });
 
     test('Should handle timeout gracefully', async function() {
-      this.timeout(8000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.TIMEOUT_TEST);
 
       const slowClient = {
         getConnectionStatus: () => ({ connected: true, model: 'test-model' }),
@@ -473,7 +434,7 @@ def calculate_total(items):
 
   suite('Error Handling', () => {
     test('Should return null when disconnected', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const disconnectedClient = {
         getConnectionStatus: () => ({ connected: false, model: null })
@@ -493,7 +454,7 @@ def calculate_total(items):
     });
 
     test('Should handle cancellation token', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function test() {}';
       const filePath = await createTestFile(testWorkspacePath, 'cancel.ts', code);
@@ -514,7 +475,7 @@ def calculate_total(items):
     });
 
     test('Should return null for invalid positions', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const code = 'function test() {}';
       const filePath = await createTestFile(testWorkspacePath, 'invalid.ts', code);
@@ -529,7 +490,7 @@ def calculate_total(items):
     });
 
     test('Should handle AI request errors gracefully', async function() {
-      this.timeout(5000);
+      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
       const errorClient = {
         getConnectionStatus: () => ({ connected: true, model: 'test-model' }),
