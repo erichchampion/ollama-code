@@ -152,8 +152,8 @@ ollama list
 ollama pull llama3.2
 
 # 4. Build the project and verify compilation
-npm run build
-npm test
+yarn build
+yarn test
 
 # 5. Test basic CLI accessibility
 ./dist/src/cli-selector.js --version
@@ -174,6 +174,152 @@ echo "const assert = require('assert');" > tests/math.test.js
 echo "# Project Documentation" > docs/README.md
 git add . && git commit -m "Add project structure"
 ```
+
+---
+
+## Automated Testing
+
+### Running Automated Tests
+
+The project includes comprehensive automated test suites using Jest for unit/integration tests and Playwright for E2E testing.
+
+#### Unit and Integration Tests
+
+```bash
+# Run all Jest tests
+yarn test
+
+# Run tests in watch mode
+yarn test:watch
+
+# Run tests with coverage
+yarn test:coverage
+
+# Run specific test suites
+yarn test:unit          # Unit tests only
+yarn test:integration   # Integration tests only
+yarn test:security      # Security tests only
+```
+
+#### End-to-End (E2E) Tests
+
+The E2E test suite uses Playwright to validate CLI functionality and VS Code extension integration.
+
+```bash
+# Run all E2E tests
+yarn test:e2e
+
+# Run E2E tests with UI mode (interactive debugging)
+yarn test:e2e:ui
+
+# Run E2E tests in debug mode
+yarn test:e2e:debug
+
+# Run specific test projects
+npx playwright test --project=cli-e2e          # CLI tests only
+npx playwright test --project=ide-integration  # VS Code extension tests
+
+# View test report
+npx playwright show-report
+```
+
+#### E2E Test Coverage
+
+The E2E test suite validates:
+
+**CLI E2E Tests** (`tests/e2e/cli/`):
+- ✅ Version and help command output
+- ✅ Invalid command error handling
+- ✅ Project fixture loading and analysis
+- ✅ File detection in test projects
+- ✅ Command execution performance
+- ✅ Timeout handling
+
+**VS Code Extension Tests** (`extensions/vscode/src/test/`):
+- ✅ Extension activation and registration
+- ✅ Command registration (22 commands)
+- ✅ Configuration management
+- ✅ WebSocket server connection
+- ✅ Message sending/receiving
+- ✅ Client disconnect handling
+- ✅ Broadcast functionality
+- ✅ Large message payload handling
+- ✅ Error handling and recovery
+
+#### Test Fixtures
+
+Test fixtures are located in `tests/fixtures/`:
+
+- **`projects/small/`**: Small JavaScript project for basic CLI testing
+  - Contains: index.js, math.js, validation.js, package.json
+  - Purpose: Basic project structure analysis and file operations
+
+- **`vulnerable/`**: Intentionally vulnerable code for security testing
+  - Contains: sql-injection.js, xss-vulnerabilities.js, hardcoded-secrets.js, command-injection.js
+  - Purpose: OWASP Top 10 security vulnerability detection validation
+
+#### Continuous Integration
+
+E2E tests run automatically on:
+- Push to `main`, `develop`, or `ai` branches
+- Pull requests to `main` or `develop`
+
+GitHub Actions workflow (`.github/workflows/test-e2e.yml`) provides:
+- Automated test execution on Ubuntu
+- Chromium browser setup for Playwright
+- Test artifact collection (reports, traces)
+- Failure notifications
+
+#### Test Helpers and Utilities
+
+**Shared Test Utilities** (`tests/shared/`):
+- `test-utils.ts`: sleep(), waitFor(), retry(), createDeferred(), waitForAll()
+- `file-utils.ts`: fileExists(), readFile(), writeFile(), ensureDir(), remove(), copy()
+- `workspace-utils.ts`: createTestWorkspace(), createMockWorkspace(), copyFixtureToWorkspace()
+
+**E2E Test Helpers** (`tests/e2e/helpers/`):
+- `cli-helper.ts`: CLI command execution, fixture management, JSON parsing
+- Test constants in `config/test-constants.ts`
+
+**VS Code Extension Test Helpers** (`extensions/vscode/src/test/helpers/`):
+- `extensionTestHelper.ts`: Extension activation, command execution, workspace management
+- `websocketTestHelper.ts`: WebSocket client/server mocking, connection testing
+- Test constants in `test-constants.ts`
+
+#### Adding New E2E Tests
+
+1. **Create test file** in appropriate directory:
+   - CLI tests: `tests/e2e/cli/*.e2e.test.ts`
+   - IDE tests: `tests/e2e/ide/*.ide.test.ts`
+
+2. **Use test helpers** for consistency:
+   ```typescript
+   import { executeOllamaCode, createTestDirectory, cleanupTestDirectory } from '../helpers/cli-helper';
+   import { TEST_TIMEOUTS } from '../config/test-constants';
+
+   test('my new test', async () => {
+     const testDir = await createTestDirectory('my-test-');
+     try {
+       const result = await executeOllamaCode('--version', {
+         cwd: testDir,
+         timeout: TEST_TIMEOUTS.DEFAULT_COMMAND_TIMEOUT
+       });
+       expect(result.exitCode).toBe(0);
+     } finally {
+       await cleanupTestDirectory(testDir);
+     }
+   });
+   ```
+
+3. **Follow naming conventions**:
+   - Test files: `*.e2e.test.ts` or `*.ide.test.ts`
+   - Use descriptive test names
+   - Group related tests in test suites
+
+4. **Run tests locally** before committing:
+   ```bash
+   yarn build && yarn test:e2e
+   ```
 
 ---
 

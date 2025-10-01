@@ -8,7 +8,7 @@
 
 > **createProvider**(`type`, `config`): [`BaseAIProvider`](../classes/BaseAIProvider.md)
 
-Defined in: [ai/providers/index.ts:43](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/ai/providers/index.ts#L43)
+Defined in: [ai/providers/index.ts:43](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/index.ts#L43)
 
 Factory function to create providers based on configuration
 
