@@ -5,6 +5,7 @@
  * and common patterns to eliminate code duplication across command implementations.
  */
 import { promises as fs } from 'fs';
+import path from 'path';
 import { logger } from './logger.js';
 import { createSpinner } from './spinner.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
@@ -20,17 +21,70 @@ export function validateNonEmptyString(value, fieldName) {
     return true;
 }
 /**
- * Validates that a file exists at the given path
+ * Validates that a file exists at the given path and prevents directory traversal attacks
  */
 export async function validateFileExists(filePath) {
     if (!validateNonEmptyString(filePath, 'file path')) {
         return false;
+    }
+    // Security: Prevent directory traversal attacks
+    if (!isSecureFilePath(filePath)) {
+        console.error(`Access denied: Path outside working directory not allowed: ${filePath}`);
+        throw new Error(`Security: Directory traversal attack blocked: ${filePath}`);
     }
     if (!await fileExists(filePath)) {
         console.error(`File not found: ${filePath}`);
         return false;
     }
     return true;
+}
+/**
+ * Security function to prevent directory traversal attacks
+ * Only allows access to files within the current working directory and its subdirectories
+ */
+function isSecureFilePath(filePath) {
+    try {
+        // Get the current working directory
+        const cwd = process.cwd();
+        // Resolve the file path to an absolute path
+        const resolvedPath = path.resolve(filePath);
+        // Check if the resolved path is within the current working directory
+        // This prevents access to parent directories using ../
+        const isWithinCwd = resolvedPath.startsWith(cwd + path.sep) || resolvedPath === cwd;
+        if (!isWithinCwd) {
+            logger.warn(`Directory traversal attempt blocked: ${filePath} -> ${resolvedPath}`);
+            return false;
+        }
+        // Additional security: Block access to sensitive system files
+        const forbiddenPaths = [
+            '/etc/',
+            '/var/',
+            '/usr/',
+            '/opt/',
+            '/root/',
+            '/proc/',
+            '/sys/',
+            'C:\\Windows\\',
+            'C:\\Program Files\\',
+            'C:\\Program Files (x86)\\',
+            'C:\\Users\\',
+            process.env.HOME || '',
+            path.join(process.env.HOME || '', '.ssh'),
+            path.join(process.env.HOME || '', '.aws'),
+            path.join(process.env.HOME || '', '.config')
+        ];
+        for (const forbiddenPath of forbiddenPaths) {
+            if (forbiddenPath && resolvedPath.startsWith(forbiddenPath)) {
+                logger.warn(`Access to sensitive system path blocked: ${resolvedPath}`);
+                return false;
+            }
+        }
+        return true;
+    }
+    catch (error) {
+        logger.error(`Path validation error: ${error}`);
+        return false;
+    }
 }
 /**
  * Validates that a directory exists at the given path
@@ -195,5 +249,86 @@ export function validateRequiredArgs(args, requiredCount, commandName, usage) {
         return false;
     }
     return true;
+}
+/**
+ * Security function to sanitize search terms and prevent command injection
+ * Removes dangerous shell metacharacters that could be used for injection attacks
+ */
+export function sanitizeSearchTerm(input) {
+    if (!input || typeof input !== 'string') {
+        return '';
+    }
+    // Remove or escape dangerous shell metacharacters
+    // Keep only alphanumeric, spaces, basic punctuation, and safe regex characters
+    const sanitized = input
+        .replace(/[;&|`$(){}[\]\\<>]/g, '') // Remove shell metacharacters
+        .replace(/"/g, '\\"') // Escape quotes
+        .replace(/'/g, "\\'") // Escape single quotes
+        .trim();
+    // Additional validation: prevent extremely long inputs
+    if (sanitized.length > 1000) {
+        logger.warn(`Search term truncated from ${input.length} to 1000 characters`);
+        return sanitized.substring(0, 1000);
+    }
+    // Log security warning if dangerous characters were removed
+    if (sanitized !== input) {
+        logger.warn(`Search term sanitized: "${input}" -> "${sanitized}"`);
+    }
+    return sanitized;
+}
+/**
+ * Security function to validate and sanitize shell commands to prevent injection attacks
+ * Returns null if the command is deemed unsafe
+ */
+export function validateAndSanitizeCommand(input) {
+    if (!input || typeof input !== 'string') {
+        logger.warn('Command validation failed: empty or invalid input');
+        return null;
+    }
+    const command = input.trim();
+    // Prevent extremely long commands
+    if (command.length > 500) {
+        logger.warn(`Command rejected: too long (${command.length} characters)`);
+        return null;
+    }
+    // Define allowed safe commands for code development
+    const allowedCommands = [
+        'ls', 'pwd', 'echo', 'cat', 'head', 'tail', 'grep', 'find', 'wc',
+        'git status', 'git log', 'git diff', 'git branch', 'git show',
+        'npm --version', 'node --version', 'yarn --version', 'tsc --version',
+        'npm list', 'yarn list', 'npm audit', 'yarn audit'
+    ];
+    // Check if command starts with any allowed pattern
+    const isAllowed = allowedCommands.some(allowed => command.toLowerCase().startsWith(allowed.toLowerCase()));
+    if (!isAllowed) {
+        logger.warn(`Command rejected: not in allowlist: ${command}`);
+        return null;
+    }
+    // Additional security checks: dangerous patterns
+    const dangerousPatterns = [
+        /rm\s+(-rf|\-r|\-f)/i, // rm -rf, rm -r, rm -f
+        />/, // Output redirection
+        /\|/, // Pipes
+        /;/, // Command chaining
+        /&&/, // Command chaining
+        /\|\|/, // Command chaining
+        /`/, // Command substitution
+        /\$\(/, // Command substitution
+        /\.\./, // Directory traversal
+        /(curl|wget)\s+/i, // Network requests
+        /(nc|netcat)\s+/i, // Network connections
+        /sh\s+/i, // Shell execution
+        /bash\s+/i, // Bash execution
+        /eval\s+/i, // Code evaluation
+        /exec\s+/i // Process execution
+    ];
+    for (const pattern of dangerousPatterns) {
+        if (pattern.test(command)) {
+            logger.warn(`Command rejected: dangerous pattern detected: ${command}`);
+            return null;
+        }
+    }
+    logger.debug(`Command validated and approved: ${command}`);
+    return command;
 }
 //# sourceMappingURL=command-helpers.js.map

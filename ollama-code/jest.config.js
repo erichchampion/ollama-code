@@ -36,7 +36,12 @@ export default {
     },
     {
       displayName: 'integration',
-      testMatch: ['**/tests/integration/*.test.js', '**/tests/integration/*.test.cjs'],
+      testMatch: [
+        '**/tests/integration/*.test.js',
+        '**/tests/integration/*.test.cjs',
+        '**/tests/integration/**/*.test.js',
+        '**/tests/integration/**/*.test.cjs'
+      ],
       testEnvironment: 'node',
       testTimeout: 60000,
       maxWorkers: 1,
@@ -48,6 +53,16 @@ export default {
       displayName: 'docs',
       testMatch: ['**/tests/docs/*.test.cjs'],
       testEnvironment: 'node'
+    },
+    {
+      displayName: 'security',
+      testMatch: ['**/tests/security/*.test.js'],
+      testEnvironment: 'node',
+      testTimeout: 60000,
+      maxWorkers: 1,
+      transform: {
+        '^.+\\.js$': 'babel-jest'
+      }
     }
   ],
   collectCoverageFrom: [

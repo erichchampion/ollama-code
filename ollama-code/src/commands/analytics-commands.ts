@@ -109,6 +109,13 @@ function registerAnalyticsShowCommand(): void {
         type: ArgType.BOOLEAN,
         flag: '--detailed',
         required: false
+      },
+      {
+        name: 'metric',
+        description: 'Specific metric to show (usage, performance, errors)',
+        type: ArgType.STRING,
+        flag: '--metric',
+        required: false
       }
     ],
     examples: [
@@ -555,6 +562,34 @@ function registerPerformanceAlertsCommand(): void {
         type: ArgType.STRING,
         flag: '--alert-id',
         required: false
+      },
+      {
+        name: 'configure',
+        description: 'Configure alert thresholds',
+        type: ArgType.BOOLEAN,
+        flag: '--configure',
+        required: false
+      },
+      {
+        name: 'threshold',
+        description: 'Alert threshold (e.g., cpu:80, memory:85)',
+        type: ArgType.STRING,
+        flag: '--threshold',
+        required: false
+      },
+      {
+        name: 'list',
+        description: 'List all active alerts',
+        type: ArgType.BOOLEAN,
+        flag: '--list',
+        required: false
+      },
+      {
+        name: 'format',
+        description: 'Output format (summary, detailed, json)',
+        type: ArgType.STRING,
+        flag: '--format',
+        required: false
       }
     ],
     examples: [
@@ -643,6 +678,13 @@ function registerPerformanceReportCommand(): void {
     },
     args: [
       {
+        name: 'period',
+        description: 'Time period for report (1h, 24h, 7d, 30d)',
+        type: ArgType.STRING,
+        flag: '--period',
+        required: false
+      },
+      {
         name: 'export',
         description: 'Export report to file',
         type: ArgType.BOOLEAN,
@@ -651,7 +693,7 @@ function registerPerformanceReportCommand(): void {
       },
       {
         name: 'format',
-        description: 'Output format (text, json)',
+        description: 'Output format (text, json, csv, html)',
         type: ArgType.STRING,
         flag: '--format',
         required: false

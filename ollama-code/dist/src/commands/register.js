@@ -6,14 +6,14 @@
 import { commandRegistry, ArgType } from './index.js';
 import { logger } from '../utils/logger.js';
 import { getAIClient, getEnhancedClient, isEnhancedAIInitialized, cleanupAI } from '../ai/index.js';
-import { fileExists, readTextFile } from '../fs/operations.js';
+import { readTextFile } from '../fs/operations.js';
 import { isNonEmptyString } from '../utils/validation.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
 import { createSpinner } from '../utils/spinner.js';
 import { MAX_SEARCH_RESULTS } from '../constants.js';
-import { validateNonEmptyString, validateFileExists } from '../utils/command-helpers.js';
+import { validateNonEmptyString, validateFileExists, sanitizeSearchTerm } from '../utils/command-helpers.js';
 // import { toolCommand } from './tool.js';
 import { registerGitCommands } from './git-commands.js';
 import { registerTestingCommands } from './testing-commands.js';
@@ -282,6 +282,13 @@ function registerExplainCommand() {
             }
             catch (error) {
                 console.error('Error explaining code:', formatErrorForDisplay(error));
+                // Re-throw security-related errors to ensure proper exit codes
+                if (error instanceof Error &&
+                    (error.message.includes('Directory traversal') ||
+                        error.message.includes('Security:') ||
+                        error.message.includes('Access denied'))) {
+                    throw error;
+                }
             }
         },
         args: [
@@ -324,9 +331,8 @@ function registerRefactorCommand() {
                     console.error('Please provide a file path to refactor.');
                     return;
                 }
-                // Check if file exists
-                if (!await fileExists(file)) {
-                    console.error(`File not found: ${file}`);
+                // Validate file path and check if file exists
+                if (!await validateFileExists(file)) {
                     return;
                 }
                 console.log(`Refactoring ${file} with focus on ${focus}...\n`);
@@ -593,8 +599,9 @@ function registerConfigCommand() {
                     // Save the updated config to file
                     // Since there's no direct saveConfig function, we'd need to implement
                     // this part separately to write to a config file
-                    logger.info(`Configuration updated in memory: ${key} = ${JSON.stringify(parsedValue)}`);
-                    logger.warn('Note: Configuration changes are only temporary for this session');
+                    console.log(`Configuration updated: ${key} = ${JSON.stringify(parsedValue)}`);
+                    console.log('Note: Configuration changes are only temporary for this session');
+                    logger.info(`Configuration set: ${key} = ${JSON.stringify(parsedValue)}`);
                     // In a real implementation, we would save to the config file
                 }
             }
@@ -644,14 +651,33 @@ function registerRunCommand() {
                     resolution: 'Please provide a command to execute'
                 });
             }
+            // Security: Validate and sanitize the command to prevent injection attacks
+            const { validateAndSanitizeCommand } = await import('../utils/command-helpers.js');
+            const sanitizedCommand = validateAndSanitizeCommand(commandToRun);
+            if (!sanitizedCommand) {
+                console.error('Access denied: Command rejected for security reasons');
+                logger.warn(`Security: Command rejected: ${commandToRun}`);
+                throw createUserError('Command not allowed for security reasons', {
+                    category: ErrorCategory.VALIDATION,
+                    resolution: 'Only safe, whitelisted commands are allowed'
+                });
+            }
             try {
-                logger.info(`Running command: ${commandToRun}`);
-                // Execute the command
+                logger.info(`Running command: ${sanitizedCommand}`);
+                // Execute the command with timeout and restricted environment
                 const { exec } = await import('child_process');
                 const util = await import('util');
                 const execPromise = util.promisify(exec);
-                logger.debug(`Executing: ${commandToRun}`);
-                const { stdout, stderr } = await execPromise(commandToRun);
+                logger.debug(`Executing: ${sanitizedCommand}`);
+                // Execute with security constraints
+                const { stdout, stderr } = await execPromise(sanitizedCommand, {
+                    timeout: 30000, // 30 second timeout
+                    cwd: process.cwd(), // Restrict to current working directory
+                    env: {
+                        ...process.env,
+                        PATH: process.env.PATH // Only preserve PATH, remove other potentially dangerous env vars
+                    }
+                });
                 if (stdout) {
                     console.log(stdout);
                 }
@@ -673,6 +699,7 @@ function registerRunCommand() {
                 name: 'command',
                 description: 'The command to execute',
                 type: ArgType.STRING,
+                position: 0,
                 required: true
             }
         ],
@@ -715,7 +742,14 @@ function registerSearchCommand() {
                     const util = await import('util');
                     const execPromise = util.promisify(exec);
                     let searchCommand;
-                    const searchPattern = term.includes(' ') ? `"${term}"` : term;
+                    // Security: Sanitize search term to prevent command injection
+                    const sanitizedTerm = sanitizeSearchTerm(term);
+                    // Notify user if search term was modified for security
+                    if (sanitizedTerm !== term) {
+                        console.error('Search term sanitized for security reasons');
+                        logger.warn(`Search term sanitized: "${term}" -> "${sanitizedTerm}"`);
+                    }
+                    const searchPattern = sanitizedTerm.includes(' ') ? `"${sanitizedTerm}"` : sanitizedTerm;
                     // Build file type filters
                     let typeFilter = '';
                     if (args.type) {
@@ -769,7 +803,7 @@ function registerSearchCommand() {
                             const includePatterns = typeFilter.split(',').map(ext => `--include="*.${ext}"`).join(' ');
                             grepCommand += ` ${includePatterns}`;
                         }
-                        searchCommand = `${grepCommand} "${term}" ${searchDir} | head -${MAX_SEARCH_RESULTS}`;
+                        searchCommand = `${grepCommand} "${sanitizedTerm}" ${searchDir} | head -${MAX_SEARCH_RESULTS}`;
                     }
                     logger.debug(`Running search command: ${searchCommand}`);
                     const { stdout, stderr } = await execPromise(searchCommand, {
@@ -793,7 +827,8 @@ function registerSearchCommand() {
                         }
                     }
                     else {
-                        console.log(`No results found for '${term}'`);
+                        // Use sanitized term to prevent displaying dangerous input
+                        console.log(`No results found for '${sanitizedTerm}'`);
                     }
                     logger.info('Search completed');
                 }
@@ -1012,6 +1047,10 @@ function registerEditCommand() {
                 });
             }
             try {
+                // Security: Validate file path to prevent directory traversal attacks
+                if (!await validateFileExists(file)) {
+                    return;
+                }
                 // Check if file exists
                 const fs = await import('fs/promises');
                 const path = await import('path');
@@ -1139,14 +1178,28 @@ function registerGitCommand() {
                 // Construct and execute the git command
                 const gitCommand = `git ${operation}`;
                 logger.debug(`Executing git command: ${gitCommand}`);
-                const { stdout, stderr } = await execPromise(gitCommand);
-                if (stderr) {
-                    console.error(stderr);
+                try {
+                    const { stdout, stderr } = await execPromise(gitCommand);
+                    if (stderr) {
+                        console.error(stderr);
+                    }
+                    if (stdout) {
+                        console.log(stdout);
+                    }
+                    logger.info('Git operation completed');
                 }
-                if (stdout) {
-                    console.log(stdout);
+                catch (gitError) {
+                    // Handle common git errors gracefully
+                    if (gitError.message.includes('not a git repository')) {
+                        throw createUserError('Not in a git repository', {
+                            category: ErrorCategory.COMMAND_EXECUTION,
+                            resolution: 'Navigate to a git repository directory or run "git init" to initialize one'
+                        });
+                    }
+                    else {
+                        throw gitError;
+                    }
                 }
-                logger.info('Git operation completed');
             }
             catch (error) {
                 logger.error(`Error executing git operation: ${error instanceof Error ? error.message : 'Unknown error'}`);

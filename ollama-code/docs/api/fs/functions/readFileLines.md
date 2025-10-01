@@ -8,7 +8,7 @@
 
 > **readFileLines**(`filePath`, `start`, `end`, `encoding`): `Promise`\<`string`[]\>
 
-Defined in: [fs/operations.ts:102](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/fs/operations.ts#L102)
+Defined in: [fs/operations.ts:102](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/fs/operations.ts#L102)
 
 Read specific lines from a file
 

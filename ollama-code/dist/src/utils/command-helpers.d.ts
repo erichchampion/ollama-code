@@ -10,7 +10,7 @@ import { Spinner } from './spinner.js';
  */
 export declare function validateNonEmptyString(value: any, fieldName: string): boolean;
 /**
- * Validates that a file exists at the given path
+ * Validates that a file exists at the given path and prevents directory traversal attacks
  */
 export declare function validateFileExists(filePath: string): Promise<boolean>;
 /**
@@ -59,3 +59,13 @@ export declare function truncateText(text: string, maxLength: number): string;
  * Validates that required command arguments are provided
  */
 export declare function validateRequiredArgs(args: string[], requiredCount: number, commandName: string, usage: string): boolean;
+/**
+ * Security function to sanitize search terms and prevent command injection
+ * Removes dangerous shell metacharacters that could be used for injection attacks
+ */
+export declare function sanitizeSearchTerm(input: string): string;
+/**
+ * Security function to validate and sanitize shell commands to prevent injection attacks
+ * Returns null if the command is deemed unsafe
+ */
+export declare function validateAndSanitizeCommand(input: string): string | null;
