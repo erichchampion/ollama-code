@@ -1,4 +1,4 @@
-# Configuration Guide - Ollama Code CLI v0.7.0
+# Configuration Guide - Ollama Code CLI v0.7.1
 
 This document provides comprehensive information about configuring the Ollama Code CLI tool, including all advanced features, multi-provider settings, and enterprise configurations.
 
@@ -784,6 +784,279 @@ ollama-code config set ai.defaultProvider anthropic --global
           "developer": ["read", "write", "execute"],
           "viewer": ["read"]
         }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Performance Dashboard & Analytics Configuration - Phase 6
+
+### Performance Dashboard Configuration
+
+```json
+{
+  "performanceDashboard": {
+    "enabled": true,
+    "monitoring": {
+      "realTimeUpdates": true,
+      "updateInterval": 5000,
+      "retentionPeriod": "7d",
+      "maxDataPoints": 10000
+    },
+    "metrics": {
+      "system": {
+        "cpu": {
+          "enabled": true,
+          "thresholds": {
+            "warning": 70,
+            "critical": 90
+          }
+        },
+        "memory": {
+          "enabled": true,
+          "thresholds": {
+            "warning": 80,
+            "critical": 95
+          }
+        },
+        "disk": {
+          "enabled": true,
+          "paths": ["/", "/tmp"],
+          "thresholds": {
+            "warning": 85,
+            "critical": 95
+          }
+        }
+      },
+      "application": {
+        "responseTime": {
+          "enabled": true,
+          "percentiles": [50, 90, 95, 99],
+          "thresholds": {
+            "p50": 100,
+            "p90": 500,
+            "p95": 1000,
+            "p99": 2000
+          }
+        },
+        "errorRate": {
+          "enabled": true,
+          "thresholds": {
+            "warning": 1,
+            "critical": 5
+          }
+        },
+        "throughput": {
+          "enabled": true,
+          "windowSize": "1m",
+          "thresholds": {
+            "min": 10,
+            "target": 100
+          }
+        }
+      },
+      "ai": {
+        "providerHealth": {
+          "enabled": true,
+          "checkInterval": 30000,
+          "timeout": 10000
+        },
+        "modelPerformance": {
+          "enabled": true,
+          "trackLatency": true,
+          "trackAccuracy": false,
+          "trackCost": true
+        },
+        "cacheHitRate": {
+          "enabled": true,
+          "thresholds": {
+            "warning": 60,
+            "target": 80
+          }
+        }
+      }
+    },
+    "alerts": {
+      "enabled": true,
+      "channels": {
+        "console": {
+          "enabled": true,
+          "level": "warning"
+        },
+        "email": {
+          "enabled": false,
+          "smtp": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "secure": false,
+            "auth": {
+              "user": "${SMTP_USER}",
+              "pass": "${SMTP_PASS}"
+            }
+          },
+          "recipients": ["admin@example.com"]
+        },
+        "webhook": {
+          "enabled": false,
+          "url": "${WEBHOOK_URL}",
+          "headers": {
+            "Authorization": "Bearer ${WEBHOOK_TOKEN}"
+          }
+        }
+      },
+      "rules": {
+        "cpuHigh": {
+          "metric": "system.cpu",
+          "condition": "> 80",
+          "duration": "5m",
+          "severity": "warning"
+        },
+        "memoryHigh": {
+          "metric": "system.memory",
+          "condition": "> 90",
+          "duration": "2m",
+          "severity": "critical"
+        },
+        "errorRateHigh": {
+          "metric": "application.errorRate",
+          "condition": "> 5",
+          "duration": "1m",
+          "severity": "critical"
+        },
+        "responseTimeSlow": {
+          "metric": "application.responseTime.p95",
+          "condition": "> 2000",
+          "duration": "3m",
+          "severity": "warning"
+        }
+      }
+    },
+    "reporting": {
+      "enabled": true,
+      "formats": ["json", "html", "csv"],
+      "schedule": {
+        "daily": {
+          "enabled": true,
+          "time": "09:00"
+        },
+        "weekly": {
+          "enabled": true,
+          "day": "monday",
+          "time": "08:00"
+        },
+        "monthly": {
+          "enabled": false,
+          "day": 1,
+          "time": "08:00"
+        }
+      },
+      "includeRecommendations": true,
+      "exportPath": "./reports/performance"
+    }
+  }
+}
+```
+
+### Analytics Configuration
+
+```json
+{
+  "analytics": {
+    "enabled": true,
+    "collection": {
+      "anonymizeData": true,
+      "sampleRate": 1.0,
+      "bufferSize": 1000,
+      "flushInterval": 30000
+    },
+    "storage": {
+      "type": "local",
+      "path": "~/.ollama-code/analytics",
+      "retention": {
+        "raw": "30d",
+        "aggregated": "1y"
+      },
+      "compression": true
+    },
+    "analysis": {
+      "trendDetection": {
+        "enabled": true,
+        "sensitivity": "medium",
+        "minimumDataPoints": 100
+      },
+      "anomalyDetection": {
+        "enabled": true,
+        "algorithm": "isolation-forest",
+        "sensitivity": 0.1
+      },
+      "predictiveAnalysis": {
+        "enabled": false,
+        "horizon": "24h",
+        "confidence": 0.95
+      }
+    },
+    "recommendations": {
+      "enabled": true,
+      "categories": [
+        "performance",
+        "cost",
+        "reliability",
+        "security"
+      ],
+      "autoApply": {
+        "enabled": false,
+        "safetyLevel": "conservative"
+      }
+    }
+  }
+}
+```
+
+### Performance Optimization Integration
+
+```json
+{
+  "optimization": {
+    "startup": {
+      "strategy": "balanced",
+      "strategies": {
+        "fast": {
+          "maxStartupTime": 1500,
+          "memoryBudget": 128,
+          "skipNonEssential": true
+        },
+        "balanced": {
+          "maxStartupTime": 3000,
+          "memoryBudget": 256,
+          "skipNonEssential": false
+        },
+        "performance": {
+          "maxStartupTime": 5000,
+          "memoryBudget": 512,
+          "preloadAll": true
+        }
+      },
+      "monitoring": {
+        "trackComponentLoad": true,
+        "trackMemoryUsage": true,
+        "trackInitTime": true
+      }
+    },
+    "cache": {
+      "preloading": {
+        "enabled": true,
+        "strategy": "predictive",
+        "memoryBudget": 256,
+        "maxPreloadTime": 5000,
+        "parallelPreloads": 4
+      },
+      "indexOptimization": {
+        "enabled": true,
+        "rebuildThreshold": 0.3,
+        "backgroundRebuild": true
       }
     }
   }

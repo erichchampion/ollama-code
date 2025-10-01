@@ -119,6 +119,7 @@ export async function executeCommandOptimized(commandName, args) {
 export async function preloadCommonComponents() {
     // Run in background without blocking
     setTimeout(async () => {
+        const startTime = Date.now();
         try {
             // Phase 5: Initialize cache and index preloading
             logger.info('Starting Phase 5: Cache and Index Preloading');
@@ -132,6 +133,17 @@ export async function preloadCommonComponents() {
             await cachePreloader.startPreloading();
             // Start predictive index preloading
             await indexOptimizer.preloadIndexes();
+            // Phase 6: Initialize Performance Dashboard and Analytics
+            logger.info('Starting Phase 6: Performance Dashboard integration');
+            const { globalPerformanceDashboard } = await import('../ai/performance-dashboard.js');
+            // Start performance monitoring
+            globalPerformanceDashboard.startMonitoring();
+            // Record cache preloading metrics
+            globalPerformanceDashboard.recordEvent('cache', 'preloader_initialized', 0);
+            // Record index optimization metrics
+            globalPerformanceDashboard.recordEvent('performance', 'index_optimizer_ready', 0);
+            // Record startup optimization completion
+            globalPerformanceDashboard.recordEvent('startup', 'phase_5_completed', Date.now() - startTime);
             // Original lazy loader preloading
             const { getLazyLoader } = await import('../core/services.js');
             const lazyLoader = await getLazyLoader();

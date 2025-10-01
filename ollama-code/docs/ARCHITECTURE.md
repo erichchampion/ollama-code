@@ -233,13 +233,37 @@ export const ROUTING_STRATEGIES = {
     │             │             │             │
     ▼             ▼             ▼             ▼
 ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-│Knowledge│  │Startup  │  │Real-time│  │Predictive│
-│Graph    │  │Optimizer│  │Updates  │  │AI Cache │
-│System   │  │         │  │Engine   │  │         │
+│Knowledge│  │Enhanced │  │Cache &  │  │Performance│
+│Graph    │  │Startup  │  │Index    │  │Dashboard│
+│System   │  │Optimizer│  │Preloader│  │Analytics│
 └─────────┘  └─────────┘  └─────────┘  └─────────┘
 ```
 
 ### Key Performance Components
+
+#### Enhanced Startup Optimizer (`src/optimization/startup-optimizer.ts`) - Phase 4
+- **Multi-Strategy Optimization**: Fast, Balanced, and Performance startup modes
+- **Intelligent Component Loading**: Priority-based module initialization
+- **Resource Budget Management**: Memory and time-based optimization
+- **Background Service Integration**: Non-blocking startup with component status tracking
+- **Phase 5 & 6 Integration**: Cache preloading and performance dashboard initialization
+
+#### Cache & Index Preloading System - Phase 5
+- **Cache Preloader** (`src/optimization/cache-preloader.ts`): Intelligent cache warming with predictive loading
+- **Index Optimizer** (`src/optimization/index-optimizer.ts`): File system and module index optimization
+- **Memory-Aware Strategies**: Dynamic cache sizing based on available memory
+- **Usage Pattern Analysis**: Predictive cache loading based on user behavior
+- **Background Processing**: Non-blocking preloading without affecting startup time
+
+#### Performance Dashboard & Analytics - Phase 6
+- **Global Performance Dashboard** (`src/ai/performance-dashboard.ts`): Real-time system monitoring
+- **Analytics Commands** (`src/commands/analytics-commands.ts`): CLI commands for performance insights
+  - `performance-dashboard`: Real-time dashboard display
+  - `performance-alerts`: Alert configuration and monitoring
+  - `performance-report`: Comprehensive performance reports
+- **Metrics Collection**: CPU, memory, response times, error rates
+- **Alert System**: Configurable thresholds with real-time notifications
+- **Trend Analysis**: Historical performance tracking and predictions
 
 #### Distributed Analyzer (`src/ai/distributed-analyzer.ts`)
 - **Partition-Based Processing**: Intelligent workload distribution
@@ -838,30 +862,78 @@ Test Coverage Areas:
 
 ## Performance Optimization
 
-### Multi-Tier Optimization Strategy
+### Multi-Phase Optimization Strategy (Phases 4-6)
 
-#### Startup Optimization (`src/ai/startup-optimizer.ts`)
-- **Lazy Loading**: Modules loaded on demand
-- **Background Initialization**: Non-blocking service startup
-- **Cache Preloading**: Intelligent cache warming
-- **Resource Pooling**: Connection and resource reuse
+#### Phase 4: Enhanced Startup Optimization (`src/optimization/startup-optimizer.ts`)
+- **Strategy-Based Initialization**: Fast (1.5s), Balanced (3s), Performance (5s) modes
+- **Component Priority System**: Critical, High, Normal, Lazy loading priorities
+- **Memory Budget Management**: Configurable memory limits with intelligent allocation
+- **Background Component Loading**: Non-blocking initialization with progress tracking
+- **Resource Monitoring**: Real-time memory and CPU usage tracking
+- **DRY-Compliant Configuration**: Centralized constants in `src/constants/startup.ts`
+
+#### Phase 5: Cache & Index Preloading System
+- **Intelligent Cache Preloader** (`src/optimization/cache-preloader.ts`):
+  - Predictive cache warming based on usage patterns
+  - Memory-aware cache sizing with automatic budget management
+  - Background preloading without blocking startup
+  - Multi-tier cache strategy (critical, high, normal priority)
+- **Index Optimizer** (`src/optimization/index-optimizer.ts`):
+  - File system index optimization for faster lookups
+  - Module dependency analysis and predictive preloading
+  - Background index building with progress tracking
+
+#### Phase 6: Performance Dashboard & Analytics
+- **Real-Time Performance Monitoring**:
+  - Global performance dashboard with live metrics
+  - CPU, memory, response time, and error rate tracking
+  - Historical trend analysis and performance predictions
+- **CLI Analytics Commands**:
+  - `performance-dashboard --watch --format detailed`
+  - `performance-alerts --configure --threshold cpu:80`
+  - `performance-report --period 24h --export json`
+- **Alert System**: Configurable thresholds with real-time notifications
+- **Integration**: Seamless integration with Phase 4 startup optimizer
 
 #### Runtime Performance
-- **Predictive Caching**: AI-powered cache optimization
+- **Predictive Caching**: AI-powered cache optimization with Phase 5 preloading
 - **Request Batching**: Multiple operations batched together
 - **Parallel Processing**: Concurrent execution where possible
-- **Memory Management**: Automatic cleanup and optimization
+- **Memory Management**: Automatic cleanup and optimization with centralized utilities
 
 #### Large Codebase Handling
 - **Distributed Processing**: Workload distribution across multiple processes
-- **Incremental Analysis**: Only analyze changed files
+- **Incremental Analysis**: Only analyze changed files with Phase 5 index optimization
 - **Streaming Processing**: Handle large files without memory issues
-- **Background Services**: Non-blocking background operations
+- **Background Services**: Non-blocking background operations with Phase 4 component loading
 
 #### Provider Optimization
 - **Connection Pooling**: Reuse HTTP connections
 - **Request Deduplication**: Avoid duplicate requests
-- **Response Caching**: Cache provider responses
-- **Circuit Breakers**: Automatic failure recovery
+- **Response Caching**: Cache provider responses with Phase 5 intelligent preloading
+- **Circuit Breakers**: Automatic failure recovery with Phase 6 performance monitoring
+
+### Performance Monitoring Integration
+
+The performance optimization system now includes comprehensive monitoring through:
+
+```typescript
+// Phase 6: Performance Dashboard Integration
+const { globalPerformanceDashboard } = await import('../ai/performance-dashboard.js');
+
+// Start performance monitoring
+globalPerformanceDashboard.startMonitoring();
+
+// Record startup optimization events
+globalPerformanceDashboard.recordEvent('startup', 'phase_4_completed', startupTime);
+globalPerformanceDashboard.recordEvent('startup', 'phase_5_completed', cachePreloadTime);
+```
+
+### DRY-Compliant Performance Configuration
+
+All performance optimization constants are centralized in:
+- **Startup Constants** (`src/constants/startup.ts`): Timing, memory, and component loading settings
+- **Memory Utilities** (`src/utils/memory.ts`): Standardized memory calculation functions
+- **Performance Defaults**: Consistent configuration across all optimization phases
 
 This comprehensive architecture provides a robust foundation for the Ollama Code CLI system, enabling advanced AI integration, enterprise scalability, and seamless developer experience across multiple platforms and use cases.

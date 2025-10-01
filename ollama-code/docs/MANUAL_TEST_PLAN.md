@@ -1,5 +1,5 @@
 # Manual Test Plan - Ollama Code CLI v0.7.1
-*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration, TypeDoc API Documentation Generation, Security Enhancements & Safety-Enhanced Interactive Mode (Phase 2.4)*
+*Comprehensive Functional Testing for AI-Powered Development Assistant with Enhanced IDE Integration, Advanced AI Provider Features (Fine-tuning, Deployment, Response Fusion), Shared Utility System, DRY-Compliant Architecture, Complete VCS Integration with Git Hooks Management, CI/CD Pipeline Integration, TypeDoc API Documentation Generation, Security Enhancements & Safety-Enhanced Interactive Mode (Phase 2.4), and Complete Phase 6 Performance Dashboard and Analytics with Real-Time Monitoring*
 
 ## Overview
 
@@ -98,6 +98,12 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - **NEW:** Index-based file and module resolution with dependency analysis
 - **NEW:** Cache hit/miss analytics with performance improvement tracking
 - **NEW:** Configurable preload priorities (critical, high, normal, lazy)
+- **NEW:** Phase 6 Performance Dashboard with real-time monitoring and alerting
+- **NEW:** Live performance metrics with system health scoring (good/warning/critical)
+- **NEW:** Intelligent performance alerts with threshold-based warning and critical levels
+- **NEW:** Comprehensive optimization reports with trend analysis and actionable recommendations
+- **NEW:** CLI dashboard commands with live monitoring mode and export functionality
+- **NEW:** Phase 4, 5, and 6 integration with automatic startup monitoring
 
 ### 🛠️ **Infrastructure & System Reliability**
 - Centralized performance configuration management
@@ -4002,33 +4008,54 @@ rm tests/math.test.js
 
 #### Test: Real-Time Performance Dashboard
 **Commands:**
-1. `"Start the performance monitoring dashboard"`
-2. `"Show real-time CPU, memory, and cache metrics"`
-3. `"Generate performance alerts by exceeding thresholds"`
-4. `"Show performance trends over the last hour"`
+1. `ollama-code performance-dashboard`
+2. `ollama-code performance-dashboard --format detailed`
+3. `ollama-code performance-dashboard --watch`
+4. `ollama-code performance-dashboard --watch --interval 3000`
 
 **Expected Results:**
-- Real-time monitoring with 5-second metric collection intervals
-- CPU, memory, network, cache, and streaming metrics displayed
-- Automatic alert generation when thresholds exceeded (CPU >90%, memory >1GB)
-- Performance trend analysis showing improving/degrading metrics
-- Health scoring with overall system status (good/warning/critical)
+- Real-time monitoring with configurable metric collection intervals
+- CPU, memory, network, cache, and streaming metrics displayed with health icons
+- System health overview (🟢 good, 🟡 warning, 🔴 critical)
+- Component health scores displayed in detailed format
+- Live monitoring mode with automatic refresh and console clearing
+- Dashboard shows active alerts and top recommendations
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
-#### Test: Optimization Recommendations Engine
+#### Test: Performance Alerts and Recommendations
 **Commands:**
-1. `"Generate optimization recommendations for current performance"`
-2. `"Show critical and high-priority performance issues"`
-3. `"Apply recommended optimizations and measure impact"`
-4. `"Export performance report with trends and recommendations"`
+1. `ollama-code performance-alerts`
+2. `ollama-code performance-alerts --severity critical`
+3. `ollama-code performance-alerts --acknowledge --alert-id cpu_cpu_usage`
+4. `ollama-code performance-report`
+5. `ollama-code performance-report --export --format json`
 
 **Expected Results:**
-- Intelligent recommendations based on metrics, trends, and alerts
-- Priority-based recommendation ranking (critical > high > medium > low)
-- Specific implementation guidance for each recommendation
-- Estimated performance improvement percentages and confidence scores
-- Comprehensive reports with actionable optimization strategies
+- Performance alerts displayed with severity levels (🔴 critical, 🟡 warning)
+- Alert details include value, threshold, category, and timestamp
+- High priority recommendations shown with each alert
+- Performance reports include comprehensive analysis and trends
+- Export functionality creates timestamped report files
+- JSON format available for integration with monitoring systems
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Phase 6 Dashboard Integration with Phase 4 & 5
+**Commands:**
+1. `ollama-code ask "Start an intensive task to trigger monitoring"`
+2. `ollama-code performance-dashboard --watch` (in separate terminal)
+3. Monitor dashboard during Phase 4 startup optimization
+4. Verify Phase 5 cache preloading metrics appear in dashboard
+5. `ollama-code performance-alerts` (check for any startup alerts)
+
+**Expected Results:**
+- Phase 4 startup optimization metrics recorded by dashboard
+- Phase 5 cache and index preloading events tracked
+- Performance monitoring starts automatically during startup
+- Cache preloader and index optimizer metrics integrated
+- Background processing visible in streaming metrics
+- No performance degradation from monitoring overhead
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 

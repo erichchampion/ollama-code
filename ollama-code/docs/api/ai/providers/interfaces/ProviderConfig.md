@@ -6,7 +6,7 @@
 
 # Interface: ProviderConfig
 
-Defined in: [ai/providers/base-provider.ts:106](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L106)
+Defined in: [ai/providers/base-provider.ts:106](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L106)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/base-provider.ts:106](https://github.com/erichchampion
 
 > **name**: `string`
 
-Defined in: [ai/providers/base-provider.ts:107](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L107)
+Defined in: [ai/providers/base-provider.ts:107](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L107)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/base-provider.ts:107](https://github.com/erichchampion
 
 > `optional` **apiKey**: `string`
 
-Defined in: [ai/providers/base-provider.ts:108](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L108)
+Defined in: [ai/providers/base-provider.ts:108](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L108)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/base-provider.ts:108](https://github.com/erichchampion
 
 > `optional` **baseUrl**: `string`
 
-Defined in: [ai/providers/base-provider.ts:109](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L109)
+Defined in: [ai/providers/base-provider.ts:109](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L109)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/base-provider.ts:109](https://github.com/erichchampion
 
 > `optional` **timeout**: `number`
 
-Defined in: [ai/providers/base-provider.ts:110](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L110)
+Defined in: [ai/providers/base-provider.ts:110](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L110)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/base-provider.ts:110](https://github.com/erichchampion
 
 > `optional` **retryOptions**: `object`
 
-Defined in: [ai/providers/base-provider.ts:111](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L111)
+Defined in: [ai/providers/base-provider.ts:111](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L111)
 
 #### maxRetries
 
@@ -66,7 +66,7 @@ Defined in: [ai/providers/base-provider.ts:111](https://github.com/erichchampion
 
 > `optional` **rateLimiting**: `object`
 
-Defined in: [ai/providers/base-provider.ts:116](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L116)
+Defined in: [ai/providers/base-provider.ts:116](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L116)
 
 #### enabled
 
@@ -86,7 +86,7 @@ Defined in: [ai/providers/base-provider.ts:116](https://github.com/erichchampion
 
 > `optional` **caching**: `object`
 
-Defined in: [ai/providers/base-provider.ts:121](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/ai/providers/base-provider.ts#L121)
+Defined in: [ai/providers/base-provider.ts:121](https://github.com/erichchampion/ollama-code/blob/7bf02bdc8ebf923c87dd1be8a3c8c4011170f2d0/ollama-code/src/ai/providers/base-provider.ts#L121)
 
 #### enabled
 

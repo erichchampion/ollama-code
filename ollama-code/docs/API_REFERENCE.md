@@ -1,4 +1,4 @@
-# API Reference - Ollama Code CLI v0.7.0
+# API Reference - Ollama Code CLI v0.7.1
 
 This document provides comprehensive API documentation for the Ollama Code CLI, including all commands, CLI modes, parameters, and usage examples.
 
@@ -1226,45 +1226,111 @@ ollama-code docs deploy github-pages --branch gh-pages
 
 ## Performance and Analytics Commands
 
-### `analytics`
+*Phase 6 Implementation: Comprehensive Performance Dashboard and Analytics*
 
-Performance analytics and insights.
+### `performance-dashboard`
+
+Real-time performance monitoring dashboard with system health scoring.
 
 **Usage:**
 ```bash
-ollama-code analytics <subcommand> [options]
+ollama-code performance-dashboard [options]
 ```
 
-**Subcommands:**
-
-#### `dashboard`
-Show performance dashboard.
-```bash
-ollama-code analytics dashboard [--real-time] [--export <format>]
-```
-
-#### `benchmark`
-Run performance benchmarks.
-```bash
-ollama-code analytics benchmark [--suite <name>] [--duration <seconds>]
-```
-
-#### `profile`
-Profile application performance.
-```bash
-ollama-code analytics profile <command> [--output <file>] [--format <type>]
-```
+**Options:**
+- `--format <type>` - Output format: summary (default), detailed, json
+- `--watch` - Enable live monitoring mode with automatic refresh
+- `--interval <ms>` - Refresh interval in milliseconds for watch mode (default: 5000)
 
 **Examples:**
 ```bash
-# Show real-time performance dashboard
-ollama-code analytics dashboard --real-time
+# Show current performance snapshot
+ollama-code performance-dashboard
 
-# Run comprehensive benchmarks
-ollama-code analytics benchmark --suite full --duration 300
+# Detailed dashboard with component health scores
+ollama-code performance-dashboard --format detailed
 
-# Profile specific command
-ollama-code analytics profile "ollama-code ask 'complex question'" --output profile.json
+# Live monitoring mode (press Ctrl+C to exit)
+ollama-code performance-dashboard --watch
+
+# Custom refresh interval
+ollama-code performance-dashboard --watch --interval 3000
+
+# JSON output for monitoring integration
+ollama-code performance-dashboard --format json
+```
+
+### `performance-alerts`
+
+Performance alerts and recommendations management.
+
+**Usage:**
+```bash
+ollama-code performance-alerts [options]
+```
+
+**Options:**
+- `--severity <level>` - Filter by severity: all (default), warning, critical
+- `--acknowledge` - Acknowledge an alert
+- `--alert-id <id>` - Specific alert ID to acknowledge
+
+**Examples:**
+```bash
+# Show all active performance alerts
+ollama-code performance-alerts
+
+# Show only critical alerts
+ollama-code performance-alerts --severity critical
+
+# Acknowledge a specific alert
+ollama-code performance-alerts --acknowledge --alert-id cpu_cpu_usage
+```
+
+### `performance-report`
+
+Generate comprehensive performance optimization reports.
+
+**Usage:**
+```bash
+ollama-code performance-report [options]
+```
+
+**Options:**
+- `--export` - Export report to timestamped file
+- `--format <type>` - Output format: text (default), json
+
+**Examples:**
+```bash
+# Generate performance report
+ollama-code performance-report
+
+# Export report to file
+ollama-code performance-report --export
+
+# Generate JSON report for automation
+ollama-code performance-report --format json --export
+```
+
+### `analytics-show`
+
+Display usage analytics and statistics.
+
+**Usage:**
+```bash
+ollama-code analytics-show [options]
+```
+
+**Options:**
+- `--days <number>` - Number of days to analyze (1-365, default: 30)
+- `--detailed` - Show detailed analytics breakdown
+
+**Examples:**
+```bash
+# Show 30-day analytics summary
+ollama-code analytics-show
+
+# Show detailed 7-day analytics
+ollama-code analytics-show --days 7 --detailed
 ```
 
 ### `cache`
