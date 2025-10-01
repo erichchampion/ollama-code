@@ -30,6 +30,14 @@ export const AI_RESPONSE_FIXTURES = {
   },
   diagnostic: {
     analysis: 'LINE 3: [WARNING] Potential null pointer exception\nLINE 5: [INFO] Consider using const instead of let'
+  },
+  chat: {
+    greeting: 'Hello! How can I help you today?',
+    help: 'I can assist with code generation, debugging, refactoring, and more!',
+    create: 'Sure! I can help you create that. What specific functionality do you need?',
+    debug: 'Let me analyze the error. Can you provide the error message or stack trace?',
+    explain: 'I\'d be happy to explain that. This code does the following...',
+    default: 'I understand. Let me help you with that.'
   }
 } as const;
 
@@ -128,6 +136,33 @@ export function createDiagnosticAIHandler() {
 }
 
 /**
+ * Create a standard AI request handler for chat panel testing
+ * @returns AI request handler function
+ */
+export function createChatAIHandler() {
+  return async (request: any) => {
+    if (request.type === 'chat') {
+      const prompt = request.prompt.toLowerCase();
+
+      if (prompt.includes('hello') || prompt.includes('hi')) {
+        return { result: AI_RESPONSE_FIXTURES.chat.greeting };
+      } else if (prompt.includes('help')) {
+        return { result: AI_RESPONSE_FIXTURES.chat.help };
+      } else if (prompt.includes('create') || prompt.includes('generate')) {
+        return { result: AI_RESPONSE_FIXTURES.chat.create };
+      } else if (prompt.includes('bug') || prompt.includes('error')) {
+        return { result: AI_RESPONSE_FIXTURES.chat.debug };
+      } else if (prompt.includes('explain')) {
+        return { result: AI_RESPONSE_FIXTURES.chat.explain };
+      } else {
+        return { result: AI_RESPONSE_FIXTURES.chat.default };
+      }
+    }
+    return { result: '' };
+  };
+}
+
+/**
  * Create a mock logger for testing
  * @returns Mock Logger instance
  */
@@ -160,5 +195,27 @@ export const TEST_DATA_CONSTANTS = {
   RAPID_MESSAGE_COUNT: 50,
 
   /** Message count for concurrent processing tests */
-  CONCURRENT_MESSAGE_COUNT: 10
+  CONCURRENT_MESSAGE_COUNT: 10,
+
+  /** Chat test message counts */
+  CHAT_TEST_COUNTS: {
+    /** Single exchange: 1 user message + 1 assistant response */
+    SINGLE_EXCHANGE: 2,
+    /** Double exchange: 2 user messages + 2 assistant responses */
+    DOUBLE_EXCHANGE: 4,
+    /** Triple exchange: 3 user messages + 3 assistant responses */
+    TRIPLE_EXCHANGE: 6,
+    /** Number of user messages in a triple exchange */
+    TRIPLE_USER_MESSAGES: 3,
+    /** Number of assistant messages in a triple exchange */
+    TRIPLE_ASSISTANT_MESSAGES: 3
+  },
+
+  /** Test timing delays */
+  DELAYS: {
+    /** Milliseconds to ensure distinct timestamps in chronological tests */
+    TIMESTAMP_DIFFERENTIATION: 10,
+    /** Milliseconds spacing for rapid message tests */
+    RAPID_MESSAGE_SPACING: 5
+  }
 } as const;

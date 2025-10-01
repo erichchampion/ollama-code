@@ -13,14 +13,23 @@ import {
   sleep
 } from '../helpers/extensionTestHelper';
 import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-import { createMockOllamaClient, createMockLogger } from '../helpers/providerTestHelper';
+import { createMockOllamaClient, createMockLogger, createChatAIHandler, TEST_DATA_CONSTANTS } from '../helpers/providerTestHelper';
+
+/**
+ * Chat message interface
+ */
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 /**
  * Mock Chat Panel for testing
  * Simulates the WebView-based chat panel behavior
  */
 class MockChatPanel {
-  private messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }> = [];
+  private messages: ChatMessage[] = [];
   private visible: boolean = false;
   private client: OllamaCodeClient;
   private logger: Logger;
@@ -93,7 +102,7 @@ class MockChatPanel {
 
       case '/clear':
         const messageCount = this.messages.length;
-        this.messages = [];
+        this.clearHistory();
         return `Cleared ${messageCount} messages from history`;
 
       case '/session':
@@ -101,7 +110,7 @@ class MockChatPanel {
         return `Session Information:\n` +
           `Connected: ${status.connected}\n` +
           `Messages: ${this.messages.length}\n` +
-          `Port: ${status.config.port}`;
+          `Port: ${status.config?.port || 'Unknown'}`;
 
       case '/model':
         return `Current model: Ollama (via WebSocket)`;
@@ -111,7 +120,7 @@ class MockChatPanel {
     }
   }
 
-  getMessages(): Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }> {
+  getMessages(): ChatMessage[] {
     return [...this.messages];
   }
 
@@ -123,11 +132,11 @@ class MockChatPanel {
     this.messages = [];
   }
 
-  getLastMessage(): { role: 'user' | 'assistant'; content: string; timestamp: Date } | undefined {
+  getLastMessage(): ChatMessage | undefined {
     return this.messages.length > 0 ? this.messages[this.messages.length - 1] : undefined;
   }
 
-  findMessagesByRole(role: 'user' | 'assistant'): Array<{ role: 'user' | 'assistant'; content: string; timestamp: Date }> {
+  findMessagesByRole(role: ChatMessage['role']): ChatMessage[] {
     return this.messages.filter(msg => msg.role === role);
   }
 }
@@ -141,30 +150,8 @@ suite('Chat Panel Integration Tests', () => {
   setup(async function() {
     this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create AI handler for chat messages
-    const chatAIHandler = async (request: any) => {
-      if (request.type === 'chat') {
-        const prompt = request.prompt.toLowerCase();
-
-        if (prompt.includes('hello') || prompt.includes('hi')) {
-          return { result: 'Hello! How can I help you today?' };
-        } else if (prompt.includes('help')) {
-          return { result: 'I can assist with code generation, debugging, refactoring, and more!' };
-        } else if (prompt.includes('create') || prompt.includes('generate')) {
-          return { result: 'Sure! I can help you create that. What specific functionality do you need?' };
-        } else if (prompt.includes('bug') || prompt.includes('error')) {
-          return { result: 'Let me analyze the error. Can you provide the error message or stack trace?' };
-        } else if (prompt.includes('explain')) {
-          return { result: 'I\'d be happy to explain that. This code does the following...' };
-        } else {
-          return { result: 'I understand. Let me help you with that.' };
-        }
-      }
-      return { result: '' };
-    };
-
-    // Create mock client and logger
-    mockClient = createMockOllamaClient(true, chatAIHandler);
+    // Create mock client and logger using shared helpers
+    mockClient = createMockOllamaClient(true, createChatAIHandler());
     mockLogger = createMockLogger();
 
     // Create chat panel
@@ -198,7 +185,7 @@ suite('Chat Panel Integration Tests', () => {
       await chatPanel.sendMessage('Hello!');
 
       const messages = chatPanel.getMessages();
-      assert.strictEqual(messages.length, 2, 'Should have user message and AI response');
+      assert.strictEqual(messages.length, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.SINGLE_EXCHANGE, 'Should have user message and AI response');
       assert.strictEqual(messages[0].role, 'user', 'First message should be from user');
       assert.strictEqual(messages[0].content, 'Hello!', 'User message content should match');
       assert.strictEqual(messages[1].role, 'assistant', 'Second message should be from assistant');
@@ -215,13 +202,13 @@ suite('Chat Panel Integration Tests', () => {
       await chatPanel.sendMessage('I need to create a function');
 
       const messages = chatPanel.getMessages();
-      assert.strictEqual(messages.length, 6, 'Should have 3 user messages + 3 assistant responses');
+      assert.strictEqual(messages.length, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.TRIPLE_EXCHANGE, 'Should have 3 user messages + 3 assistant responses');
 
       const userMessages = chatPanel.findMessagesByRole('user');
       const assistantMessages = chatPanel.findMessagesByRole('assistant');
 
-      assert.strictEqual(userMessages.length, 3, 'Should have 3 user messages');
-      assert.strictEqual(assistantMessages.length, 3, 'Should have 3 assistant messages');
+      assert.strictEqual(userMessages.length, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.TRIPLE_USER_MESSAGES, 'Should have 3 user messages');
+      assert.strictEqual(assistantMessages.length, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.TRIPLE_ASSISTANT_MESSAGES, 'Should have 3 assistant messages');
     });
 
     test('Should display code blocks in chat', async function() {
@@ -269,7 +256,7 @@ suite('Chat Panel Integration Tests', () => {
       const messagesAfter = chatPanel.getMessageCount();
 
       assert.strictEqual(messagesBefore, messagesAfter, 'Message count should persist after hide/show');
-      assert.strictEqual(messagesAfter, 4, 'Should have 2 user messages + 2 assistant responses');
+      assert.strictEqual(messagesAfter, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.DOUBLE_EXCHANGE, 'Should have 2 user messages + 2 assistant responses');
     });
 
     test('Should handle errors when client is disconnected', async function() {
@@ -295,9 +282,9 @@ suite('Chat Panel Integration Tests', () => {
       chatPanel.show();
 
       await chatPanel.sendMessage('Message 1');
-      await sleep(10); // Small delay to ensure timestamp difference
+      await sleep(TEST_DATA_CONSTANTS.DELAYS.TIMESTAMP_DIFFERENTIATION);
       await chatPanel.sendMessage('Message 2');
-      await sleep(10);
+      await sleep(TEST_DATA_CONSTANTS.DELAYS.TIMESTAMP_DIFFERENTIATION);
       await chatPanel.sendMessage('Message 3');
 
       const messages = chatPanel.getMessages();
@@ -326,7 +313,7 @@ suite('Chat Panel Integration Tests', () => {
       await Promise.all(promises);
 
       const messages = chatPanel.getMessages();
-      assert.strictEqual(messages.length, 6, 'Should handle all rapid messages (3 user + 3 assistant)');
+      assert.strictEqual(messages.length, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.TRIPLE_EXCHANGE, 'Should handle all rapid messages (3 user + 3 assistant)');
     });
 
     test('Should clear conversation history', async function() {
@@ -337,7 +324,7 @@ suite('Chat Panel Integration Tests', () => {
       await chatPanel.sendMessage('Message 1');
       await chatPanel.sendMessage('Message 2');
 
-      assert.strictEqual(chatPanel.getMessageCount(), 4, 'Should have messages before clear');
+      assert.strictEqual(chatPanel.getMessageCount(), TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.DOUBLE_EXCHANGE, 'Should have messages before clear');
 
       chatPanel.clearHistory();
 
@@ -370,16 +357,16 @@ suite('Chat Panel Integration Tests', () => {
       await chatPanel.sendMessage('Message 1');
       await chatPanel.sendMessage('Message 2');
 
-      assert.strictEqual(chatPanel.getMessageCount(), 4, 'Should have 4 messages before clear');
+      assert.strictEqual(chatPanel.getMessageCount(), TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.DOUBLE_EXCHANGE, 'Should have 4 messages before clear');
 
       await chatPanel.sendMessage('/clear');
 
       // After /clear command, only the /clear message and its response remain
-      assert.strictEqual(chatPanel.getMessageCount(), 2, 'Should only have /clear command and response');
+      assert.strictEqual(chatPanel.getMessageCount(), TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.SINGLE_EXCHANGE, 'Should only have /clear command and response');
 
       const lastMessage = chatPanel.getLastMessage();
       assert.ok(lastMessage!.content.includes('Cleared'), 'Should confirm clearing');
-      assert.ok(lastMessage!.content.includes('4'), 'Should mention number of cleared messages');
+      assert.ok(lastMessage!.content.includes(String(TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.DOUBLE_EXCHANGE)), 'Should mention number of cleared messages');
     });
 
     test('Should execute /session command', async function() {
@@ -495,7 +482,7 @@ suite('Chat Panel Integration Tests', () => {
       const messages = chatPanel.getMessages();
       const userMessages = chatPanel.findMessagesByRole('user');
 
-      assert.strictEqual(userMessages.length, 3, 'Should have 3 user messages');
+      assert.strictEqual(userMessages.length, TEST_DATA_CONSTANTS.CHAT_TEST_COUNTS.TRIPLE_USER_MESSAGES, 'Should have 3 user messages');
 
       const regularMessages = userMessages.filter(m => !m.content.startsWith('/'));
       const commandMessages = userMessages.filter(m => m.content.startsWith('/'));
