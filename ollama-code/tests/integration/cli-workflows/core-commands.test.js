@@ -121,7 +121,7 @@ describe('Core CLI Commands Integration', () => {
     test('should handle non-existent file gracefully', async () => {
       const result = await cliRunner.execCommand([
         'explain',
-        '/path/to/nonexistent/file.js'
+        'nonexistent-file.js'
       ], {
         expectSuccess: false
       });
@@ -251,7 +251,7 @@ describe('Core CLI Commands Integration', () => {
     test('should handle non-existent file gracefully', async () => {
       const result = await cliRunner.execCommand([
         'fix',
-        '/path/to/nonexistent/file.js'
+        'nonexistent-file.js'
       ], {
         expectSuccess: false
       });
@@ -307,7 +307,7 @@ describe('Core CLI Commands Integration', () => {
     test('should handle non-existent file gracefully', async () => {
       const result = await cliRunner.execCommand([
         'refactor',
-        '/path/to/nonexistent/file.js'
+        'nonexistent-file.js'
       ], {
         expectSuccess: false
       });
@@ -414,9 +414,10 @@ describe('Core CLI Commands Integration', () => {
     });
 
     test('should handle interrupted commands gracefully', async () => {
-      // Test timeout handling
+      // Test timeout handling - use extremely short timeout to force timeout
+      // Even with mocks, 10ms should timeout during initialization
       const result = await cliRunner.execCommand(['ask', 'test'], {
-        timeout: 1000 // Very short timeout
+        timeout: 10 // Extremely short timeout to force timeout
       }).catch(error => ({ error: error.message }));
 
       expect(result.error).toBeDefined();

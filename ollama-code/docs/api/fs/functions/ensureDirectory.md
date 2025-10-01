@@ -8,7 +8,7 @@
 
 > **ensureDirectory**(`dirPath`): `Promise`\<`void`\>
 
-Defined in: [fs/operations.ts:46](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/fs/operations.ts#L46)
+Defined in: [fs/operations.ts:46](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/fs/operations.ts#L46)
 
 Create a directory if it doesn't exist
 

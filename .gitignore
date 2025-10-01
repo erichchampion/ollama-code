@@ -34,6 +34,7 @@ yarn-error.log*
 .pnpm-debug.log*
 debug.txt
 network.txt
+ollama-code/performance-report-*
 
 # env files (can opt-in for committing if needed)
 .env*

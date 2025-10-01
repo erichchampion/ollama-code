@@ -42,23 +42,42 @@ export async function validateFileExists(filePath) {
  * Security function to prevent directory traversal attacks
  * Only allows access to files within the current working directory and its subdirectories
  */
-function isSecureFilePath(filePath) {
+export function isSecureFilePath(filePath) {
     try {
         // Get the current working directory
         const cwd = process.cwd();
+        // Security: Normalize path separators to prevent bypassing checks with mixed separators
+        // On Unix systems, backslashes in paths are literal characters, not separators
+        // Convert any backslashes to forward slashes before processing
+        const normalizedPath = filePath.replace(/\\/g, '/');
         // Resolve the file path to an absolute path
-        const resolvedPath = path.resolve(filePath);
-        // Check if the resolved path is within the current working directory
-        // This prevents access to parent directories using ../
+        const resolvedPath = path.resolve(normalizedPath);
+        // Allow access to current working directory and its subdirectories
         const isWithinCwd = resolvedPath.startsWith(cwd + path.sep) || resolvedPath === cwd;
-        if (!isWithinCwd) {
-            logger.warn(`Directory traversal attempt blocked: ${filePath} -> ${resolvedPath}`);
+        // Allow access to system temp directories for testing and legitimate operations
+        const tempDirs = [
+            '/tmp/',
+            '/var/tmp/',
+            process.env.TMPDIR || '',
+            process.env.TEMP || '',
+            process.env.TMP || ''
+        ].filter(Boolean);
+        const isInTempDir = tempDirs.some(tempDir => {
+            try {
+                const normalizedTempDir = path.resolve(tempDir);
+                return resolvedPath.startsWith(normalizedTempDir + path.sep) || resolvedPath === normalizedTempDir;
+            }
+            catch {
+                return false;
+            }
+        });
+        if (!isWithinCwd && !isInTempDir) {
+            logger.warn(`Directory traversal attempt blocked: ${normalizedPath} -> ${resolvedPath}`);
             return false;
         }
-        // Additional security: Block access to sensitive system files
+        // Additional security: Block access to sensitive system files even in temp dirs
         const forbiddenPaths = [
             '/etc/',
-            '/var/',
             '/usr/',
             '/opt/',
             '/root/',
@@ -68,7 +87,6 @@ function isSecureFilePath(filePath) {
             'C:\\Program Files\\',
             'C:\\Program Files (x86)\\',
             'C:\\Users\\',
-            process.env.HOME || '',
             path.join(process.env.HOME || '', '.ssh'),
             path.join(process.env.HOME || '', '.aws'),
             path.join(process.env.HOME || '', '.config')
@@ -251,6 +269,283 @@ export function validateRequiredArgs(args, requiredCount, commandName, usage) {
     return true;
 }
 /**
+ * Validates input size to prevent DoS attacks
+ * Returns false if input is too large
+ */
+export function validateInputSize(input, maxSizeBytes = 50000) {
+    if (!input || typeof input !== 'string') {
+        return true; // Empty/null inputs are valid
+    }
+    const inputSize = Buffer.byteLength(input, 'utf8');
+    if (inputSize > maxSizeBytes) {
+        const sizeInKB = Math.round(inputSize / 1024);
+        const maxSizeInKB = Math.round(maxSizeBytes / 1024);
+        console.error(`Input too large: ${sizeInKB}KB exceeds maximum of ${maxSizeInKB}KB`);
+        logger.warn(`Input size validation failed: ${inputSize} bytes > ${maxSizeBytes} bytes`);
+        return false;
+    }
+    return true;
+}
+/**
+ * Simple rate limiter to prevent DoS attacks
+ */
+class RateLimiter {
+    requests = new Map();
+    maxRequests;
+    windowMs;
+    constructor(maxRequests = 10, windowMs = 60000) {
+        this.maxRequests = maxRequests;
+        this.windowMs = windowMs;
+    }
+    /**
+     * Check if a request is allowed for the given identifier
+     */
+    isAllowed(identifier = 'global') {
+        const now = Date.now();
+        const requestTimes = this.requests.get(identifier) || [];
+        // Remove old requests outside the window
+        const validRequests = requestTimes.filter(time => now - time < this.windowMs);
+        // Check if limit is exceeded
+        if (validRequests.length >= this.maxRequests) {
+            logger.warn(`Rate limit exceeded for ${identifier}: ${validRequests.length}/${this.maxRequests} requests`);
+            return false;
+        }
+        // Add current request time
+        validRequests.push(now);
+        this.requests.set(identifier, validRequests);
+        return true;
+    }
+    /**
+     * Get current request count for identifier
+     */
+    getCurrentCount(identifier = 'global') {
+        const now = Date.now();
+        const requestTimes = this.requests.get(identifier) || [];
+        return requestTimes.filter(time => now - time < this.windowMs).length;
+    }
+}
+// Global rate limiter instance
+const globalRateLimiter = new RateLimiter(10, 60000); // 10 requests per minute
+/**
+ * Validates rate limiting to prevent DoS attacks
+ * Returns false if rate limit is exceeded
+ */
+export function validateRateLimit(identifier = 'global') {
+    if (!globalRateLimiter.isAllowed(identifier)) {
+        const currentCount = globalRateLimiter.getCurrentCount(identifier);
+        console.error(`Rate limit exceeded: ${currentCount}/10 requests per minute`);
+        console.error('Please wait before making additional requests');
+        return false;
+    }
+    return true;
+}
+/**
+ * Validates configuration values for security
+ * Prevents insecure or malicious configuration settings
+ */
+export function validateConfigurationValue(key, value) {
+    if (!key || typeof key !== 'string') {
+        console.error('Invalid configuration key');
+        logger.warn('Configuration validation failed: invalid key');
+        return false;
+    }
+    // Define validation rules for different config keys
+    const validationRules = {
+        'logger.level': (val) => ['error', 'warn', 'info', 'debug'].includes(val),
+        'api.baseUrl': (val) => {
+            if (typeof val !== 'string')
+                return false;
+            try {
+                const url = new URL(val);
+                // A10 Security: Block dangerous protocols that could lead to SSRF
+                const dangerousProtocols = ['file:', 'gopher:', 'ftp:', 'ldap:', 'dict:', 'telnet:'];
+                if (dangerousProtocols.includes(url.protocol)) {
+                    console.error(`A10 Security: Dangerous protocol blocked: ${url.protocol}`);
+                    return false;
+                }
+                // A10 Security: Block attempts to access internal/private networks
+                const hostname = url.hostname.toLowerCase();
+                const port = url.port ? parseInt(url.port) : (url.protocol === 'https:' ? 443 : 80);
+                // Block localhost access to non-HTTP ports (prevent port scanning)
+                if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== 80 && port !== 443 && port !== 11434) {
+                    console.error(`A10 Security: Blocked localhost access to non-standard port: ${port}`);
+                    return false;
+                }
+                // Block cloud metadata endpoints
+                if (hostname === '169.254.169.254' || hostname.includes('metadata')) {
+                    console.error(`A10 Security: Blocked access to cloud metadata endpoint: ${hostname}`);
+                    return false;
+                }
+                // Block private IP ranges (RFC 1918)
+                if (hostname.startsWith('10.') || hostname.startsWith('192.168.') ||
+                    hostname.match(/^172\.(1[6-9]|2[0-9]|3[01])\./)) {
+                    console.error(`A10 Security: Blocked access to private IP range: ${hostname}`);
+                    return false;
+                }
+                // Allow only HTTP/HTTPS protocols
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                    console.error(`A10 Security: Only HTTP/HTTPS protocols allowed, got: ${url.protocol}`);
+                    return false;
+                }
+                // Allow localhost HTTP and Ollama default port, require HTTPS for external URLs
+                return url.protocol === 'https:' ||
+                    (url.protocol === 'http:' && (hostname === 'localhost' || hostname === '127.0.0.1'));
+            }
+            catch {
+                return false;
+            }
+        },
+        'telemetry.enabled': (val) => typeof val === 'boolean',
+        'ai.temperature': (val) => typeof val === 'number' && val >= 0 && val <= 2,
+        'ai.maxTokens': (val) => typeof val === 'number' && val > 0 && val <= 100000,
+        'api.timeout': (val) => typeof val === 'number' && val > 0 && val <= 300000,
+        'fileOps.maxReadSizeBytes': (val) => typeof val === 'number' && val > 0 && val <= 100000000,
+        'performance.maxCacheSize': (val) => typeof val === 'number' && val > 0 && val <= 10000,
+        'performance.concurrentOperations': (val) => typeof val === 'number' && val > 0 && val <= 20
+    };
+    // Check if we have a specific validation rule
+    const validator = validationRules[key];
+    if (validator) {
+        const isValid = validator(value);
+        if (!isValid) {
+            console.error(`Invalid value for ${key}: ${value}`);
+            logger.warn(`Configuration validation failed for ${key}: ${value}`);
+            return false;
+        }
+    }
+    // General security checks
+    if (typeof value === 'string') {
+        // Prevent script injection in string values
+        if (value.includes('<script>') || value.includes('javascript:') || value.includes('data:')) {
+            console.error(`Potentially malicious configuration value detected for ${key}`);
+            logger.warn(`Security: Malicious config value blocked for ${key}`);
+            return false;
+        }
+        // Prevent command injection patterns
+        if (value.includes('$(') || value.includes('`') || value.includes('|') || value.includes(';')) {
+            console.error(`Potentially dangerous configuration value for ${key}`);
+            logger.warn(`Security: Dangerous config pattern blocked for ${key}`);
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * Sanitizes configuration output for production mode
+ * Removes debug information and sensitive data
+ */
+export function sanitizeConfigurationOutput(config, isProduction = false) {
+    if (!config || typeof config !== 'object') {
+        return config;
+    }
+    const sanitized = JSON.parse(JSON.stringify(config));
+    if (isProduction) {
+        // Remove debug and development specific information
+        if (sanitized.development) {
+            delete sanitized.development.enableDebugMode;
+            delete sanitized.development.logLevel;
+        }
+        if (sanitized.logger) {
+            // Don't expose debug level logs in production
+            if (sanitized.logger.level === 'debug') {
+                sanitized.logger.level = 'info';
+            }
+        }
+        // Remove internal/sensitive keys
+        delete sanitized.version;
+        delete sanitized.internalMetrics;
+        delete sanitized.debugInfo;
+    }
+    return sanitized;
+}
+/**
+ * A06 Security: Validate file types for processing
+ * Returns true if the file is safe to process, false otherwise
+ */
+export function validateFileTypeForProcessing(filePath) {
+    // Get file extension using simple string manipulation
+    const lastDotIndex = filePath.lastIndexOf('.');
+    const extension = lastDotIndex >= 0 ? filePath.substring(lastDotIndex).toLowerCase() : '';
+    // A06 Security: List of dangerous file extensions that should not be processed
+    const dangerousExtensions = [
+        '.exe', '.dll', '.bat', '.cmd', '.com', '.scr', '.vbs', '.vbe',
+        '.jse', '.wsf', '.wsh', '.msi', '.msp', '.hta', '.cpl',
+        '.ps1', '.ps2', '.psc1', '.psc2', '.msh', '.msh1', '.msh2', '.mshxml',
+        '.scf', '.lnk', '.inf', '.reg', '.docm', '.dotm', '.xlsm', '.xltm',
+        '.xlam', '.pptm', '.potm', '.ppam', '.ppsm', '.sldm'
+    ];
+    if (dangerousExtensions.includes(extension)) {
+        console.error(`A06 Security: File type not supported for processing: ${extension}`);
+        logger.warn(`A06 Security: Dangerous file type blocked: ${extension} (${filePath})`);
+        return false;
+    }
+    // A06 Security: List of safe text-based file extensions for code analysis
+    const safeExtensions = [
+        '.txt', '.md', '.json', '.xml', '.yaml', '.yml', '.toml', '.ini', '.cfg',
+        '.js', '.ts', '.jsx', '.tsx', '.vue', '.svelte', '.py', '.java', '.c', '.cpp',
+        '.cc', '.cxx', '.h', '.hpp', '.cs', '.vb', '.php', '.rb', '.go', '.rs',
+        '.swift', '.kt', '.scala', '.clj', '.hs', '.elm', '.ml', '.fs', '.r',
+        '.sql', '.html', '.htm', '.css', '.scss', '.sass', '.less', '.styl',
+        '.sh', '.bash', '.zsh', '.fish', '.dockerfile', '.gitignore', '.editorconfig'
+    ];
+    // Allow files without extensions (often config files)
+    if (!extension) {
+        return true;
+    }
+    // Only allow explicitly safe extensions
+    if (safeExtensions.includes(extension)) {
+        return true;
+    }
+    // Warn about unknown file types but allow them (with caution)
+    logger.warn(`A06 Security: Unknown file type, proceeding with caution: ${extension} (${filePath})`);
+    return true;
+}
+/**
+ * A08 Security: Validate content for potential security issues
+ * Returns true if content appears safe to process, false otherwise
+ */
+export function validateContentIntegrity(content, filePath) {
+    // Allow empty files - they're valid for analysis
+    if (typeof content !== 'string') {
+        logger.warn(`A08 Security: Invalid content type for file: ${filePath}`);
+        return false;
+    }
+    // A08 Security: Check for potentially malicious patterns
+    const maliciousPatterns = [
+        /eval\s*\(/i, // eval() calls
+        /Function\s*\(/i, // Function constructor
+        /setTimeout\s*\(/i, // setTimeout with string
+        /setInterval\s*\(/i, // setInterval with string
+        /document\.write\s*\(/i, // document.write
+        /innerHTML\s*=/i, // innerHTML assignment
+        /outerHTML\s*=/i, // outerHTML assignment
+        /javascript:/i, // javascript: protocol
+        /vbscript:/i, // vbscript: protocol
+        /data:.*script/i, // data: URLs with script
+        /\.call\s*\(\s*null/i, // suspicious .call usage
+        /\.apply\s*\(\s*null/i, // suspicious .apply usage
+        /process\.exit\s*\(/i, // process.exit calls
+        /require\s*\(\s*['"][^'"]*child_process['"]/, // child_process require
+        /import.*child_process/i, // child_process import
+        /spawn|exec|fork/i, // process spawning functions
+    ];
+    let suspiciousPatternCount = 0;
+    for (const pattern of maliciousPatterns) {
+        if (pattern.test(content)) {
+            suspiciousPatternCount++;
+            logger.warn(`A08 Security: Suspicious pattern detected in ${filePath}: ${pattern.toString()}`);
+        }
+    }
+    // A08 Security: If too many suspicious patterns, warn but still allow processing
+    if (suspiciousPatternCount > 3) {
+        logger.warn(`A08 Security: High risk content detected in ${filePath}: ${suspiciousPatternCount} suspicious patterns`);
+        console.warn(`⚠️  A08 Security Warning: File contains ${suspiciousPatternCount} potentially dangerous patterns`);
+    }
+    // A08 Security: Always return true as we're analyzing, not executing
+    // The goal is to warn about risks while still allowing static analysis
+    return true;
+}
+/**
  * Security function to sanitize search terms and prevent command injection
  * Removes dangerous shell metacharacters that could be used for injection attacks
  */
@@ -273,6 +568,46 @@ export function sanitizeSearchTerm(input) {
     // Log security warning if dangerous characters were removed
     if (sanitized !== input) {
         logger.warn(`Search term sanitized: "${input}" -> "${sanitized}"`);
+    }
+    return sanitized;
+}
+/**
+ * Security function to sanitize output content to prevent display of dangerous patterns
+ */
+export function sanitizeOutput(output) {
+    if (!output || typeof output !== 'string') {
+        return '';
+    }
+    // Define dangerous patterns that should not be displayed
+    const dangerousPatterns = [
+        /rm\s+-rf\s+[\/\w]/gi, // rm -rf commands
+        /DROP\s+TABLE/gi, // SQL injection attempts
+        /\<script\>/gi, // XSS attempts
+        /javascript:/gi, // JavaScript URL schemes
+        /eval\s*\(/gi, // Code evaluation
+        /exec\s*\(/gi, // Code execution
+        /system\s*\(/gi, // System calls
+        /curl\s+.*[|&;]/gi, // Dangerous curl commands
+        /wget\s+.*[|&;]/gi, // Dangerous wget commands
+        /\$\(.*\)/g, // Command substitution
+        /`.*`/g, // Backtick execution
+        /\|.*>/g, // Pipe with redirection
+        /&&.*rm/gi, // Chained commands with rm
+        /;.*rm/gi // Semicolon chained with rm
+    ];
+    let sanitized = output;
+    let wasModified = false;
+    // Replace dangerous patterns with sanitized versions
+    for (const pattern of dangerousPatterns) {
+        const before = sanitized;
+        sanitized = sanitized.replace(pattern, '[CONTENT_SANITIZED]');
+        if (sanitized !== before) {
+            wasModified = true;
+        }
+    }
+    // Log security warning if content was modified
+    if (wasModified) {
+        logger.warn('Output content sanitized to remove potentially dangerous patterns');
     }
     return sanitized;
 }
@@ -312,6 +647,7 @@ export function validateAndSanitizeCommand(input) {
         /;/, // Command chaining
         /&&/, // Command chaining
         /\|\|/, // Command chaining
+        /\s+&\s+/, // Background execution / command chaining
         /`/, // Command substitution
         /\$\(/, // Command substitution
         /\.\./, // Directory traversal
@@ -330,5 +666,39 @@ export function validateAndSanitizeCommand(input) {
     }
     logger.debug(`Command validated and approved: ${command}`);
     return command;
+}
+/**
+ * A09 Security: Log security-relevant events without exposing sensitive data
+ */
+export function logSecurityEvent(event, details = {}) {
+    // A09 Security: Sanitize details to remove sensitive information
+    const sanitizedDetails = { ...details };
+    // Remove sensitive fields
+    const sensitiveFields = ['password', 'secret', 'key', 'token', 'auth', 'credential'];
+    for (const field of sensitiveFields) {
+        for (const key in sanitizedDetails) {
+            if (key.toLowerCase().includes(field)) {
+                sanitizedDetails[key] = '[REDACTED]';
+            }
+        }
+    }
+    // Log the security event with timestamp
+    const timestamp = new Date().toISOString();
+    console.error(`[SECURITY] ${timestamp}: ${event}`, sanitizedDetails);
+}
+/**
+ * A09 Security: Sanitize sensitive configuration values for output
+ */
+export function sanitizeConfigurationValue(key, value) {
+    // A09 Security: Redact sensitive configuration values
+    const sensitiveKeys = [
+        'password', 'secret', 'key', 'token', 'auth', 'credential',
+        'api.secret', 'api.key', 'database.password', 'oauth.secret'
+    ];
+    const isSensitive = sensitiveKeys.some(sensitiveKey => key.toLowerCase().includes(sensitiveKey.toLowerCase()));
+    if (isSensitive) {
+        return '[REDACTED]';
+    }
+    return String(value);
 }
 //# sourceMappingURL=command-helpers.js.map

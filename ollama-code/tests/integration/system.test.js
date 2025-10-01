@@ -44,14 +44,13 @@ describe('System Commands', () => {
     test('should handle invalid config keys', async () => {
       const result = await execCLI(['--mode', 'advanced', 'config', 'invalid.key'], {
         timeout: 10000,
-        env: testEnv
+        env: testEnv,
+        expectError: true
       });
 
-      // Config command shows full config when given invalid key (working as designed)
-      expect(result.exitCode).toBe(0);
-      verifyOutput(result.stdout, [
-        'Current configuration:'
-      ]);
+      // Config command should return error for invalid config keys
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr.includes('not found') || result.stderr.includes('Configuration key')).toBe(true);
     });
   });
 

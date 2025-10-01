@@ -75,13 +75,13 @@ describe('System CLI Commands Integration', () => {
     });
 
     test('should handle invalid configuration keys', async () => {
-      const result = await cliRunner.execCommand(['config', 'invalid.nonexistent.key']);
+      const result = await cliRunner.execCommand(['config', 'invalid.nonexistent.key'], {
+        expectSuccess: false
+      });
 
-      // Should either return 0 with error message or non-zero exit code
-      expect(typeof result.exitCode).toBe('number');
-      if (result.exitCode !== 0) {
-        expect(result.stderr.includes('not found') || result.stdout.includes('not found')).toBe(true);
-      }
+      // Should return non-zero exit code for invalid config key
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr.includes('not found') || result.stdout.includes('not found')).toBe(true);
     });
 
     test('should test config command help', async () => {
@@ -454,11 +454,12 @@ describe('System CLI Commands Integration', () => {
     test('should handle very long command arguments', async () => {
       const longArg = 'a'.repeat(10000);
       const result = await cliRunner.execCommand(['config', longArg], {
-        timeout: 15000
+        timeout: 15000,
+        expectSuccess: false
       });
 
-      // Should handle gracefully without crashing
-      expect(typeof result.exitCode).toBe('number');
+      // Should handle gracefully without crashing - invalid key will return error
+      expect(result.exitCode).not.toBe(0);
     });
 
     test('should handle special characters in arguments', async () => {
@@ -470,8 +471,11 @@ describe('System CLI Commands Integration', () => {
       ];
 
       for (const arg of specialArgs) {
-        const result = await cliRunner.execCommand(['config', arg]);
-        expect(typeof result.exitCode).toBe('number');
+        const result = await cliRunner.execCommand(['config', arg], {
+          expectSuccess: false
+        });
+        // These are invalid config keys, should return error
+        expect(result.exitCode).not.toBe(0);
       }
     });
   });

@@ -6,7 +6,7 @@
 
 # Enumeration: ErrorCategory
 
-Defined in: [errors/types.ts:45](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L45)
+Defined in: [errors/types.ts:45](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L45)
 
 Error categories for classification
 
@@ -16,7 +16,7 @@ Error categories for classification
 
 > **APPLICATION**: `0`
 
-Defined in: [errors/types.ts:49](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L49)
+Defined in: [errors/types.ts:49](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L49)
 
 Application-level errors
 
@@ -26,7 +26,7 @@ Application-level errors
 
 > **SYSTEM**: `1`
 
-Defined in: [errors/types.ts:54](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L54)
+Defined in: [errors/types.ts:54](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L54)
 
 System-related errors
 
@@ -36,7 +36,7 @@ System-related errors
 
 > **NETWORK**: `2`
 
-Defined in: [errors/types.ts:59](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L59)
+Defined in: [errors/types.ts:59](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L59)
 
 Network-related errors
 
@@ -46,7 +46,7 @@ Network-related errors
 
 > **FILE\_SYSTEM**: `3`
 
-Defined in: [errors/types.ts:64](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L64)
+Defined in: [errors/types.ts:64](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L64)
 
 File system-related errors
 
@@ -56,7 +56,7 @@ File system-related errors
 
 > **COMMAND\_EXECUTION**: `4`
 
-Defined in: [errors/types.ts:69](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L69)
+Defined in: [errors/types.ts:69](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L69)
 
 Command execution-related errors
 
@@ -66,7 +66,7 @@ Command execution-related errors
 
 > **AI\_SERVICE**: `5`
 
-Defined in: [errors/types.ts:74](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L74)
+Defined in: [errors/types.ts:74](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L74)
 
 AI service-related errors
 
@@ -76,7 +76,7 @@ AI service-related errors
 
 > **CONFIGURATION**: `6`
 
-Defined in: [errors/types.ts:79](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L79)
+Defined in: [errors/types.ts:79](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L79)
 
 Configuration-related errors
 
@@ -86,7 +86,7 @@ Configuration-related errors
 
 > **RESOURCE**: `7`
 
-Defined in: [errors/types.ts:84](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L84)
+Defined in: [errors/types.ts:84](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L84)
 
 Resource-related errors
 
@@ -96,7 +96,7 @@ Resource-related errors
 
 > **UNKNOWN**: `8`
 
-Defined in: [errors/types.ts:89](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L89)
+Defined in: [errors/types.ts:89](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L89)
 
 Unknown errors
 
@@ -106,7 +106,7 @@ Unknown errors
 
 > **INTERNAL**: `9`
 
-Defined in: [errors/types.ts:94](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L94)
+Defined in: [errors/types.ts:94](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L94)
 
 Internal errors
 
@@ -116,7 +116,7 @@ Internal errors
 
 > **VALIDATION**: `10`
 
-Defined in: [errors/types.ts:99](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L99)
+Defined in: [errors/types.ts:99](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L99)
 
 Validation errors
 
@@ -126,7 +126,7 @@ Validation errors
 
 > **INITIALIZATION**: `11`
 
-Defined in: [errors/types.ts:104](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L104)
+Defined in: [errors/types.ts:104](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L104)
 
 Initialization errors
 
@@ -136,7 +136,7 @@ Initialization errors
 
 > **SERVER**: `12`
 
-Defined in: [errors/types.ts:109](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L109)
+Defined in: [errors/types.ts:109](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L109)
 
 Server errors
 
@@ -146,7 +146,7 @@ Server errors
 
 > **API**: `13`
 
-Defined in: [errors/types.ts:114](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L114)
+Defined in: [errors/types.ts:114](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L114)
 
 API errors
 
@@ -156,7 +156,7 @@ API errors
 
 > **TIMEOUT**: `14`
 
-Defined in: [errors/types.ts:119](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L119)
+Defined in: [errors/types.ts:119](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L119)
 
 Timeout errors
 
@@ -166,7 +166,7 @@ Timeout errors
 
 > **RATE\_LIMIT**: `15`
 
-Defined in: [errors/types.ts:124](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L124)
+Defined in: [errors/types.ts:124](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L124)
 
 Rate limit errors
 
@@ -176,7 +176,7 @@ Rate limit errors
 
 > **CONNECTION**: `16`
 
-Defined in: [errors/types.ts:129](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L129)
+Defined in: [errors/types.ts:129](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L129)
 
 Connection errors
 
@@ -186,7 +186,7 @@ Connection errors
 
 > **FILE\_NOT\_FOUND**: `18`
 
-Defined in: [errors/types.ts:135](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L135)
+Defined in: [errors/types.ts:135](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L135)
 
 File not found errors
 
@@ -196,7 +196,7 @@ File not found errors
 
 > **FILE\_ACCESS**: `19`
 
-Defined in: [errors/types.ts:140](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L140)
+Defined in: [errors/types.ts:140](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L140)
 
 File access errors
 
@@ -206,7 +206,7 @@ File access errors
 
 > **FILE\_READ**: `20`
 
-Defined in: [errors/types.ts:145](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L145)
+Defined in: [errors/types.ts:145](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L145)
 
 File read errors
 
@@ -216,7 +216,7 @@ File read errors
 
 > **FILE\_WRITE**: `21`
 
-Defined in: [errors/types.ts:150](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L150)
+Defined in: [errors/types.ts:150](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L150)
 
 File write errors
 
@@ -226,7 +226,7 @@ File write errors
 
 > **COMMAND**: `22`
 
-Defined in: [errors/types.ts:155](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L155)
+Defined in: [errors/types.ts:155](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L155)
 
 Command errors
 
@@ -236,6 +236,6 @@ Command errors
 
 > **COMMAND\_NOT\_FOUND**: `23`
 
-Defined in: [errors/types.ts:160](https://github.com/erichchampion/ollama-code/blob/183876b4797e673d6e7563c8838e3394af95f5a5/ollama-code/src/errors/types.ts#L160)
+Defined in: [errors/types.ts:160](https://github.com/erichchampion/ollama-code/blob/5fb08106889018e8b231627b7550ae6fde01dc16/ollama-code/src/errors/types.ts#L160)
 
 Command not found errors

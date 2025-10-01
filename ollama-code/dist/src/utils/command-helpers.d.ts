@@ -14,6 +14,11 @@ export declare function validateNonEmptyString(value: any, fieldName: string): b
  */
 export declare function validateFileExists(filePath: string): Promise<boolean>;
 /**
+ * Security function to prevent directory traversal attacks
+ * Only allows access to files within the current working directory and its subdirectories
+ */
+export declare function isSecureFilePath(filePath: string): boolean;
+/**
  * Validates that a directory exists at the given path
  */
 export declare function validateDirectoryExists(dirPath: string): Promise<boolean>;
@@ -60,12 +65,54 @@ export declare function truncateText(text: string, maxLength: number): string;
  */
 export declare function validateRequiredArgs(args: string[], requiredCount: number, commandName: string, usage: string): boolean;
 /**
+ * Validates input size to prevent DoS attacks
+ * Returns false if input is too large
+ */
+export declare function validateInputSize(input: string, maxSizeBytes?: number): boolean;
+/**
+ * Validates rate limiting to prevent DoS attacks
+ * Returns false if rate limit is exceeded
+ */
+export declare function validateRateLimit(identifier?: string): boolean;
+/**
+ * Validates configuration values for security
+ * Prevents insecure or malicious configuration settings
+ */
+export declare function validateConfigurationValue(key: string, value: any): boolean;
+/**
+ * Sanitizes configuration output for production mode
+ * Removes debug information and sensitive data
+ */
+export declare function sanitizeConfigurationOutput(config: any, isProduction?: boolean): any;
+/**
+ * A06 Security: Validate file types for processing
+ * Returns true if the file is safe to process, false otherwise
+ */
+export declare function validateFileTypeForProcessing(filePath: string): boolean;
+/**
+ * A08 Security: Validate content for potential security issues
+ * Returns true if content appears safe to process, false otherwise
+ */
+export declare function validateContentIntegrity(content: string, filePath: string): boolean;
+/**
  * Security function to sanitize search terms and prevent command injection
  * Removes dangerous shell metacharacters that could be used for injection attacks
  */
 export declare function sanitizeSearchTerm(input: string): string;
 /**
+ * Security function to sanitize output content to prevent display of dangerous patterns
+ */
+export declare function sanitizeOutput(output: string): string;
+/**
  * Security function to validate and sanitize shell commands to prevent injection attacks
  * Returns null if the command is deemed unsafe
  */
 export declare function validateAndSanitizeCommand(input: string): string | null;
+/**
+ * A09 Security: Log security-relevant events without exposing sensitive data
+ */
+export declare function logSecurityEvent(event: string, details?: Record<string, any>): void;
+/**
+ * A09 Security: Sanitize sensitive configuration values for output
+ */
+export declare function sanitizeConfigurationValue(key: string, value: any): string;
