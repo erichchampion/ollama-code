@@ -45,6 +45,8 @@ export const CORE_MODULE_MEMORY = {
   CORE_SERVICES: 15,
   /** Configuration manager - settings and preferences */
   CONFIG_MANAGER: 10,
+  /** Index optimizer - file and module index caching */
+  INDEX_OPTIMIZER: 20,
 } as const;
 
 /** Memory footprint for high priority modules */
@@ -65,6 +67,8 @@ export const NORMAL_PRIORITY_MODULE_MEMORY = {
   COMPONENT_FACTORY: 30,
   /** Enhanced client - advanced AI features */
   ENHANCED_CLIENT: 45,
+  /** Cache preloader - intelligent cache warming system */
+  CACHE_PRELOADER: 25,
 } as const;
 
 /** Memory footprint for lazy-loaded modules */
@@ -91,6 +95,37 @@ export const MODULE_LOADING_TIMEOUT = 5000;
 
 /** Component initialization timeout in milliseconds */
 export const COMPONENT_INIT_TIMEOUT = 3000;
+
+// =============================================================================
+// CACHE AND INDEX OPTIMIZATION CONSTANTS
+// =============================================================================
+
+/** Default cache size limit in number of entries */
+export const DEFAULT_CACHE_SIZE = 1000;
+
+/** Default index cache size in number of entries */
+export const DEFAULT_INDEX_CACHE_SIZE = 500;
+
+/** Cache cleanup interval in milliseconds */
+export const CACHE_CLEANUP_INTERVAL = 300000; // 5 minutes
+
+/** Index optimization timeout in milliseconds */
+export const INDEX_OPTIMIZATION_TIMEOUT = 2000;
+
+/** Default maximum event listeners for managed event emitters */
+export const DEFAULT_MAX_LISTENERS = 100;
+
+/** Default maximum preload time in milliseconds */
+export const DEFAULT_MAX_PRELOAD_TIME = 5000; // 5 seconds
+
+/** Default parallel preloads */
+export const DEFAULT_PARALLEL_PRELOADS = 4;
+
+/** Cache loading simulation delays in milliseconds */
+export const CACHE_LOAD_DELAY = 10;
+
+/** Index loading simulation delays in milliseconds */
+export const INDEX_LOAD_DELAY = 20;
 
 // =============================================================================
 // OPTIMIZATION STRATEGY PRESETS

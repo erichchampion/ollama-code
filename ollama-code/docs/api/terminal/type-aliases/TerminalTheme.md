@@ -8,6 +8,6 @@
 
 > **TerminalTheme** = `"dark"` \| `"light"` \| `"system"`
 
-Defined in: [terminal/types.ts:10](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L10)
+Defined in: [terminal/types.ts:10](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/terminal/types.ts#L10)
 
 Terminal theme options

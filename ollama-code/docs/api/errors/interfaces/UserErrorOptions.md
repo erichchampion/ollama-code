@@ -6,7 +6,7 @@
 
 # Interface: UserErrorOptions
 
-Defined in: [errors/types.ts:201](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L201)
+Defined in: [errors/types.ts:201](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L201)
 
 User error options
 
@@ -16,7 +16,7 @@ User error options
 
 > `optional` **cause**: `unknown`
 
-Defined in: [errors/types.ts:205](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L205)
+Defined in: [errors/types.ts:205](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L205)
 
 Original error that caused this error
 
@@ -26,7 +26,7 @@ Original error that caused this error
 
 > `optional` **category**: [`ErrorCategory`](../enumerations/ErrorCategory.md)
 
-Defined in: [errors/types.ts:210](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L210)
+Defined in: [errors/types.ts:210](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L210)
 
 Error category
 
@@ -36,7 +36,7 @@ Error category
 
 > `optional` **level**: [`ErrorLevel`](../enumerations/ErrorLevel.md)
 
-Defined in: [errors/types.ts:215](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L215)
+Defined in: [errors/types.ts:215](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L215)
 
 Error level
 
@@ -46,7 +46,7 @@ Error level
 
 > `optional` **resolution**: `string` \| `string`[]
 
-Defined in: [errors/types.ts:220](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L220)
+Defined in: [errors/types.ts:220](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L220)
 
 Hint on how to resolve the error
 
@@ -56,7 +56,7 @@ Hint on how to resolve the error
 
 > `optional` **details**: `Record`\<`string`, `unknown`\>
 
-Defined in: [errors/types.ts:225](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L225)
+Defined in: [errors/types.ts:225](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L225)
 
 Additional details about the error
 
@@ -66,7 +66,7 @@ Additional details about the error
 
 > `optional` **context**: `Record`\<`string`, `any`\>
 
-Defined in: [errors/types.ts:230](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L230)
+Defined in: [errors/types.ts:230](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L230)
 
 Error context
 
@@ -76,6 +76,6 @@ Error context
 
 > `optional` **code**: `string`
 
-Defined in: [errors/types.ts:235](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L235)
+Defined in: [errors/types.ts:235](https://github.com/erichchampion/ollama-code/blob/f11aa29f0957a2a94b06684242c1f2e6d21777c5/ollama-code/src/errors/types.ts#L235)
 
 Error code

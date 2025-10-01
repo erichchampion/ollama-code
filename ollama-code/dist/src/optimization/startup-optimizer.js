@@ -120,13 +120,26 @@ export async function preloadCommonComponents() {
     // Run in background without blocking
     setTimeout(async () => {
         try {
+            // Phase 5: Initialize cache and index preloading
+            logger.info('Starting Phase 5: Cache and Index Preloading');
+            // Initialize cache preloader
+            const { initializeCachePreloader } = await import('./cache-preloader.js');
+            const cachePreloader = await initializeCachePreloader();
+            // Initialize index optimizer
+            const { indexOptimizer } = await import('./index-optimizer.js');
+            await indexOptimizer.initialize();
+            // Start background cache warming
+            await cachePreloader.startPreloading();
+            // Start predictive index preloading
+            await indexOptimizer.preloadIndexes();
+            // Original lazy loader preloading
             const { getLazyLoader } = await import('../core/services.js');
             const lazyLoader = await getLazyLoader();
             await lazyLoader.preload(['config', 'analytics']);
-            logger.debug('Background preload completed');
+            logger.info('Phase 5 background preload completed');
         }
         catch (error) {
-            logger.debug('Background preload failed:', error);
+            logger.error('Phase 5 background preload failed:', error);
         }
     }, BACKGROUND_PRELOAD_DELAY);
 }
@@ -193,6 +206,13 @@ function registerEnhancedModules(optimizer) {
             priority: ModulePriority.CRITICAL,
             dependencies: ['logger'],
             memoryFootprint: CORE_MODULE_MEMORY.CONFIG_MANAGER
+        },
+        {
+            name: 'index-optimizer',
+            path: './optimization/index-optimizer',
+            priority: ModulePriority.CRITICAL,
+            dependencies: ['logger'],
+            memoryFootprint: CORE_MODULE_MEMORY.INDEX_OPTIMIZER
         }
     ];
     // High priority modules - load during startup
@@ -241,6 +261,13 @@ function registerEnhancedModules(optimizer) {
             priority: ModulePriority.NORMAL,
             dependencies: ['ai-client', 'component-status-tracker'],
             memoryFootprint: NORMAL_PRIORITY_MODULE_MEMORY.ENHANCED_CLIENT
+        },
+        {
+            name: 'cache-preloader',
+            path: './optimization/cache-preloader',
+            priority: ModulePriority.NORMAL,
+            dependencies: ['index-optimizer', 'config-manager'],
+            memoryFootprint: NORMAL_PRIORITY_MODULE_MEMORY.CACHE_PRELOADER
         }
     ];
     // Lazy modules - load on demand only

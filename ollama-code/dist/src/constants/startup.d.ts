@@ -28,6 +28,8 @@ export declare const CORE_MODULE_MEMORY: {
     readonly CORE_SERVICES: 15;
     /** Configuration manager - settings and preferences */
     readonly CONFIG_MANAGER: 10;
+    /** Index optimizer - file and module index caching */
+    readonly INDEX_OPTIMIZER: 20;
 };
 /** Memory footprint for high priority modules */
 export declare const HIGH_PRIORITY_MODULE_MEMORY: {
@@ -46,6 +48,8 @@ export declare const NORMAL_PRIORITY_MODULE_MEMORY: {
     readonly COMPONENT_FACTORY: 30;
     /** Enhanced client - advanced AI features */
     readonly ENHANCED_CLIENT: 45;
+    /** Cache preloader - intelligent cache warming system */
+    readonly CACHE_PRELOADER: 25;
 };
 /** Memory footprint for lazy-loaded modules */
 export declare const LAZY_MODULE_MEMORY: {
@@ -64,6 +68,24 @@ export declare const BACKGROUND_PRELOAD_DELAY = 100;
 export declare const MODULE_LOADING_TIMEOUT = 5000;
 /** Component initialization timeout in milliseconds */
 export declare const COMPONENT_INIT_TIMEOUT = 3000;
+/** Default cache size limit in number of entries */
+export declare const DEFAULT_CACHE_SIZE = 1000;
+/** Default index cache size in number of entries */
+export declare const DEFAULT_INDEX_CACHE_SIZE = 500;
+/** Cache cleanup interval in milliseconds */
+export declare const CACHE_CLEANUP_INTERVAL = 300000;
+/** Index optimization timeout in milliseconds */
+export declare const INDEX_OPTIMIZATION_TIMEOUT = 2000;
+/** Default maximum event listeners for managed event emitters */
+export declare const DEFAULT_MAX_LISTENERS = 100;
+/** Default maximum preload time in milliseconds */
+export declare const DEFAULT_MAX_PRELOAD_TIME = 5000;
+/** Default parallel preloads */
+export declare const DEFAULT_PARALLEL_PRELOADS = 4;
+/** Cache loading simulation delays in milliseconds */
+export declare const CACHE_LOAD_DELAY = 10;
+/** Index loading simulation delays in milliseconds */
+export declare const INDEX_LOAD_DELAY = 20;
 /** Fast startup strategy - minimal memory, aggressive lazy loading */
 export declare const FAST_STARTUP_STRATEGY: {
     readonly enableLazyLoading: true;

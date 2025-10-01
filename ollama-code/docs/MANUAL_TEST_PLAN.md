@@ -90,6 +90,14 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - Real-time incremental updates with file watching
 - Partition-based querying for 10M+ line codebases
 - Performance monitoring and optimization recommendations
+- **NEW:** Phase 5 Cache and Index Preloading System with intelligent warming
+- **NEW:** Predictive cache preloading based on usage patterns and access frequency
+- **NEW:** Memory-aware preloading strategies with configurable budget limits
+- **NEW:** File system and module index optimization for faster lookups
+- **NEW:** Background cache warming with non-blocking startup optimization
+- **NEW:** Index-based file and module resolution with dependency analysis
+- **NEW:** Cache hit/miss analytics with performance improvement tracking
+- **NEW:** Configurable preload priorities (critical, high, normal, lazy)
 
 ### 🛠️ **Infrastructure & System Reliability**
 - Centralized performance configuration management
@@ -3854,6 +3862,9 @@ DEBUG=component-status ./dist/src/cli-selector.js --mode interactive
 1. `"Show me current memory usage and cache statistics"`
 2. `"Optimize memory usage for this analysis session"`
 3. `"Clear caches and show memory recovery"`
+4. **NEW:** `"Test cache preloader initialization and functionality"`
+5. **NEW:** `"Show memory budget enforcement during preloading"`
+6. **NEW:** `"Test background preloading without blocking startup"`
 
 **Expected Results:**
 - Multi-tier caching (memory → disk → network) working efficiently
@@ -3861,6 +3872,10 @@ DEBUG=component-status ./dist/src/cli-selector.js --mode interactive
 - Automatic memory pressure detection and cache eviction
 - Intelligent cache warming for predicted queries
 - Compression for large cached items
+- **NEW:** Cache preloader initializes properly with configurable budget limits
+- **NEW:** Memory-aware preloading strategies respect configured budget limits
+- **NEW:** Background cache warming completes without blocking application startup
+- **NEW:** Preload priorities (critical, high, normal, lazy) function correctly
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -3949,6 +3964,9 @@ rm tests/math.test.js
 2. `"Show startup optimization metrics and module loading"`
 3. `"Enable lazy loading mode and restart"`
 4. `"Show memory usage immediately after startup"`
+5. **NEW:** `"Test Phase 5 cache preloader during startup"`
+6. **NEW:** `"Verify background preloading doesn't block startup"`
+7. **NEW:** `"Show index optimizer initialization performance"`
 
 **Expected Results:**
 - Sub-2-second application startup time (target: <2000ms)
@@ -3956,6 +3974,10 @@ rm tests/math.test.js
 - Parallel initialization of independent components
 - Critical module prioritization with dependency resolution
 - Memory usage under 250MB immediately after startup
+- **NEW:** Cache preloader initializes efficiently without blocking startup
+- **NEW:** Background cache warming runs independently of main startup process
+- **NEW:** Index optimizer enhances startup performance through faster lookups
+- **NEW:** Non-blocking startup optimization with Phase 5 preloading system
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -4074,6 +4096,9 @@ rm tests/math.test.js
 2. `"Verify cache eviction strategies under memory pressure"`
 3. `"Monitor cache hit rates and optimization effectiveness"`
 4. **NEW:** `"Test shared cache utilities across different systems"`
+5. **NEW:** `"Test index optimizer initialization and file/module lookups"`
+6. **NEW:** `"Verify cache hit/miss analytics and performance tracking"`
+7. **NEW:** `"Test predictive cache preloading based on usage patterns"`
 
 **Expected Results:**
 - LRU cache operates efficiently with configurable size limits
@@ -4081,6 +4106,10 @@ rm tests/math.test.js
 - Cache metrics tracked (hit rate, eviction count, memory usage)
 - Multiple systems can share cache utilities without conflicts
 - TTL-based expiration works correctly
+- **NEW:** Index optimizer provides faster file and module lookups
+- **NEW:** Cache analytics show detailed hit/miss ratios and performance improvements
+- **NEW:** Predictive preloading improves cache hit rates based on access frequency
+- **NEW:** File system index optimization reduces lookup times significantly
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -4311,6 +4340,9 @@ git add . && git commit -m "Large codebase simulation"
 3. `"Show cache statistics and hit rates"`
 4. `"Clear specific cache entries and retry analysis"`
 5. `"Demonstrate predictive cache warming"`
+6. **NEW:** `"Test Phase 5 cache preloader with different priority levels"`
+7. **NEW:** `"Verify dependency analysis in index-based resolution"`
+8. **NEW:** `"Test memory budget enforcement during intensive preloading"`
 
 **Expected Results:**
 - First analysis takes full processing time
@@ -4318,6 +4350,10 @@ git add . && git commit -m "Large codebase simulation"
 - Cache hit rates above 80% for repeated queries
 - Multi-tier caching visible (memory → disk → computation)
 - Intelligent cache eviction based on usage patterns
+- **NEW:** Cache preloader efficiently handles different priority levels (critical, high, normal, lazy)
+- **NEW:** Index-based file and module resolution with dependency analysis works correctly
+- **NEW:** Memory budget enforcement prevents system overload during preloading
+- **NEW:** Background cache warming improves overall system responsiveness
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
@@ -4342,6 +4378,69 @@ mkdir src/new-module && echo "export class NewModule {}" > src/new-module/index.
 - Change impact analysis showing affected components
 - Conflict detection for concurrent modifications
 - Background processing doesn't block user interactions
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+### Test Group: Phase 5 Cache and Index Preloading System
+**Priority: Critical** *(NEW: Phase 5 intelligent cache and index optimization)*
+
+#### Test: Cache Preloader Initialization and Debug Logging
+**Commands:**
+1. **NEW:** `"Initialize cache preloader with debug logging enabled"`
+2. **NEW:** `"Show cache preloader configuration and status"`
+3. **NEW:** `"Test preload priority configuration (critical, high, normal, lazy)"`
+4. **NEW:** `"Verify debug logging for Phase 5 components"`
+
+**Expected Results:**
+- **NEW:** Cache preloader initializes correctly with configurable settings
+- **NEW:** Debug logging shows detailed Phase 5 component initialization
+- **NEW:** Preload priorities are correctly configured and functional
+- **NEW:** Cache preloader status provides clear operational information
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Index Optimizer Functionality
+**Commands:**
+1. **NEW:** `"Initialize index optimizer for file and module resolution"`
+2. **NEW:** `"Test file system index optimization performance"`
+3. **NEW:** `"Verify dependency analysis in module resolution"`
+4. **NEW:** `"Show index optimizer performance metrics"`
+
+**Expected Results:**
+- **NEW:** Index optimizer provides significantly faster file and module lookups
+- **NEW:** File system indexing improves overall system responsiveness
+- **NEW:** Dependency analysis correctly identifies module relationships
+- **NEW:** Performance metrics show measurable lookup time improvements
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Memory Budget Enforcement
+**Commands:**
+1. **NEW:** `"Configure memory budget limits for preloading"`
+2. **NEW:** `"Test memory-aware preloading strategies"`
+3. **NEW:** `"Verify budget enforcement during intensive operations"`
+4. **NEW:** `"Show memory usage during preloading phases"`
+
+**Expected Results:**
+- **NEW:** Memory budget limits are properly enforced during preloading
+- **NEW:** Preloading strategies adapt to available memory budget
+- **NEW:** System prevents memory overload through intelligent budget management
+- **NEW:** Memory usage stays within configured limits during all preloading phases
+- **Status:** [ ] Pass [ ] Fail
+- **Notes:** _____________
+
+#### Test: Background Cache Warming
+**Commands:**
+1. **NEW:** `"Start background cache warming without blocking startup"`
+2. **NEW:** `"Test predictive preloading based on usage patterns"`
+3. **NEW:** `"Verify access frequency analysis for cache decisions"`
+4. **NEW:** `"Show cache warming progress and completion status"`
+
+**Expected Results:**
+- **NEW:** Background cache warming runs independently without blocking startup
+- **NEW:** Predictive preloading improves cache hit rates for frequently accessed items
+- **NEW:** Usage pattern analysis correctly identifies high-priority cache candidates
+- **NEW:** Cache warming provides clear progress feedback and completion status
 - **Status:** [ ] Pass [ ] Fail
 - **Notes:** _____________
 
