@@ -6,6 +6,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileExists } from '../shared/file-utils.js';
+import { AI_TEST_PATHS, AI_TEST_DEFAULTS } from './ai-test-constants.js';
 
 /**
  * AI response fixture structure
@@ -21,30 +22,30 @@ export interface AIFixture {
   response: string;
   /** Metadata about the response */
   metadata: {
-    /** Model that generated the response */
+    /** Model that generated the response (e.g., "tinyllama", "gpt-4") */
     model: string;
-    /** When the response was captured */
+    /** When the response was captured (ISO 8601 format) */
     timestamp: string;
-    /** AI provider (ollama, openai, etc.) */
+    /** AI provider (ollama, openai, anthropic, google) */
     provider: string;
-    /** Temperature used */
+    /** Temperature used (0-2, higher = more random) */
     temperature?: number;
     /** Max tokens setting */
     maxTokens?: number;
     /** Response time in milliseconds */
     responseTime?: number;
-    /** Additional tags for searching */
+    /** Additional tags for searching and categorization */
     tags?: string[];
   };
   /** Validation rules for this fixture */
   validation?: {
-    /** Patterns that should be present in response */
+    /** Regex patterns that should be present in response */
     expectedPatterns?: string[];
     /** Strings that should NOT be in response */
     shouldNotContain?: string[];
-    /** Minimum response length */
+    /** Minimum response length in characters */
     minLength?: number;
-    /** Maximum response length */
+    /** Maximum response length in characters */
     maxLength?: number;
   };
 }
@@ -64,10 +65,7 @@ export interface CaptureOptions {
   validation?: AIFixture['validation'];
 }
 
-const FIXTURES_BASE_PATH = path.join(
-  process.cwd(),
-  'tests/fixtures/ai-responses'
-);
+const FIXTURES_BASE_PATH = AI_TEST_PATHS.FIXTURES_BASE;
 
 /**
  * Get the full path to a fixture file
@@ -280,8 +278,12 @@ export async function findFixturesByTags(
  * Check if fixtures are outdated (older than specified days)
  */
 export async function findOutdatedFixtures(
-  maxAgeDays: number = 180
+  maxAgeDays: number = AI_TEST_DEFAULTS.MAX_FIXTURE_AGE_DAYS
 ): Promise<Array<{ name: string; age: number }>> {
+  if (maxAgeDays < 0) {
+    throw new Error('maxAgeDays must be a non-negative number');
+  }
+
   const allFixtures = await listFixtures();
   const outdated: Array<{ name: string; age: number }> = [];
   const now = Date.now();
@@ -300,7 +302,8 @@ export async function findOutdatedFixtures(
         });
       }
     } catch (error) {
-      console.warn(`Failed to check age of fixture ${fixtureName}:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`Failed to check age of fixture ${fixtureName}: ${errorMessage}`);
     }
   }
 
@@ -332,9 +335,10 @@ export async function validateAllFixtures(
         });
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       invalid.push({
         name: fixtureName,
-        errors: [`Failed to load/validate: ${error}`],
+        errors: [`Failed to load/validate: ${errorMessage}`],
       });
     }
   }

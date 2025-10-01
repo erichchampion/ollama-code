@@ -3,6 +3,13 @@
  * Provides utilities for testing with real AI models vs mocks
  */
 
+import {
+  AI_TEST_TIMEOUTS,
+  AI_TEST_DEFAULTS,
+  OLLAMA_ENDPOINTS,
+} from './ai-test-constants.js';
+import { sleep } from '../shared/test-utils.js';
+
 /**
  * Configuration for AI testing
  */
@@ -18,15 +25,65 @@ export interface AITestConfig {
 }
 
 /**
+ * Ollama model information
+ */
+interface OllamaModel {
+  /** Model name (e.g., "tinyllama:latest") */
+  name: string;
+  /** Last modification timestamp (ISO 8601) */
+  modified_at: string;
+  /** Model size in bytes */
+  size: number;
+  /** Model digest/hash */
+  digest?: string;
+}
+
+/**
+ * Response from Ollama /api/tags endpoint
+ */
+interface OllamaTagsResponse {
+  /** List of available models */
+  models?: OllamaModel[];
+}
+
+/**
  * Get AI test configuration from environment variables
  */
 export function getAITestConfig(): AITestConfig {
   return {
     useRealAI: process.env.USE_REAL_AI === 'true',
-    host: process.env.OLLAMA_TEST_HOST || 'http://localhost:11435',
-    model: process.env.OLLAMA_TEST_MODEL || 'tinyllama',
-    timeout: parseInt(process.env.OLLAMA_TEST_TIMEOUT || '30000', 10),
+    host: process.env.OLLAMA_TEST_HOST || AI_TEST_DEFAULTS.HOST,
+    model: process.env.OLLAMA_TEST_MODEL || AI_TEST_DEFAULTS.MODEL,
+    timeout: parseInt(
+      process.env.OLLAMA_TEST_TIMEOUT || String(AI_TEST_DEFAULTS.TIMEOUT),
+      10
+    ),
   };
+}
+
+/**
+ * Fetch Ollama tags with timeout
+ * @internal
+ */
+async function fetchOllamaTags(
+  host: string,
+  timeout: number = AI_TEST_TIMEOUTS.OLLAMA_CHECK_TIMEOUT
+): Promise<{ ok: boolean; data?: OllamaTagsResponse; error?: string }> {
+  try {
+    const response = await fetch(`${host}${OLLAMA_ENDPOINTS.TAGS}`, {
+      signal: AbortSignal.timeout(timeout),
+    });
+
+    if (!response.ok) {
+      return { ok: false, error: `HTTP ${response.status}: ${response.statusText}` };
+    }
+
+    const data = (await response.json()) as OllamaTagsResponse;
+    return { ok: true, data };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { ok: false, error: errorMessage };
+  }
 }
 
 /**
@@ -35,31 +92,32 @@ export function getAITestConfig(): AITestConfig {
 export async function isOllamaTestAvailable(
   config: AITestConfig = getAITestConfig()
 ): Promise<boolean> {
-  try {
-    const response = await fetch(`${config.host}/api/tags`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
+  const result = await fetchOllamaTags(config.host);
+  return result.ok;
 }
 
 /**
- * Wait for Ollama test instance to be ready
+ * Wait for Ollama test instance to be ready with exponential backoff
  */
 export async function waitForOllamaReady(
   config: AITestConfig = getAITestConfig(),
-  maxWaitMs: number = 60000
+  maxWaitMs: number = AI_TEST_TIMEOUTS.MAX_WAIT_TIMEOUT
 ): Promise<boolean> {
   const startTime = Date.now();
-  const pollInterval = 2000;
+  let pollInterval = AI_TEST_TIMEOUTS.INITIAL_POLL_INTERVAL;
 
   while (Date.now() - startTime < maxWaitMs) {
     if (await isOllamaTestAvailable(config)) {
       return true;
     }
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+    await sleep(pollInterval);
+
+    // Exponential backoff to avoid hammering the API
+    pollInterval = Math.min(
+      pollInterval * AI_TEST_TIMEOUTS.BACKOFF_MULTIPLIER,
+      AI_TEST_TIMEOUTS.MAX_POLL_INTERVAL
+    );
   }
 
   return false;
@@ -136,23 +194,21 @@ export async function validateAITestPrerequisites(): Promise<{
   }
 
   // Check if model is loaded
-  try {
-    const response = await fetch(`${config.host}/api/tags`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    const data = await response.json();
-    const modelAvailable = data.models?.some(
-      (m: any) => m.name.startsWith(config.model)
+  const tagsResult = await fetchOllamaTags(config.host);
+
+  if (!tagsResult.ok) {
+    issues.push(`Failed to query models: ${tagsResult.error || 'Unknown error'}`);
+  } else if (tagsResult.data) {
+    const modelAvailable = tagsResult.data.models?.some((m) =>
+      m.name.startsWith(config.model)
     );
 
     if (!modelAvailable) {
       issues.push(
         `Model '${config.model}' not found. ` +
-        `Pull with: docker-compose -f docker-compose.test.yml exec ollama-test ollama pull ${config.model}`
+          `Pull with: docker-compose -f docker-compose.test.yml exec ollama-test ollama pull ${config.model}`
       );
     }
-  } catch (error) {
-    issues.push(`Failed to query models: ${error}`);
   }
 
   return {
