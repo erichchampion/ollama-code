@@ -8,7 +8,7 @@
 
 > **fileExists**(`filePath`): `Promise`\<`boolean`\>
 
-Defined in: [fs/operations.ts:22](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/fs/operations.ts#L22)
+Defined in: [fs/operations.ts:22](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/fs/operations.ts#L22)
 
 Check if a file exists
 

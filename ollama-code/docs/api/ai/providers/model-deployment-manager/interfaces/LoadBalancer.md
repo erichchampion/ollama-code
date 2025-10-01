@@ -6,7 +6,7 @@
 
 # Interface: LoadBalancer
 
-Defined in: [ai/providers/model-deployment-manager.ts:88](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L88)
+Defined in: [ai/providers/model-deployment-manager.ts:88](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L88)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:88](https://github.com/eri
 
 > **id**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:89](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L89)
+Defined in: [ai/providers/model-deployment-manager.ts:89](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L89)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:89](https://github.com/eri
 
 > **deploymentId**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:90](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L90)
+Defined in: [ai/providers/model-deployment-manager.ts:90](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L90)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:90](https://github.com/eri
 
 > **strategy**: `"round_robin"` \| `"random"` \| `"least_connections"` \| `"weighted"`
 
-Defined in: [ai/providers/model-deployment-manager.ts:91](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L91)
+Defined in: [ai/providers/model-deployment-manager.ts:91](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L91)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:91](https://github.com/eri
 
 > **instances**: `string`[]
 
-Defined in: [ai/providers/model-deployment-manager.ts:92](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L92)
+Defined in: [ai/providers/model-deployment-manager.ts:92](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L92)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:92](https://github.com/eri
 
 > **currentIndex**: `number`
 
-Defined in: [ai/providers/model-deployment-manager.ts:93](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L93)
+Defined in: [ai/providers/model-deployment-manager.ts:93](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L93)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:93](https://github.com/eri
 
 > `optional` **weights**: `Map`\<`string`, `number`\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:94](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L94)
+Defined in: [ai/providers/model-deployment-manager.ts:94](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L94)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [ai/providers/model-deployment-manager.ts:94](https://github.com/eri
 
 > **healthyInstances**: `Set`\<`string`\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:95](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L95)
+Defined in: [ai/providers/model-deployment-manager.ts:95](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L95)

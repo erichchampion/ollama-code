@@ -6,7 +6,7 @@
 
 # Interface: RoutingStrategy
 
-Defined in: [ai/providers/intelligent-router.ts:24](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/intelligent-router.ts#L24)
+Defined in: [ai/providers/intelligent-router.ts:24](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/intelligent-router.ts#L24)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/intelligent-router.ts:24](https://github.com/erichcham
 
 > **name**: `string`
 
-Defined in: [ai/providers/intelligent-router.ts:25](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/intelligent-router.ts#L25)
+Defined in: [ai/providers/intelligent-router.ts:25](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/intelligent-router.ts#L25)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/intelligent-router.ts:25](https://github.com/erichcham
 
 > **priority**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:26](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/intelligent-router.ts#L26)
+Defined in: [ai/providers/intelligent-router.ts:26](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/intelligent-router.ts#L26)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [ai/providers/intelligent-router.ts:26](https://github.com/erichcham
 
 > **description**: `string`
 
-Defined in: [ai/providers/intelligent-router.ts:27](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/intelligent-router.ts#L27)
+Defined in: [ai/providers/intelligent-router.ts:27](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/intelligent-router.ts#L27)

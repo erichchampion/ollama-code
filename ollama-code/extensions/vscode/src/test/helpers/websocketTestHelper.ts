@@ -11,6 +11,7 @@ export interface WebSocketTestClient {
   ws: WebSocket;
   messages: any[];
   errors: Error[];
+  isConnected: boolean;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   send(data: any): Promise<void>;
@@ -19,27 +20,61 @@ export interface WebSocketTestClient {
 }
 
 /**
+ * Options for creating test WebSocket client
+ */
+export interface WebSocketClientOptions {
+  /** Authentication token */
+  authToken?: string;
+  /** Connection timeout in milliseconds */
+  timeout?: number;
+  /** Additional headers */
+  headers?: Record<string, string>;
+}
+
+/**
  * Create a test WebSocket client
  */
-export function createTestWebSocketClient(url: string): WebSocketTestClient {
+export function createTestWebSocketClient(
+  url: string,
+  options: WebSocketClientOptions = {}
+): WebSocketTestClient {
   const messages: any[] = [];
   const errors: Error[] = [];
   let ws: WebSocket;
+  let connected = false;
 
   return {
     get ws() {
       return ws;
+    },
+    get isConnected() {
+      return connected;
     },
     messages,
     errors,
 
     async connect(): Promise<void> {
       return new Promise((resolve, reject) => {
-        ws = new WebSocket(url);
-        let isConnected = false;
+        const headers: Record<string, string> = { ...options.headers };
+
+        // Add authentication token if provided
+        if (options.authToken) {
+          headers['Authorization'] = `Bearer ${options.authToken}`;
+        }
+
+        ws = new WebSocket(url, { headers });
+
+        const timeout = options.timeout || WEBSOCKET_TEST_CONSTANTS.CONNECTION_TIMEOUT;
+        const timer = setTimeout(() => {
+          if (!connected) {
+            ws.terminate();
+            reject(new Error('Connection timeout'));
+          }
+        }, timeout);
 
         ws.on('open', () => {
-          isConnected = true;
+          clearTimeout(timer);
+          connected = true;
           resolve();
         });
 
@@ -55,13 +90,14 @@ export function createTestWebSocketClient(url: string): WebSocketTestClient {
         ws.on('error', (error: Error) => {
           errors.push(error);
           // Only reject if connection hasn't been established yet
-          if (!isConnected) {
+          if (!connected) {
+            clearTimeout(timer);
             reject(error);
           }
         });
 
         ws.on('close', () => {
-          // Connection closed
+          connected = false;
         });
       });
     },
@@ -118,34 +154,208 @@ export function createTestWebSocketClient(url: string): WebSocketTestClient {
 }
 
 /**
+ * MCP Tool definition
+ */
+export interface MCPTool {
+  /** Tool name */
+  name: string;
+  /** Tool description */
+  description: string;
+  /** Input schema */
+  inputSchema: {
+    type: string;
+    properties: Record<string, any>;
+    required?: string[];
+  };
+  /** Tool handler function */
+  handler?: (input: any) => Promise<any> | any;
+}
+
+/**
+ * Mock MCP server options
+ */
+export interface MockMCPServerOptions {
+  /** Require authentication token */
+  requireAuth?: boolean;
+  /** Valid authentication token */
+  validAuthToken?: string;
+  /** Maximum number of concurrent connections */
+  maxConnections?: number;
+  /** Enable heartbeat/ping-pong */
+  enableHeartbeat?: boolean;
+  /** Heartbeat interval in milliseconds */
+  heartbeatInterval?: number;
+  /** Enable MCP protocol support */
+  enableMCP?: boolean;
+  /** Simulate MCP initialization delay */
+  mcpInitDelay?: number;
+}
+
+/**
  * Mock MCP server for testing
  */
 export interface MockMCPServer {
-  start(port: number): Promise<void>;
+  start(port: number, options?: MockMCPServerOptions): Promise<void>;
   stop(): Promise<void>;
   getConnectedClients(): number;
   broadcastMessage(data: any): void;
   getReceivedMessages(): any[];
+  getRejectedConnections(): number;
+  clearMessages(): void;
+  registerTool(tool: MCPTool): void;
+  getRegisteredTools(): MCPTool[];
+  isInitialized(): boolean;
+  simulateRestart(): Promise<void>;
 }
 
 export function createMockMCPServer(): MockMCPServer {
   let wss: WebSocket.Server | null = null;
   const clients: Set<WebSocket> = new Set();
   const receivedMessages: any[] = [];
+  let rejectedConnections = 0;
+  let serverOptions: MockMCPServerOptions = {};
+  const heartbeatTimers: Map<WebSocket, NodeJS.Timeout> = new Map();
+  const registeredTools: MCPTool[] = [];
+  let initialized = false;
+  let currentPort = 0;
 
   return {
-    async start(port: number): Promise<void> {
+    async start(port: number, options: MockMCPServerOptions = {}): Promise<void> {
+      serverOptions = options;
+      currentPort = port;
       return new Promise((resolve, reject) => {
         try {
-          wss = new WebSocket.Server({ port });
+          wss = new WebSocket.Server({
+            port,
+            verifyClient: (info, callback) => {
+              // Check authentication if required
+              if (options.requireAuth) {
+                const authHeader = info.req.headers['authorization'];
+                const expectedToken = `Bearer ${options.validAuthToken || 'valid-token'}`;
+
+                if (authHeader !== expectedToken) {
+                  rejectedConnections++;
+                  callback(false, 401, 'Unauthorized');
+                  return;
+                }
+              }
+
+              // Check connection limit
+              if (options.maxConnections && clients.size >= options.maxConnections) {
+                rejectedConnections++;
+                callback(false, 503, 'Connection limit reached');
+                return;
+              }
+
+              callback(true);
+            }
+          });
 
           wss.on('connection', (ws: WebSocket) => {
             clients.add(ws);
 
-            ws.on('message', (data: WebSocket.Data) => {
+            // Start heartbeat if enabled
+            if (options.enableHeartbeat) {
+              const interval = options.heartbeatInterval || 30000;
+              const timer = setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.ping();
+                }
+              }, interval);
+              heartbeatTimers.set(ws, timer);
+
+              ws.on('pong', () => {
+                // Client is alive
+              });
+            }
+
+            ws.on('message', async (data: WebSocket.Data) => {
               try {
                 const parsed = JSON.parse(data.toString());
                 receivedMessages.push(parsed);
+
+                // Auto-respond to ping messages
+                if (parsed.type === 'ping') {
+                  ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+                }
+
+                // Handle MCP protocol messages if enabled
+                if (options.enableMCP) {
+                  if (parsed.method === 'initialize') {
+                    // Simulate MCP initialization
+                    if (options.mcpInitDelay) {
+                      await sleep(options.mcpInitDelay);
+                    }
+                    initialized = true;
+                    ws.send(JSON.stringify({
+                      jsonrpc: '2.0',
+                      id: parsed.id,
+                      result: {
+                        protocolVersion: '2024-11-05',
+                        capabilities: {
+                          tools: {},
+                          prompts: {}
+                        },
+                        serverInfo: {
+                          name: 'mock-mcp-server',
+                          version: '1.0.0'
+                        }
+                      }
+                    }));
+                  } else if (parsed.method === 'tools/list') {
+                    ws.send(JSON.stringify({
+                      jsonrpc: '2.0',
+                      id: parsed.id,
+                      result: {
+                        tools: registeredTools.map(tool => ({
+                          name: tool.name,
+                          description: tool.description,
+                          inputSchema: tool.inputSchema
+                        }))
+                      }
+                    }));
+                  } else if (parsed.method === 'tools/call') {
+                    const toolName = parsed.params?.name;
+                    const tool = registeredTools.find(t => t.name === toolName);
+
+                    if (tool && tool.handler) {
+                      try {
+                        const result = await tool.handler(parsed.params?.arguments);
+                        ws.send(JSON.stringify({
+                          jsonrpc: '2.0',
+                          id: parsed.id,
+                          result: {
+                            content: [
+                              {
+                                type: 'text',
+                                text: typeof result === 'string' ? result : JSON.stringify(result)
+                              }
+                            ]
+                          }
+                        }));
+                      } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        ws.send(JSON.stringify({
+                          jsonrpc: '2.0',
+                          id: parsed.id,
+                          error: {
+                            code: -32603,
+                            message: errorMessage
+                          }
+                        }));
+                      }
+                    } else {
+                      ws.send(JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: parsed.id,
+                        error: {
+                          code: -32601,
+                          message: `Tool not found: ${toolName}`
+                        }
+                      }));
+                    }
+                  }
+                }
               } catch {
                 receivedMessages.push(data.toString());
               }
@@ -153,6 +363,11 @@ export function createMockMCPServer(): MockMCPServer {
 
             ws.on('close', () => {
               clients.delete(ws);
+              const timer = heartbeatTimers.get(ws);
+              if (timer) {
+                clearInterval(timer);
+                heartbeatTimers.delete(ws);
+              }
             });
 
             ws.on('error', (error) => {
@@ -176,6 +391,10 @@ export function createMockMCPServer(): MockMCPServer {
     async stop(): Promise<void> {
       return new Promise((resolve) => {
         if (wss) {
+          // Clear all heartbeat timers
+          heartbeatTimers.forEach(timer => clearInterval(timer));
+          heartbeatTimers.clear();
+
           // Close all client connections
           clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
@@ -209,6 +428,39 @@ export function createMockMCPServer(): MockMCPServer {
 
     getReceivedMessages(): any[] {
       return [...receivedMessages];
+    },
+
+    getRejectedConnections(): number {
+      return rejectedConnections;
+    },
+
+    clearMessages(): void {
+      receivedMessages.length = 0;
+      rejectedConnections = 0;
+    },
+
+    registerTool(tool: MCPTool): void {
+      registeredTools.push(tool);
+    },
+
+    getRegisteredTools(): MCPTool[] {
+      return [...registeredTools];
+    },
+
+    isInitialized(): boolean {
+      return initialized;
+    },
+
+    async simulateRestart(): Promise<void> {
+      // Simulate server restart
+      initialized = false;
+      await sleep(100);
+
+      // Re-initialize if clients are connected
+      if (clients.size > 0 && serverOptions.enableMCP) {
+        await sleep(serverOptions.mcpInitDelay || 0);
+        initialized = true;
+      }
     }
   };
 }

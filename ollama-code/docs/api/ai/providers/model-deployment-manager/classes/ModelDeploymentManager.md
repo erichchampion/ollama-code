@@ -6,7 +6,7 @@
 
 # Class: ModelDeploymentManager
 
-Defined in: [ai/providers/model-deployment-manager.ts:126](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L126)
+Defined in: [ai/providers/model-deployment-manager.ts:126](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L126)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:126](https://github.com/er
 
 > **new ModelDeploymentManager**(`workspaceDir`): `ModelDeploymentManager`
 
-Defined in: [ai/providers/model-deployment-manager.ts:134](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L134)
+Defined in: [ai/providers/model-deployment-manager.ts:134](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L134)
 
 #### Parameters
 
@@ -40,7 +40,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:134](https://github.com/er
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:153](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L153)
+Defined in: [ai/providers/model-deployment-manager.ts:153](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L153)
 
 Initialize the deployment manager
 
@@ -54,7 +54,7 @@ Initialize the deployment manager
 
 > **registerModel**(`name`, `version`, `type`, `modelPath`, `metadata`): `Promise`\<[`ModelRegistryEntry`](../interfaces/ModelRegistryEntry.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:168](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L168)
+Defined in: [ai/providers/model-deployment-manager.ts:168](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L168)
 
 Register a new model in the registry
 
@@ -108,7 +108,7 @@ Register a new model in the registry
 
 > **deployModel**(`modelId`, `config`): `Promise`\<[`ModelDeployment`](../../local-fine-tuning/interfaces/ModelDeployment.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:203](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L203)
+Defined in: [ai/providers/model-deployment-manager.ts:203](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L203)
 
 Deploy a registered model
 
@@ -132,7 +132,7 @@ Deploy a registered model
 
 > **scaleDeployment**(`deploymentId`, `targetInstances`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:260](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L260)
+Defined in: [ai/providers/model-deployment-manager.ts:260](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L260)
 
 Scale a deployment up or down
 
@@ -156,7 +156,7 @@ Scale a deployment up or down
 
 > **startInstance**(`deploymentId`): `Promise`\<[`DeploymentInstance`](../interfaces/DeploymentInstance.md)\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:291](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L291)
+Defined in: [ai/providers/model-deployment-manager.ts:291](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L291)
 
 Start a new instance of a deployment
 
@@ -176,7 +176,7 @@ Start a new instance of a deployment
 
 > **stopInstance**(`instanceId`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:349](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L349)
+Defined in: [ai/providers/model-deployment-manager.ts:349](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L349)
 
 Stop an instance
 
@@ -196,7 +196,7 @@ Stop an instance
 
 > **getDeployment**(`deploymentId`): `undefined` \| [`ModelDeployment`](../../local-fine-tuning/interfaces/ModelDeployment.md)
 
-Defined in: [ai/providers/model-deployment-manager.ts:391](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L391)
+Defined in: [ai/providers/model-deployment-manager.ts:391](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L391)
 
 Get deployment status
 
@@ -216,7 +216,7 @@ Get deployment status
 
 > **listDeployments**(): [`ModelDeployment`](../../local-fine-tuning/interfaces/ModelDeployment.md)[]
 
-Defined in: [ai/providers/model-deployment-manager.ts:398](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L398)
+Defined in: [ai/providers/model-deployment-manager.ts:398](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L398)
 
 List all deployments
 
@@ -230,7 +230,7 @@ List all deployments
 
 > **getInstances**(`deploymentId`): [`DeploymentInstance`](../interfaces/DeploymentInstance.md)[]
 
-Defined in: [ai/providers/model-deployment-manager.ts:405](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L405)
+Defined in: [ai/providers/model-deployment-manager.ts:405](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L405)
 
 Get instances for a deployment
 
@@ -250,7 +250,7 @@ Get instances for a deployment
 
 > **getLoadBalancer**(`deploymentId`): `undefined` \| [`LoadBalancer`](../interfaces/LoadBalancer.md)
 
-Defined in: [ai/providers/model-deployment-manager.ts:413](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L413)
+Defined in: [ai/providers/model-deployment-manager.ts:413](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L413)
 
 Get load balancer for a deployment
 
@@ -270,7 +270,7 @@ Get load balancer for a deployment
 
 > **routeRequest**(`deploymentId`): `null` \| [`DeploymentInstance`](../interfaces/DeploymentInstance.md)
 
-Defined in: [ai/providers/model-deployment-manager.ts:420](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L420)
+Defined in: [ai/providers/model-deployment-manager.ts:420](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L420)
 
 Route request to healthy instance
 
@@ -290,7 +290,7 @@ Route request to healthy instance
 
 > **updateInstanceMetrics**(`instanceId`, `metrics`): `void`
 
-Defined in: [ai/providers/model-deployment-manager.ts:453](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L453)
+Defined in: [ai/providers/model-deployment-manager.ts:453](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L453)
 
 Update instance metrics
 
@@ -314,7 +314,7 @@ Update instance metrics
 
 > **cleanup**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/model-deployment-manager.ts:464](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/providers/model-deployment-manager.ts#L464)
+Defined in: [ai/providers/model-deployment-manager.ts:464](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/providers/model-deployment-manager.ts#L464)
 
 Cleanup all resources
 

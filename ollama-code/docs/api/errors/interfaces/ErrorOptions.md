@@ -6,7 +6,7 @@
 
 # Interface: ErrorOptions
 
-Defined in: [errors/types.ts:166](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L166)
+Defined in: [errors/types.ts:166](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L166)
 
 Error options for error handling
 
@@ -16,7 +16,7 @@ Error options for error handling
 
 > `optional` **level**: [`ErrorLevel`](../enumerations/ErrorLevel.md)
 
-Defined in: [errors/types.ts:170](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L170)
+Defined in: [errors/types.ts:170](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L170)
 
 Error level
 
@@ -26,7 +26,7 @@ Error level
 
 > `optional` **category**: [`ErrorCategory`](../enumerations/ErrorCategory.md)
 
-Defined in: [errors/types.ts:175](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L175)
+Defined in: [errors/types.ts:175](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L175)
 
 Error category
 
@@ -36,7 +36,7 @@ Error category
 
 > `optional` **context**: `Record`\<`string`, `any`\>
 
-Defined in: [errors/types.ts:180](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L180)
+Defined in: [errors/types.ts:180](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L180)
 
 Additional context for the error
 
@@ -46,7 +46,7 @@ Additional context for the error
 
 > `optional` **report**: `boolean`
 
-Defined in: [errors/types.ts:185](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L185)
+Defined in: [errors/types.ts:185](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L185)
 
 Whether to report the error to monitoring systems
 
@@ -56,7 +56,7 @@ Whether to report the error to monitoring systems
 
 > `optional` **userMessage**: `string`
 
-Defined in: [errors/types.ts:190](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L190)
+Defined in: [errors/types.ts:190](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L190)
 
 User message to display
 
@@ -66,6 +66,6 @@ User message to display
 
 > `optional` **resolution**: `string` \| `string`[]
 
-Defined in: [errors/types.ts:195](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/errors/types.ts#L195)
+Defined in: [errors/types.ts:195](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/errors/types.ts#L195)
 
 Suggested resolution steps

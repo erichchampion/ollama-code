@@ -6,7 +6,7 @@
 
 # Class: UniversalCIAPI
 
-Defined in: [ai/vcs/universal-ci-api.ts:216](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L216)
+Defined in: [ai/vcs/universal-ci-api.ts:216](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L216)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:216](https://github.com/erichchampion/ol
 
 > **new UniversalCIAPI**(`config`): `UniversalCIAPI`
 
-Defined in: [ai/vcs/universal-ci-api.ts:221](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L221)
+Defined in: [ai/vcs/universal-ci-api.ts:221](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L221)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:221](https://github.com/erichchampion/ol
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [ai/vcs/universal-ci-api.ts:237](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L237)
+Defined in: [ai/vcs/universal-ci-api.ts:237](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L237)
 
 Initialize the API and detect platform if enabled
 
@@ -46,7 +46,7 @@ Initialize the API and detect platform if enabled
 
 > **detectPlatform**(): `Promise`\<[`CI_PLATFORM`](../type-aliases/CI_PLATFORM.md)\>
 
-Defined in: [ai/vcs/universal-ci-api.ts:256](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L256)
+Defined in: [ai/vcs/universal-ci-api.ts:256](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L256)
 
 Auto-detect the CI/CD platform based on environment and files
 
@@ -60,7 +60,7 @@ Auto-detect the CI/CD platform based on environment and files
 
 > **getPlatformCapabilities**(): `undefined` \| [`PlatformCapabilities`](../interfaces/PlatformCapabilities.md)
 
-Defined in: [ai/vcs/universal-ci-api.ts:356](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L356)
+Defined in: [ai/vcs/universal-ci-api.ts:356](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L356)
 
 Get platform capabilities
 
@@ -74,7 +74,7 @@ Get platform capabilities
 
 > **getPlatform**(): `undefined` \| [`CI_PLATFORM`](../type-aliases/CI_PLATFORM.md)
 
-Defined in: [ai/vcs/universal-ci-api.ts:363](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L363)
+Defined in: [ai/vcs/universal-ci-api.ts:363](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L363)
 
 Get detected or configured platform
 
@@ -88,7 +88,7 @@ Get detected or configured platform
 
 > **executeAnalysis**(): `Promise`\<`any`\>
 
-Defined in: [ai/vcs/universal-ci-api.ts:370](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L370)
+Defined in: [ai/vcs/universal-ci-api.ts:370](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L370)
 
 Execute analysis using the appropriate CI pipeline integrator
 
@@ -102,7 +102,7 @@ Execute analysis using the appropriate CI pipeline integrator
 
 > **generateConfigurationTemplate**(): `Promise`\<[`ConfigurationTemplate`](../interfaces/ConfigurationTemplate.md)\>
 
-Defined in: [ai/vcs/universal-ci-api.ts:401](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L401)
+Defined in: [ai/vcs/universal-ci-api.ts:401](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L401)
 
 Generate platform-specific configuration template
 
@@ -116,7 +116,7 @@ Generate platform-specific configuration template
 
 > **optimizeForPlatform**(): [`UniversalCIConfig`](../interfaces/UniversalCIConfig.md)
 
-Defined in: [ai/vcs/universal-ci-api.ts:427](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L427)
+Defined in: [ai/vcs/universal-ci-api.ts:427](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L427)
 
 Optimize configuration for the detected platform
 
@@ -130,7 +130,7 @@ Optimize configuration for the detected platform
 
 > **validateConfiguration**(): `object`
 
-Defined in: [ai/vcs/universal-ci-api.ts:455](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L455)
+Defined in: [ai/vcs/universal-ci-api.ts:455](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L455)
 
 Validate configuration against platform capabilities
 
@@ -156,7 +156,7 @@ Validate configuration against platform capabilities
 
 > **getPlatformDocumentation**(): `string`
 
-Defined in: [ai/vcs/universal-ci-api.ts:771](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/ai/vcs/universal-ci-api.ts#L771)
+Defined in: [ai/vcs/universal-ci-api.ts:771](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/ai/vcs/universal-ci-api.ts#L771)
 
 Get platform-specific documentation
 

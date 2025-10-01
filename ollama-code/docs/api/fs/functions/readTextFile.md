@@ -8,7 +8,7 @@
 
 > **readTextFile**(`filePath`, `encoding`): `Promise`\<`string`\>
 
-Defined in: [fs/operations.ts:65](https://github.com/erichchampion/ollama-code/blob/6fbd2b7ec436444e20f96917e578abed00a87538/ollama-code/src/fs/operations.ts#L65)
+Defined in: [fs/operations.ts:65](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/fs/operations.ts#L65)
 
 Read a file as text
 
