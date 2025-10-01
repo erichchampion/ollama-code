@@ -10,13 +10,13 @@ import {
   WebSocketTestClient,
   MockMCPServer
 } from '../helpers/websocketTestHelper';
-import { WEBSOCKET_TEST_CONSTANTS } from '../helpers/test-constants';
+import { WEBSOCKET_TEST_CONSTANTS, TEST_DELAYS } from '../helpers/test-constants';
 import { sleep } from '../../../../tests/shared/test-utils';
 
 suite('WebSocket Connection Management Tests', () => {
-  const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.DEFAULT_TEST_PORT + 1; // 9877 to avoid conflicts
+  const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.PORTS.CONNECTION_TESTS;
   const WS_URL = `ws://localhost:${TEST_PORT}`;
-  const VALID_AUTH_TOKEN = 'test-auth-token-12345';
+  const VALID_AUTH_TOKEN = WEBSOCKET_TEST_CONSTANTS.AUTH.VALID_TOKEN;
 
   let mockServer: MockMCPServer;
   let testClient: WebSocketTestClient;
@@ -157,7 +157,7 @@ suite('WebSocket Connection Management Tests', () => {
       // Disconnect all clients
       await Promise.all(clients.map(client => client.disconnect()));
 
-      await sleep(200);
+      await sleep(TEST_DELAYS.DISCONNECTION);
 
       assert.strictEqual(
         mockServer.getConnectedClients(),
@@ -221,7 +221,7 @@ suite('WebSocket Connection Management Tests', () => {
 
       // Graceful disconnect
       await testClient.disconnect();
-      await sleep(100);
+      await sleep(TEST_DELAYS.CLEANUP);
 
       assert.strictEqual(
         mockServer.getConnectedClients(),
@@ -246,7 +246,7 @@ suite('WebSocket Connection Management Tests', () => {
 
       // Abrupt disconnect (terminate)
       testClient.ws.terminate();
-      await sleep(200);
+      await sleep(TEST_DELAYS.DISCONNECTION);
 
       assert.strictEqual(
         mockServer.getConnectedClients(),
@@ -296,7 +296,7 @@ suite('WebSocket Connection Management Tests', () => {
       // Send messages over 5 seconds
       for (let i = 0; i < 10; i++) {
         await testClient.send({ type: 'stability-test', sequence: i });
-        await sleep(500);
+        await sleep(TEST_DELAYS.STABILITY_INTERVAL);
       }
 
       assert.strictEqual(
@@ -389,7 +389,7 @@ suite('WebSocket Connection Management Tests', () => {
 
       // Simulate network interruption
       await testClient.disconnect();
-      await sleep(100);
+      await sleep(TEST_DELAYS.CLEANUP);
       assert.strictEqual(testClient.isConnected, false);
 
       // Reconnect
@@ -432,7 +432,7 @@ suite('WebSocket Connection Management Tests', () => {
           `Cycle ${i + 1}: Should disconnect successfully`
         );
 
-        await sleep(100);
+        await sleep(TEST_DELAYS.CLEANUP);
       }
 
       const messages = mockServer.getReceivedMessages();

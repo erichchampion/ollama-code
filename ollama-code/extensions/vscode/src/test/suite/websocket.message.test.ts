@@ -10,11 +10,11 @@ import {
   WebSocketTestClient,
   MockMCPServer
 } from '../helpers/websocketTestHelper';
-import { WEBSOCKET_TEST_CONSTANTS } from '../helpers/test-constants';
+import { WEBSOCKET_TEST_CONSTANTS, TEST_DELAYS } from '../helpers/test-constants';
 import { sleep } from '../../../../tests/shared/test-utils';
 
 suite('WebSocket Message Processing Tests', () => {
-  const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.DEFAULT_TEST_PORT + 2; // 9878 to avoid conflicts
+  const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.PORTS.MESSAGE_TESTS;
   const WS_URL = `ws://localhost:${TEST_PORT}`;
 
   let mockServer: MockMCPServer;
@@ -52,7 +52,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(validMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(received.length, 1, 'Should receive 1 message');
@@ -87,7 +87,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(nestedMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.deepStrictEqual(
@@ -111,7 +111,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(messageWithArray);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(received[0].items.length, 3, 'Array length should be preserved');
@@ -129,7 +129,7 @@ suite('WebSocket Message Processing Tests', () => {
 
       const malformedJSON = '{invalid json}';
       await testClient.send(malformedJSON);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(
@@ -149,7 +149,7 @@ suite('WebSocket Message Processing Tests', () => {
 
       const emptyMessage = {};
       await testClient.send(emptyMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(received.length, 1, 'Should receive empty object');
@@ -167,7 +167,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(messageWithNulls);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(received[0].nullValue, null, 'Null values should be preserved');
@@ -185,7 +185,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(messageWithSpecialChars);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(
@@ -279,7 +279,7 @@ suite('WebSocket Message Processing Tests', () => {
       for (const msg of messages) {
         await testClient.send(msg);
       }
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       const types = received.map((msg: any) => msg.type);
@@ -358,7 +358,7 @@ suite('WebSocket Message Processing Tests', () => {
       for (const msg of emptyPayloadMessages) {
         await testClient.send(msg);
       }
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(
@@ -379,7 +379,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(unknownTypeMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(
@@ -404,7 +404,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(incompleteMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(received.length, 1, 'Should receive incomplete message');
@@ -423,7 +423,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(messageWithExtras);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.ok(
@@ -450,7 +450,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(binaryMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(
@@ -478,7 +478,7 @@ suite('WebSocket Message Processing Tests', () => {
       };
 
       await testClient.send(numericMessage);
-      await sleep(100);
+      await sleep(TEST_DELAYS.MESSAGE_PROCESSING);
 
       const received = mockServer.getReceivedMessages();
       assert.strictEqual(received[0].integer, 42, 'Integer should be exact');

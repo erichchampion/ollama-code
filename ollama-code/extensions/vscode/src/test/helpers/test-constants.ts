@@ -33,6 +33,74 @@ export const WEBSOCKET_TEST_CONSTANTS = {
   HEARTBEAT_INTERVAL: 1000,
   /** Number of heartbeat iterations */
   HEARTBEAT_COUNT: 3,
+
+  /** Port assignments for different test suites */
+  PORTS: {
+    /** Integration tests port */
+    INTEGRATION_TESTS: 9876,
+    /** Connection management tests port */
+    CONNECTION_TESTS: 9877,
+    /** Message processing tests port */
+    MESSAGE_TESTS: 9878,
+    /** MCP integration tests port */
+    MCP_TESTS: 9879,
+  },
+
+  /** Authentication test tokens */
+  AUTH: {
+    /** Valid authentication token for tests */
+    VALID_TOKEN: 'test-auth-token-12345',
+    /** Invalid authentication token for tests */
+    INVALID_TOKEN: 'invalid-token',
+  },
+} as const;
+
+/**
+ * MCP (Model Context Protocol) test constants
+ */
+export const MCP_TEST_CONSTANTS = {
+  /** MCP protocol version */
+  PROTOCOL_VERSION: '2024-11-05',
+  /** Mock server name */
+  SERVER_NAME: 'mock-mcp-server',
+  /** Mock server version */
+  SERVER_VERSION: '1.0.0',
+  /** Default heartbeat interval for MCP server */
+  DEFAULT_HEARTBEAT_INTERVAL: 30000,
+} as const;
+
+/**
+ * JSON-RPC 2.0 error codes
+ */
+export const JSONRPC_ERROR_CODES = {
+  /** Parse error - Invalid JSON */
+  PARSE_ERROR: -32700,
+  /** Invalid request - Not a valid JSON-RPC request */
+  INVALID_REQUEST: -32600,
+  /** Method not found */
+  METHOD_NOT_FOUND: -32601,
+  /** Invalid method parameters */
+  INVALID_PARAMS: -32602,
+  /** Internal JSON-RPC error */
+  INTERNAL_ERROR: -32603,
+  /** Server error (reserved range -32000 to -32099) */
+  SERVER_ERROR: -32000,
+} as const;
+
+/**
+ * Test delay constants (in milliseconds)
+ */
+export const TEST_DELAYS = {
+  /** Short cleanup wait */
+  CLEANUP: 100,
+  /** Disconnection detection wait */
+  DISCONNECTION: 200,
+  /** Server restart wait */
+  SERVER_RESTART: 100,
+  /** Stability test interval */
+  STABILITY_INTERVAL: 500,
+  /** Message processing wait */
+  MESSAGE_PROCESSING: 100,
 } as const;
 
 /**

@@ -4,7 +4,11 @@
  */
 
 import WebSocket from 'ws';
-import { WEBSOCKET_TEST_CONSTANTS } from './test-constants.js';
+import {
+  WEBSOCKET_TEST_CONSTANTS,
+  MCP_TEST_CONSTANTS,
+  JSONRPC_ERROR_CODES,
+} from './test-constants.js';
 import { sleep } from '../../../../tests/shared/test-utils.js';
 
 export interface WebSocketTestClient {
@@ -41,14 +45,13 @@ export function createTestWebSocketClient(
   const messages: any[] = [];
   const errors: Error[] = [];
   let ws: WebSocket;
-  let connected = false;
 
   return {
     get ws() {
       return ws;
     },
     get isConnected() {
-      return connected;
+      return ws && ws.readyState === WebSocket.OPEN;
     },
     messages,
     errors,
@@ -66,7 +69,7 @@ export function createTestWebSocketClient(
 
         const timeout = options.timeout || WEBSOCKET_TEST_CONSTANTS.CONNECTION_TIMEOUT;
         const timer = setTimeout(() => {
-          if (!connected) {
+          if (ws.readyState !== WebSocket.OPEN) {
             ws.terminate();
             reject(new Error('Connection timeout'));
           }
@@ -74,7 +77,6 @@ export function createTestWebSocketClient(
 
         ws.on('open', () => {
           clearTimeout(timer);
-          connected = true;
           resolve();
         });
 
@@ -90,14 +92,10 @@ export function createTestWebSocketClient(
         ws.on('error', (error: Error) => {
           errors.push(error);
           // Only reject if connection hasn't been established yet
-          if (!connected) {
+          if (ws.readyState !== WebSocket.OPEN) {
             clearTimeout(timer);
             reject(error);
           }
-        });
-
-        ws.on('close', () => {
-          connected = false;
         });
       });
     },
@@ -219,6 +217,90 @@ export function createMockMCPServer(): MockMCPServer {
   let initialized = false;
   let currentPort = 0;
 
+  /**
+   * Handle MCP protocol messages
+   */
+  async function handleMCPMessage(
+    ws: WebSocket,
+    parsed: any,
+    options: MockMCPServerOptions
+  ): Promise<void> {
+    if (parsed.method === 'initialize') {
+      // Simulate MCP initialization
+      if (options.mcpInitDelay) {
+        await sleep(options.mcpInitDelay);
+      }
+      initialized = true;
+      ws.send(JSON.stringify({
+        jsonrpc: '2.0',
+        id: parsed.id,
+        result: {
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
+          capabilities: {
+            tools: {},
+            prompts: {}
+          },
+          serverInfo: {
+            name: MCP_TEST_CONSTANTS.SERVER_NAME,
+            version: MCP_TEST_CONSTANTS.SERVER_VERSION
+          }
+        }
+      }));
+    } else if (parsed.method === 'tools/list') {
+      ws.send(JSON.stringify({
+        jsonrpc: '2.0',
+        id: parsed.id,
+        result: {
+          tools: registeredTools.map(tool => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema
+          }))
+        }
+      }));
+    } else if (parsed.method === 'tools/call') {
+      const toolName = parsed.params?.name;
+      const tool = registeredTools.find(t => t.name === toolName);
+
+      if (tool && tool.handler) {
+        try {
+          const result = await tool.handler(parsed.params?.arguments);
+          ws.send(JSON.stringify({
+            jsonrpc: '2.0',
+            id: parsed.id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: typeof result === 'string' ? result : JSON.stringify(result)
+                }
+              ]
+            }
+          }));
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          ws.send(JSON.stringify({
+            jsonrpc: '2.0',
+            id: parsed.id,
+            error: {
+              code: JSONRPC_ERROR_CODES.INTERNAL_ERROR,
+              message: errorMessage
+            }
+          }));
+        }
+      } else {
+        ws.send(JSON.stringify({
+          jsonrpc: '2.0',
+          id: parsed.id,
+          error: {
+            code: JSONRPC_ERROR_CODES.METHOD_NOT_FOUND,
+            message: `Tool not found: ${toolName}`
+          }
+        }));
+      }
+    }
+  }
+
   return {
     async start(port: number, options: MockMCPServerOptions = {}): Promise<void> {
       serverOptions = options;
@@ -231,7 +313,9 @@ export function createMockMCPServer(): MockMCPServer {
               // Check authentication if required
               if (options.requireAuth) {
                 const authHeader = info.req.headers['authorization'];
-                const expectedToken = `Bearer ${options.validAuthToken || 'valid-token'}`;
+                const expectedToken = `Bearer ${
+                  options.validAuthToken || WEBSOCKET_TEST_CONSTANTS.AUTH.VALID_TOKEN
+                }`;
 
                 if (authHeader !== expectedToken) {
                   rejectedConnections++;
@@ -256,7 +340,8 @@ export function createMockMCPServer(): MockMCPServer {
 
             // Start heartbeat if enabled
             if (options.enableHeartbeat) {
-              const interval = options.heartbeatInterval || 30000;
+              const interval = options.heartbeatInterval ||
+                MCP_TEST_CONSTANTS.DEFAULT_HEARTBEAT_INTERVAL;
               const timer = setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN) {
                   ws.ping();
@@ -270,94 +355,30 @@ export function createMockMCPServer(): MockMCPServer {
             }
 
             ws.on('message', async (data: WebSocket.Data) => {
+              // Try to parse as JSON
+              let parsed: any;
               try {
-                const parsed = JSON.parse(data.toString());
+                parsed = JSON.parse(data.toString());
                 receivedMessages.push(parsed);
-
-                // Auto-respond to ping messages
-                if (parsed.type === 'ping') {
-                  ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
-                }
-
-                // Handle MCP protocol messages if enabled
-                if (options.enableMCP) {
-                  if (parsed.method === 'initialize') {
-                    // Simulate MCP initialization
-                    if (options.mcpInitDelay) {
-                      await sleep(options.mcpInitDelay);
-                    }
-                    initialized = true;
-                    ws.send(JSON.stringify({
-                      jsonrpc: '2.0',
-                      id: parsed.id,
-                      result: {
-                        protocolVersion: '2024-11-05',
-                        capabilities: {
-                          tools: {},
-                          prompts: {}
-                        },
-                        serverInfo: {
-                          name: 'mock-mcp-server',
-                          version: '1.0.0'
-                        }
-                      }
-                    }));
-                  } else if (parsed.method === 'tools/list') {
-                    ws.send(JSON.stringify({
-                      jsonrpc: '2.0',
-                      id: parsed.id,
-                      result: {
-                        tools: registeredTools.map(tool => ({
-                          name: tool.name,
-                          description: tool.description,
-                          inputSchema: tool.inputSchema
-                        }))
-                      }
-                    }));
-                  } else if (parsed.method === 'tools/call') {
-                    const toolName = parsed.params?.name;
-                    const tool = registeredTools.find(t => t.name === toolName);
-
-                    if (tool && tool.handler) {
-                      try {
-                        const result = await tool.handler(parsed.params?.arguments);
-                        ws.send(JSON.stringify({
-                          jsonrpc: '2.0',
-                          id: parsed.id,
-                          result: {
-                            content: [
-                              {
-                                type: 'text',
-                                text: typeof result === 'string' ? result : JSON.stringify(result)
-                              }
-                            ]
-                          }
-                        }));
-                      } catch (error) {
-                        const errorMessage = error instanceof Error ? error.message : String(error);
-                        ws.send(JSON.stringify({
-                          jsonrpc: '2.0',
-                          id: parsed.id,
-                          error: {
-                            code: -32603,
-                            message: errorMessage
-                          }
-                        }));
-                      }
-                    } else {
-                      ws.send(JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: parsed.id,
-                        error: {
-                          code: -32601,
-                          message: `Tool not found: ${toolName}`
-                        }
-                      }));
-                    }
-                  }
-                }
-              } catch {
+              } catch (parseError) {
+                // Not JSON - store as string
                 receivedMessages.push(data.toString());
+                return;
+              }
+
+              // Auto-respond to ping messages
+              if (parsed.type === 'ping') {
+                ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+              }
+
+              // Handle MCP protocol messages if enabled
+              if (options.enableMCP && parsed.method) {
+                try {
+                  await handleMCPMessage(ws, parsed, options);
+                } catch (mcpError) {
+                  // Log MCP handling errors but don't crash
+                  console.error('[Mock MCP Server] Handler error:', mcpError);
+                }
               }
             });
 
@@ -440,6 +461,21 @@ export function createMockMCPServer(): MockMCPServer {
     },
 
     registerTool(tool: MCPTool): void {
+      // Validate required fields
+      if (!tool.name || !tool.description || !tool.inputSchema) {
+        throw new Error('Tool missing required fields (name, description, inputSchema)');
+      }
+
+      // Validate name is not empty string
+      if (tool.name.trim().length === 0) {
+        throw new Error('Tool name cannot be empty');
+      }
+
+      // Check for duplicate tool names
+      if (registeredTools.some(t => t.name === tool.name)) {
+        throw new Error(`Tool '${tool.name}' is already registered`);
+      }
+
       registeredTools.push(tool);
     },
 

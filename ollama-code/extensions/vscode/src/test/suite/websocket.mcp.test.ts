@@ -11,11 +11,16 @@ import {
   MockMCPServer,
   MCPTool
 } from '../helpers/websocketTestHelper';
-import { WEBSOCKET_TEST_CONSTANTS } from '../helpers/test-constants';
+import {
+  WEBSOCKET_TEST_CONSTANTS,
+  MCP_TEST_CONSTANTS,
+  JSONRPC_ERROR_CODES,
+  TEST_DELAYS
+} from '../helpers/test-constants';
 import { sleep } from '../../../../tests/shared/test-utils';
 
 suite('WebSocket MCP Server Integration Tests', () => {
-  const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.DEFAULT_TEST_PORT + 3; // 9879 to avoid conflicts
+  const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.PORTS.MCP_TESTS;
   const WS_URL = `ws://localhost:${TEST_PORT}`;
 
   let mockServer: MockMCPServer;
@@ -53,7 +58,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: {
             name: 'test-client',
@@ -108,7 +113,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 2,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test-client', version: '1.0.0' }
         }
@@ -198,7 +203,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -261,7 +266,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -327,7 +332,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -373,7 +378,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -395,7 +400,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
       const response = await testClient.waitForMessage(2000);
 
       assert.ok(response.error, 'Should have error object');
-      assert.strictEqual(response.error.code, -32601, 'Should be method not found error');
+      assert.strictEqual(response.error.code, JSONRPC_ERROR_CODES.METHOD_NOT_FOUND, 'Should be method not found error');
       assert.ok(
         response.error.message.includes('not found'),
         'Error message should mention tool not found'
@@ -433,7 +438,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -455,7 +460,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
       const response = await testClient.waitForMessage(2000);
 
       assert.ok(response.error, 'Should have error object');
-      assert.strictEqual(response.error.code, -32603, 'Should be internal error');
+      assert.strictEqual(response.error.code, JSONRPC_ERROR_CODES.INTERNAL_ERROR, 'Should be internal error');
       assert.strictEqual(
         response.error.message,
         'Tool execution failed',
@@ -491,7 +496,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -504,7 +509,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
       await mockServer.simulateRestart();
 
       // Server should re-initialize
-      await sleep(500);
+      await sleep(TEST_DELAYS.STABILITY_INTERVAL);
 
       // Tools should still be registered
       const tools = mockServer.getRegisteredTools();
@@ -529,7 +534,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -538,7 +543,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
 
       // Disconnect
       await testClient.disconnect();
-      await sleep(200);
+      await sleep(TEST_DELAYS.DISCONNECTION);
 
       // Reconnect
       await testClient.connect();
@@ -550,7 +555,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 2,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
@@ -603,7 +608,7 @@ suite('WebSocket MCP Server Integration Tests', () => {
         id: 1,
         method: 'initialize',
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: MCP_TEST_CONSTANTS.PROTOCOL_VERSION,
           capabilities: {},
           clientInfo: { name: 'test', version: '1.0.0' }
         }
