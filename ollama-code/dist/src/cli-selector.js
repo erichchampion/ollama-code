@@ -15,7 +15,7 @@ import { registerCommands } from './commands/register.js';
 import { UserError } from './errors/types.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
 import { initializeToolSystem } from './tools/index.js';
-import { initializeLazyLoading, executeCommandOptimized, preloadCommonComponents } from './optimization/startup-optimizer.js';
+import { initializeLazyLoading, executeCommandOptimized, preloadCommonComponents, initializeEnhancedStartupOptimizer } from './optimization/startup-optimizer.js';
 import { registerServices, disposeServices } from './core/services.js';
 import { HELP_COMMAND_SUGGESTION, SAFETY_MODE_ENV_VAR } from './constants.js';
 import { OptimizedEnhancedMode } from './interactive/optimized-enhanced-mode.js';
@@ -290,23 +290,28 @@ async function runSimpleMode(commandName, args) {
     }
 }
 /**
- * Run advanced mode (full command registry) with optimized startup
+ * Run advanced mode (full command registry) with Phase 4 enhanced startup optimization
  */
 async function runAdvancedMode(commandName, args) {
     // Register all services with dependency injection container
     await registerServices();
-    // Initialize lazy loading system
-    await initializeLazyLoading();
-    // Start background preloading of common components
-    preloadCommonComponents();
     try {
-        // Use optimized execution that only loads what's needed
+        // Use Phase 4 enhanced startup optimization
         if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
-            // Fallback to original method for tests
+            // Fallback to legacy execution for tests
             logger.info('Using legacy execution mode for testing');
             await runAdvancedModeLegacy(commandName, args);
         }
         else {
+            // Phase 4: Enhanced startup optimization with comprehensive monitoring
+            logger.info('Starting Phase 4 enhanced startup optimization');
+            // Initialize enhanced startup optimizer
+            await initializeEnhancedStartupOptimizer();
+            // Initialize lazy loading system (maintains backward compatibility)
+            await initializeLazyLoading();
+            // Start background preloading of common components
+            preloadCommonComponents();
+            // Execute command with optimized loading
             await executeCommandOptimized(commandName, args);
         }
     }

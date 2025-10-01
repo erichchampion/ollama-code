@@ -6,7 +6,7 @@
 
 # Interface: WeightedItem\<T\>
 
-Defined in: [utils/metrics-calculator.ts:8](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/utils/metrics-calculator.ts#L8)
+Defined in: [utils/metrics-calculator.ts:8](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/utils/metrics-calculator.ts#L8)
 
 Metrics Calculation Utility
 
@@ -25,7 +25,7 @@ duplicate mathematical and statistical logic across providers.
 
 > **value**: `T`
 
-Defined in: [utils/metrics-calculator.ts:9](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/utils/metrics-calculator.ts#L9)
+Defined in: [utils/metrics-calculator.ts:9](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/utils/metrics-calculator.ts#L9)
 
 ***
 
@@ -33,4 +33,4 @@ Defined in: [utils/metrics-calculator.ts:9](https://github.com/erichchampion/oll
 
 > **weight**: `number`
 
-Defined in: [utils/metrics-calculator.ts:10](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/utils/metrics-calculator.ts#L10)
+Defined in: [utils/metrics-calculator.ts:10](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/utils/metrics-calculator.ts#L10)

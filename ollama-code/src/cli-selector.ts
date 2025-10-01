@@ -21,7 +21,9 @@ import { initializeToolSystem } from './tools/index.js';
 import {
   initializeLazyLoading,
   executeCommandOptimized,
-  preloadCommonComponents
+  preloadCommonComponents,
+  initializeEnhancedStartupOptimizer,
+  executeEnhancedStartup
 } from './optimization/startup-optimizer.js';
 import { registerServices, disposeServices } from './core/services.js';
 import {
@@ -357,25 +359,32 @@ async function runSimpleMode(commandName: string, args: string[]): Promise<void>
 }
 
 /**
- * Run advanced mode (full command registry) with optimized startup
+ * Run advanced mode (full command registry) with Phase 4 enhanced startup optimization
  */
 async function runAdvancedMode(commandName: string, args: string[]): Promise<void> {
   // Register all services with dependency injection container
   await registerServices();
 
-  // Initialize lazy loading system
-  await initializeLazyLoading();
-
-  // Start background preloading of common components
-  preloadCommonComponents();
-
   try {
-    // Use optimized execution that only loads what's needed
+    // Use Phase 4 enhanced startup optimization
     if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
-      // Fallback to original method for tests
+      // Fallback to legacy execution for tests
       logger.info('Using legacy execution mode for testing');
       await runAdvancedModeLegacy(commandName, args);
     } else {
+      // Phase 4: Enhanced startup optimization with comprehensive monitoring
+      logger.info('Starting Phase 4 enhanced startup optimization');
+
+      // Initialize enhanced startup optimizer
+      await initializeEnhancedStartupOptimizer();
+
+      // Initialize lazy loading system (maintains backward compatibility)
+      await initializeLazyLoading();
+
+      // Start background preloading of common components
+      preloadCommonComponents();
+
+      // Execute command with optimized loading
       await executeCommandOptimized(commandName, args);
     }
   } finally {

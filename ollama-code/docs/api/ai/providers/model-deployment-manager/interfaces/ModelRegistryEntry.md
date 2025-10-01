@@ -6,7 +6,7 @@
 
 # Interface: ModelRegistryEntry
 
-Defined in: [ai/providers/model-deployment-manager.ts:105](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L105)
+Defined in: [ai/providers/model-deployment-manager.ts:105](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L105)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:105](https://github.com/er
 
 > **id**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:106](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L106)
+Defined in: [ai/providers/model-deployment-manager.ts:106](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L106)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:106](https://github.com/er
 
 > **name**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:107](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L107)
+Defined in: [ai/providers/model-deployment-manager.ts:107](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L107)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:107](https://github.com/er
 
 > **version**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:108](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L108)
+Defined in: [ai/providers/model-deployment-manager.ts:108](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L108)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:108](https://github.com/er
 
 > **type**: `"ollama"` \| `"custom"` \| `"huggingface"` \| `"onnx"` \| `"tensorrt"`
 
-Defined in: [ai/providers/model-deployment-manager.ts:109](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L109)
+Defined in: [ai/providers/model-deployment-manager.ts:109](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L109)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:109](https://github.com/er
 
 > **path**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:110](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L110)
+Defined in: [ai/providers/model-deployment-manager.ts:110](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L110)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:110](https://github.com/er
 
 > **size**: `number`
 
-Defined in: [ai/providers/model-deployment-manager.ts:111](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L111)
+Defined in: [ai/providers/model-deployment-manager.ts:111](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L111)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:111](https://github.com/er
 
 > **checksum**: `string`
 
-Defined in: [ai/providers/model-deployment-manager.ts:112](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L112)
+Defined in: [ai/providers/model-deployment-manager.ts:112](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L112)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:112](https://github.com/er
 
 > **metadata**: `object`
 
-Defined in: [ai/providers/model-deployment-manager.ts:113](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L113)
+Defined in: [ai/providers/model-deployment-manager.ts:113](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L113)
 
 #### description?
 
@@ -98,7 +98,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:113](https://github.com/er
 
 > **createdAt**: `Date`
 
-Defined in: [ai/providers/model-deployment-manager.ts:120](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L120)
+Defined in: [ai/providers/model-deployment-manager.ts:120](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L120)
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:120](https://github.com/er
 
 > `optional` **lastAccessed**: `Date`
 
-Defined in: [ai/providers/model-deployment-manager.ts:121](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L121)
+Defined in: [ai/providers/model-deployment-manager.ts:121](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L121)
 
 ***
 
@@ -114,7 +114,7 @@ Defined in: [ai/providers/model-deployment-manager.ts:121](https://github.com/er
 
 > **downloadCount**: `number`
 
-Defined in: [ai/providers/model-deployment-manager.ts:122](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L122)
+Defined in: [ai/providers/model-deployment-manager.ts:122](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L122)
 
 ***
 
@@ -122,4 +122,4 @@ Defined in: [ai/providers/model-deployment-manager.ts:122](https://github.com/er
 
 > **deploymentCount**: `number`
 
-Defined in: [ai/providers/model-deployment-manager.ts:123](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/model-deployment-manager.ts#L123)
+Defined in: [ai/providers/model-deployment-manager.ts:123](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/model-deployment-manager.ts#L123)

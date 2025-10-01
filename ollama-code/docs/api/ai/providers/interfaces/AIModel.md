@@ -6,7 +6,7 @@
 
 # Interface: AIModel
 
-Defined in: [ai/providers/base-provider.ts:60](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L60)
+Defined in: [ai/providers/base-provider.ts:60](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L60)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/base-provider.ts:60](https://github.com/erichchampion/
 
 > **id**: `string`
 
-Defined in: [ai/providers/base-provider.ts:61](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L61)
+Defined in: [ai/providers/base-provider.ts:61](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L61)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/base-provider.ts:61](https://github.com/erichchampion/
 
 > **name**: `string`
 
-Defined in: [ai/providers/base-provider.ts:62](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L62)
+Defined in: [ai/providers/base-provider.ts:62](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L62)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/base-provider.ts:62](https://github.com/erichchampion/
 
 > **provider**: `string`
 
-Defined in: [ai/providers/base-provider.ts:63](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L63)
+Defined in: [ai/providers/base-provider.ts:63](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L63)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/base-provider.ts:63](https://github.com/erichchampion/
 
 > **capabilities**: [`AICapability`](../enumerations/AICapability.md)[]
 
-Defined in: [ai/providers/base-provider.ts:64](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L64)
+Defined in: [ai/providers/base-provider.ts:64](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L64)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/base-provider.ts:64](https://github.com/erichchampion/
 
 > **contextWindow**: `number`
 
-Defined in: [ai/providers/base-provider.ts:65](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L65)
+Defined in: [ai/providers/base-provider.ts:65](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L65)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/providers/base-provider.ts:65](https://github.com/erichchampion/
 
 > **costPerToken**: `object`
 
-Defined in: [ai/providers/base-provider.ts:66](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L66)
+Defined in: [ai/providers/base-provider.ts:66](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L66)
 
 #### input
 
@@ -70,7 +70,7 @@ Defined in: [ai/providers/base-provider.ts:66](https://github.com/erichchampion/
 
 > **averageResponseTime**: `number`
 
-Defined in: [ai/providers/base-provider.ts:70](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L70)
+Defined in: [ai/providers/base-provider.ts:70](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L70)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [ai/providers/base-provider.ts:70](https://github.com/erichchampion/
 
 > **qualityScore**: `number`
 
-Defined in: [ai/providers/base-provider.ts:71](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L71)
+Defined in: [ai/providers/base-provider.ts:71](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L71)
 
 ***
 
@@ -86,4 +86,4 @@ Defined in: [ai/providers/base-provider.ts:71](https://github.com/erichchampion/
 
 > **lastUpdated**: `Date`
 
-Defined in: [ai/providers/base-provider.ts:72](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/ai/providers/base-provider.ts#L72)
+Defined in: [ai/providers/base-provider.ts:72](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/ai/providers/base-provider.ts#L72)

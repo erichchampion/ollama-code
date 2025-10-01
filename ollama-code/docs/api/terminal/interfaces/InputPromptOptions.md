@@ -6,7 +6,7 @@
 
 # Interface: InputPromptOptions
 
-Defined in: [terminal/types.ts:130](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L130)
+Defined in: [terminal/types.ts:130](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L130)
 
 Input prompt options
 
@@ -20,7 +20,7 @@ Input prompt options
 
 > **name**: `string`
 
-Defined in: [terminal/types.ts:104](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L104)
+Defined in: [terminal/types.ts:104](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L104)
 
 Name of the value in the returned object
 
@@ -34,7 +34,7 @@ Name of the value in the returned object
 
 > **message**: `string`
 
-Defined in: [terminal/types.ts:109](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L109)
+Defined in: [terminal/types.ts:109](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L109)
 
 Message to display to the user
 
@@ -48,7 +48,7 @@ Message to display to the user
 
 > `optional` **default**: `any`
 
-Defined in: [terminal/types.ts:114](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L114)
+Defined in: [terminal/types.ts:114](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L114)
 
 Default value
 
@@ -62,7 +62,7 @@ Default value
 
 > `optional` **validate**: (`input`) => `string` \| `boolean` \| `Promise`\<`string` \| `boolean`\>
 
-Defined in: [terminal/types.ts:119](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L119)
+Defined in: [terminal/types.ts:119](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L119)
 
 Validation function
 
@@ -86,7 +86,7 @@ Validation function
 
 > `optional` **required**: `boolean`
 
-Defined in: [terminal/types.ts:124](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L124)
+Defined in: [terminal/types.ts:124](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L124)
 
 Whether the prompt is required
 
@@ -100,7 +100,7 @@ Whether the prompt is required
 
 > **type**: `"input"`
 
-Defined in: [terminal/types.ts:131](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L131)
+Defined in: [terminal/types.ts:131](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L131)
 
 Prompt type
 
@@ -114,7 +114,7 @@ Prompt type
 
 > `optional` **filter**: (`input`) => `any`
 
-Defined in: [terminal/types.ts:132](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L132)
+Defined in: [terminal/types.ts:132](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L132)
 
 #### Parameters
 
@@ -132,7 +132,7 @@ Defined in: [terminal/types.ts:132](https://github.com/erichchampion/ollama-code
 
 > `optional` **transformer**: (`input`) => `string`
 
-Defined in: [terminal/types.ts:133](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/terminal/types.ts#L133)
+Defined in: [terminal/types.ts:133](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/terminal/types.ts#L133)
 
 #### Parameters
 

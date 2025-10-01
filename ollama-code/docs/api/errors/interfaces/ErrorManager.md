@@ -6,7 +6,7 @@
 
 # Interface: ErrorManager
 
-Defined in: [errors/types.ts:241](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/errors/types.ts#L241)
+Defined in: [errors/types.ts:241](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L241)
 
 Error manager interface
 
@@ -16,7 +16,7 @@ Error manager interface
 
 > **handleError**(`error`, `options?`): `void`
 
-Defined in: [errors/types.ts:242](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/errors/types.ts#L242)
+Defined in: [errors/types.ts:242](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L242)
 
 #### Parameters
 
@@ -38,7 +38,7 @@ Defined in: [errors/types.ts:242](https://github.com/erichchampion/ollama-code/b
 
 > **handleFatalError**(`error`): `never`
 
-Defined in: [errors/types.ts:243](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/errors/types.ts#L243)
+Defined in: [errors/types.ts:243](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L243)
 
 #### Parameters
 
@@ -56,7 +56,7 @@ Defined in: [errors/types.ts:243](https://github.com/erichchampion/ollama-code/b
 
 > **formatError**(`error`, `options?`): `string`
 
-Defined in: [errors/types.ts:244](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/errors/types.ts#L244)
+Defined in: [errors/types.ts:244](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L244)
 
 #### Parameters
 
@@ -78,7 +78,7 @@ Defined in: [errors/types.ts:244](https://github.com/erichchampion/ollama-code/b
 
 > **getErrorCount**(`category?`): `number`
 
-Defined in: [errors/types.ts:245](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/errors/types.ts#L245)
+Defined in: [errors/types.ts:245](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L245)
 
 #### Parameters
 
@@ -96,7 +96,7 @@ Defined in: [errors/types.ts:245](https://github.com/erichchampion/ollama-code/b
 
 > **clearErrorCount**(`category?`): `void`
 
-Defined in: [errors/types.ts:246](https://github.com/erichchampion/ollama-code/blob/9aa0d3d9efbf0acb3af45aa780c9b9fb1aaf7ce0/ollama-code/src/errors/types.ts#L246)
+Defined in: [errors/types.ts:246](https://github.com/erichchampion/ollama-code/blob/97554aa24b97798bc862485527ccd6faff2a1d42/ollama-code/src/errors/types.ts#L246)
 
 #### Parameters
 

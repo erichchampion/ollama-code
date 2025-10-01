@@ -14,6 +14,7 @@ import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
+import { getMemoryUsageMB } from '../utils/memory.js';
 
 export interface StartupMetrics {
   totalStartupTime: number;
@@ -115,7 +116,7 @@ export class StartupOptimizer extends EventEmitter {
       indexLoadTime: 0,
       cacheWarmupTime: 0,
       parallelizationSavings: 0,
-      memoryUsageAtStart: process.memoryUsage().heapUsed / 1024 / 1024,
+      memoryUsageAtStart: getMemoryUsageMB(),
       criticalModulesLoaded: 0,
       totalModulesLoaded: 0,
       lazyModulesDeferred: 0
@@ -541,7 +542,7 @@ export class StartupOptimizer extends EventEmitter {
       this.metrics.cacheWarmupTime;
 
     // Update memory usage
-    const currentMemory = process.memoryUsage().heapUsed / 1024 / 1024;
+    const currentMemory = getMemoryUsageMB();
     this.metrics.memoryUsageAtStart = currentMemory;
   }
 

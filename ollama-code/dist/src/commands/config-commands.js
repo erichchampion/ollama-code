@@ -11,6 +11,7 @@ import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
 import { getStatusTracker } from '../interactive/component-status.js';
 import { COMPONENT_STATUS_VALUES } from '../constants/component-status.js';
+import { getEnhancedStartupMetrics, getStartupOptimizationRecommendations } from '../optimization/startup-optimizer.js';
 /**
  * Register configuration commands
  */
@@ -476,7 +477,7 @@ function registerStatusCommand() {
         category: 'System',
         async handler(args) {
             try {
-                const { format = 'summary', components = false, metrics = false, deps = false, filter = '' } = args;
+                const { format = 'summary', components = false, metrics = false, deps = false, filter = '', startup = false, recommendations = false } = args;
                 const statusTracker = getStatusTracker();
                 // Build display options
                 const displayOptions = {
@@ -492,6 +493,69 @@ function registerStatusCommand() {
                         displayOptions.filterStatus = filterStatuses;
                     }
                 }
+                // Phase 4: Enhanced startup optimization metrics
+                if (startup) {
+                    console.log('🚀 Phase 4 Enhanced Startup Optimization Metrics\n');
+                    const startupMetrics = await getEnhancedStartupMetrics();
+                    if (format === 'json') {
+                        console.log(JSON.stringify(startupMetrics, null, 2));
+                    }
+                    else {
+                        // Display basic metrics
+                        console.log('📊 Basic Component Metrics:');
+                        console.log(`   Loaded Components: ${startupMetrics.basic.loadedComponents.join(', ') || 'None'}`);
+                        console.log(`   Total Available: ${startupMetrics.basic.totalComponents.length}`);
+                        // Display enhanced metrics
+                        console.log('\n⚡ Enhanced Startup Metrics:');
+                        console.log(`   Total Startup Time: ${startupMetrics.enhanced.totalStartupTime.toFixed(2)}ms`);
+                        console.log(`   Core Init Time: ${startupMetrics.enhanced.coreInitTime.toFixed(2)}ms`);
+                        console.log(`   Module Load Time: ${startupMetrics.enhanced.moduleLoadTime.toFixed(2)}ms`);
+                        console.log(`   Cache Warmup Time: ${startupMetrics.enhanced.cacheWarmupTime.toFixed(2)}ms`);
+                        console.log(`   Parallelization Savings: ${startupMetrics.enhanced.parallelizationSavings.toFixed(2)}ms`);
+                        console.log(`   Memory Usage: ${startupMetrics.enhanced.memoryUsageAtStart.toFixed(2)}MB`);
+                        console.log(`   Critical Modules Loaded: ${startupMetrics.enhanced.criticalModulesLoaded}`);
+                        console.log(`   Total Modules Loaded: ${startupMetrics.enhanced.totalModulesLoaded}`);
+                        console.log(`   Lazy Modules Deferred: ${startupMetrics.enhanced.lazyModulesDeferred}`);
+                        // Display recommendations
+                        if (startupMetrics.recommendations.length > 0) {
+                            console.log('\n💡 Optimization Recommendations:');
+                            startupMetrics.recommendations.forEach((rec, index) => {
+                                console.log(`   ${index + 1}. ${rec}`);
+                            });
+                        }
+                    }
+                    return;
+                }
+                // Phase 4: Detailed optimization recommendations
+                if (recommendations) {
+                    console.log('💡 Phase 4 Startup Optimization Recommendations\n');
+                    const recs = await getStartupOptimizationRecommendations();
+                    if (format === 'json') {
+                        console.log(JSON.stringify(recs, null, 2));
+                    }
+                    else {
+                        if (recs.performance.length > 0) {
+                            console.log('⚡ Performance Recommendations:');
+                            recs.performance.forEach((rec, index) => console.log(`   ${index + 1}. ${rec}`));
+                            console.log('');
+                        }
+                        if (recs.memory.length > 0) {
+                            console.log('🧠 Memory Optimization:');
+                            recs.memory.forEach((rec, index) => console.log(`   ${index + 1}. ${rec}`));
+                            console.log('');
+                        }
+                        if (recs.loading.length > 0) {
+                            console.log('📦 Module Loading:');
+                            recs.loading.forEach((rec, index) => console.log(`   ${index + 1}. ${rec}`));
+                            console.log('');
+                        }
+                        if (recs.general.length > 0) {
+                            console.log('ℹ️ General Information:');
+                            recs.general.forEach((rec, index) => console.log(`   ${index + 1}. ${rec}`));
+                        }
+                    }
+                    return;
+                }
                 if (components) {
                     // Show detailed component information
                     console.log('🔧 Component Status\n');
@@ -506,6 +570,9 @@ function registerStatusCommand() {
                         console.log('\n💡 Use "status --components" for detailed component information');
                         console.log('💡 Use "status --format table --metrics" for performance details');
                     }
+                    // Phase 4: Show startup optimization hint
+                    console.log('💡 Use "status --startup" for Phase 4 enhanced startup metrics');
+                    console.log('💡 Use "status --recommendations" for optimization suggestions');
                 }
             }
             catch (error) {
@@ -548,6 +615,20 @@ function registerStatusCommand() {
                 type: ArgType.STRING,
                 position: -1,
                 required: false
+            },
+            {
+                name: 'startup',
+                description: 'Show Phase 4 enhanced startup optimization metrics',
+                type: ArgType.BOOLEAN,
+                position: -1,
+                required: false
+            },
+            {
+                name: 'recommendations',
+                description: 'Show Phase 4 startup optimization recommendations',
+                type: ArgType.BOOLEAN,
+                position: -1,
+                required: false
             }
         ],
         examples: [
@@ -556,6 +637,9 @@ function registerStatusCommand() {
             'status --format table --metrics',
             'status --components --deps',
             'status --filter failed,degraded',
+            'status --startup',
+            'status --startup --format json',
+            'status --recommendations',
             'status --format json > system-status.json'
         ]
     };
