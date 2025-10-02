@@ -18,6 +18,20 @@ import {
 import { EXTENSION_TEST_CONSTANTS, PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
 import { createMockOllamaClient, createMockLogger, TEST_DATA_CONSTANTS, createCompletionAIHandler, createHoverAIHandler, createDiagnosticAIHandler } from '../helpers/providerTestHelper';
 
+/**
+ * Helper to get length of InlineCompletionItem array or InlineCompletionList
+ */
+function getCompletionLength(items: vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null | undefined): number {
+  if (!items) {
+    return 0;
+  }
+  if (Array.isArray(items)) {
+    return items.length;
+  }
+  // InlineCompletionList has an items property
+  return items.items.length;
+}
+
 suite('InlineCompletion Provider Tests', () => {
   let completionProvider: InlineCompletionProvider;
   let mockClient: OllamaCodeClient;
@@ -71,7 +85,7 @@ suite('InlineCompletion Provider Tests', () => {
       );
 
       assert.ok(Array.isArray(items), 'Should return completion items');
-      assert.ok(items.length > 0, 'Should provide completion after dot');
+      assert.ok(getCompletionLength(items) > 0, 'Should provide completion after dot');
     });
 
     test('Should trigger completion after assignment operator', async function() {
@@ -95,7 +109,7 @@ suite('InlineCompletion Provider Tests', () => {
       );
 
       assert.ok(Array.isArray(items), 'Should return completion items');
-      assert.ok(items.length > 0, 'Should provide completion after assignment');
+      assert.ok(getCompletionLength(items) > 0, 'Should provide completion after assignment');
     });
 
     test('Should trigger completion for import statements', async function() {
@@ -119,7 +133,7 @@ suite('InlineCompletion Provider Tests', () => {
       );
 
       assert.ok(Array.isArray(items), 'Should return completion items');
-      assert.ok(items.length > 0, 'Should provide completion for imports');
+      assert.ok(getCompletionLength(items) > 0, 'Should provide completion for imports');
     });
 
     test('Should NOT trigger completion for very short input (< 2 chars)', async function() {
@@ -142,7 +156,7 @@ suite('InlineCompletion Provider Tests', () => {
         cancellationToken
       );
 
-      assert.strictEqual(items.length, 0, 'Should not provide completion for short input');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should not provide completion for short input');
     });
 
     test('Should NOT trigger completion after semicolon', async function() {
@@ -165,7 +179,7 @@ suite('InlineCompletion Provider Tests', () => {
         cancellationToken
       );
 
-      assert.strictEqual(items.length, 0, 'Should not provide completion after semicolon');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should not provide completion after semicolon');
     });
 
     test('Should NOT trigger completion inside string literals', async function() {
@@ -188,7 +202,7 @@ suite('InlineCompletion Provider Tests', () => {
         cancellationToken
       );
 
-      assert.strictEqual(items.length, 0, 'Should not provide completion inside strings');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should not provide completion inside strings');
     });
 
     test('Should NOT trigger completion inside comments', async function() {
@@ -211,7 +225,7 @@ suite('InlineCompletion Provider Tests', () => {
         cancellationToken
       );
 
-      assert.strictEqual(items.length, 0, 'Should not provide completion inside comments');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should not provide completion inside comments');
     });
   });
 
@@ -238,7 +252,7 @@ suite('InlineCompletion Provider Tests', () => {
 
       assert.ok(Array.isArray(items), 'Should return completion items');
 
-      if (items.length > 0 && 'insertText' in items[0]) {
+      if (getCompletionLength(items) > 0 && 'insertText' in items[0]) {
         const insertText = items[0].insertText as string;
         assert.ok(
           insertText.includes('return'),
@@ -268,7 +282,7 @@ suite('InlineCompletion Provider Tests', () => {
       );
 
       assert.ok(Array.isArray(items), 'Should return completion items');
-      assert.ok(items.length > 0, 'Should provide completion for if statement');
+      assert.ok(getCompletionLength(items) > 0, 'Should provide completion for if statement');
     });
 
     test('Should provide completion for loops (for statements)', async function() {
@@ -292,7 +306,7 @@ suite('InlineCompletion Provider Tests', () => {
       );
 
       assert.ok(Array.isArray(items), 'Should return completion items');
-      assert.ok(items.length > 0, 'Should provide completion for for loop');
+      assert.ok(getCompletionLength(items) > 0, 'Should provide completion for for loop');
     });
   });
 
@@ -325,7 +339,7 @@ const result =
       );
 
       assert.ok(Array.isArray(items), 'Should return completion items');
-      assert.ok(items.length > 0, 'Should provide context-aware completion');
+      assert.ok(getCompletionLength(items) > 0, 'Should provide context-aware completion');
     });
 
     test('Should detect function context correctly', async function() {
@@ -455,7 +469,7 @@ class Service {
       );
 
       // Should return empty array on timeout, not crash
-      assert.strictEqual(items.length, 0, 'Should return empty array on timeout');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should return empty array on timeout');
 
       slowProvider.dispose();
     });
@@ -528,7 +542,7 @@ class Service {
         cancellationToken
       );
 
-      assert.strictEqual(items.length, 0, 'Should not support plain text files');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should not support plain text files');
     });
   });
 
@@ -559,7 +573,7 @@ class Service {
         cancellationToken
       );
 
-      assert.strictEqual(items.length, 0, 'Should return empty when disconnected');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should return empty when disconnected');
 
       provider.dispose();
     });
@@ -623,7 +637,7 @@ class Service {
       );
 
       // Should return empty array on error, not crash
-      assert.strictEqual(items.length, 0, 'Should return empty array on AI error');
+      assert.strictEqual(getCompletionLength(items), 0, 'Should return empty array on AI error');
 
       provider.dispose();
     });

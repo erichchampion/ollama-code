@@ -17,7 +17,7 @@ import {
   JSONRPC_ERROR_CODES,
   TEST_DELAYS
 } from '../helpers/test-constants';
-import { sleep } from '../../../../tests/shared/test-utils';
+import { sleep } from '../helpers/test-utils';
 
 suite('WebSocket MCP Server Integration Tests', () => {
   const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.PORTS.MCP_TESTS;

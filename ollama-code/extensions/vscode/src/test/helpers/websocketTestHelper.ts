@@ -9,7 +9,7 @@ import {
   MCP_TEST_CONSTANTS,
   JSONRPC_ERROR_CODES,
 } from './test-constants.js';
-import { sleep } from '../../../../tests/shared/test-utils.js';
+import { sleep } from './test-utils.js';
 
 export interface WebSocketTestClient {
   ws: WebSocket;

@@ -11,7 +11,7 @@ import {
   MockMCPServer
 } from '../helpers/websocketTestHelper';
 import { WEBSOCKET_TEST_CONSTANTS, TEST_DELAYS } from '../helpers/test-constants';
-import { sleep } from '../../../../tests/shared/test-utils';
+import { sleep } from '../helpers/test-utils';
 
 suite('WebSocket Message Processing Tests', () => {
   const TEST_PORT = WEBSOCKET_TEST_CONSTANTS.PORTS.MESSAGE_TESTS;

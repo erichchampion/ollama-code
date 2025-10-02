@@ -6,8 +6,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { EXTENSION_TEST_CONSTANTS } from './test-constants.js';
-import { sleep, waitFor as waitForCondition } from '../../../../tests/shared/test-utils.js';
-import { ensureDir, remove, writeFile as writeFileAsync } from '../../../../tests/shared/file-utils.js';
+import { sleep, waitFor as waitForCondition, ensureDir, remove, writeFile as writeFileAsync } from './test-utils.js';
 
 /**
  * Wait for extension to activate
@@ -118,7 +117,11 @@ export async function openAndShowDocument(filePath: string): Promise<vscode.Text
  * Get configuration value
  */
 export function getConfig<T>(key: string, defaultValue?: T): T | undefined {
-  return vscode.workspace.getConfiguration('ollama-code').get<T>(key, defaultValue);
+  const config = vscode.workspace.getConfiguration('ollama-code');
+  if (defaultValue !== undefined) {
+    return config.get<T>(key, defaultValue);
+  }
+  return config.get<T>(key);
 }
 
 /**
@@ -155,7 +158,7 @@ export async function resetConfig(): Promise<void> {
 }
 
 // Re-export sleep from shared utilities
-export { sleep } from '../../../../tests/shared/test-utils.js';
+export { sleep } from './test-utils.js';
 
 /**
  * Wait for condition to be true (wrapper for shared utility with default values)
