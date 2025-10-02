@@ -7,6 +7,13 @@ import {
   FEATURE_IMPLEMENTATION_CONSTANTS,
   FEATURE_COMPLEXITY_WEIGHTS,
   FEATURE_TIME_ESTIMATES,
+  FEATURE_SPEC_KEYWORDS,
+  FEATURE_IMPLEMENTATION_NUMBERS,
+  RISK_ASSESSMENT_CONSTANTS,
+  PHASE_TEMPLATES,
+  TASK_TEMPLATES,
+  SPEC_TEMPLATES,
+  RISK_MITIGATION_STRATEGIES,
 } from './test-constants';
 
 /**
@@ -235,6 +242,101 @@ export class FeatureImplementationWorkflow {
     };
   }
 
+  // ============================================================================
+  // Helper Methods for Text Matching and Analysis
+  // ============================================================================
+
+  /**
+   * Check if text contains any of the specified keywords
+   */
+  private containsAnyKeyword(text: string, keywords: readonly string[]): boolean {
+    const lowerText = text.toLowerCase();
+    return keywords.some((keyword) => lowerText.includes(keyword));
+  }
+
+  /**
+   * Determine priority based on keyword matching
+   */
+  private determinePriority(text: string): PriorityLevel {
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.PRIORITY.CRITICAL)) {
+      return 'critical';
+    }
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.PRIORITY.HIGH)) {
+      return 'high';
+    }
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.PRIORITY.LOW)) {
+      return 'low';
+    }
+    return 'medium';
+  }
+
+  /**
+   * Determine category based on keyword matching
+   */
+  private determineCategory(text: string): string {
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.CATEGORY.BUG_FIX)) {
+      return 'bug_fix';
+    }
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.CATEGORY.ENHANCEMENT)) {
+      return 'enhancement';
+    }
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.CATEGORY.REFACTORING)) {
+      return 'refactoring';
+    }
+    return 'feature';
+  }
+
+  /**
+   * Aggregate all requirement descriptions into searchable text
+   */
+  private aggregateRequirementText(requirements: ParsedRequirement[]): string {
+    return requirements.map((r) => r.description.toLowerCase()).join(' ');
+  }
+
+  /**
+   * Create tasks from template configuration
+   */
+  private createTasksFromTemplates(
+    templates: readonly {
+      NAME: string;
+      DESCRIPTION: string;
+      PRIORITY: PriorityLevel;
+      ROLE: ResourceType;
+      RISK: RiskLevel;
+    }[],
+    phase: number,
+    taskPrefix: string,
+    totalHours: number,
+    firstTaskDependencies: string[] = []
+  ): ImplementationTask[] {
+    const tasks: ImplementationTask[] = [];
+    const hoursPerTask = totalHours / templates.length;
+
+    templates.forEach((template, index) => {
+      const taskNum = index + 1;
+      const taskId = `TASK-${taskPrefix}${taskNum.toString().padStart(FEATURE_IMPLEMENTATION_NUMBERS.TASK_ID_PADDING, '0')}`;
+      const dependencies = index === 0 ? firstTaskDependencies : [`TASK-${taskPrefix}${(taskNum - 1).toString().padStart(FEATURE_IMPLEMENTATION_NUMBERS.TASK_ID_PADDING, '0')}`];
+
+      tasks.push({
+        id: taskId,
+        name: template.NAME,
+        description: template.DESCRIPTION,
+        phase,
+        priority: template.PRIORITY,
+        estimatedHours: hoursPerTask,
+        dependencies,
+        assignedRole: template.ROLE,
+        risk: template.RISK,
+      });
+    });
+
+    return tasks;
+  }
+
+  // ============================================================================
+  // Main Workflow Methods
+  // ============================================================================
+
   /**
    * Parse feature specification into structured requirements
    */
@@ -245,37 +347,17 @@ export class FeatureImplementationWorkflow {
     // Simple heuristic: split by sentences/paragraphs
     const lines = spec.text.split('\n').filter((line) => line.trim().length > 0);
 
-    let reqId = 1;
+    let reqId = FEATURE_IMPLEMENTATION_NUMBERS.INITIAL_REQ_ID;
     for (const line of lines) {
       if (line.length < FEATURE_IMPLEMENTATION_CONSTANTS.MIN_REQUIREMENT_LENGTH) {
         continue;
       }
 
-      // Determine priority based on keywords
-      let priority: PriorityLevel = 'medium';
-      if (line.toLowerCase().includes('critical') || line.toLowerCase().includes('must')) {
-        priority = 'critical';
-      } else if (line.toLowerCase().includes('important') || line.toLowerCase().includes('should')) {
-        priority = 'high';
-      } else if (line.toLowerCase().includes('nice') || line.toLowerCase().includes('could')) {
-        priority = 'low';
-      }
-
-      // Determine category
-      let category = 'feature';
-      if (line.toLowerCase().includes('fix') || line.toLowerCase().includes('bug')) {
-        category = 'bug_fix';
-      } else if (line.toLowerCase().includes('improve') || line.toLowerCase().includes('enhance')) {
-        category = 'enhancement';
-      } else if (line.toLowerCase().includes('refactor')) {
-        category = 'refactoring';
-      }
-
       requirements.push({
-        id: `REQ-${reqId.toString().padStart(3, '0')}`,
+        id: `REQ-${reqId.toString().padStart(FEATURE_IMPLEMENTATION_NUMBERS.REQ_ID_PADDING, '0')}`,
         description: line.trim(),
-        priority,
-        category,
+        priority: this.determinePriority(line),
+        category: this.determineCategory(line),
         acceptanceCriteria: spec.acceptanceCriteria || this.extractAcceptanceCriteria(line),
         technicalConstraints: this.extractTechnicalConstraints(line),
       });
@@ -373,7 +455,7 @@ export class FeatureImplementationWorkflow {
     // Confidence based on complexity (simpler = more confident)
     const confidence = Math.max(
       FEATURE_TIME_ESTIMATES.MIN_CONFIDENCE,
-      FEATURE_TIME_ESTIMATES.MAX_CONFIDENCE - complexity.score / 2
+      FEATURE_TIME_ESTIMATES.MAX_CONFIDENCE - complexity.score / FEATURE_IMPLEMENTATION_NUMBERS.CONFIDENCE_DIVISOR
     );
 
     return {
@@ -495,49 +577,41 @@ export class FeatureImplementationWorkflow {
     complexity: ComplexityAnalysis,
     timeEstimation: TimeEstimation
   ): Promise<ImplementationPhase[]> {
-    const phases: ImplementationPhase[] = [];
+    const phaseConfigs = [
+      {
+        num: FEATURE_IMPLEMENTATION_NUMBERS.PHASE_DESIGN,
+        template: PHASE_TEMPLATES.DESIGN,
+        breakdown: timeEstimation.breakdown.design,
+        creator: this.createDesignTasks,
+      },
+      {
+        num: FEATURE_IMPLEMENTATION_NUMBERS.PHASE_IMPLEMENTATION,
+        template: PHASE_TEMPLATES.IMPLEMENTATION,
+        breakdown: timeEstimation.breakdown.implementation,
+        creator: this.createImplementationTasks,
+      },
+      {
+        num: FEATURE_IMPLEMENTATION_NUMBERS.PHASE_TESTING,
+        template: PHASE_TEMPLATES.TESTING,
+        breakdown: timeEstimation.breakdown.testing,
+        creator: this.createTestingTasks,
+      },
+      {
+        num: FEATURE_IMPLEMENTATION_NUMBERS.PHASE_REVIEW,
+        template: PHASE_TEMPLATES.REVIEW,
+        breakdown: timeEstimation.breakdown.review,
+        creator: this.createReviewTasks,
+      },
+    ];
 
-    // Phase 1: Design & Architecture
-    phases.push({
-      number: 1,
-      name: 'Design & Architecture',
-      description: 'Design system architecture and create technical specifications',
-      tasks: this.createDesignTasks(requirements, timeEstimation.breakdown.design),
-      duration: timeEstimation.breakdown.design,
-      milestone: 'Architecture Review Complete',
-    });
-
-    // Phase 2: Implementation
-    phases.push({
-      number: 2,
-      name: 'Implementation',
-      description: 'Implement features according to specifications',
-      tasks: this.createImplementationTasks(requirements, timeEstimation.breakdown.implementation),
-      duration: timeEstimation.breakdown.implementation,
-      milestone: 'Feature Implementation Complete',
-    });
-
-    // Phase 3: Testing
-    phases.push({
-      number: 3,
-      name: 'Testing & QA',
-      description: 'Comprehensive testing and quality assurance',
-      tasks: this.createTestingTasks(requirements, timeEstimation.breakdown.testing),
-      duration: timeEstimation.breakdown.testing,
-      milestone: 'All Tests Passing',
-    });
-
-    // Phase 4: Review & Deployment
-    phases.push({
-      number: 4,
-      name: 'Review & Deployment',
-      description: 'Code review and production deployment',
-      tasks: this.createReviewTasks(requirements, timeEstimation.breakdown.review),
-      duration: timeEstimation.breakdown.review,
-      milestone: 'Production Deployment Complete',
-    });
-
-    return phases;
+    return phaseConfigs.map((config) => ({
+      number: config.num,
+      name: config.template.NAME,
+      description: config.template.DESCRIPTION,
+      tasks: config.creator.call(this, requirements, config.breakdown),
+      duration: config.breakdown,
+      milestone: config.template.MILESTONE,
+    }));
   }
 
   /**
@@ -548,55 +622,46 @@ export class FeatureImplementationWorkflow {
 
     // Complexity-based risks
     if (complexity.level === 'complex' || complexity.level === 'very_complex') {
+      const config = RISK_ASSESSMENT_CONSTANTS.HIGH_COMPLEXITY_RISK;
       risks.push({
-        id: 'RISK-001',
-        description: 'High complexity may lead to timeline delays',
-        level: 'high',
-        probability: 70,
-        impact: 80,
-        score: 56,
-        mitigationStrategies: [
-          'Break down into smaller deliverables',
-          'Add buffer time to estimates',
-          'Increase team size if needed',
-        ],
-        owner: 'backend',
+        id: config.ID,
+        description: config.DESCRIPTION,
+        level: config.LEVEL,
+        probability: config.PROBABILITY,
+        impact: config.IMPACT,
+        score: Math.round((config.PROBABILITY * config.IMPACT) / 100),
+        mitigationStrategies: [...RISK_MITIGATION_STRATEGIES.HIGH_COMPLEXITY],
+        owner: config.OWNER,
       });
     }
 
     // Technical challenge risks
-    if (complexity.technicalChallenges.length > 2) {
+    if (complexity.technicalChallenges.length > RISK_ASSESSMENT_CONSTANTS.CHALLENGE_COUNT_THRESHOLD) {
+      const config = RISK_ASSESSMENT_CONSTANTS.TECHNICAL_CHALLENGES_RISK;
       risks.push({
-        id: 'RISK-002',
-        description: 'Multiple technical challenges may require research and prototyping',
-        level: 'medium',
-        probability: 60,
-        impact: 70,
-        score: 42,
-        mitigationStrategies: [
-          'Allocate time for spike research',
-          'Create proof-of-concept prototypes',
-          'Consult with technical experts',
-        ],
-        owner: 'backend',
+        id: config.ID,
+        description: config.DESCRIPTION,
+        level: config.LEVEL,
+        probability: config.PROBABILITY,
+        impact: config.IMPACT,
+        score: Math.round((config.PROBABILITY * config.IMPACT) / 100),
+        mitigationStrategies: [...RISK_MITIGATION_STRATEGIES.TECHNICAL_CHALLENGES],
+        owner: config.OWNER,
       });
     }
 
     // Dependency risks
-    if (complexity.dependencies > 3) {
+    if (complexity.dependencies > RISK_ASSESSMENT_CONSTANTS.DEPENDENCY_COUNT_THRESHOLD) {
+      const config = RISK_ASSESSMENT_CONSTANTS.DEPENDENCY_RISK;
       risks.push({
-        id: 'RISK-003',
-        description: 'Multiple dependencies may cause integration issues',
-        level: 'medium',
-        probability: 50,
-        impact: 60,
-        score: 30,
-        mitigationStrategies: [
-          'Create integration test plan early',
-          'Use feature flags for gradual rollout',
-          'Maintain backward compatibility',
-        ],
-        owner: 'backend',
+        id: config.ID,
+        description: config.DESCRIPTION,
+        level: config.LEVEL,
+        probability: config.PROBABILITY,
+        impact: config.IMPACT,
+        score: Math.round((config.PROBABILITY * config.IMPACT) / 100),
+        mitigationStrategies: [...RISK_MITIGATION_STRATEGIES.MULTIPLE_DEPENDENCIES],
+        owner: config.OWNER,
       });
     }
 
@@ -655,52 +720,50 @@ export class FeatureImplementationWorkflow {
   private extractAcceptanceCriteria(text: string): string[] {
     // Simple extraction - in real version, would use AI
     const criteria: string[] = [];
-    if (text.toLowerCase().includes('user')) {
-      criteria.push('User can successfully use the feature');
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.ACCEPTANCE_CRITERIA.USER)) {
+      criteria.push(SPEC_TEMPLATES.ACCEPTANCE_CRITERIA.USER_SUCCESS);
     }
-    if (text.toLowerCase().includes('test')) {
-      criteria.push('Feature has comprehensive test coverage');
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.ACCEPTANCE_CRITERIA.TEST)) {
+      criteria.push(SPEC_TEMPLATES.ACCEPTANCE_CRITERIA.TEST_COVERAGE);
     }
-    criteria.push('Feature meets performance requirements');
+    criteria.push(SPEC_TEMPLATES.ACCEPTANCE_CRITERIA.PERFORMANCE);
     return criteria;
   }
 
   private extractTechnicalConstraints(text: string): string[] {
     const constraints: string[] = [];
-    if (text.toLowerCase().includes('performance')) {
-      constraints.push('Must maintain sub-second response time');
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.TECHNICAL_CONSTRAINTS.PERFORMANCE)) {
+      constraints.push(SPEC_TEMPLATES.TECHNICAL_CONSTRAINTS.RESPONSE_TIME);
     }
-    if (text.toLowerCase().includes('scale')) {
-      constraints.push('Must handle 10000+ concurrent users');
+    if (this.containsAnyKeyword(text, FEATURE_SPEC_KEYWORDS.TECHNICAL_CONSTRAINTS.SCALE)) {
+      constraints.push(SPEC_TEMPLATES.TECHNICAL_CONSTRAINTS.CONCURRENT_USERS(FEATURE_IMPLEMENTATION_NUMBERS.CONCURRENT_USERS_THRESHOLD));
     }
     return constraints;
   }
 
   private estimateComponentCount(requirements: ParsedRequirement[]): number {
-    // Heuristic: ~1-2 components per requirement
-    return requirements.length * 1.5;
+    return requirements.length * FEATURE_IMPLEMENTATION_NUMBERS.COMPONENT_MULTIPLIER;
   }
 
   private estimateDependencyCount(requirements: ParsedRequirement[]): number {
-    // Heuristic: ~0.5 dependencies per requirement
-    return Math.floor(requirements.length * 0.5);
+    return Math.floor(requirements.length * FEATURE_IMPLEMENTATION_NUMBERS.DEPENDENCY_MULTIPLIER);
   }
 
   private identifyTechnicalChallenges(requirements: ParsedRequirement[]): string[] {
     const challenges: string[] = [];
-    const allText = requirements.map((r) => r.description.toLowerCase()).join(' ');
+    const allText = this.aggregateRequirementText(requirements);
 
-    if (allText.includes('real-time') || allText.includes('realtime')) {
-      challenges.push('Real-time data synchronization');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.CHALLENGES.REALTIME)) {
+      challenges.push(SPEC_TEMPLATES.TECHNICAL_CHALLENGES.REALTIME);
     }
-    if (allText.includes('scale') || allText.includes('performance')) {
-      challenges.push('High-performance architecture');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.CHALLENGES.PERFORMANCE)) {
+      challenges.push(SPEC_TEMPLATES.TECHNICAL_CHALLENGES.PERFORMANCE);
     }
-    if (allText.includes('security') || allText.includes('encryption')) {
-      challenges.push('Security and encryption implementation');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.CHALLENGES.SECURITY)) {
+      challenges.push(SPEC_TEMPLATES.TECHNICAL_CHALLENGES.SECURITY);
     }
-    if (allText.includes('integration') || allText.includes('api')) {
-      challenges.push('Third-party API integration');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.CHALLENGES.INTEGRATION)) {
+      challenges.push(SPEC_TEMPLATES.TECHNICAL_CHALLENGES.INTEGRATION);
     }
 
     return challenges;
@@ -716,61 +779,33 @@ export class FeatureImplementationWorkflow {
   }
 
   private requiresBackend(description: string): boolean {
-    const text = description.toLowerCase();
-    return (
-      text.includes('api') ||
-      text.includes('backend') ||
-      text.includes('server') ||
-      text.includes('database') ||
-      text.includes('endpoint')
-    );
+    return this.containsAnyKeyword(description, FEATURE_SPEC_KEYWORDS.BACKEND);
   }
 
   private requiresFrontend(description: string): boolean {
-    const text = description.toLowerCase();
-    return (
-      text.includes('ui') ||
-      text.includes('frontend') ||
-      text.includes('user interface') ||
-      text.includes('component') ||
-      text.includes('page')
-    );
+    return this.containsAnyKeyword(description, FEATURE_SPEC_KEYWORDS.FRONTEND);
   }
 
   private requiresDatabase(description: string): boolean {
-    const text = description.toLowerCase();
-    return (
-      text.includes('database') ||
-      text.includes('storage') ||
-      text.includes('persist') ||
-      text.includes('query') ||
-      text.includes('schema')
-    );
+    return this.containsAnyKeyword(description, FEATURE_SPEC_KEYWORDS.DATABASE);
   }
 
   private requiresInfrastructure(description: string): boolean {
-    const text = description.toLowerCase();
-    return (
-      text.includes('deploy') ||
-      text.includes('infrastructure') ||
-      text.includes('container') ||
-      text.includes('kubernetes') ||
-      text.includes('scaling')
-    );
+    return this.containsAnyKeyword(description, FEATURE_SPEC_KEYWORDS.INFRASTRUCTURE);
   }
 
   private identifyExternalDependencies(requirements: ParsedRequirement[]): string[] {
     const deps: string[] = [];
-    const allText = requirements.map((r) => r.description.toLowerCase()).join(' ');
+    const allText = this.aggregateRequirementText(requirements);
 
-    if (allText.includes('stripe') || allText.includes('payment')) {
-      deps.push('Stripe Payment API');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.DEPENDENCIES.PAYMENT)) {
+      deps.push(SPEC_TEMPLATES.EXTERNAL_DEPENDENCIES.PAYMENT);
     }
-    if (allText.includes('auth') || allText.includes('oauth')) {
-      deps.push('OAuth Provider');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.DEPENDENCIES.AUTH)) {
+      deps.push(SPEC_TEMPLATES.EXTERNAL_DEPENDENCIES.AUTH);
     }
-    if (allText.includes('email')) {
-      deps.push('Email Service Provider');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.DEPENDENCIES.EMAIL)) {
+      deps.push(SPEC_TEMPLATES.EXTERNAL_DEPENDENCIES.EMAIL);
     }
 
     return deps;
@@ -778,62 +813,29 @@ export class FeatureImplementationWorkflow {
 
   private identifyInfrastructure(requirements: ParsedRequirement[]): string[] {
     const infra: string[] = [];
-    const allText = requirements.map((r) => r.description.toLowerCase()).join(' ');
+    const allText = this.aggregateRequirementText(requirements);
 
-    if (allText.includes('database')) {
-      infra.push('PostgreSQL Database');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.INFRASTRUCTURE_TYPES.DATABASE)) {
+      infra.push(SPEC_TEMPLATES.INFRASTRUCTURE.DATABASE);
     }
-    if (allText.includes('cache') || allText.includes('redis')) {
-      infra.push('Redis Cache');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.INFRASTRUCTURE_TYPES.CACHE)) {
+      infra.push(SPEC_TEMPLATES.INFRASTRUCTURE.CACHE);
     }
-    if (allText.includes('queue') || allText.includes('message')) {
-      infra.push('Message Queue');
+    if (this.containsAnyKeyword(allText, FEATURE_SPEC_KEYWORDS.INFRASTRUCTURE_TYPES.QUEUE)) {
+      infra.push(SPEC_TEMPLATES.INFRASTRUCTURE.QUEUE);
     }
 
     return infra;
   }
 
   private createDesignTasks(requirements: ParsedRequirement[], totalHours: number): ImplementationTask[] {
-    const tasks: ImplementationTask[] = [];
-    const hoursPerTask = totalHours / 3;
-
-    tasks.push({
-      id: 'TASK-D001',
-      name: 'Create System Architecture',
-      description: 'Design overall system architecture and component interactions',
-      phase: 1,
-      priority: 'critical',
-      estimatedHours: hoursPerTask,
-      dependencies: [],
-      assignedRole: 'backend',
-      risk: 'medium',
-    });
-
-    tasks.push({
-      id: 'TASK-D002',
-      name: 'Design Database Schema',
-      description: 'Design database schema and data models',
-      phase: 1,
-      priority: 'high',
-      estimatedHours: hoursPerTask,
-      dependencies: ['TASK-D001'],
-      assignedRole: 'database',
-      risk: 'low',
-    });
-
-    tasks.push({
-      id: 'TASK-D003',
-      name: 'Create API Specifications',
-      description: 'Define API endpoints and contracts',
-      phase: 1,
-      priority: 'high',
-      estimatedHours: hoursPerTask,
-      dependencies: ['TASK-D001'],
-      assignedRole: 'backend',
-      risk: 'low',
-    });
-
-    return tasks;
+    return this.createTasksFromTemplates(
+      TASK_TEMPLATES.DESIGN,
+      FEATURE_IMPLEMENTATION_NUMBERS.PHASE_DESIGN,
+      'D',
+      totalHours,
+      []
+    );
   }
 
   private createImplementationTasks(requirements: ParsedRequirement[], totalHours: number): ImplementationTask[] {
@@ -841,14 +843,14 @@ export class FeatureImplementationWorkflow {
     const hoursPerReq = totalHours / requirements.length;
 
     requirements.forEach((req, index) => {
-      const taskId = `TASK-I${(index + 1).toString().padStart(3, '0')}`;
-      const prevTaskId = index > 0 ? `TASK-I${index.toString().padStart(3, '0')}` : 'TASK-D003';
+      const taskId = `TASK-I${(index + 1).toString().padStart(FEATURE_IMPLEMENTATION_NUMBERS.TASK_ID_PADDING, '0')}`;
+      const prevTaskId = index > 0 ? `TASK-I${index.toString().padStart(FEATURE_IMPLEMENTATION_NUMBERS.TASK_ID_PADDING, '0')}` : 'TASK-D003';
 
       tasks.push({
         id: taskId,
-        name: `Implement ${req.description.substring(0, 30)}...`,
+        name: `Implement ${req.description.substring(0, FEATURE_IMPLEMENTATION_NUMBERS.TASK_NAME_MAX_LENGTH)}...`,
         description: req.description,
-        phase: 2,
+        phase: FEATURE_IMPLEMENTATION_NUMBERS.PHASE_IMPLEMENTATION,
         priority: req.priority,
         estimatedHours: hoursPerReq,
         dependencies: [prevTaskId],
@@ -861,64 +863,22 @@ export class FeatureImplementationWorkflow {
   }
 
   private createTestingTasks(requirements: ParsedRequirement[], totalHours: number): ImplementationTask[] {
-    const tasks: ImplementationTask[] = [];
-    const hoursPerTask = totalHours / 2;
-
-    tasks.push({
-      id: 'TASK-T001',
-      name: 'Write Unit Tests',
-      description: 'Write comprehensive unit tests for all components',
-      phase: 3,
-      priority: 'critical',
-      estimatedHours: hoursPerTask,
-      dependencies: ['TASK-I001'],
-      assignedRole: 'qa',
-      risk: 'low',
-    });
-
-    tasks.push({
-      id: 'TASK-T002',
-      name: 'Write Integration Tests',
-      description: 'Write integration tests for component interactions',
-      phase: 3,
-      priority: 'high',
-      estimatedHours: hoursPerTask,
-      dependencies: ['TASK-T001'],
-      assignedRole: 'qa',
-      risk: 'low',
-    });
-
-    return tasks;
+    return this.createTasksFromTemplates(
+      TASK_TEMPLATES.TESTING,
+      FEATURE_IMPLEMENTATION_NUMBERS.PHASE_TESTING,
+      'T',
+      totalHours,
+      ['TASK-I001']
+    );
   }
 
   private createReviewTasks(requirements: ParsedRequirement[], totalHours: number): ImplementationTask[] {
-    const tasks: ImplementationTask[] = [];
-    const hoursPerTask = totalHours / 2;
-
-    tasks.push({
-      id: 'TASK-R001',
-      name: 'Code Review',
-      description: 'Comprehensive code review of all changes',
-      phase: 4,
-      priority: 'critical',
-      estimatedHours: hoursPerTask,
-      dependencies: ['TASK-T002'],
-      assignedRole: 'backend',
-      risk: 'low',
-    });
-
-    tasks.push({
-      id: 'TASK-R002',
-      name: 'Deploy to Production',
-      description: 'Deploy feature to production environment',
-      phase: 4,
-      priority: 'critical',
-      estimatedHours: hoursPerTask,
-      dependencies: ['TASK-R001'],
-      assignedRole: 'infrastructure',
-      risk: 'medium',
-    });
-
-    return tasks;
+    return this.createTasksFromTemplates(
+      TASK_TEMPLATES.REVIEW,
+      FEATURE_IMPLEMENTATION_NUMBERS.PHASE_REVIEW,
+      'R',
+      totalHours,
+      ['TASK-T002']
+    );
   }
 }

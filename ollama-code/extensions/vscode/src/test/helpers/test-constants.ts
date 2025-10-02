@@ -500,3 +500,282 @@ export const FEATURE_TIME_ESTIMATES = {
     REVIEW: 0.10,        // 10% review
   },
 } as const;
+
+/**
+ * Feature Specification Text Matching Keywords
+ * Keywords for analyzing requirement text and determining classifications
+ */
+export const FEATURE_SPEC_KEYWORDS = {
+  /** Priority detection keywords */
+  PRIORITY: {
+    CRITICAL: ['critical', 'must'],
+    HIGH: ['important', 'should'],
+    LOW: ['nice', 'could'],
+  },
+  /** Category detection keywords */
+  CATEGORY: {
+    BUG_FIX: ['fix', 'bug'],
+    ENHANCEMENT: ['improve', 'enhance'],
+    REFACTORING: ['refactor'],
+  },
+  /** Backend requirement keywords */
+  BACKEND: ['api', 'backend', 'server', 'database', 'endpoint'],
+  /** Frontend requirement keywords */
+  FRONTEND: ['ui', 'frontend', 'user interface', 'component', 'page'],
+  /** Database requirement keywords */
+  DATABASE: ['database', 'storage', 'persist', 'query', 'schema'],
+  /** Infrastructure requirement keywords */
+  INFRASTRUCTURE: ['deploy', 'infrastructure', 'container', 'kubernetes', 'scaling'],
+  /** Technical challenge detection keywords */
+  CHALLENGES: {
+    REALTIME: ['real-time', 'realtime'],
+    PERFORMANCE: ['scale', 'performance'],
+    SECURITY: ['security', 'encryption'],
+    INTEGRATION: ['integration', 'api'],
+  },
+  /** External dependency detection keywords */
+  DEPENDENCIES: {
+    PAYMENT: ['stripe', 'payment'],
+    AUTH: ['auth', 'oauth'],
+    EMAIL: ['email'],
+  },
+  /** Infrastructure type detection keywords */
+  INFRASTRUCTURE_TYPES: {
+    DATABASE: ['database'],
+    CACHE: ['cache', 'redis'],
+    QUEUE: ['queue', 'message'],
+  },
+  /** Acceptance criteria generation keywords */
+  ACCEPTANCE_CRITERIA: {
+    USER: ['user'],
+    TEST: ['test'],
+  },
+  /** Technical constraint detection keywords */
+  TECHNICAL_CONSTRAINTS: {
+    PERFORMANCE: ['performance'],
+    SCALE: ['scale'],
+  },
+} as const;
+
+/**
+ * Feature Implementation Magic Numbers
+ * Numeric constants for feature implementation workflow
+ */
+export const FEATURE_IMPLEMENTATION_NUMBERS = {
+  /** Starting requirement ID */
+  INITIAL_REQ_ID: 1,
+  /** Requirement ID padding width */
+  REQ_ID_PADDING: 3,
+  /** Task ID padding width */
+  TASK_ID_PADDING: 3,
+  /** Description truncation length for task names */
+  TASK_NAME_MAX_LENGTH: 30,
+  /** Number of design tasks */
+  DESIGN_TASK_COUNT: 3,
+  /** Number of testing tasks */
+  TESTING_TASK_COUNT: 2,
+  /** Number of review tasks */
+  REVIEW_TASK_COUNT: 2,
+  /** Component count multiplier per requirement */
+  COMPONENT_MULTIPLIER: 1.5,
+  /** Dependency count multiplier per requirement */
+  DEPENDENCY_MULTIPLIER: 0.5,
+  /** Complexity score confidence divisor */
+  CONFIDENCE_DIVISOR: 2,
+  /** Concurrent users threshold for scale constraint */
+  CONCURRENT_USERS_THRESHOLD: 10000,
+  /** Phase 1 number */
+  PHASE_DESIGN: 1,
+  /** Phase 2 number */
+  PHASE_IMPLEMENTATION: 2,
+  /** Phase 3 number */
+  PHASE_TESTING: 3,
+  /** Phase 4 number */
+  PHASE_REVIEW: 4,
+} as const;
+
+/**
+ * Risk Assessment Thresholds and Values
+ * Constants for risk identification and scoring
+ */
+export const RISK_ASSESSMENT_CONSTANTS = {
+  /** Threshold for technical challenge count to trigger risk */
+  CHALLENGE_COUNT_THRESHOLD: 2,
+  /** Threshold for dependency count to trigger risk */
+  DEPENDENCY_COUNT_THRESHOLD: 3,
+  /** High complexity risk configuration */
+  HIGH_COMPLEXITY_RISK: {
+    ID: 'RISK-001',
+    DESCRIPTION: 'High complexity may lead to timeline delays',
+    LEVEL: 'high' as const,
+    PROBABILITY: 70,
+    IMPACT: 80,
+    OWNER: 'backend' as const,
+  },
+  /** Multiple challenges risk configuration */
+  TECHNICAL_CHALLENGES_RISK: {
+    ID: 'RISK-002',
+    DESCRIPTION: 'Multiple technical challenges may require research and prototyping',
+    LEVEL: 'medium' as const,
+    PROBABILITY: 60,
+    IMPACT: 70,
+    OWNER: 'backend' as const,
+  },
+  /** Multiple dependencies risk configuration */
+  DEPENDENCY_RISK: {
+    ID: 'RISK-003',
+    DESCRIPTION: 'Multiple dependencies may cause integration issues',
+    LEVEL: 'medium' as const,
+    PROBABILITY: 50,
+    IMPACT: 60,
+    OWNER: 'backend' as const,
+  },
+} as const;
+
+/**
+ * Implementation Phase Templates
+ * Template data for standard implementation phases
+ */
+export const PHASE_TEMPLATES = {
+  DESIGN: {
+    NAME: 'Design & Architecture',
+    DESCRIPTION: 'Design system architecture and create technical specifications',
+    MILESTONE: 'Architecture Review Complete',
+  },
+  IMPLEMENTATION: {
+    NAME: 'Implementation',
+    DESCRIPTION: 'Implement features according to specifications',
+    MILESTONE: 'Feature Implementation Complete',
+  },
+  TESTING: {
+    NAME: 'Testing & QA',
+    DESCRIPTION: 'Comprehensive testing and quality assurance',
+    MILESTONE: 'All Tests Passing',
+  },
+  REVIEW: {
+    NAME: 'Review & Deployment',
+    DESCRIPTION: 'Code review and production deployment',
+    MILESTONE: 'Production Deployment Complete',
+  },
+} as const;
+
+/**
+ * Task Templates for Each Phase
+ * Predefined task configurations for standard phases
+ */
+export const TASK_TEMPLATES = {
+  DESIGN: [
+    {
+      NAME: 'Create System Architecture',
+      DESCRIPTION: 'Design overall system architecture and component interactions',
+      PRIORITY: 'critical' as const,
+      ROLE: 'backend' as const,
+      RISK: 'medium' as const,
+    },
+    {
+      NAME: 'Design Database Schema',
+      DESCRIPTION: 'Design database schema and data models',
+      PRIORITY: 'high' as const,
+      ROLE: 'database' as const,
+      RISK: 'low' as const,
+    },
+    {
+      NAME: 'Create API Specifications',
+      DESCRIPTION: 'Define API endpoints and contracts',
+      PRIORITY: 'high' as const,
+      ROLE: 'backend' as const,
+      RISK: 'low' as const,
+    },
+  ],
+  TESTING: [
+    {
+      NAME: 'Write Unit Tests',
+      DESCRIPTION: 'Write comprehensive unit tests for all components',
+      PRIORITY: 'critical' as const,
+      ROLE: 'qa' as const,
+      RISK: 'low' as const,
+    },
+    {
+      NAME: 'Write Integration Tests',
+      DESCRIPTION: 'Write integration tests for component interactions',
+      PRIORITY: 'high' as const,
+      ROLE: 'qa' as const,
+      RISK: 'low' as const,
+    },
+  ],
+  REVIEW: [
+    {
+      NAME: 'Code Review',
+      DESCRIPTION: 'Comprehensive code review of all changes',
+      PRIORITY: 'critical' as const,
+      ROLE: 'backend' as const,
+      RISK: 'low' as const,
+    },
+    {
+      NAME: 'Deploy to Production',
+      DESCRIPTION: 'Deploy feature to production environment',
+      PRIORITY: 'critical' as const,
+      ROLE: 'infrastructure' as const,
+      RISK: 'medium' as const,
+    },
+  ],
+} as const;
+
+/**
+ * Acceptance Criteria and Constraint Templates
+ * Template strings for generating acceptance criteria and constraints
+ */
+export const SPEC_TEMPLATES = {
+  /** Standard acceptance criteria templates */
+  ACCEPTANCE_CRITERIA: {
+    USER_SUCCESS: 'User can successfully use the feature',
+    TEST_COVERAGE: 'Feature has comprehensive test coverage',
+    PERFORMANCE: 'Feature meets performance requirements',
+  },
+  /** Technical constraint templates */
+  TECHNICAL_CONSTRAINTS: {
+    RESPONSE_TIME: 'Must maintain sub-second response time',
+    CONCURRENT_USERS: (count: number) => `Must handle ${count}+ concurrent users`,
+  },
+  /** Technical challenge description templates */
+  TECHNICAL_CHALLENGES: {
+    REALTIME: 'Real-time data synchronization',
+    PERFORMANCE: 'High-performance architecture',
+    SECURITY: 'Security and encryption implementation',
+    INTEGRATION: 'Third-party API integration',
+  },
+  /** External dependency description templates */
+  EXTERNAL_DEPENDENCIES: {
+    PAYMENT: 'Stripe Payment API',
+    AUTH: 'OAuth Provider',
+    EMAIL: 'Email Service Provider',
+  },
+  /** Infrastructure description templates */
+  INFRASTRUCTURE: {
+    DATABASE: 'PostgreSQL Database',
+    CACHE: 'Redis Cache',
+    QUEUE: 'Message Queue',
+  },
+} as const;
+
+/**
+ * Risk Mitigation Strategy Templates
+ * Predefined mitigation strategies for common risks
+ */
+export const RISK_MITIGATION_STRATEGIES = {
+  HIGH_COMPLEXITY: [
+    'Break down into smaller deliverables',
+    'Add buffer time to estimates',
+    'Increase team size if needed',
+  ],
+  TECHNICAL_CHALLENGES: [
+    'Allocate time for spike research',
+    'Create proof-of-concept prototypes',
+    'Consult with technical experts',
+  ],
+  MULTIPLE_DEPENDENCIES: [
+    'Create integration test plan early',
+    'Use feature flags for gradual rollout',
+    'Maintain backward compatibility',
+  ],
+} as const;

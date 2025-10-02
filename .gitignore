@@ -21,7 +21,7 @@ node_modules
 
 # production
 /build
-/ios/mastodon/Resources/web/out/
+/ollama-code/dist/
 
 # misc
 .DS_Store
@@ -34,7 +34,7 @@ yarn-error.log*
 .pnpm-debug.log*
 debug.txt
 network.txt
-ollama-code/performance-report-*
+/ollama-code/performance-report-*
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -45,6 +45,13 @@ ollama-code/performance-report-*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# VS Code Extension compiled output
+/ollama-code/extensions/vscode/dist/
+!ollama/extensions/vscode/dist/package.json
+
+# VS Code test environment
+/ollama-code/extensions/vscode/.vscode-test/
 
 # Xcode
 ## User settings
@@ -93,20 +100,6 @@ fastlane/test_output
 
 # Code Injection
 iOSInjectionProject/
-
-# Build artifacts
-ios/mastodon/build/
-ios/mastodon/DerivedData/
-ios/mastodon/*.app
-ios/mastodon/*.ipa
-
-# Xcode user data (should not be committed)
-ios/mastodon/mastodon.xcodeproj/xcuserdata/
-ios/mastodon/mastodon.xcodeproj/project.xcworkspace/xcuserdata/
-
-# Xcode build logs
-ios/mastodon/Build *.txt
-ios/mastodon/*.log
 
 # macOS
 .DS_Store
