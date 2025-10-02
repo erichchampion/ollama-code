@@ -413,3 +413,90 @@ export const PR_REVIEW_RECOMMENDATIONS = {
   /** Recommendation for minor improvements */
   MINOR_IMPROVEMENTS: 'Review completed. Minor improvements suggested.',
 } as const;
+
+/**
+ * Feature Implementation Workflow Test Constants
+ * Centralized configuration values for autonomous feature development testing
+ */
+export const FEATURE_IMPLEMENTATION_CONSTANTS = {
+  /** Default maximum number of phases in implementation plan */
+  DEFAULT_MAX_PHASES: 4,
+  /** Default team size */
+  DEFAULT_TEAM_SIZE: 5,
+  /** Minimum requirement text length to be considered valid */
+  MIN_REQUIREMENT_LENGTH: 10,
+  /** Backend effort ratio (percentage of total time) */
+  BACKEND_EFFORT_RATIO: 0.4,
+  /** Frontend effort ratio (percentage of total time) */
+  FRONTEND_EFFORT_RATIO: 0.3,
+  /** Database effort ratio (percentage of total time) */
+  DATABASE_EFFORT_RATIO: 0.15,
+  /** Infrastructure effort ratio (percentage of total time) */
+  INFRA_EFFORT_RATIO: 0.1,
+  /** QA effort ratio (percentage of total time) */
+  QA_EFFORT_RATIO: 0.25,
+  /** Simple feature text specification */
+  SIMPLE_SPEC_TEXT: 'Add a login button to the homepage',
+  /** Moderate feature text specification */
+  MODERATE_SPEC_TEXT: 'Implement user authentication with email and password. Users should be able to register, login, logout, and reset their password.',
+  /** Complex feature text specification */
+  COMPLEX_SPEC_TEXT: 'Build a real-time collaborative document editing system with version control, conflict resolution, user presence indicators, and comment threads. Must scale to 10000 concurrent users.',
+} as const;
+
+/**
+ * Feature Complexity Scoring Weights
+ * Constants for calculating feature complexity scores
+ */
+export const FEATURE_COMPLEXITY_WEIGHTS = {
+  /** Weight for component count in complexity score */
+  COMPONENT_WEIGHT: 5,
+  /** Weight for dependency count in complexity score */
+  DEPENDENCY_WEIGHT: 8,
+  /** Weight for technical challenges in complexity score */
+  CHALLENGE_WEIGHT: 10,
+  /** Component score multiplier in final calculation */
+  COMPONENT_MULTIPLIER: 0.3,
+  /** Dependency score multiplier in final calculation */
+  DEPENDENCY_MULTIPLIER: 0.3,
+  /** Challenge score multiplier in final calculation */
+  CHALLENGE_MULTIPLIER: 0.4,
+  /** Maximum complexity score */
+  MAX_SCORE: 100,
+  /** Threshold for simple complexity (<25) */
+  SIMPLE_THRESHOLD: 25,
+  /** Threshold for moderate complexity (<50) */
+  MODERATE_THRESHOLD: 50,
+  /** Threshold for complex complexity (<75) */
+  COMPLEX_THRESHOLD: 75,
+} as const;
+
+/**
+ * Feature Time Estimation Constants
+ * Constants for estimating implementation time
+ */
+export const FEATURE_TIME_ESTIMATES = {
+  /** Base hours by complexity level */
+  BASE_HOURS: {
+    simple: 8,
+    moderate: 40,
+    complex: 120,
+    very_complex: 320,
+  },
+  /** Additional hours per requirement */
+  HOURS_PER_REQUIREMENT: 4,
+  /** Additional hours per technical challenge */
+  HOURS_PER_CHALLENGE: 16,
+  /** Hours per working day */
+  HOURS_PER_DAY: 8,
+  /** Minimum confidence percentage */
+  MIN_CONFIDENCE: 20,
+  /** Maximum confidence percentage */
+  MAX_CONFIDENCE: 90,
+  /** Phase distribution percentages (must sum to 1.0) */
+  PHASE_DISTRIBUTION: {
+    DESIGN: 0.20,        // 20% design
+    IMPLEMENTATION: 0.50, // 50% implementation
+    TESTING: 0.20,       // 20% testing
+    REVIEW: 0.10,        // 10% review
+  },
+} as const;
