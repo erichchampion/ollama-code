@@ -4,7 +4,7 @@
  * Shared constants for security vulnerability testing
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EXPECTED_VULNERABILITY_COUNTS = exports.VULNERABILITY_CODE_TEMPLATES = exports.FILE_PATTERNS = exports.SECURITY_RULE_IDS = exports.CONFIDENCE_LEVELS = exports.SEVERITY_LEVELS = exports.USER_INPUT_SOURCES = exports.ESCAPE_KEYWORDS = exports.PARAMETERIZATION_MARKERS = exports.VULNERABILITY_CATEGORIES = exports.OWASP_CATEGORIES = exports.CWE_IDS = void 0;
+exports.EXPECTED_VULNERABILITY_COUNTS = exports.QUALITY_ASSESSMENT_TEMPLATES = exports.FALLBACK_POSITIVE_FINDING = exports.SUMMARY_NO_ISSUES = exports.POSITIVE_FINDING_MESSAGES = exports.MAX_RECOMMENDATION_EXAMPLES = exports.VALID_PRIORITIES = exports.PRIORITY_ORDER = exports.SEVERITY_ORDER = exports.SEVERITY_WEIGHTS = exports.PERFECT_CONFIDENCE_SCORE = exports.DEFAULT_CONFIDENCE_SCORE = exports.CONFIDENCE_SCORE_VALUES = exports.VULNERABILITY_CODE_TEMPLATES = exports.FILE_PATTERNS = exports.SECURITY_RULE_IDS = exports.CONFIDENCE_LEVELS = exports.SEVERITY_LEVELS = exports.USER_INPUT_SOURCES = exports.ESCAPE_KEYWORDS = exports.PARAMETERIZATION_MARKERS = exports.VULNERABILITY_CATEGORIES = exports.OWASP_CATEGORIES = exports.CWE_IDS = void 0;
 /**
  * CWE (Common Weakness Enumeration) IDs for security vulnerabilities
  * @see https://cwe.mitre.org/
@@ -945,6 +945,414 @@ export class UserController {
 }
 `,
     },
+    // Review Report Templates
+    REVIEW_REPORT: {
+        // Code with multiple critical issues for comprehensive report testing
+        MULTIPLE_CRITICAL_ISSUES: () => `
+const apiKey = "sk_live_1234567890abcdefghijklmnopqr";
+const dbConfig = {
+  username: 'admin',
+  password: 'admin'
+};
+
+app.post('/user', (req, res) => {
+  const sql = "SELECT * FROM users WHERE id = " + req.body.id;
+  connection.query(sql);
+  document.getElementById('output').innerHTML = req.body.data;
+});
+`,
+        // Code with mixed severity issues
+        MIXED_SEVERITY_ISSUES: () => `
+const timeout = 5000;
+function processData(data) {
+  if (data.user) {
+    if (data.user.profile) {
+      if (data.user.profile.settings) {
+        if (data.user.profile.settings.theme) {
+          return data.user.profile.settings.theme;
+        }
+      }
+    }
+  }
+}
+`,
+        // Code with only low/info issues
+        MINOR_ISSUES_ONLY: () => `
+function calculate(a, b) {
+  return a / b;
+}
+
+const result = setTimeout(() => {
+  console.log('done');
+}, 3000);
+`,
+        // Perfect code with no issues
+        NO_ISSUES_PERFECT_CODE: () => `
+import { validateInput } from './validator';
+import { DatabaseService } from './database';
+
+class UserService {
+  constructor(private db: DatabaseService) {}
+
+  async createUser(data: UserData): Promise<User> {
+    try {
+      const validated = validateInput(data);
+      return await this.db.users.create(validated);
+    } catch (error) {
+      console.error('Error creating user');
+      throw error;
+    }
+  }
+}
+`,
+        // Code demonstrating good practices
+        GOOD_PRACTICES_CODE: () => `
+const API_KEY = process.env.API_KEY;
+const TIMEOUT_MS = 5000;
+
+app.post('/data', authenticate, async (req, res) => {
+  try {
+    const validated = validator.validate(req.body);
+    const result = await db.query('SELECT * FROM data WHERE id = ?', [validated.id]);
+    res.json(sanitize(result));
+  } catch (error) {
+    logger.error('Error processing request');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+`,
+        // Code with specific categories for testing classification
+        CATEGORY_TESTING_CODE: () => `
+// XSS vulnerability
+element.innerHTML = req.query.userInput;
+
+// SQL Injection
+const query = "SELECT * FROM users WHERE name = '" + username + "'";
+
+// Secrets
+const stripeKey = "sk_test_123456789";
+
+// Configuration issue
+const config = { debug: true, env: 'production' };
+`,
+    },
+};
+/**
+ * Review report generation constants
+ */
+exports.CONFIDENCE_SCORE_VALUES = {
+    HIGH: 90,
+    MEDIUM: 70,
+    LOW: 50,
+};
+exports.DEFAULT_CONFIDENCE_SCORE = 75;
+exports.PERFECT_CONFIDENCE_SCORE = 100;
+exports.SEVERITY_WEIGHTS = {
+    CRITICAL: 3,
+    HIGH: 2,
+    MEDIUM: 1.5,
+    LOW: 1,
+    INFO: 0.5,
+};
+exports.SEVERITY_ORDER = {
+    critical: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
+    info: 4,
+};
+exports.PRIORITY_ORDER = {
+    critical: 0,
+    high: 1,
+    medium: 2,
+};
+exports.VALID_PRIORITIES = ['critical', 'high', 'medium'];
+exports.MAX_RECOMMENDATION_EXAMPLES = 3;
+exports.POSITIVE_FINDING_MESSAGES = {
+    injection: 'No SQL injection vulnerabilities detected - database queries appear to use parameterization.',
+    xss: 'No XSS vulnerabilities detected - user input handling follows secure practices.',
+    authentication: 'No authentication bypass vulnerabilities detected - access control is properly implemented.',
+    secrets: 'No hardcoded secrets detected - sensitive data appears to be externalized.',
+    configuration: 'No security misconfigurations detected - security settings are properly configured.',
+    code_quality: 'Code quality issues are minimal - code follows best practices.',
+    architecture: 'No major architecture issues detected - design follows solid principles.',
+};
+exports.SUMMARY_NO_ISSUES = 'No security vulnerabilities detected. Code follows security best practices.';
+exports.FALLBACK_POSITIVE_FINDING = 'Some security best practices are being followed despite identified issues.';
+/**
+ * Quality assessment test templates
+ */
+exports.QUALITY_ASSESSMENT_TEMPLATES = {
+    // High complexity code
+    HIGH_COMPLEXITY: () => `
+function processOrder(order, user, items, discounts, shipping) {
+  let total = 0;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].quantity > 0) {
+      if (items[i].price > 100) {
+        if (user.isPremium) {
+          if (discounts && discounts[items[i].id]) {
+            total += items[i].price * items[i].quantity * (1 - discounts[items[i].id]);
+          } else {
+            total += items[i].price * items[i].quantity * 0.9;
+          }
+        } else {
+          if (items[i].quantity > 5) {
+            total += items[i].price * items[i].quantity * 0.95;
+          } else {
+            total += items[i].price * items[i].quantity;
+          }
+        }
+      } else {
+        total += items[i].price * items[i].quantity;
+      }
+    }
+  }
+  if (shipping === 'express' && total > 50) {
+    total += 15;
+  } else if (shipping === 'standard') {
+    total += 5;
+  }
+  return total;
+}`,
+    // Low complexity code
+    LOW_COMPLEXITY: () => `
+const PREMIUM_DISCOUNT = 0.9;
+const BULK_DISCOUNT = 0.95;
+const EXPRESS_SHIPPING = 15;
+const STANDARD_SHIPPING = 5;
+const FREE_SHIPPING_THRESHOLD = 50;
+
+function calculateItemTotal(item, isPremium, discount) {
+  const basePrice = item.price * item.quantity;
+  const discountRate = discount || (isPremium ? PREMIUM_DISCOUNT : 1.0);
+  return basePrice * discountRate;
+}
+
+function calculateShipping(total, shippingType) {
+  if (shippingType === 'express' && total > FREE_SHIPPING_THRESHOLD) {
+    return EXPRESS_SHIPPING;
+  }
+  return shippingType === 'standard' ? STANDARD_SHIPPING : 0;
+}`,
+    // Poor maintainability
+    POOR_MAINTAINABILITY: () => `
+function x(a,b,c){var d=0;for(var i=0;i<a.length;i++){if(a[i].x>100){if(b.y){if(c&&c[a[i].z]){d+=a[i].x*a[i].y*(1-c[a[i].z])}else{d+=a[i].x*a[i].y*0.9}}else{if(a[i].y>5){d+=a[i].x*a[i].y*0.95}else{d+=a[i].x*a[i].y}}}else{d+=a[i].x*a[i].y}}return d}
+const API_URL="http://api.example.com";const KEY="abc123";function getData(){fetch(API_URL+"?key="+KEY).then(r=>r.json())}`,
+    // Good maintainability
+    GOOD_MAINTAINABILITY: () => `
+/**
+ * Calculate the total price for an order
+ * @param items - Array of order items
+ * @param user - User making the order
+ * @param discounts - Available discounts
+ * @returns Total price in dollars
+ */
+function calculateOrderTotal(items, user, discounts) {
+  const itemsTotal = items.reduce((sum, item) => {
+    return sum + calculateItemTotal(item, user, discounts);
+  }, 0);
+
+  return itemsTotal;
+}
+
+/**
+ * Calculate the price for a single item
+ */
+function calculateItemTotal(item, user, discounts) {
+  const basePrice = item.price * item.quantity;
+  const discount = getApplicableDiscount(item, user, discounts);
+  return basePrice * (1 - discount);
+}`,
+    // Poor naming conventions
+    POOR_NAMING: () => `
+function calc(x, y) {
+  const temp = x + y;
+  return temp;
+}
+
+const user_name = "john";
+const UserAge = 30;
+let $data = getData();
+const my-value = 123;`,
+    // Good naming conventions
+    GOOD_NAMING: () => `
+function calculateTotal(subtotal, tax) {
+  const total = subtotal + tax;
+  return total;
+}
+
+const userName = "john";
+const userAge = 30;
+const userData = getData();
+const MAX_RETRIES = 3;`,
+    // Missing error handling
+    MISSING_ERROR_HANDLING: () => `
+async function fetchUserData(userId) {
+  const response = await fetch(\`/api/users/\${userId}\`);
+  const data = await response.json();
+  return data;
+}
+
+async function processPayment(orderId) {
+  const order = await getOrder(orderId);
+  const result = await chargeCard(order.total);
+  return result;
+}`,
+    // Good error handling
+    GOOD_ERROR_HANDLING: () => `
+async function fetchUserData(userId) {
+  try {
+    const response = await fetch(\`/api/users/\${userId}\`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    throw new Error('Unable to retrieve user information');
+  }
+}
+
+async function processPayment(orderId) {
+  try {
+    const order = await getOrder(orderId);
+    const result = await chargeCard(order.total);
+    return result;
+  } catch (error) {
+    console.error('Payment processing failed:', error);
+    throw error;
+  }
+}`,
+    // Missing input validation
+    MISSING_VALIDATION: () => `
+app.post('/users', (req, res) => {
+  const user = {
+    name: req.body.name,
+    email: req.body.email,
+    age: req.body.age
+  };
+  db.users.insert(user);
+  res.json(user);
+});
+
+function divide(a, b) {
+  return a / b;
+}`,
+    // Good input validation
+    GOOD_VALIDATION: () => `
+const { check, validationResult } = require('express-validator');
+
+app.post('/users', [
+  check('name').isLength({ min: 1 }),
+  check('email').isEmail(),
+  check('age').isInt({ min: 0 })
+], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const user = {
+    name: req.body.name,
+    email: req.body.email,
+    age: req.body.age
+  };
+  db.users.insert(user);
+  res.json(user);
+});
+
+function divide(a, b) {
+  if (b === 0) {
+    throw new Error('Division by zero');
+  }
+  return a / b;
+}`,
+    // TypeScript with poor type safety
+    POOR_TYPE_SAFETY: () => `
+function processData(data: any) {
+  const result: any = transform(data);
+  return result;
+}
+
+function calculate(a, b) {
+  return a + b;
+}
+
+const values: any[] = [1, 2, 3];`,
+    // TypeScript with good type safety
+    GOOD_TYPE_SAFETY: () => `
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+}
+
+function processData(data: UserData): UserData {
+  const result: UserData = transform(data);
+  return result;
+}
+
+function calculate(a: number, b: number): number {
+  return a + b;
+}
+
+const values: number[] = [1, 2, 3];`,
+    // Missing documentation
+    MISSING_DOCUMENTATION: () => `
+function processOrder(order, user, items) {
+  const total = calculateTotal(items);
+  const tax = total * 0.08;
+  return total + tax;
+}
+
+class OrderProcessor {
+  process(order) {
+    return this.validate(order);
+  }
+
+  validate(order) {
+    return order.items.length > 0;
+  }
+}`,
+    // Good documentation
+    GOOD_DOCUMENTATION: () => `
+/**
+ * Order processing utilities
+ * @module OrderProcessor
+ */
+
+/**
+ * Process an order and calculate the final total including tax
+ * @param order - The order to process
+ * @param user - The user placing the order
+ * @param items - Array of items in the order
+ * @returns The total price including tax
+ */
+function processOrder(order, user, items) {
+  const total = calculateTotal(items);
+  const tax = total * 0.08;
+  return total + tax;
+}
+
+/**
+ * Handles order processing and validation
+ */
+class OrderProcessor {
+  /**
+   * Process an order
+   * @param order - The order to process
+   */
+  process(order) {
+    return this.validate(order);
+  }
+
+  /**
+   * Validate that an order has items
+   * @param order - The order to validate
+   */
+  validate(order) {
+    return order.items.length > 0;
+  }
+}`,
 };
 /**
  * Expected vulnerability counts for test suites

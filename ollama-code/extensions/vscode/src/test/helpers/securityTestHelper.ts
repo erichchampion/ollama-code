@@ -971,3 +971,42 @@ export async function testCircularDependencyDetection(
     }
   );
 }
+
+/**
+ * Test helper for generating and validating review reports
+ */
+export async function testReviewReportGeneration(
+  workspacePath: string,
+  filename: string,
+  code: string
+): Promise<{ vulnerabilities: SecurityVulnerability[]; report: any }> {
+  const testFile = require('path').join(workspacePath, filename);
+  await require('fs/promises').writeFile(testFile, code, 'utf8');
+
+  const { SecurityAnalyzer } = require('./securityAnalyzerWrapper');
+  const analyzer = new SecurityAnalyzer();
+
+  const vulnerabilities = await analyzer.analyzeFile(testFile);
+  const report = analyzer.generateReviewReport(vulnerabilities);
+
+  return { vulnerabilities, report };
+}
+
+/**
+ * Test helper for quality assessment metrics
+ */
+export async function testQualityMetrics(
+  workspacePath: string,
+  filename: string,
+  code: string
+): Promise<any> {
+  const testFile = require('path').join(workspacePath, filename);
+  await require('fs/promises').writeFile(testFile, code, 'utf8');
+
+  const { SecurityAnalyzer } = require('./securityAnalyzerWrapper');
+  const analyzer = new SecurityAnalyzer();
+
+  const metrics = await analyzer.calculateQualityMetrics(testFile);
+
+  return metrics;
+}

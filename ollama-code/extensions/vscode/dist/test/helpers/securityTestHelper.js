@@ -75,6 +75,8 @@ exports.testLargeClassDetection = testLargeClassDetection;
 exports.testTightCouplingDetection = testTightCouplingDetection;
 exports.testMissingAbstractionDetection = testMissingAbstractionDetection;
 exports.testCircularDependencyDetection = testCircularDependencyDetection;
+exports.testReviewReportGeneration = testReviewReportGeneration;
+exports.testQualityMetrics = testQualityMetrics;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const assert = __importStar(require("assert"));
@@ -497,5 +499,28 @@ async function testCircularDependencyDetection(workspacePath, filename, vulnerab
         shouldContainRecommendation: 'circular',
         ...options,
     });
+}
+/**
+ * Test helper for generating and validating review reports
+ */
+async function testReviewReportGeneration(workspacePath, filename, code) {
+    const testFile = require('path').join(workspacePath, filename);
+    await require('fs/promises').writeFile(testFile, code, 'utf8');
+    const { SecurityAnalyzer } = require('./securityAnalyzerWrapper');
+    const analyzer = new SecurityAnalyzer();
+    const vulnerabilities = await analyzer.analyzeFile(testFile);
+    const report = analyzer.generateReviewReport(vulnerabilities);
+    return { vulnerabilities, report };
+}
+/**
+ * Test helper for quality assessment metrics
+ */
+async function testQualityMetrics(workspacePath, filename, code) {
+    const testFile = require('path').join(workspacePath, filename);
+    await require('fs/promises').writeFile(testFile, code, 'utf8');
+    const { SecurityAnalyzer } = require('./securityAnalyzerWrapper');
+    const analyzer = new SecurityAnalyzer();
+    const metrics = await analyzer.calculateQualityMetrics(testFile);
+    return metrics;
 }
 //# sourceMappingURL=securityTestHelper.js.map
