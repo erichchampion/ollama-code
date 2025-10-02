@@ -6,7 +6,7 @@
 
 # Class: DirectoryManager
 
-Defined in: [utils/directory-manager.ts:15](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L15)
+Defined in: [utils/directory-manager.ts:15](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L15)
 
 ## Constructors
 
@@ -24,7 +24,7 @@ Defined in: [utils/directory-manager.ts:15](https://github.com/erichchampion/oll
 
 > `static` **ensureDirectories**(...`paths`): `Promise`\<`void`\>
 
-Defined in: [utils/directory-manager.ts:19](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L19)
+Defined in: [utils/directory-manager.ts:19](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L19)
 
 Ensure multiple directories exist, creating them if necessary
 
@@ -44,7 +44,7 @@ Ensure multiple directories exist, creating them if necessary
 
 > `static` **createStructure**(`basePath`, `structure`): `Promise`\<`void`\>
 
-Defined in: [utils/directory-manager.ts:28](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L28)
+Defined in: [utils/directory-manager.ts:28](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L28)
 
 Create a directory structure from a nested object definition
 
@@ -68,7 +68,7 @@ Create a directory structure from a nested object definition
 
 > `static` **ensureWorkspace**(`workspaceDir`, `subdirs`): `Promise`\<`void`\>
 
-Defined in: [utils/directory-manager.ts:51](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L51)
+Defined in: [utils/directory-manager.ts:51](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L51)
 
 Ensure workspace directories for AI providers
 
@@ -92,7 +92,7 @@ Ensure workspace directories for AI providers
 
 > `static` **cleanupEmptyDirectories**(`basePath`): `Promise`\<`void`\>
 
-Defined in: [utils/directory-manager.ts:59](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L59)
+Defined in: [utils/directory-manager.ts:59](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L59)
 
 Clean up empty directories in a path
 
@@ -112,7 +112,7 @@ Clean up empty directories in a path
 
 > `static` **isDirectoryAccessible**(`dirPath`): `Promise`\<`boolean`\>
 
-Defined in: [utils/directory-manager.ts:84](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L84)
+Defined in: [utils/directory-manager.ts:84](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L84)
 
 Check if directory exists and is writable
 
@@ -132,7 +132,7 @@ Check if directory exists and is writable
 
 > `static` **getDirectorySize**(`dirPath`): `Promise`\<`number`\>
 
-Defined in: [utils/directory-manager.ts:97](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/directory-manager.ts#L97)
+Defined in: [utils/directory-manager.ts:97](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/directory-manager.ts#L97)
 
 Get directory size in bytes
 

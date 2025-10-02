@@ -34,6 +34,12 @@ exports.CWE_IDS = {
     CORS_MISCONFIGURATION: 942, // CWE-942 for overly permissive CORS
     DEFAULT_CREDENTIALS: 798, // CWE-798 for use of default credentials
     INSECURE_TRANSPORT: 319, // CWE-319 for cleartext transmission of sensitive data
+    // Code Quality Issues (CWE)
+    MAGIC_NUMBER: 1098, // CWE-1098 for hardcoded numeric literals
+    LARGE_FUNCTION: 1121, // CWE-1121 for excessive function complexity
+    DEEP_NESTING: 1124, // CWE-1124 for excessive code nesting
+    MISSING_ERROR_HANDLING: 252, // CWE-252 for unchecked return value
+    MISSING_INPUT_VALIDATION: 20, // CWE-20 for improper input validation
 };
 /**
  * OWASP Top 10 2021 categories
@@ -72,6 +78,7 @@ exports.VULNERABILITY_CATEGORIES = {
     DATA_INTEGRITY: 'data_integrity',
     LOGGING: 'logging',
     SSRF: 'ssrf',
+    CODE_QUALITY: 'code_quality',
 };
 /**
  * Parameterization markers used in safe SQL queries
@@ -593,6 +600,180 @@ res.cookie('session', sessionId, {
   secure: true,
   httpOnly: true,
   sameSite: 'strict'
+});
+`,
+    },
+    // Code Quality Issues Templates
+    CODE_QUALITY: {
+        MAGIC_NUMBER_TIMEOUT: () => `
+function scheduleTask(callback) {
+  setTimeout(callback, 86400000); // Magic number: 86400000 milliseconds
+}
+`,
+        MAGIC_NUMBER_CALCULATION: () => `
+function calculatePrice(quantity) {
+  const tax = quantity * 0.08; // Magic number: 8% tax rate
+  const shipping = quantity > 10 ? 15.99 : 5.99; // Magic numbers: thresholds and costs
+  return quantity * 29.99 + tax + shipping; // Magic number: base price
+}
+`,
+        LARGE_FUNCTION_50_LINES: () => `
+function processUserData(userData) {
+  const name = userData.name;
+  const email = userData.email;
+  const age = userData.age;
+  const address = userData.address;
+  // Line 5
+  if (!name) { throw new Error('Name required'); }
+  if (!email) { throw new Error('Email required'); }
+  if (age < 18) { throw new Error('Must be 18+'); }
+  // Line 9
+  const normalizedName = name.trim().toLowerCase();
+  const emailParts = email.split('@');
+  const domain = emailParts[1];
+  // Line 13
+  if (!domain.includes('.')) { throw new Error('Invalid email'); }
+  // Line 15
+  const user = {
+    name: normalizedName,
+    email: email,
+    age: age,
+    address: address
+  };
+  // Line 22
+  const validation = validateUser(user);
+  if (!validation.valid) { throw new Error(validation.error); }
+  // Line 25
+  const savedUser = saveToDatabase(user);
+  sendWelcomeEmail(savedUser.email);
+  logUserCreation(savedUser.id);
+  // Line 29
+  updateAnalytics('user_created');
+  notifyAdmins(savedUser);
+  // Line 32
+  const permissions = createDefaultPermissions(savedUser.id);
+  assignRoles(savedUser.id, ['user']);
+  // Line 35
+  const session = createSession(savedUser.id);
+  const token = generateToken(savedUser.id);
+  // Line 38
+  cacheUser(savedUser);
+  indexUserForSearch(savedUser);
+  // Line 41
+  const welcome = generateWelcomeMessage(savedUser.name);
+  const dashboard = buildUserDashboard(savedUser);
+  // Line 44
+  trackConversion('signup');
+  updateMetrics('total_users');
+  // Line 47
+  sendToQueue('user_created', savedUser);
+  triggerWebhooks('user.created', savedUser);
+  // Line 50
+  return { user: savedUser, session, token, dashboard };
+}
+`,
+        DEEP_NESTING_5_LEVELS: () => `
+function validateAndProcess(data) {
+  if (data) {
+    if (data.user) {
+      if (data.user.permissions) {
+        if (data.user.permissions.admin) {
+          if (data.user.permissions.admin.canDelete) {
+            return performDeletion(data);
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+`,
+        MISSING_ERROR_HANDLING_ASYNC: () => `
+async function fetchUserData(userId) {
+  const response = await fetch(\`/api/users/\${userId}\`);
+  const data = await response.json(); // No error handling
+  return data;
+}
+`,
+        MISSING_ERROR_HANDLING_PROMISE: () => `
+function loadConfig(path) {
+  return fs.readFile(path, 'utf8')
+    .then(content => JSON.parse(content)); // No .catch()
+}
+`,
+        MISSING_INPUT_VALIDATION_API: () => `
+app.post('/api/users', (req, res) => {
+  const user = createUser(req.body); // No validation of req.body
+  res.json(user);
+});
+`,
+        MISSING_INPUT_VALIDATION_FUNCTION: () => `
+function divide(a, b) {
+  return a / b; // No check for b === 0
+}
+`,
+        // Safe code quality patterns
+        SAFE_NAMED_CONSTANT: () => `
+const MILLISECONDS_PER_DAY = 86400000;
+function scheduleTask(callback) {
+  setTimeout(callback, MILLISECONDS_PER_DAY);
+}
+`,
+        SAFE_SMALL_FUNCTION: () => `
+function calculateTax(quantity) {
+  const TAX_RATE = 0.08;
+  return quantity * TAX_RATE;
+}
+
+function calculateShipping(quantity) {
+  const BULK_THRESHOLD = 10;
+  const STANDARD_SHIPPING = 5.99;
+  const BULK_SHIPPING = 15.99;
+  return quantity > BULK_THRESHOLD ? BULK_SHIPPING : STANDARD_SHIPPING;
+}
+`,
+        SAFE_FLAT_LOGIC: () => `
+function validateAndProcess(data) {
+  if (!data) return null;
+  if (!data.user) return null;
+  if (!data.user.permissions) return null;
+  if (!data.user.permissions.admin) return null;
+  if (!data.user.permissions.admin.canDelete) return null;
+
+  return performDeletion(data);
+}
+`,
+        SAFE_ERROR_HANDLING_ASYNC: () => `
+async function fetchUserData(userId) {
+  try {
+    const response = await fetch(\`/api/users/\${userId}\`);
+    if (!response.ok) {
+      throw new Error(\`HTTP error \${response.status}\`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
+    throw error;
+  }
+}
+`,
+        SAFE_INPUT_VALIDATION: () => `
+app.post('/api/users', (req, res) => {
+  const { name, email, age } = req.body;
+
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Valid name required' });
+  }
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email required' });
+  }
+  if (age === undefined || age < 18) {
+    return res.status(400).json({ error: 'Must be 18 or older' });
+  }
+
+  const user = createUser({ name, email, age });
+  res.json(user);
 });
 `,
     },

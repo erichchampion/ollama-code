@@ -66,6 +66,11 @@ exports.testDebugModeDetection = testDebugModeDetection;
 exports.testCorsMisconfigurationDetection = testCorsMisconfigurationDetection;
 exports.testDefaultCredentialsDetection = testDefaultCredentialsDetection;
 exports.testInsecureHttpDetection = testInsecureHttpDetection;
+exports.testMagicNumberDetection = testMagicNumberDetection;
+exports.testLargeFunctionDetection = testLargeFunctionDetection;
+exports.testDeepNestingDetection = testDeepNestingDetection;
+exports.testMissingErrorHandlingDetection = testMissingErrorHandlingDetection;
+exports.testMissingInputValidationDetection = testMissingInputValidationDetection;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const assert = __importStar(require("assert"));
@@ -405,6 +410,51 @@ async function testInsecureHttpDetection(workspacePath, filename, vulnerableCode
     return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CONFIGURATION, securityTestConstants_1.CWE_IDS.INSECURE_TRANSPORT, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
         shouldContainRecommendation: 'HTTPS',
         owaspCategory: 'A05:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for magic number detection
+ */
+async function testMagicNumberDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CODE_QUALITY, securityTestConstants_1.CWE_IDS.MAGIC_NUMBER, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM, {
+        shouldContainRecommendation: 'constant',
+        ...options,
+    });
+}
+/**
+ * Test helper for large function detection
+ */
+async function testLargeFunctionDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CODE_QUALITY, securityTestConstants_1.CWE_IDS.LARGE_FUNCTION, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM, {
+        shouldContainRecommendation: 'function',
+        ...options,
+    });
+}
+/**
+ * Test helper for deep nesting detection
+ */
+async function testDeepNestingDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CODE_QUALITY, securityTestConstants_1.CWE_IDS.DEEP_NESTING, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM, {
+        shouldContainRecommendation: 'nesting',
+        ...options,
+    });
+}
+/**
+ * Test helper for missing error handling detection
+ */
+async function testMissingErrorHandlingDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CODE_QUALITY, securityTestConstants_1.CWE_IDS.MISSING_ERROR_HANDLING, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'error',
+        ...options,
+    });
+}
+/**
+ * Test helper for missing input validation detection
+ */
+async function testMissingInputValidationDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CODE_QUALITY, securityTestConstants_1.CWE_IDS.MISSING_INPUT_VALIDATION, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'validat',
         ...options,
     });
 }

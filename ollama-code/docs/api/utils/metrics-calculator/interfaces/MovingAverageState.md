@@ -6,7 +6,7 @@
 
 # Interface: MovingAverageState
 
-Defined in: [utils/metrics-calculator.ts:13](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/metrics-calculator.ts#L13)
+Defined in: [utils/metrics-calculator.ts:13](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/metrics-calculator.ts#L13)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [utils/metrics-calculator.ts:13](https://github.com/erichchampion/ol
 
 > **count**: `number`
 
-Defined in: [utils/metrics-calculator.ts:14](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/metrics-calculator.ts#L14)
+Defined in: [utils/metrics-calculator.ts:14](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/metrics-calculator.ts#L14)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [utils/metrics-calculator.ts:14](https://github.com/erichchampion/ol
 
 > **average**: `number`
 
-Defined in: [utils/metrics-calculator.ts:15](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/metrics-calculator.ts#L15)
+Defined in: [utils/metrics-calculator.ts:15](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/metrics-calculator.ts#L15)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [utils/metrics-calculator.ts:15](https://github.com/erichchampion/ol
 
 > `optional` **alpha**: `number`
 
-Defined in: [utils/metrics-calculator.ts:16](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/utils/metrics-calculator.ts#L16)
+Defined in: [utils/metrics-calculator.ts:16](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/utils/metrics-calculator.ts#L16)

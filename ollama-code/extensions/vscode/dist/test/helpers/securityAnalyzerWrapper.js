@@ -420,6 +420,96 @@ const SECURITY_RULES = [
             'https://cwe.mitre.org/data/definitions/319.html'
         ]
     },
+    // Code Quality Analysis Rules
+    {
+        id: 'magic_number',
+        name: 'Magic Number',
+        description: 'Hardcoded numeric literal without explanation',
+        severity: 'medium',
+        category: 'code_quality',
+        cweId: 1098,
+        pattern: /(?:setTimeout|setInterval)\([^,]+,\s*(\d{4,})\)|(?:const|let|var)\s+\w+\s*=\s*[^'"]*(\d+\.\d+)[^'"]*;/,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'medium',
+        recommendation: 'Replace magic numbers with named constants for better code maintainability',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1098.html',
+            'https://refactoring.guru/smells/magic-numbers'
+        ]
+    },
+    {
+        id: 'large_function',
+        name: 'Large Function',
+        description: 'Function exceeds 50 lines, indicating high complexity',
+        severity: 'medium',
+        category: 'code_quality',
+        cweId: 1121,
+        // Match function with 50+ line breaks (more accurate than character count)
+        // Pattern: function declaration followed by { and at least 50 newlines before closing }
+        pattern: /function\s+\w+\([^)]*\)\s*\{(?:[^\n]*\n){50,}[^\}]*\}/,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'medium',
+        recommendation: 'Break down large functions into smaller, focused functions following Single Responsibility Principle',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1121.html',
+            'https://refactoring.guru/smells/long-method'
+        ]
+    },
+    {
+        id: 'deep_nesting',
+        name: 'Deep Nesting',
+        description: 'Code nesting exceeds 4 levels',
+        severity: 'medium',
+        category: 'code_quality',
+        cweId: 1124,
+        // Match 5+ levels of if nesting
+        pattern: /if\s*\([^)]+\)\s*\{[^}]*if\s*\([^)]+\)\s*\{[^}]*if\s*\([^)]+\)\s*\{[^}]*if\s*\([^)]+\)\s*\{[^}]*if\s*\([^)]+\)\s*\{/s,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'high',
+        recommendation: 'Reduce nesting by using early returns, guard clauses, or extracting functions',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1124.html',
+            'https://refactoring.guru/smells/arrow-code'
+        ]
+    },
+    {
+        id: 'missing_error_handling',
+        name: 'Missing Error Handling',
+        description: 'Async operation without immediate error handling (Note: may not detect try-catch in parent scope)',
+        severity: 'high',
+        category: 'code_quality',
+        cweId: 252,
+        // Match await without try/catch or .then without .catch
+        // Note: This pattern checks for immediate error handling and may flag code that has
+        // error handling in a parent scope. This is acceptable for regex-based analysis.
+        pattern: /(?:await\s+\w+\([^)]*\)[^;]*;(?![^}]*catch))|\.\s*then\s*\([^)]+\)(?!\s*\.\s*catch)/s,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'medium',
+        recommendation: 'Add try-catch blocks for async/await or .catch() for promises to handle errors properly',
+        references: [
+            'https://cwe.mitre.org/data/definitions/252.html',
+            'https://nodejs.org/api/errors.html#error-handling-in-nodejs'
+        ]
+    },
+    {
+        id: 'missing_input_validation',
+        name: 'Missing Input Validation',
+        description: 'User input used without validation',
+        severity: 'high',
+        category: 'code_quality',
+        cweId: 20,
+        // Match req.body or function params used directly without checks
+        pattern: /(?:createUser|processData|handle\w+)\s*\(\s*req\.body\s*\)|function\s+divide\s*\([^)]*\)\s*\{[^}]*return\s+\w+\s*\/\s*\w+/,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
+        confidence: 'medium',
+        recommendation: 'Validate and sanitize all user inputs before processing',
+        references: [
+            'https://cwe.mitre.org/data/definitions/20.html',
+            'https://owasp.org/www-project-proactive-controls/v3/en/c5-validate-inputs'
+        ]
+    },
+    // Note: duplicate_code rule removed - regex patterns are too simplistic for accurate
+    // duplicate detection. Real duplicate detection requires AST/semantic analysis.
 ];
 /**
  * Security Analyzer

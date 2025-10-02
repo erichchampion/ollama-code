@@ -764,3 +764,118 @@ export async function testInsecureHttpDetection(
     }
   );
 }
+
+/**
+ * Test helper for magic number detection
+ */
+export async function testMagicNumberDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CODE_QUALITY,
+    CWE_IDS.MAGIC_NUMBER,
+    SEVERITY_LEVELS.MEDIUM,
+    {
+      shouldContainRecommendation: 'constant',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for large function detection
+ */
+export async function testLargeFunctionDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CODE_QUALITY,
+    CWE_IDS.LARGE_FUNCTION,
+    SEVERITY_LEVELS.MEDIUM,
+    {
+      shouldContainRecommendation: 'function',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for deep nesting detection
+ */
+export async function testDeepNestingDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CODE_QUALITY,
+    CWE_IDS.DEEP_NESTING,
+    SEVERITY_LEVELS.MEDIUM,
+    {
+      shouldContainRecommendation: 'nesting',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for missing error handling detection
+ */
+export async function testMissingErrorHandlingDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CODE_QUALITY,
+    CWE_IDS.MISSING_ERROR_HANDLING,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'error',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for missing input validation detection
+ */
+export async function testMissingInputValidationDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CODE_QUALITY,
+    CWE_IDS.MISSING_INPUT_VALIDATION,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'validat',
+      ...options,
+    }
+  );
+}
