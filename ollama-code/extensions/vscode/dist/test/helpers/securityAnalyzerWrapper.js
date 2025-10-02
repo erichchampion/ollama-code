@@ -175,6 +175,78 @@ const SECURITY_RULES = [
             'https://cwe.mitre.org/data/definitions/79.html'
         ]
     },
+    // Hardcoded Credentials
+    {
+        id: 'hardcoded_credentials',
+        name: 'Hardcoded Credentials Detected',
+        description: 'Credentials hardcoded in source code',
+        severity: 'critical',
+        category: 'authentication',
+        owaspCategory: 'A07:2021 – Identification and Authentication Failures',
+        cweId: 798,
+        pattern: /(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key)\s*[:=]\s*['"`](?!.*\$\{)[\w\-@#$%^&*()+=!]{8,}['"`]/i,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'high',
+        recommendation: 'Store credentials in environment variables or secure secret management systems',
+        references: [
+            'https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/',
+            'https://cwe.mitre.org/data/definitions/798.html'
+        ]
+    },
+    // Weak Password Validation
+    {
+        id: 'weak_password_policy',
+        name: 'Weak Password Policy',
+        description: 'Password validation allows weak passwords',
+        severity: 'high',
+        category: 'authentication',
+        owaspCategory: 'A07:2021 – Identification and Authentication Failures',
+        cweId: 521,
+        pattern: /password.*length.*[<<=].*[1-7][^0-9]|minLength.*:.*[1-7][^0-9]/i,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
+        confidence: 'medium',
+        recommendation: 'Enforce strong password policies: minimum 8 characters, complexity requirements',
+        references: [
+            'https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/',
+            'https://cwe.mitre.org/data/definitions/521.html'
+        ]
+    },
+    // Missing Authentication Check
+    {
+        id: 'missing_auth_check',
+        name: 'Missing Authentication Check',
+        description: 'Route or endpoint missing authentication middleware',
+        severity: 'critical',
+        category: 'authentication',
+        owaspCategory: 'A01:2021 – Broken Access Control',
+        cweId: 287,
+        pattern: /(?:app|router)\.(get|post|put|delete|patch)\s*\(['"`]\/(?:admin|api|private|protected|dashboard)[^'"`]*['"`]\s*,\s*(?:async\s*)?\((?!.*(?:auth|isAuthenticated|requireAuth|checkAuth|verifyToken))/i,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
+        confidence: 'medium',
+        recommendation: 'Add authentication middleware to protected routes',
+        references: [
+            'https://owasp.org/Top10/A01_2021-Broken_Access_Control/',
+            'https://cwe.mitre.org/data/definitions/287.html'
+        ]
+    },
+    // Session Fixation
+    {
+        id: 'session_fixation',
+        name: 'Session Fixation Vulnerability',
+        description: 'Session ID not regenerated after authentication',
+        severity: 'high',
+        category: 'authentication',
+        owaspCategory: 'A07:2021 – Identification and Authentication Failures',
+        cweId: 384,
+        pattern: /(?:login|authenticate|signin).*(?:req\.session\.user|session\.userId).*(?!.*regenerate)/is,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
+        confidence: 'medium',
+        recommendation: 'Regenerate session ID after successful authentication using session.regenerate()',
+        references: [
+            'https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/',
+            'https://cwe.mitre.org/data/definitions/384.html'
+        ]
+    },
 ];
 /**
  * Security Analyzer

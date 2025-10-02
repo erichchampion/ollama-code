@@ -312,6 +312,102 @@ export async function testHardcodedSecretsDetection(
 }
 
 /**
+ * Test helper for hardcoded credentials detection
+ */
+export async function testHardcodedCredentialsDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.AUTHENTICATION,
+    CWE_IDS.HARDCODED_CREDENTIALS,
+    SEVERITY_LEVELS.CRITICAL,
+    {
+      shouldContainRecommendation: 'environment',
+      owaspCategory: 'A07:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for weak password policy detection
+ */
+export async function testWeakPasswordPolicyDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.AUTHENTICATION,
+    CWE_IDS.WEAK_PASSWORD,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'password',
+      owaspCategory: 'A07:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for missing authentication check detection
+ */
+export async function testMissingAuthCheckDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.AUTHENTICATION,
+    CWE_IDS.AUTH_BYPASS,
+    SEVERITY_LEVELS.CRITICAL,
+    {
+      shouldContainRecommendation: 'authentication',
+      owaspCategory: 'A01:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for session fixation detection
+ */
+export async function testSessionFixationDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.AUTHENTICATION,
+    CWE_IDS.SESSION_FIXATION,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'regenerate',
+      owaspCategory: 'A07:2021',
+      ...options,
+    }
+  );
+}
+
+/**
  * Test helper to verify NO vulnerabilities are detected (negative test)
  */
 export async function testNoVulnerabilitiesDetected(

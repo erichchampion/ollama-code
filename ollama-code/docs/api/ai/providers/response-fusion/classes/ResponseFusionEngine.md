@@ -6,7 +6,7 @@
 
 # Class: ResponseFusionEngine
 
-Defined in: [ai/providers/response-fusion.ts:97](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L97)
+Defined in: [ai/providers/response-fusion.ts:97](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L97)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [ai/providers/response-fusion.ts:97](https://github.com/erichchampio
 
 > **new ResponseFusionEngine**(): `ResponseFusionEngine`
 
-Defined in: [ai/providers/response-fusion.ts:105](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L105)
+Defined in: [ai/providers/response-fusion.ts:105](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L105)
 
 #### Returns
 
@@ -34,7 +34,7 @@ Defined in: [ai/providers/response-fusion.ts:105](https://github.com/erichchampi
 
 > **registerProvider**(`provider`): `void`
 
-Defined in: [ai/providers/response-fusion.ts:115](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L115)
+Defined in: [ai/providers/response-fusion.ts:115](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L115)
 
 Register an AI provider for fusion
 
@@ -54,7 +54,7 @@ Register an AI provider for fusion
 
 > **unregisterProvider**(`providerId`): `void`
 
-Defined in: [ai/providers/response-fusion.ts:123](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L123)
+Defined in: [ai/providers/response-fusion.ts:123](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L123)
 
 Unregister a provider
 
@@ -74,7 +74,7 @@ Unregister a provider
 
 > **fusedComplete**(`prompt`, `options`, `fusionOptions`): `Promise`\<[`FusionResult`](../interfaces/FusionResult.md)\>
 
-Defined in: [ai/providers/response-fusion.ts:131](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L131)
+Defined in: [ai/providers/response-fusion.ts:131](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L131)
 
 Execute fusion request with multiple providers
 
@@ -120,7 +120,7 @@ Execute fusion request with multiple providers
 
 > **getStrategies**(): [`FusionStrategy`](../interfaces/FusionStrategy.md)[]
 
-Defined in: [ai/providers/response-fusion.ts:239](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L239)
+Defined in: [ai/providers/response-fusion.ts:239](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L239)
 
 Get available fusion strategies
 
@@ -134,7 +134,7 @@ Get available fusion strategies
 
 > **getProviders**(): `string`[]
 
-Defined in: [ai/providers/response-fusion.ts:246](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L246)
+Defined in: [ai/providers/response-fusion.ts:246](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L246)
 
 Get registered providers
 
@@ -148,7 +148,7 @@ Get registered providers
 
 > **getActiveRequests**(): [`FusionRequest`](../interfaces/FusionRequest.md)[]
 
-Defined in: [ai/providers/response-fusion.ts:253](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L253)
+Defined in: [ai/providers/response-fusion.ts:253](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L253)
 
 Get active requests
 
@@ -162,7 +162,7 @@ Get active requests
 
 > **cancelRequest**(`requestId`): `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:260](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L260)
+Defined in: [ai/providers/response-fusion.ts:260](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L260)
 
 Cancel an active request
 
@@ -182,7 +182,7 @@ Cancel an active request
 
 > **clearCache**(): `void`
 
-Defined in: [ai/providers/response-fusion.ts:271](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/providers/response-fusion.ts#L271)
+Defined in: [ai/providers/response-fusion.ts:271](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/providers/response-fusion.ts#L271)
 
 Clear response cache
 

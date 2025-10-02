@@ -8,7 +8,7 @@
 
 > **appendTextFile**(`filePath`, `content`, `options`): `Promise`\<`void`\>
 
-Defined in: [fs/operations.ts:178](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/fs/operations.ts#L178)
+Defined in: [fs/operations.ts:178](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/fs/operations.ts#L178)
 
 Append text to a file
 

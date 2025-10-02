@@ -46,6 +46,10 @@ exports.testXPathInjectionDetection = testXPathInjectionDetection;
 exports.testTemplateInjectionDetection = testTemplateInjectionDetection;
 exports.testXSSDetection = testXSSDetection;
 exports.testHardcodedSecretsDetection = testHardcodedSecretsDetection;
+exports.testHardcodedCredentialsDetection = testHardcodedCredentialsDetection;
+exports.testWeakPasswordPolicyDetection = testWeakPasswordPolicyDetection;
+exports.testMissingAuthCheckDetection = testMissingAuthCheckDetection;
+exports.testSessionFixationDetection = testSessionFixationDetection;
 exports.testNoVulnerabilitiesDetected = testNoVulnerabilitiesDetected;
 exports.assertSecurityMetadata = assertSecurityMetadata;
 exports.assertVulnerabilityLine = assertVulnerabilityLine;
@@ -187,6 +191,46 @@ async function testHardcodedSecretsDetection(workspacePath, filename, vulnerable
     return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.SECRETS, securityTestConstants_1.CWE_IDS.HARDCODED_SECRETS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
         shouldContainRecommendation: 'environment',
         owaspCategory: 'A04:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for hardcoded credentials detection
+ */
+async function testHardcodedCredentialsDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.AUTHENTICATION, securityTestConstants_1.CWE_IDS.HARDCODED_CREDENTIALS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
+        shouldContainRecommendation: 'environment',
+        owaspCategory: 'A07:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for weak password policy detection
+ */
+async function testWeakPasswordPolicyDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.AUTHENTICATION, securityTestConstants_1.CWE_IDS.WEAK_PASSWORD, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'password',
+        owaspCategory: 'A07:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for missing authentication check detection
+ */
+async function testMissingAuthCheckDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.AUTHENTICATION, securityTestConstants_1.CWE_IDS.AUTH_BYPASS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
+        shouldContainRecommendation: 'authentication',
+        owaspCategory: 'A01:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for session fixation detection
+ */
+async function testSessionFixationDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.AUTHENTICATION, securityTestConstants_1.CWE_IDS.SESSION_FIXATION, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'regenerate',
+        owaspCategory: 'A07:2021',
         ...options,
     });
 }

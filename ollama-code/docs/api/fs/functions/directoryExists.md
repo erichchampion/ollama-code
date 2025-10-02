@@ -8,7 +8,7 @@
 
 > **directoryExists**(`dirPath`): `Promise`\<`boolean`\>
 
-Defined in: [fs/operations.ts:34](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/fs/operations.ts#L34)
+Defined in: [fs/operations.ts:34](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/fs/operations.ts#L34)
 
 Check if a directory exists
 

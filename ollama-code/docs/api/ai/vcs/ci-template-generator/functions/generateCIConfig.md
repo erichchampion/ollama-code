@@ -8,7 +8,7 @@
 
 > **generateCIConfig**(`platform`, `options?`): `string`
 
-Defined in: [ai/vcs/ci-template-generator.ts:516](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/ai/vcs/ci-template-generator.ts#L516)
+Defined in: [ai/vcs/ci-template-generator.ts:516](https://github.com/erichchampion/ollama-code/blob/5fa5a402f1434a41b466cfc71ab6d619028efab2/ollama-code/src/ai/vcs/ci-template-generator.ts#L516)
 
 Generate CI configuration for a specific platform
 
