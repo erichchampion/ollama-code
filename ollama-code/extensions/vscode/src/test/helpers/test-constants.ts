@@ -779,3 +779,159 @@ export const RISK_MITIGATION_STRATEGIES = {
     'Maintain backward compatibility',
   ],
 } as const;
+
+/**
+ * Debugging & Issue Resolution Constants
+ * Configuration values for autonomous debugging workflow
+ */
+export const DEBUGGING_CONSTANTS = {
+  DEFAULT_MAX_SOLUTIONS: 3,
+  BASE_CONFIDENCE: 50,
+  MAX_CONFIDENCE: 95,
+  CONFIDENCE_BOOST_STACK: 15,
+  CONFIDENCE_BOOST_CONTEXT: 10,
+  CONFIDENCE_BOOST_PATTERN: 20,
+  MIN_CONTEXT_LENGTH: 50,
+  DEEP_STACK_THRESHOLD: 10,
+  MAX_RELATED_LOCATIONS: 5,
+  BASE_FIX_TIME: 2.0, // hours
+  COMPLEXITY_MULTIPLIER: 1.5,
+  EFFICIENCY_MULTIPLIER: 0.8,
+  COMPLEX_LOCATION_THRESHOLD: 3,
+  HIGH_RISK_LOCATION_THRESHOLD: 5,
+  MEDIUM_RISK_FACTOR_THRESHOLD: 2,
+  LOW_CONFIDENCE_THRESHOLD: 60,
+  HIGH_EFFECTIVENESS_THRESHOLD: 80,
+} as const;
+
+/**
+ * Error Pattern Database
+ * Known error patterns and their root causes
+ */
+export const ERROR_PATTERNS = {
+  NULL_POINTER: [
+    { keyword: 'cannot read property', cause: 'Attempted to access property on null or undefined value' },
+    { keyword: 'undefined is not an object', cause: 'Variable not initialized before use' },
+    { keyword: 'null reference', cause: 'Null pointer dereference' },
+  ],
+  TYPE_ERROR: [
+    { keyword: 'not a function', cause: 'Variable is not a function but was called as one' },
+    { keyword: 'not defined', cause: 'Variable or function not declared in scope' },
+    { keyword: 'cannot convert', cause: 'Type conversion failed' },
+  ],
+  ASYNC_ERROR: [
+    { keyword: 'unhandled promise rejection', cause: 'Promise rejection not caught' },
+    { keyword: 'await outside async', cause: 'await used outside async function' },
+    { keyword: 'race condition', cause: 'Concurrent access to shared resource' },
+  ],
+  MEMORY_LEAK: [
+    { keyword: 'out of memory', cause: 'Memory allocation exceeded available heap' },
+    { keyword: 'heap overflow', cause: 'Memory leak causing heap exhaustion' },
+    { keyword: 'garbage collection', cause: 'Excessive memory retention preventing GC' },
+  ],
+  LOGIC_ERROR: [
+    { keyword: 'unexpected result', cause: 'Logic error in algorithm implementation' },
+    { keyword: 'infinite loop', cause: 'Loop termination condition never met' },
+  ],
+  CONFIGURATION_ERROR: [
+    { keyword: 'environment variable', cause: 'Missing or invalid environment configuration' },
+    { keyword: 'config not found', cause: 'Configuration file missing or invalid' },
+  ],
+} as const;
+
+/**
+ * Solution Strategies by Error Category
+ * Recommended approaches for different error types
+ */
+export const SOLUTION_STRATEGIES = {
+  null_pointer: {
+    description: 'Add null/undefined checks before property access',
+    safetyRating: 85,
+    effectivenessRating: 90,
+    validationCriteria: [
+      'Verify all null checks are in place',
+      'Test with null and undefined inputs',
+      'Check for related null pointer issues',
+    ],
+    suggestedTests: [
+      'Test with null input',
+      'Test with undefined input',
+      'Test with valid input',
+    ],
+  },
+  type_error: {
+    description: 'Add type checking and validation',
+    safetyRating: 80,
+    effectivenessRating: 85,
+    validationCriteria: [
+      'Verify type guards are correct',
+      'Test with various input types',
+      'Check TypeScript type definitions',
+    ],
+    suggestedTests: [
+      'Test with correct type',
+      'Test with incorrect type',
+      'Test with edge case types',
+    ],
+  },
+  async_error: {
+    description: 'Add proper async/await handling and error catching',
+    safetyRating: 75,
+    effectivenessRating: 88,
+    validationCriteria: [
+      'Verify all promises are awaited or handled',
+      'Test error propagation',
+      'Check for race conditions',
+    ],
+    suggestedTests: [
+      'Test successful async operation',
+      'Test failed async operation',
+      'Test concurrent operations',
+    ],
+  },
+  memory_leak: {
+    description: 'Fix memory leaks by removing dangling references',
+    safetyRating: 70,
+    effectivenessRating: 80,
+    validationCriteria: [
+      'Monitor memory usage over time',
+      'Verify cleanup functions are called',
+      'Check for circular references',
+    ],
+    suggestedTests: [
+      'Memory profiling test',
+      'Stress test with high load',
+      'Cleanup verification test',
+    ],
+  },
+  logic_error: {
+    description: 'Correct algorithm logic and conditions',
+    safetyRating: 90,
+    effectivenessRating: 85,
+    validationCriteria: [
+      'Verify algorithm correctness',
+      'Test with boundary conditions',
+      'Validate expected outputs',
+    ],
+    suggestedTests: [
+      'Test with typical inputs',
+      'Test with edge cases',
+      'Test with invalid inputs',
+    ],
+  },
+  configuration_error: {
+    description: 'Fix configuration settings and environment variables',
+    safetyRating: 95,
+    effectivenessRating: 92,
+    validationCriteria: [
+      'Verify configuration is loaded',
+      'Test with different environments',
+      'Validate configuration schema',
+    ],
+    suggestedTests: [
+      'Test with valid configuration',
+      'Test with missing configuration',
+      'Test with invalid configuration',
+    ],
+  },
+} as const;
