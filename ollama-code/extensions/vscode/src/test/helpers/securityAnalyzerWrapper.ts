@@ -189,16 +189,17 @@ const SECURITY_RULES: SecurityRule[] = [
     ]
   },
 
-  // Hardcoded Credentials
+  // Hardcoded Credentials - Handles passwords and short auth tokens (< 20 chars)
+  // Note: API keys (20+ chars) are handled by 'hardcoded_secrets' rule
   {
     id: 'hardcoded_credentials',
     name: 'Hardcoded Credentials Detected',
-    description: 'Credentials hardcoded in source code',
+    description: 'Passwords and credentials hardcoded in source code',
     severity: 'critical',
     category: 'authentication',
     owaspCategory: 'A07:2021 – Identification and Authentication Failures',
     cweId: 798,
-    pattern: /(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key)\s*[:=]\s*['"`](?!.*\$\{)[\w\-@#$%^&*()+=!]{6,}['"`]/i,
+    pattern: /(?:password|passwd|pwd|secret|auth[_-]?token)\s*[:=]\s*['"`](?!.*\$\{)[\w\-@#$%^&*()+=!]{6,}['"`]/i,
     filePatterns: FILE_PATTERNS.ALL_CODE as unknown as string[],
     confidence: 'high',
     recommendation: 'Store credentials in environment variables or secure secret management systems',
@@ -300,6 +301,83 @@ const SECURITY_RULES: SecurityRule[] = [
       // No regenerate call found = vulnerable
       return true;
     }
+  },
+
+  // Hardcoded Secrets (API Keys, Tokens) - Handles long API keys and tokens (20+ chars)
+  // Note: Short passwords (< 20 chars) are handled by 'hardcoded_credentials' rule
+  {
+    id: 'hardcoded_secrets',
+    name: 'Hardcoded Secrets/API Keys Detected',
+    description: 'API keys, tokens, or secrets hardcoded in source code',
+    severity: 'critical',
+    category: 'secrets',
+    owaspCategory: 'A02:2021 – Cryptographic Failures',
+    cweId: 798,
+    pattern: /(?:api[_-]?key|apikey|access[_-]?key|secret[_-]?key|private[_-]?key|aws[_-]?access|stripe|twilio|github[_-]?token|slack[_-]?token|oauth[_-]?token)\s*[:=]\s*['"`](?!.*\$\{)[A-Za-z0-9\-_]{20,}['"`]/i,
+    filePatterns: FILE_PATTERNS.ALL_CODE as unknown as string[],
+    confidence: 'high',
+    recommendation: 'Store API keys and secrets in environment variables or secure vault services (AWS Secrets Manager, HashiCorp Vault)',
+    references: [
+      'https://owasp.org/Top10/A02_2021-Cryptographic_Failures/',
+      'https://cwe.mitre.org/data/definitions/798.html'
+    ]
+  },
+
+  // Exposed Encryption Keys
+  {
+    id: 'exposed_encryption_keys',
+    name: 'Exposed Encryption Keys',
+    description: 'Encryption keys or cryptographic material exposed in code',
+    severity: 'critical',
+    category: 'secrets',
+    owaspCategory: 'A02:2021 – Cryptographic Failures',
+    cweId: 321,
+    pattern: /(?:encryption[_-]?key|crypto[_-]?key|aes[_-]?key|rsa[_-]?key|hmac[_-]?secret|jwt[_-]?secret|signing[_-]?key)\s*[:=]\s*['"`][A-Za-z0-9+/=]{16,}['"`]/i,
+    filePatterns: FILE_PATTERNS.ALL_CODE as unknown as string[],
+    confidence: 'high',
+    recommendation: 'Store encryption keys in secure key management systems (KMS), never in source code',
+    references: [
+      'https://owasp.org/Top10/A02_2021-Cryptographic_Failures/',
+      'https://cwe.mitre.org/data/definitions/321.html'
+    ]
+  },
+
+  // Sensitive Data in Logs
+  {
+    id: 'sensitive_data_in_logs',
+    name: 'Sensitive Data in Logs',
+    description: 'Logging statements that may expose sensitive data',
+    severity: 'high',
+    category: 'secrets',
+    owaspCategory: 'A09:2021 – Security Logging and Monitoring Failures',
+    cweId: 532,
+    pattern: /(?:console\.log|logger\.info|logger\.debug|log\.debug|print)\s*\([^)]*(?:password|token|secret|key|ssn|credit[_-]?card|auth)/i,
+    filePatterns: FILE_PATTERNS.ALL_CODE as unknown as string[],
+    confidence: 'medium',
+    recommendation: 'Sanitize sensitive data before logging. Use structured logging with allowlists for sensitive fields',
+    references: [
+      'https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/',
+      'https://cwe.mitre.org/data/definitions/532.html'
+    ]
+  },
+
+  // Unencrypted Sensitive Data Storage
+  {
+    id: 'unencrypted_sensitive_storage',
+    name: 'Unencrypted Sensitive Data Storage',
+    description: 'Sensitive data stored without encryption',
+    severity: 'high',
+    category: 'secrets',
+    owaspCategory: 'A02:2021 – Cryptographic Failures',
+    cweId: 311,
+    pattern: /(?:localStorage|sessionStorage|AsyncStorage|cookies?)\.setItem\s*\([^)]*(?:password|token|secret|ssn|credit[_-]?card|auth[_-]?token)/i,
+    filePatterns: FILE_PATTERNS.WEB_LANGUAGES as unknown as string[],
+    confidence: 'medium',
+    recommendation: 'Encrypt sensitive data before storage using AES-256 or similar. Consider using secure storage APIs',
+    references: [
+      'https://owasp.org/Top10/A02_2021-Cryptographic_Failures/',
+      'https://cwe.mitre.org/data/definitions/311.html'
+    ]
   },
 ];
 
