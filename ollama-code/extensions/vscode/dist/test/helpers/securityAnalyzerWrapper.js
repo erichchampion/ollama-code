@@ -184,7 +184,7 @@ const SECURITY_RULES = [
         category: 'authentication',
         owaspCategory: 'A07:2021 – Identification and Authentication Failures',
         cweId: 798,
-        pattern: /(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key)\s*[:=]\s*['"`](?!.*\$\{)[\w\-@#$%^&*()+=!]{8,}['"`]/i,
+        pattern: /(?:password|passwd|pwd|secret|api[_-]?key|apikey|access[_-]?token|auth[_-]?token|private[_-]?key)\s*[:=]\s*['"`](?!.*\$\{)[\w\-@#$%^&*()+=!]{6,}['"`]/i,
         filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
         confidence: 'high',
         recommendation: 'Store credentials in environment variables or secure secret management systems',
@@ -238,14 +238,41 @@ const SECURITY_RULES = [
         category: 'authentication',
         owaspCategory: 'A07:2021 – Identification and Authentication Failures',
         cweId: 384,
-        pattern: /(?:login|authenticate|signin).*(?:req\.session\.user|session\.userId).*(?!.*regenerate)/is,
+        pattern: /(?:login|authenticate|signin)[\s\S]*?(?:req\.)?session\.(?:userId|user)\s*=/i,
         filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
         confidence: 'medium',
         recommendation: 'Regenerate session ID after successful authentication using session.regenerate()',
         references: [
             'https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/',
             'https://cwe.mitre.org/data/definitions/384.html'
-        ]
+        ],
+        validator: (match, code, filePath) => {
+            if (!match.index)
+                return false;
+            // Extract the function/block containing the match
+            const beforeAssignment = code.substring(0, match.index);
+            // Find the start of the current function (last occurrence of function keyword or arrow)
+            const functionStart = Math.max(beforeAssignment.lastIndexOf('function'), beforeAssignment.lastIndexOf('=>'), beforeAssignment.lastIndexOf('{'));
+            // Get the code from function start to session assignment
+            const functionScope = code.substring(Math.max(0, functionStart), match.index + match[0].length);
+            // Check if session.regenerate() is called BEFORE the session assignment in the same scope
+            // Must be an actual function call, not in comments or strings
+            const regenerateCallPattern = /(?:req\.)?session\.regenerate\s*\(/;
+            const hasRegenerateCall = regenerateCallPattern.test(functionScope);
+            // If regenerate is found, ensure it's before the session assignment
+            if (hasRegenerateCall) {
+                const regenerateMatch = functionScope.match(regenerateCallPattern);
+                if (regenerateMatch && regenerateMatch.index !== undefined) {
+                    const sessionAssignmentInScope = functionScope.indexOf('session.userId') !== -1
+                        ? functionScope.indexOf('session.userId')
+                        : functionScope.indexOf('session.user');
+                    // Regenerate must come before assignment
+                    return regenerateMatch.index >= sessionAssignmentInScope;
+                }
+            }
+            // No regenerate call found = vulnerable
+            return true;
+        }
     },
 ];
 /**

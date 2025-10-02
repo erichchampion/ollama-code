@@ -43,6 +43,9 @@ exports.OWASP_CATEGORIES = {
     A08_SOFTWARE_DATA_INTEGRITY: 'A08:2021 – Software and Data Integrity Failures',
     A09_SECURITY_LOGGING: 'A09:2021 – Security Logging and Monitoring Failures',
     A10_SSRF: 'A10:2021 – Server-Side Request Forgery',
+    // Aliases for easier reference
+    A01_ACCESS_CONTROL: 'A01:2021',
+    A07_AUTHENTICATION: 'A07:2021',
 };
 /**
  * Security vulnerability categories
@@ -287,6 +290,113 @@ function UserContent({ userInput }) {
     <div>{${source}}</div> // Safe - React escapes by default
   );
 }
+`,
+    },
+    AUTHENTICATION: {
+        HARDCODED_PASSWORD: (password = 'SuperSecret123!') => `
+const DB_PASSWORD = "${password}";
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'admin',
+  password: DB_PASSWORD
+});
+`,
+        HARDCODED_API_KEY: (apiKey = 'sk_live_1234567890abcdefghijklmnop') => `
+const apiKey = "${apiKey}";
+fetch('https://api.example.com/data', {
+  headers: { 'Authorization': \`Bearer \${apiKey}\` }
+});
+`,
+        HARDCODED_NUMERIC: (password = '12345678') => `
+const apiKey = "${password}";
+const secret = "00000000";
+`,
+        WEAK_PASSWORD_LENGTH: (minLength = 6) => `
+function validatePassword(password) {
+  if (password.length < ${minLength}) {
+    return false;
+  }
+  return true;
+}
+`,
+        WEAK_MIN_LENGTH_CONFIG: (minLength = 4) => `
+const passwordSchema = {
+  minLength: ${minLength},
+  requireUppercase: false,
+  requireNumbers: false
+};
+`,
+        UNPROTECTED_ADMIN_ROUTE: () => `
+app.get('/admin/users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+`,
+        UNPROTECTED_API_ENDPOINT: () => `
+router.post('/api/sensitive-data', async (req, res) => {
+  const data = await SensitiveModel.create(req.body);
+  res.json(data);
+});
+`,
+        SESSION_FIXATION: () => `
+app.post('/login', async (req, res) => {
+  const user = await User.findOne({ username: req.body.username });
+  if (user && user.validPassword(req.body.password)) {
+    req.session.userId = user.id;
+    req.session.user = user;
+    res.redirect('/dashboard');
+  }
+});
+`,
+        SESSION_FIXATION_COMMENT: () => `
+app.post('/login', async (req, res) => {
+  const user = await User.findOne({ username: req.body.username });
+  if (user && user.validPassword(req.body.password)) {
+    req.session.userId = user.id;
+    // TODO: Add session.regenerate() for security
+    res.redirect('/dashboard');
+  }
+});
+`,
+        SAFE_ENV_VARS: () => `
+const password = process.env.DB_PASSWORD;
+const apiKey = process.env.API_KEY;
+const connection = mysql.createConnection({
+  host: 'localhost',
+  password: password
+});
+`,
+        SAFE_STRONG_PASSWORD: () => `
+function validatePassword(password) {
+  if (password.length < 8) {
+    return false;
+  }
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$/.test(password);
+}
+`,
+        SAFE_PROTECTED_ROUTE: () => `
+app.get('/admin/users', isAuthenticated, async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+app.post('/api/data', requireAuth, async (req, res) => {
+  const data = await Model.create(req.body);
+  res.json(data);
+});
+`,
+        SAFE_SESSION_REGENERATE: () => `
+app.post('/login', async (req, res) => {
+  const user = await User.findOne({ username: req.body.username });
+  if (user && user.validPassword(req.body.password)) {
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).send('Session error');
+      req.session.userId = user.id;
+      req.session.user = user;
+      res.redirect('/dashboard');
+    });
+  }
+});
 `,
     },
 };
