@@ -156,6 +156,24 @@ const SECURITY_RULES = [
             'https://cwe.mitre.org/data/definitions/94.html'
         ]
     },
+    // XSS (Cross-Site Scripting)
+    {
+        id: 'xss_vulnerability',
+        name: 'Potential Cross-Site Scripting (XSS)',
+        description: 'User input rendered without sanitization',
+        severity: 'high',
+        category: 'xss',
+        owaspCategory: 'A03:2021 – Injection',
+        cweId: 79,
+        pattern: /\.innerHTML\s*=.*(?:req\.|params\.|query\.|body\.|location\.|window\.location)|\.outerHTML\s*=.*(?:req\.|params\.|query\.|body\.|location\.)|document\.write\s*\(.*(?:req\.|params\.|query\.|body\.|location\.)|dangerouslySetInnerHTML.*(?:req\.|params\.|query\.|body\.)/i,
+        filePatterns: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'],
+        confidence: 'high',
+        recommendation: 'Sanitize user input before rendering, use textContent instead of innerHTML, or use a library like DOMPurify',
+        references: [
+            'https://owasp.org/Top10/A03_2021-Injection/',
+            'https://cwe.mitre.org/data/definitions/79.html'
+        ]
+    },
 ];
 /**
  * Security Analyzer
