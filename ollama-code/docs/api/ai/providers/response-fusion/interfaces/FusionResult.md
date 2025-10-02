@@ -6,7 +6,7 @@
 
 # Interface: FusionResult
 
-Defined in: [ai/providers/response-fusion.ts:46](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L46)
+Defined in: [ai/providers/response-fusion.ts:46](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L46)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/response-fusion.ts:46](https://github.com/erichchampio
 
 > **requestId**: `string`
 
-Defined in: [ai/providers/response-fusion.ts:47](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L47)
+Defined in: [ai/providers/response-fusion.ts:47](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L47)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/response-fusion.ts:47](https://github.com/erichchampio
 
 > **prompt**: `string` \| [`AIMessage`](../../interfaces/AIMessage.md)[]
 
-Defined in: [ai/providers/response-fusion.ts:48](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L48)
+Defined in: [ai/providers/response-fusion.ts:48](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L48)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/response-fusion.ts:48](https://github.com/erichchampio
 
 > **strategy**: [`FusionStrategy`](FusionStrategy.md)
 
-Defined in: [ai/providers/response-fusion.ts:49](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L49)
+Defined in: [ai/providers/response-fusion.ts:49](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L49)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/response-fusion.ts:49](https://github.com/erichchampio
 
 > **providerResponses**: [`ProviderResponse`](ProviderResponse.md)[]
 
-Defined in: [ai/providers/response-fusion.ts:50](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L50)
+Defined in: [ai/providers/response-fusion.ts:50](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L50)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/response-fusion.ts:50](https://github.com/erichchampio
 
 > **fusedResponse**: `object`
 
-Defined in: [ai/providers/response-fusion.ts:51](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L51)
+Defined in: [ai/providers/response-fusion.ts:51](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L51)
 
 #### content
 
@@ -78,7 +78,7 @@ Defined in: [ai/providers/response-fusion.ts:51](https://github.com/erichchampio
 
 > **metadata**: `object`
 
-Defined in: [ai/providers/response-fusion.ts:59](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L59)
+Defined in: [ai/providers/response-fusion.ts:59](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L59)
 
 #### totalProviders
 
@@ -110,7 +110,7 @@ Defined in: [ai/providers/response-fusion.ts:59](https://github.com/erichchampio
 
 > **analysis**: `object`
 
-Defined in: [ai/providers/response-fusion.ts:67](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L67)
+Defined in: [ai/providers/response-fusion.ts:67](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L67)
 
 #### agreementLevel
 
@@ -134,4 +134,4 @@ Defined in: [ai/providers/response-fusion.ts:67](https://github.com/erichchampio
 
 > **completedAt**: `Date`
 
-Defined in: [ai/providers/response-fusion.ts:73](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/response-fusion.ts#L73)
+Defined in: [ai/providers/response-fusion.ts:73](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/response-fusion.ts#L73)

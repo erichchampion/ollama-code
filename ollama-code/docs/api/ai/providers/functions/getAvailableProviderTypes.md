@@ -8,7 +8,7 @@
 
 > **getAvailableProviderTypes**(): `string`[]
 
-Defined in: [ai/providers/index.ts:69](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/index.ts#L69)
+Defined in: [ai/providers/index.ts:69](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/index.ts#L69)
 
 Get list of available provider types
 

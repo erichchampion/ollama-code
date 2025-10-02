@@ -6,7 +6,7 @@
 
 # Interface: RouterMetrics
 
-Defined in: [ai/providers/intelligent-router.ts:69](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L69)
+Defined in: [ai/providers/intelligent-router.ts:69](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L69)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/intelligent-router.ts:69](https://github.com/erichcham
 
 > **totalRequests**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:70](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L70)
+Defined in: [ai/providers/intelligent-router.ts:70](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L70)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/intelligent-router.ts:70](https://github.com/erichcham
 
 > **successfulRoutings**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:71](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L71)
+Defined in: [ai/providers/intelligent-router.ts:71](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L71)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/intelligent-router.ts:71](https://github.com/erichcham
 
 > **fallbacksUsed**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:72](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L72)
+Defined in: [ai/providers/intelligent-router.ts:72](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L72)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/intelligent-router.ts:72](https://github.com/erichcham
 
 > **providerSwitches**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:73](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L73)
+Defined in: [ai/providers/intelligent-router.ts:73](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L73)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/intelligent-router.ts:73](https://github.com/erichcham
 
 > **averageDecisionTime**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:74](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L74)
+Defined in: [ai/providers/intelligent-router.ts:74](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L74)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/providers/intelligent-router.ts:74](https://github.com/erichcham
 
 > **costSavings**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:75](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L75)
+Defined in: [ai/providers/intelligent-router.ts:75](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L75)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [ai/providers/intelligent-router.ts:75](https://github.com/erichcham
 
 > **performanceGains**: `number`
 
-Defined in: [ai/providers/intelligent-router.ts:76](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/ai/providers/intelligent-router.ts#L76)
+Defined in: [ai/providers/intelligent-router.ts:76](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/ai/providers/intelligent-router.ts#L76)
