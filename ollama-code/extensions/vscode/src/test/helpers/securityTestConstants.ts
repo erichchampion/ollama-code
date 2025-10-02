@@ -25,9 +25,13 @@ export const CWE_IDS = {
   WEAK_PASSWORD: 521,
   SESSION_FIXATION: 384,
   DEBUG_ENABLED: 489,
+  DEBUG_MODE_PRODUCTION: 489, // CWE-489 for debug mode in production (alias)
   EXPOSED_ENCRYPTION_KEYS: 321, // CWE-321 for exposed crypto keys
   SENSITIVE_DATA_IN_LOGS: 532, // CWE-532 for information exposure through logs
   UNENCRYPTED_STORAGE: 311, // CWE-311 for missing encryption of sensitive data
+  CORS_MISCONFIGURATION: 942, // CWE-942 for overly permissive CORS
+  DEFAULT_CREDENTIALS: 798, // CWE-798 for use of default credentials
+  INSECURE_TRANSPORT: 319, // CWE-319 for cleartext transmission of sensitive data
 } as const;
 
 /**
@@ -49,6 +53,7 @@ export const OWASP_CATEGORIES = {
   // Aliases for easier reference
   A01_ACCESS_CONTROL: 'A01:2021',
   A02_CRYPTOGRAPHIC: 'A02:2021',
+  A05_MISCONFIGURATION: 'A05:2021',
   A07_AUTHENTICATION: 'A07:2021',
   A09_LOGGING: 'A09:2021',
 } as const;
@@ -511,6 +516,107 @@ fetch('/api', { headers: { 'Authorization': token } });
 const encryptionKey = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=";
 const iv = crypto.randomBytes(16);
 const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'base64'), iv);
+`,
+  },
+
+  MISCONFIGURATION: {
+    // Debug mode in production
+    DEBUG_MODE_ENABLED: () => `
+const config = {
+  debug: true,
+  env: 'production',
+  logging: { level: 'debug' }
+};
+app.listen(3000);
+`,
+    DEBUG_MODE_NODE_ENV: () => `
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+}
+`,
+    // CORS misconfiguration
+    CORS_WILDCARD: () => `
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
+`,
+    CORS_NULL_ORIGIN: () => `
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
+`,
+    // Default credentials
+    DEFAULT_ADMIN_PASSWORD: () => `
+const users = [
+  { username: 'admin', password: 'admin' },
+  { username: 'root', password: 'password' }
+];
+`,
+    DEFAULT_DATABASE_CREDS: () => `
+const dbConfig = {
+  host: 'localhost',
+  user: 'admin',
+  password: 'admin123',
+  database: 'production'
+};
+`,
+    // Insecure HTTP
+    HTTP_URL: () => `
+const API_ENDPOINT = 'http://api.example.com/user/data';
+fetch(API_ENDPOINT, {
+  method: 'POST',
+  body: JSON.stringify({ password: userPassword })
+});
+`,
+    HTTP_COOKIE: () => `
+res.cookie('session', sessionId, {
+  secure: false,
+  httpOnly: true
+});
+`,
+    // Safe configurations
+    SAFE_DEBUG_DISABLED: () => `
+const config = {
+  debug: process.env.NODE_ENV !== 'production',
+  env: process.env.NODE_ENV || 'development',
+  logging: { level: process.env.LOG_LEVEL || 'info' }
+};
+`,
+    SAFE_CORS_WHITELIST: () => `
+const whitelist = ['https://example.com', 'https://app.example.com'];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+`,
+    SAFE_ENV_CREDENTIALS: () => `
+const users = [
+  { username: 'admin', password: process.env.ADMIN_PASSWORD },
+  { username: 'root', password: process.env.ROOT_PASSWORD }
+];
+`,
+    SAFE_HTTPS_URL: () => `
+const API_ENDPOINT = 'https://api.example.com/user/data';
+fetch(API_ENDPOINT, {
+  method: 'POST',
+  body: JSON.stringify({ password: userPassword })
+});
+`,
+    SAFE_SECURE_COOKIE: () => `
+res.cookie('session', sessionId, {
+  secure: true,
+  httpOnly: true,
+  sameSite: 'strict'
+});
 `,
   },
 } as const;

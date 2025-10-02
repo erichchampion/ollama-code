@@ -45,7 +45,6 @@ exports.testLDAPInjectionDetection = testLDAPInjectionDetection;
 exports.testXPathInjectionDetection = testXPathInjectionDetection;
 exports.testTemplateInjectionDetection = testTemplateInjectionDetection;
 exports.testXSSDetection = testXSSDetection;
-exports.testHardcodedSecretsDetection = testHardcodedSecretsDetection;
 exports.testHardcodedCredentialsDetection = testHardcodedCredentialsDetection;
 exports.testWeakPasswordPolicyDetection = testWeakPasswordPolicyDetection;
 exports.testMissingAuthCheckDetection = testMissingAuthCheckDetection;
@@ -58,7 +57,15 @@ exports.assertOWASPCategory = assertOWASPCategory;
 exports.assertAllVulnerabilitiesHaveOWASP = assertAllVulnerabilitiesHaveOWASP;
 exports.assertCWEId = assertCWEId;
 exports.assertAllVulnerabilitiesHaveCWE = assertAllVulnerabilitiesHaveCWE;
+exports.testHardcodedSecretsDetection = testHardcodedSecretsDetection;
+exports.testExposedEncryptionKeysDetection = testExposedEncryptionKeysDetection;
+exports.testSensitiveDataInLogsDetection = testSensitiveDataInLogsDetection;
+exports.testUnencryptedStorageDetection = testUnencryptedStorageDetection;
 exports.createSecurityTestFile = createSecurityTestFile;
+exports.testDebugModeDetection = testDebugModeDetection;
+exports.testCorsMisconfigurationDetection = testCorsMisconfigurationDetection;
+exports.testDefaultCredentialsDetection = testDefaultCredentialsDetection;
+exports.testInsecureHttpDetection = testInsecureHttpDetection;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const assert = __importStar(require("assert"));
@@ -181,16 +188,6 @@ async function testXSSDetection(workspacePath, filename, vulnerableCode, options
     return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.XSS, securityTestConstants_1.CWE_IDS.XSS, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
         shouldContainRecommendation: 'sanitize',
         owaspCategory: 'A03:2021',
-        ...options,
-    });
-}
-/**
- * Test helper for hardcoded secrets detection
- */
-async function testHardcodedSecretsDetection(workspacePath, filename, vulnerableCode, options = {}) {
-    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.SECRETS, securityTestConstants_1.CWE_IDS.HARDCODED_SECRETS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
-        shouldContainRecommendation: 'environment',
-        owaspCategory: 'A04:2021',
         ...options,
     });
 }
@@ -329,9 +326,86 @@ function assertAllVulnerabilitiesHaveCWE(vulnerabilities, expectedCweId) {
     }
 }
 /**
+ * Test helper for hardcoded secrets detection (API keys, tokens)
+ */
+async function testHardcodedSecretsDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.SECRETS, securityTestConstants_1.CWE_IDS.HARDCODED_SECRETS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
+        shouldContainRecommendation: 'environment',
+        owaspCategory: 'A02:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for exposed encryption keys detection
+ */
+async function testExposedEncryptionKeysDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.SECRETS, securityTestConstants_1.CWE_IDS.EXPOSED_ENCRYPTION_KEYS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
+        owaspCategory: 'A02:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for sensitive data in logs detection
+ */
+async function testSensitiveDataInLogsDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.SECRETS, securityTestConstants_1.CWE_IDS.SENSITIVE_DATA_IN_LOGS, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        owaspCategory: 'A09:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for unencrypted sensitive storage detection
+ */
+async function testUnencryptedStorageDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.SECRETS, securityTestConstants_1.CWE_IDS.UNENCRYPTED_STORAGE, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        owaspCategory: 'A02:2021',
+        ...options,
+    });
+}
+/**
  * Create security test filename with proper extension
  */
 function createSecurityTestFile(category, testName, language = 'js') {
     return `${category}-${testName}.${language}`;
+}
+/**
+ * Test helper for debug mode in production detection
+ */
+async function testDebugModeDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CONFIGURATION, securityTestConstants_1.CWE_IDS.DEBUG_MODE_PRODUCTION, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'debug',
+        owaspCategory: 'A05:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for CORS misconfiguration detection
+ */
+async function testCorsMisconfigurationDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CONFIGURATION, securityTestConstants_1.CWE_IDS.CORS_MISCONFIGURATION, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'CORS',
+        owaspCategory: 'A05:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for default credentials detection
+ */
+async function testDefaultCredentialsDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CONFIGURATION, securityTestConstants_1.CWE_IDS.DEFAULT_CREDENTIALS, securityTestConstants_1.SEVERITY_LEVELS.CRITICAL, {
+        shouldContainRecommendation: 'credentials',
+        owaspCategory: 'A05:2021',
+        ...options,
+    });
+}
+/**
+ * Test helper for insecure HTTP usage detection
+ */
+async function testInsecureHttpDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CONFIGURATION, securityTestConstants_1.CWE_IDS.INSECURE_TRANSPORT, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'HTTPS',
+        owaspCategory: 'A05:2021',
+        ...options,
+    });
 }
 //# sourceMappingURL=securityTestHelper.js.map

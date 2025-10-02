@@ -379,6 +379,82 @@ const SECURITY_RULES: SecurityRule[] = [
       'https://cwe.mitre.org/data/definitions/311.html'
     ]
   },
+
+  // Debug Mode in Production
+  {
+    id: 'debug_mode_production',
+    name: 'Debug Mode Enabled in Production',
+    description: 'Debug mode or verbose error handling enabled in production environment',
+    severity: 'high',
+    category: 'configuration',
+    owaspCategory: 'A05:2021 – Security Misconfiguration',
+    cweId: 489,
+    pattern: /(?:debug\s*:\s*true|dumpExceptions\s*:\s*true|showStack\s*:\s*true).*(?:production|prod)/i,
+    filePatterns: FILE_PATTERNS.ALL_CODE as unknown as string[],
+    confidence: 'high',
+    recommendation: 'Disable debug mode and verbose error handling in production. Use environment variables to control debug settings',
+    references: [
+      'https://owasp.org/Top10/A05_2021-Security_Misconfiguration/',
+      'https://cwe.mitre.org/data/definitions/489.html'
+    ]
+  },
+
+  // CORS Misconfiguration
+  {
+    id: 'cors_misconfiguration',
+    name: 'Overly Permissive CORS Configuration',
+    description: 'CORS configured to allow all origins with credentials enabled',
+    severity: 'high',
+    category: 'configuration',
+    owaspCategory: 'A05:2021 – Security Misconfiguration',
+    cweId: 942,
+    pattern: /(?:origin\s*:\s*['"`]\*['"`]|Access-Control-Allow-Origin['"`]\s*,\s*['"`]\*['"`]).*(?:credentials\s*:\s*true|Access-Control-Allow-Credentials['"`]\s*,\s*['"`]true)/is,
+    filePatterns: FILE_PATTERNS.WEB_LANGUAGES as unknown as string[],
+    confidence: 'high',
+    recommendation: 'Use a whitelist of allowed origins instead of wildcard (*). Never combine wildcard origin with credentials',
+    references: [
+      'https://owasp.org/Top10/A05_2021-Security_Misconfiguration/',
+      'https://cwe.mitre.org/data/definitions/942.html'
+    ]
+  },
+
+  // Default Credentials
+  {
+    id: 'default_credentials',
+    name: 'Use of Default Credentials',
+    description: 'Default or common credentials used for authentication',
+    severity: 'critical',
+    category: 'configuration',
+    owaspCategory: 'A05:2021 – Security Misconfiguration',
+    cweId: 798,
+    pattern: /(?:username|user)\s*:\s*['"`](?:admin|root|administrator)['"`]\s*,\s*password\s*:\s*['"`](?:admin|password|admin123|root|12345)/i,
+    filePatterns: FILE_PATTERNS.ALL_CODE as unknown as string[],
+    confidence: 'high',
+    recommendation: 'Never use default credentials. Generate strong, unique passwords and store them securely in environment variables',
+    references: [
+      'https://owasp.org/Top10/A05_2021-Security_Misconfiguration/',
+      'https://cwe.mitre.org/data/definitions/798.html'
+    ]
+  },
+
+  // Insecure HTTP Usage
+  {
+    id: 'insecure_http',
+    name: 'Insecure HTTP for Sensitive Data',
+    description: 'Sensitive data transmitted over unencrypted HTTP connection',
+    severity: 'high',
+    category: 'configuration',
+    owaspCategory: 'A05:2021 – Security Misconfiguration',
+    cweId: 319,
+    pattern: /(?:http:\/\/[^'"`\s]+).*(?:password|token|secret|auth|session|cookie)/i,
+    filePatterns: FILE_PATTERNS.WEB_LANGUAGES as unknown as string[],
+    confidence: 'medium',
+    recommendation: 'Always use HTTPS for transmitting sensitive data. Set secure flag on cookies',
+    references: [
+      'https://owasp.org/Top10/A05_2021-Security_Misconfiguration/',
+      'https://cwe.mitre.org/data/definitions/319.html'
+    ]
+  },
 ];
 
 /**

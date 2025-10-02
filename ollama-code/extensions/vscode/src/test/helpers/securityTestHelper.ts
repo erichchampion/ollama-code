@@ -288,30 +288,6 @@ export async function testXSSDetection(
 }
 
 /**
- * Test helper for hardcoded secrets detection
- */
-export async function testHardcodedSecretsDetection(
-  workspacePath: string,
-  filename: string,
-  vulnerableCode: string,
-  options: VulnerabilityDetectionOptions = {}
-): Promise<SecurityVulnerability[]> {
-  return testVulnerabilityDetection(
-    workspacePath,
-    filename,
-    vulnerableCode,
-    VULNERABILITY_CATEGORIES.SECRETS,
-    CWE_IDS.HARDCODED_SECRETS,
-    SEVERITY_LEVELS.CRITICAL,
-    {
-      shouldContainRecommendation: 'environment',
-      owaspCategory: 'A04:2021',
-      ...options,
-    }
-  );
-}
-
-/**
  * Test helper for hardcoded credentials detection
  */
 export async function testHardcodedCredentialsDetection(
@@ -590,6 +566,99 @@ export function assertAllVulnerabilitiesHaveCWE(
 }
 
 /**
+ * Test helper for hardcoded secrets detection (API keys, tokens)
+ */
+export async function testHardcodedSecretsDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.SECRETS,
+    CWE_IDS.HARDCODED_SECRETS,
+    SEVERITY_LEVELS.CRITICAL,
+    {
+      shouldContainRecommendation: 'environment',
+      owaspCategory: 'A02:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for exposed encryption keys detection
+ */
+export async function testExposedEncryptionKeysDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.SECRETS,
+    CWE_IDS.EXPOSED_ENCRYPTION_KEYS,
+    SEVERITY_LEVELS.CRITICAL,
+    {
+      owaspCategory: 'A02:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for sensitive data in logs detection
+ */
+export async function testSensitiveDataInLogsDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.SECRETS,
+    CWE_IDS.SENSITIVE_DATA_IN_LOGS,
+    SEVERITY_LEVELS.HIGH,
+    {
+      owaspCategory: 'A09:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for unencrypted sensitive storage detection
+ */
+export async function testUnencryptedStorageDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.SECRETS,
+    CWE_IDS.UNENCRYPTED_STORAGE,
+    SEVERITY_LEVELS.HIGH,
+    {
+      owaspCategory: 'A02:2021',
+      ...options,
+    }
+  );
+}
+
+/**
  * Create security test filename with proper extension
  */
 export function createSecurityTestFile(
@@ -598,4 +667,100 @@ export function createSecurityTestFile(
   language: 'js' | 'ts' | 'jsx' | 'tsx' | 'py' = 'js'
 ): string {
   return `${category}-${testName}.${language}`;
+}
+
+/**
+ * Test helper for debug mode in production detection
+ */
+export async function testDebugModeDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CONFIGURATION,
+    CWE_IDS.DEBUG_MODE_PRODUCTION,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'debug',
+      owaspCategory: 'A05:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for CORS misconfiguration detection
+ */
+export async function testCorsMisconfigurationDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CONFIGURATION,
+    CWE_IDS.CORS_MISCONFIGURATION,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'CORS',
+      owaspCategory: 'A05:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for default credentials detection
+ */
+export async function testDefaultCredentialsDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CONFIGURATION,
+    CWE_IDS.DEFAULT_CREDENTIALS,
+    SEVERITY_LEVELS.CRITICAL,
+    {
+      shouldContainRecommendation: 'credentials',
+      owaspCategory: 'A05:2021',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for insecure HTTP usage detection
+ */
+export async function testInsecureHttpDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.CONFIGURATION,
+    CWE_IDS.INSECURE_TRANSPORT,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'HTTPS',
+      owaspCategory: 'A05:2021',
+      ...options,
+    }
+  );
 }

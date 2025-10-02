@@ -27,6 +27,13 @@ exports.CWE_IDS = {
     WEAK_PASSWORD: 521,
     SESSION_FIXATION: 384,
     DEBUG_ENABLED: 489,
+    DEBUG_MODE_PRODUCTION: 489, // CWE-489 for debug mode in production (alias)
+    EXPOSED_ENCRYPTION_KEYS: 321, // CWE-321 for exposed crypto keys
+    SENSITIVE_DATA_IN_LOGS: 532, // CWE-532 for information exposure through logs
+    UNENCRYPTED_STORAGE: 311, // CWE-311 for missing encryption of sensitive data
+    CORS_MISCONFIGURATION: 942, // CWE-942 for overly permissive CORS
+    DEFAULT_CREDENTIALS: 798, // CWE-798 for use of default credentials
+    INSECURE_TRANSPORT: 319, // CWE-319 for cleartext transmission of sensitive data
 };
 /**
  * OWASP Top 10 2021 categories
@@ -45,7 +52,10 @@ exports.OWASP_CATEGORIES = {
     A10_SSRF: 'A10:2021 – Server-Side Request Forgery',
     // Aliases for easier reference
     A01_ACCESS_CONTROL: 'A01:2021',
+    A02_CRYPTOGRAPHIC: 'A02:2021',
+    A05_MISCONFIGURATION: 'A05:2021',
     A07_AUTHENTICATION: 'A07:2021',
+    A09_LOGGING: 'A09:2021',
 };
 /**
  * Security vulnerability categories
@@ -396,6 +406,193 @@ app.post('/login', async (req, res) => {
       res.redirect('/dashboard');
     });
   }
+});
+`,
+    },
+    SECRETS: {
+        HARDCODED_API_KEY_AWS: (key = 'AKIAIOSFODNN7EXAMPLE1234') => `
+const awsAccessKey = "${key}";
+const s3 = new AWS.S3({ accessKeyId: awsAccessKey });
+`,
+        HARDCODED_API_KEY_STRIPE: (key = 'sk_live_51234567890abcdefghijklmnopqr') => `
+const stripeKey = "${key}";
+const stripe = require('stripe')(stripeKey);
+`,
+        HARDCODED_API_KEY_GITHUB: (token = 'ghp_1234567890abcdefghijklmnopqrstuvwxyz') => `
+const githubToken = "${token}";
+fetch('https://api.github.com/user', {
+  headers: { 'Authorization': \`token \${githubToken}\` }
+});
+`,
+        EXPOSED_ENCRYPTION_KEY_AES: (key = 'aAbBcCdDeEfFgGhH1234567890') => `
+const encryptionKey = "${key}";
+const iv = crypto.randomBytes(16);
+const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey), iv);
+`,
+        EXPOSED_ENCRYPTION_KEY_JWT: (secret = 'my-super-secret-jwt-key-123456') => `
+const jwtSecret = "${secret}";
+const token = jwt.sign({ userId: 123 }, jwtSecret);
+`,
+        SENSITIVE_DATA_IN_LOGS_PASSWORD: () => `
+app.post('/login', (req, res) => {
+  console.log('User login attempt:', req.body.password);
+  // Authentication logic
+});
+`,
+        SENSITIVE_DATA_IN_LOGS_TOKEN: () => `
+function handleAuth(token) {
+  logger.info('Processing auth token:', token);
+  // Token validation
+}
+`,
+        SENSITIVE_DATA_IN_LOGS_CREDIT_CARD: () => `
+function processPayment(cardNumber) {
+  console.log('Processing payment for card:', cardNumber);
+  // Payment logic
+}
+`,
+        UNENCRYPTED_STORAGE_TOKEN: () => `
+function storeUserSession(authToken) {
+  localStorage.setItem('auth_token', authToken);
+}
+`,
+        UNENCRYPTED_STORAGE_PASSWORD: () => `
+function rememberUser(password) {
+  sessionStorage.setItem('user_password', password);
+}
+`,
+        SAFE_ENV_VARS_API_KEY: () => `
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe = require('stripe')(stripeKey);
+`,
+        SAFE_ENCRYPTED_STORAGE: () => `
+import { encryptData } from './crypto';
+function storeUserSession(authToken) {
+  const encrypted = encryptData(authToken);
+  localStorage.setItem('auth_token', encrypted);
+}
+`,
+        SAFE_SANITIZED_LOGS: () => `
+function handleAuth(token) {
+  logger.info('Processing auth token:', '***REDACTED***');
+  // Token validation
+}
+`,
+        // Edge case: 20-character boundary test
+        EDGE_CASE_20_CHAR_BOUNDARY: () => `
+const apiKey = "ABCD1234EFGH5678IJKL"; // Exactly 20 characters
+const service = initService(apiKey);
+`,
+        // Edge case: Template literal with secret
+        EDGE_CASE_TEMPLATE_LITERAL: () => `
+const timestamp = Date.now();
+const token = \`sk_live_\${timestamp}_secretkey123456789\`;
+fetch('/api', { headers: { 'Authorization': token } });
+`,
+        // Edge case: Base64-encoded secret
+        EDGE_CASE_BASE64_SECRET: () => `
+const encryptionKey = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=";
+const iv = crypto.randomBytes(16);
+const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'base64'), iv);
+`,
+    },
+    MISCONFIGURATION: {
+        // Debug mode in production
+        DEBUG_MODE_ENABLED: () => `
+const config = {
+  debug: true,
+  env: 'production',
+  logging: { level: 'debug' }
+};
+app.listen(3000);
+`,
+        DEBUG_MODE_NODE_ENV: () => `
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+}
+`,
+        // CORS misconfiguration
+        CORS_WILDCARD: () => `
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
+`,
+        CORS_NULL_ORIGIN: () => `
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
+`,
+        // Default credentials
+        DEFAULT_ADMIN_PASSWORD: () => `
+const users = [
+  { username: 'admin', password: 'admin' },
+  { username: 'root', password: 'password' }
+];
+`,
+        DEFAULT_DATABASE_CREDS: () => `
+const dbConfig = {
+  host: 'localhost',
+  user: 'admin',
+  password: 'admin123',
+  database: 'production'
+};
+`,
+        // Insecure HTTP
+        HTTP_URL: () => `
+const API_ENDPOINT = 'http://api.example.com/user/data';
+fetch(API_ENDPOINT, {
+  method: 'POST',
+  body: JSON.stringify({ password: userPassword })
+});
+`,
+        HTTP_COOKIE: () => `
+res.cookie('session', sessionId, {
+  secure: false,
+  httpOnly: true
+});
+`,
+        // Safe configurations
+        SAFE_DEBUG_DISABLED: () => `
+const config = {
+  debug: process.env.NODE_ENV !== 'production',
+  env: process.env.NODE_ENV || 'development',
+  logging: { level: process.env.LOG_LEVEL || 'info' }
+};
+`,
+        SAFE_CORS_WHITELIST: () => `
+const whitelist = ['https://example.com', 'https://app.example.com'];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+`,
+        SAFE_ENV_CREDENTIALS: () => `
+const users = [
+  { username: 'admin', password: process.env.ADMIN_PASSWORD },
+  { username: 'root', password: process.env.ROOT_PASSWORD }
+];
+`,
+        SAFE_HTTPS_URL: () => `
+const API_ENDPOINT = 'https://api.example.com/user/data';
+fetch(API_ENDPOINT, {
+  method: 'POST',
+  body: JSON.stringify({ password: userPassword })
+});
+`,
+        SAFE_SECURE_COOKIE: () => `
+res.cookie('session', sessionId, {
+  secure: true,
+  httpOnly: true,
+  sameSite: 'strict'
 });
 `,
     },
