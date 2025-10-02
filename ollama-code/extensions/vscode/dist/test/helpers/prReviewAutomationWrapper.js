@@ -5,6 +5,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PRReviewAutomation = void 0;
+const test_constants_1 = require("./test-constants");
 /**
  * Mock Pull Request Review Automation
  */
@@ -13,25 +14,43 @@ class PRReviewAutomation {
         this.config = config;
     }
     /**
+     * Calculate total changes across all files in PR
+     */
+    getTotalChanges(metadata) {
+        return metadata.files.reduce((sum, f) => sum + f.changes, 0);
+    }
+    /**
+     * Calculate total deletions across all files in PR
+     */
+    getTotalDeletions(metadata) {
+        return metadata.files.reduce((sum, f) => sum + f.deletions, 0);
+    }
+    /**
+     * Calculate total additions across all files in PR
+     */
+    getTotalAdditions(metadata) {
+        return metadata.files.reduce((sum, f) => sum + f.additions, 0);
+    }
+    /**
      * Extract PR metadata from platform
      */
     async extractPRMetadata(prId) {
         return {
             id: prId,
             platform: this.config.platform,
-            title: 'feat: Add new feature',
-            description: 'This PR adds a new feature to the codebase',
-            author: 'test-user',
-            sourceBranch: 'feat/new-feature',
-            targetBranch: 'main',
+            title: test_constants_1.PR_REVIEW_TEST_CONSTANTS.MOCK_PR_TITLE,
+            description: test_constants_1.PR_REVIEW_TEST_CONSTANTS.MOCK_PR_DESCRIPTION,
+            author: test_constants_1.PR_REVIEW_TEST_CONSTANTS.TEST_USER_NAME,
+            sourceBranch: test_constants_1.PR_REVIEW_TEST_CONSTANTS.MOCK_SOURCE_BRANCH,
+            targetBranch: test_constants_1.PR_REVIEW_TEST_CONSTANTS.DEFAULT_TARGET_BRANCH,
             files: [
                 {
-                    path: 'src/feature.ts',
-                    additions: 50,
-                    deletions: 10,
-                    changes: 60,
+                    path: test_constants_1.PR_REVIEW_TEST_CONSTANTS.MOCK_FILE_PATH,
+                    additions: test_constants_1.PR_MOCK_FILE_METADATA.MOCK_ADDITIONS,
+                    deletions: test_constants_1.PR_MOCK_FILE_METADATA.MOCK_DELETIONS,
+                    changes: test_constants_1.PR_MOCK_FILE_METADATA.MOCK_CHANGES,
                     status: 'modified',
-                    patch: '+ new code\n- old code',
+                    patch: test_constants_1.PR_REVIEW_TEST_CONSTANTS.MOCK_PATCH,
                 },
             ],
             createdAt: new Date(),
@@ -43,11 +62,11 @@ class PRReviewAutomation {
      */
     async postComment(prId, body, path, line) {
         return {
-            id: Math.floor(Math.random() * 10000),
+            id: Math.floor(Math.random() * test_constants_1.PR_METRIC_DIVISORS.COMMENT_ID_RANGE),
             body,
             path,
             line,
-            author: 'ollama-code-bot',
+            author: test_constants_1.PR_REVIEW_TEST_CONSTANTS.BOT_AUTHOR_NAME,
             createdAt: new Date(),
         };
     }
@@ -72,13 +91,13 @@ class PRReviewAutomation {
             if (file.patch?.includes('eval(') || file.patch?.includes('dangerouslySetInnerHTML')) {
                 vulnerabilities.push({
                     severity: 'critical',
-                    category: 'XSS',
-                    description: 'Potential XSS vulnerability detected',
+                    category: test_constants_1.PR_SECURITY_TEMPLATES.XSS_CATEGORY,
+                    description: test_constants_1.PR_SECURITY_TEMPLATES.XSS_DESCRIPTION,
                     file: file.path,
-                    line: 10,
-                    code: file.patch.substring(0, 100),
-                    recommendation: 'Sanitize user input before rendering',
-                    cweId: 'CWE-79',
+                    line: test_constants_1.PR_METRIC_DIVISORS.DEFAULT_VULNERABILITY_LINE,
+                    code: file.patch.substring(0, test_constants_1.PR_METRIC_DIVISORS.PATCH_PREVIEW_LENGTH),
+                    recommendation: test_constants_1.PR_SECURITY_TEMPLATES.XSS_RECOMMENDATION,
+                    cweId: test_constants_1.PR_SECURITY_TEMPLATES.XSS_CWE_ID,
                 });
             }
         }
@@ -86,7 +105,10 @@ class PRReviewAutomation {
         const highCount = vulnerabilities.filter(v => v.severity === 'high').length;
         const mediumCount = vulnerabilities.filter(v => v.severity === 'medium').length;
         const lowCount = vulnerabilities.filter(v => v.severity === 'low').length;
-        const score = Math.max(0, 100 - (criticalCount * 40 + highCount * 20 + mediumCount * 10 + lowCount * 5));
+        const score = Math.max(test_constants_1.PR_SECURITY_SCORING.MIN_SCORE, test_constants_1.PR_SECURITY_SCORING.MAX_SCORE - (criticalCount * test_constants_1.PR_SECURITY_SCORING.CRITICAL_WEIGHT +
+            highCount * test_constants_1.PR_SECURITY_SCORING.HIGH_WEIGHT +
+            mediumCount * test_constants_1.PR_SECURITY_SCORING.MEDIUM_WEIGHT +
+            lowCount * test_constants_1.PR_SECURITY_SCORING.LOW_WEIGHT));
         return {
             vulnerabilities,
             criticalCount,
@@ -130,14 +152,17 @@ class PRReviewAutomation {
      */
     async calculateQualityMetrics(metadata) {
         // Mock quality metrics calculation
-        const totalChanges = metadata.files.reduce((sum, f) => sum + f.changes, 0);
+        const totalChanges = this.getTotalChanges(metadata);
         // Simulate complexity based on change size
-        const complexity = Math.min(100, totalChanges / 5);
-        const maintainability = Math.max(0, 100 - complexity / 2);
-        const testCoverage = 80; // Mock value
-        const documentationCoverage = 70; // Mock value
-        const codeSmells = Math.floor(totalChanges / 20);
-        const overallScore = Math.round((maintainability * 0.3 + testCoverage * 0.3 + documentationCoverage * 0.2 + (100 - complexity) * 0.2));
+        const complexity = Math.min(test_constants_1.PR_SECURITY_SCORING.MAX_SCORE, totalChanges / test_constants_1.PR_METRIC_DIVISORS.COMPLEXITY_FROM_CHANGES);
+        const maintainability = Math.max(test_constants_1.PR_SECURITY_SCORING.MIN_SCORE, test_constants_1.PR_SECURITY_SCORING.MAX_SCORE - complexity / test_constants_1.PR_METRIC_DIVISORS.MAINTAINABILITY_DIVISOR);
+        const testCoverage = test_constants_1.PR_QUALITY_SCORING.MOCK_TEST_COVERAGE;
+        const documentationCoverage = test_constants_1.PR_QUALITY_SCORING.MOCK_DOCUMENTATION_COVERAGE;
+        const codeSmells = Math.floor(totalChanges / test_constants_1.PR_METRIC_DIVISORS.CODE_SMELLS_FROM_CHANGES);
+        const overallScore = Math.round(maintainability * test_constants_1.PR_QUALITY_SCORING.MAINTAINABILITY_WEIGHT +
+            testCoverage * test_constants_1.PR_QUALITY_SCORING.TEST_COVERAGE_WEIGHT +
+            documentationCoverage * test_constants_1.PR_QUALITY_SCORING.DOCUMENTATION_WEIGHT +
+            (test_constants_1.PR_SECURITY_SCORING.MAX_SCORE - complexity) * test_constants_1.PR_QUALITY_SCORING.COMPLEXITY_WEIGHT);
         return {
             complexity,
             maintainability,
@@ -155,26 +180,27 @@ class PRReviewAutomation {
         const testFiles = metadata.files.filter(f => f.path.includes('.test.') || f.path.includes('.spec.'));
         const sourceFiles = metadata.files.filter(f => !f.path.includes('.test.') && !f.path.includes('.spec.'));
         if (sourceFiles.length === 0) {
-            return 100; // Only test files changed
+            return test_constants_1.PR_SECURITY_SCORING.MAX_SCORE; // Only test files changed
         }
         const testToSourceRatio = testFiles.length / sourceFiles.length;
-        return Math.min(100, testToSourceRatio * 100);
+        return Math.min(test_constants_1.PR_SECURITY_SCORING.MAX_SCORE, testToSourceRatio * test_constants_1.PR_METRIC_DIVISORS.DELETION_RATIO_MULTIPLIER);
     }
     /**
      * Analyze complexity changes
      */
     async analyzeComplexityChange(metadata) {
-        const totalChanges = metadata.files.reduce((sum, f) => sum + f.changes, 0);
-        return Math.min(100, totalChanges / 10); // Complexity increases with change size
+        const totalChanges = this.getTotalChanges(metadata);
+        return Math.min(test_constants_1.PR_SECURITY_SCORING.MAX_SCORE, totalChanges / test_constants_1.PR_METRIC_DIVISORS.COMPLEXITY_CHANGE_DIVISOR);
     }
     /**
      * Calculate regression risk score
      */
     async calculateRegressionRisk(metadata) {
-        const deletions = metadata.files.reduce((sum, f) => sum + f.deletions, 0);
-        const totalChanges = metadata.files.reduce((sum, f) => sum + f.changes, 0);
+        const deletions = this.getTotalDeletions(metadata);
+        const totalChanges = this.getTotalChanges(metadata);
         const deletionRatio = totalChanges > 0 ? deletions / totalChanges : 0;
-        const riskScore = Math.min(100, deletionRatio * 100 + totalChanges / 5);
+        const riskScore = Math.min(test_constants_1.PR_SECURITY_SCORING.MAX_SCORE, deletionRatio * test_constants_1.PR_METRIC_DIVISORS.DELETION_RATIO_MULTIPLIER +
+            totalChanges / test_constants_1.PR_METRIC_DIVISORS.RISK_SCORE_DIVISOR);
         return Math.round(riskScore);
     }
     /**
@@ -194,21 +220,24 @@ class PRReviewAutomation {
         let status = 'pending';
         let recommendation = '';
         const shouldBlock = await this.shouldBlockOnSecurity(securityAnalysis);
+        const minQualityScore = this.config.minimumQualityScore || test_constants_1.PR_APPROVAL_THRESHOLDS.DEFAULT_MINIMUM_QUALITY_SCORE;
         if (shouldBlock) {
             status = 'changes_requested';
-            recommendation = `Critical security issues detected. Please address ${securityAnalysis.criticalCount} critical vulnerabilities before merging.`;
+            recommendation = test_constants_1.PR_REVIEW_RECOMMENDATIONS.CRITICAL_SECURITY_ISSUES(securityAnalysis.criticalCount);
         }
-        else if (this.config.autoApprove && securityAnalysis.score >= 80 && qualityMetrics.overallScore >= (this.config.minimumQualityScore || 70)) {
+        else if (this.config.autoApprove &&
+            securityAnalysis.score >= test_constants_1.PR_APPROVAL_THRESHOLDS.MINIMUM_SECURITY_SCORE &&
+            qualityMetrics.overallScore >= minQualityScore) {
             status = 'approved';
-            recommendation = 'All checks passed. PR approved automatically.';
+            recommendation = test_constants_1.PR_REVIEW_RECOMMENDATIONS.ALL_CHECKS_PASSED;
         }
-        else if (securityAnalysis.highCount > 0 || qualityMetrics.overallScore < (this.config.minimumQualityScore || 70)) {
+        else if (securityAnalysis.highCount > test_constants_1.PR_APPROVAL_THRESHOLDS.HIGH_SEVERITY_BLOCK_COUNT || qualityMetrics.overallScore < minQualityScore) {
             status = 'changes_requested';
-            recommendation = `Please address ${securityAnalysis.highCount} high-severity issues and improve code quality (current score: ${qualityMetrics.overallScore}/100).`;
+            recommendation = test_constants_1.PR_REVIEW_RECOMMENDATIONS.HIGH_SEVERITY_ISSUES(securityAnalysis.highCount, qualityMetrics.overallScore);
         }
         else {
             status = 'commented';
-            recommendation = 'Review completed. Minor improvements suggested.';
+            recommendation = test_constants_1.PR_REVIEW_RECOMMENDATIONS.MINOR_IMPROVEMENTS;
         }
         return {
             status,

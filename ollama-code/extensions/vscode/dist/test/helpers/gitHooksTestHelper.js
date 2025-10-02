@@ -67,6 +67,7 @@ exports.createCommitMessageConfig = createCommitMessageConfig;
 exports.assertValidCommitMessage = assertValidCommitMessage;
 exports.assertConventionalFormat = assertConventionalFormat;
 exports.assertEmojiFormat = assertEmojiFormat;
+exports.createPRReviewConfig = createPRReviewConfig;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const child_process_1 = require("child_process");
@@ -440,5 +441,28 @@ function assertEmojiFormat(message) {
     const emojiPattern = /^[\u{1F300}-\u{1F9FF}]/u;
     assert.ok(emojiPattern.test(message), 'Should start with emoji');
     assert.ok(message.length > 2, 'Should have text after emoji');
+}
+/**
+ * Create a PR Review configuration with sensible defaults
+ * Reduces code duplication by providing a base config that can be overridden
+ *
+ * @param platform - The platform type (github, gitlab, or bitbucket)
+ * @param overrides - Partial config to override defaults
+ * @returns Complete PRReviewConfig object
+ */
+function createPRReviewConfig(platform, overrides = {}) {
+    const repoUrls = {
+        github: test_constants_1.PR_REVIEW_TEST_CONSTANTS.DEFAULT_GITHUB_REPO,
+        gitlab: test_constants_1.PR_REVIEW_TEST_CONSTANTS.DEFAULT_GITLAB_REPO,
+        bitbucket: test_constants_1.PR_REVIEW_TEST_CONSTANTS.DEFAULT_BITBUCKET_REPO,
+    };
+    return {
+        platform,
+        repositoryUrl: repoUrls[platform],
+        apiToken: test_constants_1.PR_REVIEW_TEST_CONSTANTS.DEFAULT_API_TOKEN,
+        autoApprove: false,
+        blockOnCritical: true,
+        ...overrides,
+    };
 }
 //# sourceMappingURL=gitHooksTestHelper.js.map

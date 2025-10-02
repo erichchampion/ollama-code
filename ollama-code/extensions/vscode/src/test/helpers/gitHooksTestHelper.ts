@@ -11,9 +11,11 @@ import {
   GIT_HOOKS_TEST_CONSTANTS,
   GIT_HOOKS_FILE_PERMISSIONS,
   COMMIT_MESSAGE_TEST_CONSTANTS,
+  PR_REVIEW_TEST_CONSTANTS,
 } from './test-constants';
 import type { GitHooksConfig } from './gitHooksManagerWrapper';
 import type { CommitMessageConfig, GeneratedCommitMessage } from './commitMessageGeneratorWrapper';
+import type { PRReviewConfig } from './prReviewAutomationWrapper';
 
 const execAsync = promisify(exec);
 
@@ -466,4 +468,32 @@ export function assertEmojiFormat(message: string): void {
   const emojiPattern = /^[\u{1F300}-\u{1F9FF}]/u;
   assert.ok(emojiPattern.test(message), 'Should start with emoji');
   assert.ok(message.length > 2, 'Should have text after emoji');
+}
+
+/**
+ * Create a PR Review configuration with sensible defaults
+ * Reduces code duplication by providing a base config that can be overridden
+ *
+ * @param platform - The platform type (github, gitlab, or bitbucket)
+ * @param overrides - Partial config to override defaults
+ * @returns Complete PRReviewConfig object
+ */
+export function createPRReviewConfig(
+  platform: 'github' | 'gitlab' | 'bitbucket',
+  overrides: Partial<PRReviewConfig> = {}
+): PRReviewConfig {
+  const repoUrls = {
+    github: PR_REVIEW_TEST_CONSTANTS.DEFAULT_GITHUB_REPO,
+    gitlab: PR_REVIEW_TEST_CONSTANTS.DEFAULT_GITLAB_REPO,
+    bitbucket: PR_REVIEW_TEST_CONSTANTS.DEFAULT_BITBUCKET_REPO,
+  };
+
+  return {
+    platform,
+    repositoryUrl: repoUrls[platform],
+    apiToken: PR_REVIEW_TEST_CONSTANTS.DEFAULT_API_TOKEN,
+    autoApprove: false,
+    blockOnCritical: true,
+    ...overrides,
+  };
 }

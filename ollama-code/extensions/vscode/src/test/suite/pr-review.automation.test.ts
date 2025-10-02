@@ -7,7 +7,8 @@
 
 import * as assert from 'assert';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import { PROVIDER_TEST_TIMEOUTS, PR_REVIEW_TEST_CONSTANTS } from '../helpers/test-constants';
+import { createPRReviewConfig } from '../helpers/gitHooksTestHelper';
 import {
   PRReviewAutomation,
   type PRReviewConfig,
@@ -34,19 +35,12 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should integrate with GitHub PR review', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-        autoApprove: false,
-        blockOnCritical: true,
-      };
-
+      const config = createPRReviewConfig('github');
       const automation = new PRReviewAutomation(config);
-      const metadata = await automation.extractPRMetadata(123);
+      const metadata = await automation.extractPRMetadata(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID);
 
       assert.strictEqual(metadata.platform, 'github');
-      assert.ok(metadata.id === 123);
+      assert.ok(metadata.id === PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID);
       assert.ok(metadata.title);
       assert.ok(metadata.files.length > 0);
     });
@@ -54,12 +48,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should integrate with GitLab MR review', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'gitlab',
-        repositoryUrl: 'https://gitlab.com/test/repo',
-        apiToken: 'test-token',
-      };
-
+      const config = createPRReviewConfig('gitlab');
       const automation = new PRReviewAutomation(config);
       const metadata = await automation.extractPRMetadata(456);
 
@@ -72,12 +61,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should integrate with Bitbucket PR review', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'bitbucket',
-        repositoryUrl: 'https://bitbucket.org/test/repo',
-        apiToken: 'test-token',
-      };
-
+      const config = createPRReviewConfig('bitbucket');
       const automation = new PRReviewAutomation(config);
       const metadata = await automation.extractPRMetadata(789);
 
@@ -89,11 +73,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should extract PR metadata (title, description, files)', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
-
+      const config = createPRReviewConfig('github');
       const automation = new PRReviewAutomation(config);
       const metadata = await automation.extractPRMetadata(100);
 
@@ -119,33 +99,23 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should post comment on PR', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-      };
-
+      const config = createPRReviewConfig('github');
       const automation = new PRReviewAutomation(config);
-      const comment = await automation.postComment(123, 'This is a test comment');
+      const comment = await automation.postComment(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID, 'This is a test comment');
 
       assert.ok(comment.id, 'Comment should have ID');
       assert.strictEqual(comment.body, 'This is a test comment');
-      assert.strictEqual(comment.author, 'ollama-code-bot');
+      assert.strictEqual(comment.author, PR_REVIEW_TEST_CONSTANTS.BOT_AUTHOR_NAME);
       assert.ok(comment.createdAt instanceof Date);
     });
 
     test('Should post inline comment on specific file and line', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-      };
-
+      const config = createPRReviewConfig('github');
       const automation = new PRReviewAutomation(config);
       const comment = await automation.postComment(
-        123,
+        PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID,
         'Security issue detected',
         'src/auth.ts',
         42
@@ -160,40 +130,30 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should update PR status (approve, request changes)', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-      };
-
+      const config = createPRReviewConfig('github');
       const automation = new PRReviewAutomation(config);
 
       // Test approve
-      const approveStatus = await automation.updateStatus(123, 'approve');
+      const approveStatus = await automation.updateStatus(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID, 'approve');
       assert.strictEqual(approveStatus, 'approved');
 
       // Test request changes
-      const requestChangesStatus = await automation.updateStatus(123, 'request_changes');
+      const requestChangesStatus = await automation.updateStatus(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID, 'request_changes');
       assert.strictEqual(requestChangesStatus, 'changes_requested');
 
       // Test comment
-      const commentStatus = await automation.updateStatus(123, 'comment');
+      const commentStatus = await automation.updateStatus(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID, 'comment');
       assert.strictEqual(commentStatus, 'commented');
     });
 
     test('Should handle platform API errors with retry logic', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'invalid-token', // Simulate API error
-      };
-
+      const config = createPRReviewConfig('github', { apiToken: PR_REVIEW_TEST_CONSTANTS.INVALID_API_TOKEN });
       const automation = new PRReviewAutomation(config);
 
       // Should not throw error - retry logic handles failures gracefully
-      const metadata = await automation.extractPRMetadata(123);
+      const metadata = await automation.extractPRMetadata(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID);
       assert.ok(metadata, 'Should return metadata even with retry');
     });
 
@@ -203,12 +163,7 @@ suite('Pull Request Review Automation Tests', () => {
       const platforms: PRPlatform[] = ['github', 'gitlab', 'bitbucket'];
 
       for (const platform of platforms) {
-        const config: PRReviewConfig = {
-          platform,
-          repositoryUrl: `https://${platform}.com/test/repo`,
-          apiToken: 'test-token',
-        };
-
+        const config = createPRReviewConfig(platform);
         const automation = new PRReviewAutomation(config);
         const metadata = await automation.extractPRMetadata(100);
 
@@ -222,11 +177,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should detect security vulnerabilities in PR diff', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        blockOnCritical: true,
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -263,11 +214,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should block PR on critical security issues', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        blockOnCritical: true,
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -299,11 +246,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should post security recommendations as PR comments', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -340,10 +283,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should calculate security score for PR', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -364,10 +304,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should handle diff parsing edge cases', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -439,10 +376,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should categorize vulnerabilities by severity correctly', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -485,10 +419,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should calculate code quality metrics for PR', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -529,10 +460,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should analyze test coverage changes in PR', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -574,10 +502,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should analyze complexity changes in PR', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -611,10 +536,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should calculate regression risk score for PR', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-      };
+      const config = createPRReviewConfig('github');
 
       const automation = new PRReviewAutomation(config);
 
@@ -649,14 +571,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should provide complete PR review with all metrics', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-        autoApprove: true,
-        blockOnCritical: true,
-        minimumQualityScore: 70,
-      };
+      const config = createPRReviewConfig('github', { autoApprove: true, minimumQualityScore: 70 });
 
       const automation = new PRReviewAutomation(config);
       const result = await automation.reviewPR(123);
@@ -673,14 +588,7 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should auto-approve PR when quality thresholds met', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-        autoApprove: true,
-        blockOnCritical: false,
-        minimumQualityScore: 70,
-      };
+      const config = createPRReviewConfig('github', { autoApprove: true, blockOnCritical: false, minimumQualityScore: 70 });
 
       const automation = new PRReviewAutomation(config);
       const result = await automation.reviewPR(123);
@@ -695,17 +603,9 @@ suite('Pull Request Review Automation Tests', () => {
     test('Should request changes when quality below threshold', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const config: PRReviewConfig = {
-        platform: 'github',
-        repositoryUrl: 'https://github.com/test/repo',
-        apiToken: 'test-token',
-        autoApprove: true,
-        blockOnCritical: true,
-        minimumQualityScore: 90, // High threshold
-      };
-
+      const config = createPRReviewConfig('github', { autoApprove: true, minimumQualityScore: 90 });
       const automation = new PRReviewAutomation(config);
-      const result = await automation.reviewPR(123);
+      const result = await automation.reviewPR(PR_REVIEW_TEST_CONSTANTS.DEFAULT_PR_ID);
 
       // With high threshold, typical PRs should request changes
       if (result.qualityMetrics && result.qualityMetrics.overallScore < 90) {

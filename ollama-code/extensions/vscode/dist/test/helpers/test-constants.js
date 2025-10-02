@@ -4,7 +4,7 @@
  * Centralized configuration values for extension testing
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.COMMIT_SUBJECT_TEMPLATES = exports.COMMIT_EMOJI_MAP = exports.COMMIT_MESSAGE_TEST_CONSTANTS = exports.GIT_HOOK_TYPES = exports.GIT_HOOKS_FILE_PERMISSIONS = exports.GIT_HOOKS_TEST_CONSTANTS = exports.PROVIDER_TEST_TIMEOUTS = exports.EXPECTED_CONFIG_KEYS = exports.EXPECTED_COMMANDS = exports.TEST_DELAYS = exports.JSONRPC_ERROR_CODES = exports.MCP_TEST_CONSTANTS = exports.WEBSOCKET_TEST_CONSTANTS = exports.EXTENSION_TEST_CONSTANTS = void 0;
+exports.PR_REVIEW_RECOMMENDATIONS = exports.PR_SECURITY_TEMPLATES = exports.PR_MOCK_FILE_METADATA = exports.PR_APPROVAL_THRESHOLDS = exports.PR_METRIC_DIVISORS = exports.PR_QUALITY_SCORING = exports.PR_SECURITY_SCORING = exports.PR_REVIEW_TEST_CONSTANTS = exports.COMMIT_SUBJECT_TEMPLATES = exports.COMMIT_EMOJI_MAP = exports.COMMIT_MESSAGE_TEST_CONSTANTS = exports.GIT_HOOK_TYPES = exports.GIT_HOOKS_FILE_PERMISSIONS = exports.GIT_HOOKS_TEST_CONSTANTS = exports.PROVIDER_TEST_TIMEOUTS = exports.EXPECTED_CONFIG_KEYS = exports.EXPECTED_COMMANDS = exports.TEST_DELAYS = exports.JSONRPC_ERROR_CODES = exports.MCP_TEST_CONSTANTS = exports.WEBSOCKET_TEST_CONSTANTS = exports.EXTENSION_TEST_CONSTANTS = void 0;
 /**
  * Extension identification constants
  */
@@ -241,5 +241,152 @@ exports.COMMIT_SUBJECT_TEMPLATES = {
     FIX: 'Fix critical bug',
     TEST: 'Add test coverage',
     DEFAULT: 'Update code',
+};
+/**
+ * Pull Request Review Automation Test Constants
+ * Centralized configuration values for PR review automation testing
+ */
+exports.PR_REVIEW_TEST_CONSTANTS = {
+    /** Default GitHub repository URL for testing */
+    DEFAULT_GITHUB_REPO: 'https://github.com/test/repo',
+    /** Default GitLab repository URL for testing */
+    DEFAULT_GITLAB_REPO: 'https://gitlab.com/test/repo',
+    /** Default Bitbucket repository URL for testing */
+    DEFAULT_BITBUCKET_REPO: 'https://bitbucket.org/test/repo',
+    /** Default API token for testing */
+    DEFAULT_API_TOKEN: 'test-token',
+    /** Invalid API token for error testing */
+    INVALID_API_TOKEN: 'invalid-token',
+    /** Bot author name for automated comments */
+    BOT_AUTHOR_NAME: 'ollama-code-bot',
+    /** Default PR ID for testing */
+    DEFAULT_PR_ID: 123,
+    /** Test user name */
+    TEST_USER_NAME: 'test-user',
+    /** Default target branch */
+    DEFAULT_TARGET_BRANCH: 'main',
+    /** Mock PR title */
+    MOCK_PR_TITLE: 'feat: Add new feature',
+    /** Mock PR description */
+    MOCK_PR_DESCRIPTION: 'This PR adds a new feature to the codebase',
+    /** Mock source branch */
+    MOCK_SOURCE_BRANCH: 'feat/new-feature',
+    /** Mock file path */
+    MOCK_FILE_PATH: 'src/feature.ts',
+    /** Mock patch content */
+    MOCK_PATCH: '+ new code\n- old code',
+};
+/**
+ * PR Security Scoring Constants
+ * Weights and thresholds for security vulnerability scoring
+ */
+exports.PR_SECURITY_SCORING = {
+    /** Weight for critical severity vulnerabilities */
+    CRITICAL_WEIGHT: 40,
+    /** Weight for high severity vulnerabilities */
+    HIGH_WEIGHT: 20,
+    /** Weight for medium severity vulnerabilities */
+    MEDIUM_WEIGHT: 10,
+    /** Weight for low severity vulnerabilities */
+    LOW_WEIGHT: 5,
+    /** Maximum security score */
+    MAX_SCORE: 100,
+    /** Minimum security score */
+    MIN_SCORE: 0,
+};
+/**
+ * PR Quality Metric Weights
+ * Weights for calculating overall quality score
+ * NOTE: All weights must sum to 1.0
+ */
+exports.PR_QUALITY_SCORING = {
+    /** Weight for maintainability metric (30%) */
+    MAINTAINABILITY_WEIGHT: 0.3,
+    /** Weight for test coverage metric (30%) */
+    TEST_COVERAGE_WEIGHT: 0.3,
+    /** Weight for documentation coverage metric (20%) */
+    DOCUMENTATION_WEIGHT: 0.2,
+    /** Weight for complexity metric (20%) */
+    COMPLEXITY_WEIGHT: 0.2,
+    /** Mock test coverage value for testing */
+    MOCK_TEST_COVERAGE: 80,
+    /** Mock documentation coverage value for testing */
+    MOCK_DOCUMENTATION_COVERAGE: 70,
+};
+/**
+ * PR Metric Calculation Divisors
+ * Constants used in metric calculations
+ */
+exports.PR_METRIC_DIVISORS = {
+    /** Divisor for calculating complexity from changes */
+    COMPLEXITY_FROM_CHANGES: 5,
+    /** Divisor for calculating code smells from changes */
+    CODE_SMELLS_FROM_CHANGES: 20,
+    /** Divisor for complexity change calculation */
+    COMPLEXITY_CHANGE_DIVISOR: 10,
+    /** Divisor for risk score calculation */
+    RISK_SCORE_DIVISOR: 5,
+    /** Multiplier for deletion ratio in risk calculation */
+    DELETION_RATIO_MULTIPLIER: 100,
+    /** Length for patch preview in vulnerability reports */
+    PATCH_PREVIEW_LENGTH: 100,
+    /** Range for random comment ID generation */
+    COMMENT_ID_RANGE: 10000,
+    /** Default line number for vulnerabilities */
+    DEFAULT_VULNERABILITY_LINE: 10,
+    /** Divisor for maintainability calculation */
+    MAINTAINABILITY_DIVISOR: 2,
+};
+/**
+ * PR Approval Thresholds
+ * Minimum scores required for auto-approval
+ */
+exports.PR_APPROVAL_THRESHOLDS = {
+    /** Minimum security score for auto-approval */
+    MINIMUM_SECURITY_SCORE: 80,
+    /** Default minimum quality score for auto-approval */
+    DEFAULT_MINIMUM_QUALITY_SCORE: 70,
+    /** Maximum high-severity issues before blocking */
+    HIGH_SEVERITY_BLOCK_COUNT: 0,
+};
+/**
+ * PR Mock File Metadata
+ * Default values for mock file changes
+ */
+exports.PR_MOCK_FILE_METADATA = {
+    /** Mock file additions count */
+    MOCK_ADDITIONS: 50,
+    /** Mock file deletions count */
+    MOCK_DELETIONS: 10,
+    /** Mock file changes count */
+    MOCK_CHANGES: 60,
+};
+/**
+ * PR Security Templates
+ * Template strings for security vulnerability reporting
+ */
+exports.PR_SECURITY_TEMPLATES = {
+    /** XSS vulnerability category */
+    XSS_CATEGORY: 'XSS',
+    /** XSS vulnerability description */
+    XSS_DESCRIPTION: 'Potential XSS vulnerability detected',
+    /** XSS sanitization recommendation */
+    XSS_RECOMMENDATION: 'Sanitize user input before rendering',
+    /** XSS CWE identifier */
+    XSS_CWE_ID: 'CWE-79',
+};
+/**
+ * PR Review Recommendation Templates
+ * Template strings for review recommendations
+ */
+exports.PR_REVIEW_RECOMMENDATIONS = {
+    /** Recommendation when critical security issues detected */
+    CRITICAL_SECURITY_ISSUES: (count) => `Critical security issues detected. Please address ${count} critical vulnerabilities before merging.`,
+    /** Recommendation when all checks pass */
+    ALL_CHECKS_PASSED: 'All checks passed. PR approved automatically.',
+    /** Recommendation when high severity issues found */
+    HIGH_SEVERITY_ISSUES: (highCount, qualityScore) => `Please address ${highCount} high-severity issues and improve code quality (current score: ${qualityScore}/100).`,
+    /** Recommendation for minor improvements */
+    MINOR_IMPROVEMENTS: 'Review completed. Minor improvements suggested.',
 };
 //# sourceMappingURL=test-constants.js.map
