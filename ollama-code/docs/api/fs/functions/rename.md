@@ -8,7 +8,7 @@
 
 > **rename**(`oldPath`, `newPath`): `Promise`\<`void`\>
 
-Defined in: [fs/operations.ts:243](https://github.com/erichchampion/ollama-code/blob/ab39001f5b20eb752663d221d744e3f01c2bdae9/ollama-code/src/fs/operations.ts#L243)
+Defined in: [fs/operations.ts:243](https://github.com/erichchampion/ollama-code/blob/3fe0ce113b10803e1393cbc2fdc48d5134e8d686/ollama-code/src/fs/operations.ts#L243)
 
 Rename a file or directory
 
