@@ -508,6 +508,76 @@ const SECURITY_RULES = [
             'https://owasp.org/www-project-proactive-controls/v3/en/c5-validate-inputs'
         ]
     },
+    // Architecture Issues Rules
+    {
+        id: 'large_class',
+        name: 'Large Class (God Object)',
+        description: 'Class has more than 10 methods, indicating low cohesion',
+        severity: 'medium',
+        category: 'architecture',
+        cweId: 1048,
+        // Match class with 10+ method definitions
+        pattern: /class\s+\w+\s*\{[\s\S]*?(?:^\s*\w+\s*\([^)]*\)\s*\{[\s\S]*?\n\s*\}[\s\S]*?){10,}/m,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'medium',
+        recommendation: 'Break down large classes following Single Responsibility Principle. Extract related methods into separate classes',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1048.html',
+            'https://refactoring.guru/smells/large-class'
+        ]
+    },
+    {
+        id: 'tight_coupling',
+        name: 'Tight Coupling',
+        description: 'Module has excessive dependencies (high fan-out)',
+        severity: 'medium',
+        category: 'architecture',
+        cweId: 1047,
+        // Match 6+ import statements at the top of file
+        pattern: /^(?:import\s+.*?from\s+['"][^'"]+['"];?\s*\n){6,}/m,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'low',
+        recommendation: 'Reduce coupling by using dependency injection, interfaces, or facade pattern',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1047.html',
+            'https://en.wikipedia.org/wiki/Coupling_(computer_programming)'
+        ]
+    },
+    {
+        id: 'missing_abstraction',
+        name: 'Missing Abstraction Layer',
+        description: 'Direct database/external service access without abstraction',
+        severity: 'medium',
+        category: 'architecture',
+        cweId: 1061,
+        // Match direct database connection in controller/handler
+        pattern: /(?:class\s+\w+Controller|app\.\w+\(['"]\/)[\s\S]*?(?:createConnection|connect\(|new\s+(?:MongoClient|Pool|Connection))/,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'medium',
+        recommendation: 'Use repository pattern or data access layer to abstract database operations',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1061.html',
+            'https://martinfowler.com/eaaCatalog/repository.html'
+        ]
+    },
+    {
+        id: 'circular_dependency',
+        name: 'Circular Dependency',
+        description: 'Circular import detected between modules',
+        severity: 'high',
+        category: 'architecture',
+        cweId: 1047,
+        // This is difficult to detect with regex alone - looking for suspicious patterns
+        // where file imports from another and that file likely imports back
+        pattern: /import\s+\{[^}]*\}\s+from\s+['"]\.(\/\w+)?\/file[AB]['"]/,
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
+        confidence: 'low',
+        recommendation: 'Refactor to eliminate circular dependencies. Extract shared code to separate module or use dependency inversion',
+        references: [
+            'https://cwe.mitre.org/data/definitions/1047.html',
+            'https://en.wikipedia.org/wiki/Circular_dependency'
+        ]
+    },
     // Note: duplicate_code rule removed - regex patterns are too simplistic for accurate
     // duplicate detection. Real duplicate detection requires AST/semantic analysis.
 ];

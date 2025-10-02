@@ -879,3 +879,95 @@ export async function testMissingInputValidationDetection(
     }
   );
 }
+
+/**
+ * Test helper for large class detection
+ */
+export async function testLargeClassDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.ARCHITECTURE,
+    CWE_IDS.LARGE_CLASS,
+    SEVERITY_LEVELS.MEDIUM,
+    {
+      shouldContainRecommendation: 'class',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for tight coupling detection
+ */
+export async function testTightCouplingDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.ARCHITECTURE,
+    CWE_IDS.TIGHT_COUPLING,
+    SEVERITY_LEVELS.MEDIUM,
+    {
+      shouldContainRecommendation: 'coupling',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for missing abstraction detection
+ */
+export async function testMissingAbstractionDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.ARCHITECTURE,
+    CWE_IDS.MISSING_ABSTRACTION,
+    SEVERITY_LEVELS.MEDIUM,
+    {
+      shouldContainRecommendation: 'repository',
+      ...options,
+    }
+  );
+}
+
+/**
+ * Test helper for circular dependency detection
+ */
+export async function testCircularDependencyDetection(
+  workspacePath: string,
+  filename: string,
+  vulnerableCode: string,
+  options: VulnerabilityDetectionOptions = {}
+): Promise<SecurityVulnerability[]> {
+  return testVulnerabilityDetection(
+    workspacePath,
+    filename,
+    vulnerableCode,
+    VULNERABILITY_CATEGORIES.ARCHITECTURE,
+    CWE_IDS.CIRCULAR_DEPENDENCY,
+    SEVERITY_LEVELS.HIGH,
+    {
+      shouldContainRecommendation: 'circular',
+      ...options,
+    }
+  );
+}

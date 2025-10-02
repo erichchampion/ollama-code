@@ -71,6 +71,10 @@ exports.testLargeFunctionDetection = testLargeFunctionDetection;
 exports.testDeepNestingDetection = testDeepNestingDetection;
 exports.testMissingErrorHandlingDetection = testMissingErrorHandlingDetection;
 exports.testMissingInputValidationDetection = testMissingInputValidationDetection;
+exports.testLargeClassDetection = testLargeClassDetection;
+exports.testTightCouplingDetection = testTightCouplingDetection;
+exports.testMissingAbstractionDetection = testMissingAbstractionDetection;
+exports.testCircularDependencyDetection = testCircularDependencyDetection;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const assert = __importStar(require("assert"));
@@ -455,6 +459,42 @@ async function testMissingErrorHandlingDetection(workspacePath, filename, vulner
 async function testMissingInputValidationDetection(workspacePath, filename, vulnerableCode, options = {}) {
     return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.CODE_QUALITY, securityTestConstants_1.CWE_IDS.MISSING_INPUT_VALIDATION, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
         shouldContainRecommendation: 'validat',
+        ...options,
+    });
+}
+/**
+ * Test helper for large class detection
+ */
+async function testLargeClassDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.ARCHITECTURE, securityTestConstants_1.CWE_IDS.LARGE_CLASS, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM, {
+        shouldContainRecommendation: 'class',
+        ...options,
+    });
+}
+/**
+ * Test helper for tight coupling detection
+ */
+async function testTightCouplingDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.ARCHITECTURE, securityTestConstants_1.CWE_IDS.TIGHT_COUPLING, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM, {
+        shouldContainRecommendation: 'coupling',
+        ...options,
+    });
+}
+/**
+ * Test helper for missing abstraction detection
+ */
+async function testMissingAbstractionDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.ARCHITECTURE, securityTestConstants_1.CWE_IDS.MISSING_ABSTRACTION, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM, {
+        shouldContainRecommendation: 'repository',
+        ...options,
+    });
+}
+/**
+ * Test helper for circular dependency detection
+ */
+async function testCircularDependencyDetection(workspacePath, filename, vulnerableCode, options = {}) {
+    return testVulnerabilityDetection(workspacePath, filename, vulnerableCode, securityTestConstants_1.VULNERABILITY_CATEGORIES.ARCHITECTURE, securityTestConstants_1.CWE_IDS.CIRCULAR_DEPENDENCY, securityTestConstants_1.SEVERITY_LEVELS.HIGH, {
+        shouldContainRecommendation: 'circular',
         ...options,
     });
 }

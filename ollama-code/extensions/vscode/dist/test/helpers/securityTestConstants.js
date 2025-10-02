@@ -40,6 +40,11 @@ exports.CWE_IDS = {
     DEEP_NESTING: 1124, // CWE-1124 for excessive code nesting
     MISSING_ERROR_HANDLING: 252, // CWE-252 for unchecked return value
     MISSING_INPUT_VALIDATION: 20, // CWE-20 for improper input validation
+    // Architecture Issues (CWE)
+    LARGE_CLASS: 1048, // CWE-1048 for god object/large class
+    TIGHT_COUPLING: 1047, // CWE-1047 for modules with excessive dependencies
+    MISSING_ABSTRACTION: 1061, // CWE-1061 for insufficient encapsulation
+    CIRCULAR_DEPENDENCY: 1047, // CWE-1047 for circular dependencies (alias)
 };
 /**
  * OWASP Top 10 2021 categories
@@ -79,6 +84,7 @@ exports.VULNERABILITY_CATEGORIES = {
     LOGGING: 'logging',
     SSRF: 'ssrf',
     CODE_QUALITY: 'code_quality',
+    ARCHITECTURE: 'architecture',
 };
 /**
  * Parameterization markers used in safe SQL queries
@@ -775,6 +781,149 @@ app.post('/api/users', (req, res) => {
   const user = createUser({ name, email, age });
   res.json(user);
 });
+`,
+    },
+    // Architecture Issues Templates
+    ARCHITECTURE: {
+        LARGE_CLASS_15_METHODS: () => `
+class UserManager {
+  constructor() {}
+  createUser() {}
+  updateUser() {}
+  deleteUser() {}
+  getUser() {}
+  listUsers() {}
+  validateUser() {}
+  authenticateUser() {}
+  authorizeUser() {}
+  sendEmail() {}
+  logActivity() {}
+  generateReport() {}
+  exportData() {}
+  importData() {}
+  calculateMetrics() {}
+}
+`,
+        TIGHT_COUPLING_MANY_IMPORTS: () => `
+import { DatabaseService } from './database';
+import { EmailService } from './email';
+import { LoggingService } from './logging';
+import { CacheService } from './cache';
+import { AuthService } from './auth';
+import { PaymentService } from './payment';
+import { NotificationService } from './notification';
+import { AnalyticsService } from './analytics';
+import { StorageService } from './storage';
+import { ValidationService } from './validation';
+
+class OrderProcessor {
+  process(order) {
+    DatabaseService.save(order);
+    EmailService.send(order.email);
+    LoggingService.log(order);
+    CacheService.set(order.id, order);
+    PaymentService.charge(order);
+  }
+}
+`,
+        MISSING_ABSTRACTION_DIRECT_ACCESS: () => `
+class UserController {
+  getUser(req, res) {
+    const connection = mysql.createConnection({
+      host: 'localhost',
+      user: 'root',
+      password: 'password',
+      database: 'myapp'
+    });
+    connection.query('SELECT * FROM users WHERE id = ?', [req.params.id], (err, results) => {
+      res.json(results[0]);
+    });
+  }
+}
+`,
+        CIRCULAR_DEPENDENCY_A_TO_B: () => `
+// fileA.js
+import { ClassB } from './fileB';
+export class ClassA {
+  constructor() {
+    this.b = new ClassB();
+  }
+}
+`,
+        CIRCULAR_DEPENDENCY_B_TO_A: () => `
+// fileB.js
+import { ClassA } from './fileA';
+export class ClassB {
+  constructor() {
+    this.a = new ClassA();
+  }
+}
+`,
+        // Safe architecture patterns
+        SAFE_SMALL_CLASS: () => `
+class UserValidator {
+  constructor() {}
+  validateEmail(email) {
+    return email.includes('@');
+  }
+  validateAge(age) {
+    return age >= 18;
+  }
+  validate(user) {
+    return this.validateEmail(user.email) && this.validateAge(user.age);
+  }
+}
+`,
+        SAFE_LOOSE_COUPLING_INTERFACES: () => `
+class OrderProcessor {
+  constructor(database, emailer, logger) {
+    this.database = database;
+    this.emailer = emailer;
+    this.logger = logger;
+  }
+
+  process(order) {
+    this.database.save(order);
+    this.emailer.send(order.email);
+    this.logger.log(order);
+  }
+}
+`,
+        SAFE_PROPER_ABSTRACTION: () => `
+class UserRepository {
+  constructor(database) {
+    this.db = database;
+  }
+  findById(id) {
+    return this.db.query('SELECT * FROM users WHERE id = ?', [id]);
+  }
+}
+
+class UserController {
+  constructor(userRepository) {
+    this.users = userRepository;
+  }
+  async getUser(req, res) {
+    const user = await this.users.findById(req.params.id);
+    res.json(user);
+  }
+}
+`,
+        SAFE_NO_CIRCULAR_DEPS: () => `
+// services/database.js
+export class DatabaseService {
+  query(sql, params) {
+    // database logic
+  }
+}
+
+// controllers/user.js
+import { DatabaseService } from '../services/database';
+export class UserController {
+  constructor() {
+    this.db = new DatabaseService();
+  }
+}
 `,
     },
 };
