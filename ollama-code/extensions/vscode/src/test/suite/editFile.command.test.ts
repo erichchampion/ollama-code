@@ -16,40 +16,13 @@ import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
 import {
   createMockOllamaClient,
   createMockLogger,
+  createEditHandler,
+  assertCommandSuccess,
+  assertFileExists,
+  assertFileContains,
+  assertFileDoesNotContain,
   TEST_DATA_CONSTANTS
 } from '../helpers/providerTestHelper';
-
-/**
- * Assertion helper functions for edit-file command testing
- */
-function assertCommandSuccess(result: any, filePath: string): void {
-  assert.strictEqual(result.success, true, 'Command should succeed');
-  assert.strictEqual(result.filePath, filePath, 'Should return correct file path');
-}
-
-function assertFileExists(filePath: string): void {
-  assert.ok(fs.existsSync(filePath), 'File should exist');
-}
-
-function assertFileContains(filePath: string, patterns: string | string[], description?: string): void {
-  const content = fs.readFileSync(filePath, 'utf8');
-  const patternArray = Array.isArray(patterns) ? patterns : [patterns];
-
-  patternArray.forEach(pattern => {
-    assert.ok(
-      content.includes(pattern),
-      description || `File should contain: ${pattern}`
-    );
-  });
-}
-
-function assertFileDoesNotContain(filePath: string, pattern: string, description?: string): void {
-  const content = fs.readFileSync(filePath, 'utf8');
-  assert.ok(
-    !content.includes(pattern),
-    description || `File should not contain: ${pattern}`
-  );
-}
 
 /**
  * Mock edit-file command handler
@@ -192,53 +165,8 @@ suite('edit-file Command Tests', () => {
   setup(async function() {
     this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create AI handler for file editing
-    const editHandler = async (request: any) => {
-      if (request.type === 'edit') {
-        const { prompt, context } = request;
-        const { originalContent } = context;
-
-        // Handle different edit instructions
-        if (prompt.toLowerCase().includes('add function calculatesum')) {
-          return {
-            result: originalContent + '\n\n/**\n * Calculate sum of two numbers\n */\nfunction calculateSum(a, b) {\n  return a + b;\n}\n\nmodule.exports = { calculateSum };\n'
-          };
-        } else if (prompt.toLowerCase().includes('add jsdoc')) {
-          // Add JSDoc comments to functions
-          return {
-            result: originalContent.replace(
-              /function (\w+)\(/g,
-              '/**\n * Description for $1\n */\nfunction $1('
-            )
-          };
-        } else if (prompt.toLowerCase().includes('convert to typescript')) {
-          // Convert JavaScript to TypeScript
-          return {
-            result: originalContent
-              .replace(/function (\w+)\(([^)]*)\)/g, 'function $1($2): void')
-              .replace(/module\.exports/g, 'export')
-          };
-        } else if (prompt.toLowerCase().includes('refactor')) {
-          // Refactor with improved logic
-          return {
-            result: originalContent.replace(
-              /console\.log/g,
-              'logger.info'
-            )
-          };
-        } else if (prompt.toLowerCase().includes('add comment')) {
-          return {
-            result: '// Added comment\n' + originalContent
-          };
-        } else {
-          // Default: add a comment
-          return { result: '// Edited by AI\n' + originalContent };
-        }
-      }
-      return { result: '' };
-    };
-
-    mockClient = createMockOllamaClient(true, editHandler);
+    // Use centralized edit handler
+    mockClient = createMockOllamaClient(true, createEditHandler());
     mockLogger = createMockLogger();
     editFileCmd = new EditFileCommand(mockClient, mockLogger);
 
@@ -376,7 +304,7 @@ suite('edit-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'large.js');
       // Generate large file content
       let largeContent = '';
-      for (let i = 0; i < 1100; i++) {
+      for (let i = 0; i < TEST_DATA_CONSTANTS.FILE_OPERATION_CONSTANTS.LARGE_FILE_LINE_COUNT; i++) {
         largeContent += `const var${i} = ${i};\n`;
       }
       fs.writeFileSync(filePath, largeContent, 'utf8');
@@ -428,7 +356,7 @@ suite('edit-file Command Tests', () => {
       fs.writeFileSync(filePath, 'const x = 1;\n', 'utf8');
 
       // Make file read-only
-      fs.chmodSync(filePath, 0o444);
+      fs.chmodSync(filePath, TEST_DATA_CONSTANTS.FILE_OPERATION_CONSTANTS.PERMISSIONS.READ_ONLY);
 
       const result = await editFileCmd.execute(filePath, 'Add function');
 
@@ -437,7 +365,7 @@ suite('edit-file Command Tests', () => {
       assert.ok(result.error!.includes('read-only'), 'Error should mention read-only');
 
       // Restore permissions for cleanup
-      fs.chmodSync(filePath, 0o644);
+      fs.chmodSync(filePath, TEST_DATA_CONSTANTS.FILE_OPERATION_CONSTANTS.PERMISSIONS.READ_WRITE);
     });
 
     test('Should handle client disconnection error', async function() {

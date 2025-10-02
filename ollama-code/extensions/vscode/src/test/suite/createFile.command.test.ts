@@ -19,32 +19,11 @@ import {
   detectLanguageFromExtension,
   FILE_GENERATION_TEMPLATES,
   createFileGenerationHandler,
+  assertCommandSuccess,
+  assertFileExists,
+  assertFileContains,
   TEST_DATA_CONSTANTS
 } from '../helpers/providerTestHelper';
-
-/**
- * Assertion helper functions for file command testing
- */
-function assertCommandSuccess(result: any, filePath: string): void {
-  assert.strictEqual(result.success, true, 'Command should succeed');
-  assert.strictEqual(result.filePath, filePath, 'Should return correct file path');
-}
-
-function assertFileExists(filePath: string): void {
-  assert.ok(fs.existsSync(filePath), 'File should be created');
-}
-
-function assertFileContains(filePath: string, patterns: string | string[], description?: string): void {
-  const content = fs.readFileSync(filePath, 'utf8');
-  const patternArray = Array.isArray(patterns) ? patterns : [patterns];
-
-  patternArray.forEach(pattern => {
-    assert.ok(
-      content.includes(pattern),
-      description || `File should contain: ${pattern}`
-    );
-  });
-}
 
 /**
  * Mock create-file command handler

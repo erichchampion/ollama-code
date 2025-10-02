@@ -3,6 +3,8 @@
  * Shared mocks, fixtures, and utilities for VS Code provider testing
  */
 
+import * as assert from 'assert';
+import * as fs from 'fs';
 import { OllamaCodeClient } from '../../client/ollamaCodeClient';
 import { Logger } from '../../utils/logger';
 
@@ -224,7 +226,14 @@ export const TEST_DATA_CONSTANTS = {
     /** Minimum depth for deep path tests */
     MIN_DEEP_PATH_DEPTH: 4,
     /** Maximum file name length for validation */
-    MAX_FILE_NAME_LENGTH: 255
+    MAX_FILE_NAME_LENGTH: 255,
+    /** Line count for large file tests (exceeds 1000 line threshold) */
+    LARGE_FILE_LINE_COUNT: 1100,
+    /** File permissions for testing */
+    PERMISSIONS: {
+      READ_ONLY: 0o444,
+      READ_WRITE: 0o644
+    }
   }
 } as const;
 
@@ -322,4 +331,139 @@ export function createFileGenerationHandler() {
     }
     return { result: '' };
   };
+}
+
+/**
+ * Code transformation templates for edit operations
+ * Centralized edit transformations to eliminate duplication
+ */
+export const CODE_EDIT_TEMPLATES = {
+  addFunction: {
+    calculateSum: '\n\n/**\n * Calculate sum of two numbers\n */\nfunction calculateSum(a, b) {\n  return a + b;\n}\n\nmodule.exports = { calculateSum };\n'
+  },
+  jsdoc: {
+    regex: /function (\w+)\(/g,
+    replacement: '/**\n * Description for $1\n */\nfunction $1('
+  },
+  typescript: {
+    functionAnnotation: /function (\w+)\(([^)]*)\)/g,
+    functionReplacement: 'function $1($2): void',
+    exportsRegex: /module\.exports/g,
+    exportsReplacement: 'export'
+  },
+  refactor: {
+    consoleToLogger: {
+      regex: /console\.log/g,
+      replacement: 'logger.info'
+    }
+  },
+  comments: {
+    addTop: (content: string) => '// Added comment\n' + content,
+    addAI: (content: string) => '// Edited by AI\n' + content
+  }
+} as const;
+
+/**
+ * Create edit handler for file editing tests
+ * @returns AI request handler for edit operations
+ */
+export function createEditHandler() {
+  return async (request: any) => {
+    if (request.type === 'edit') {
+      const { prompt, context } = request;
+      const { originalContent } = context;
+      const lowerPrompt = prompt.toLowerCase();
+
+      // Add function
+      if (lowerPrompt.includes('add function calculatesum')) {
+        return { result: originalContent + CODE_EDIT_TEMPLATES.addFunction.calculateSum };
+      }
+
+      // Add JSDoc
+      if (lowerPrompt.includes('add jsdoc')) {
+        return {
+          result: originalContent.replace(
+            CODE_EDIT_TEMPLATES.jsdoc.regex,
+            CODE_EDIT_TEMPLATES.jsdoc.replacement
+          )
+        };
+      }
+
+      // Convert to TypeScript
+      if (lowerPrompt.includes('convert to typescript')) {
+        return {
+          result: originalContent
+            .replace(
+              CODE_EDIT_TEMPLATES.typescript.functionAnnotation,
+              CODE_EDIT_TEMPLATES.typescript.functionReplacement
+            )
+            .replace(
+              CODE_EDIT_TEMPLATES.typescript.exportsRegex,
+              CODE_EDIT_TEMPLATES.typescript.exportsReplacement
+            )
+        };
+      }
+
+      // Refactor
+      if (lowerPrompt.includes('refactor')) {
+        return {
+          result: originalContent.replace(
+            CODE_EDIT_TEMPLATES.refactor.consoleToLogger.regex,
+            CODE_EDIT_TEMPLATES.refactor.consoleToLogger.replacement
+          )
+        };
+      }
+
+      // Add comment
+      if (lowerPrompt.includes('add comment')) {
+        return { result: CODE_EDIT_TEMPLATES.comments.addTop(originalContent) };
+      }
+
+      // Default
+      return { result: CODE_EDIT_TEMPLATES.comments.addAI(originalContent) };
+    }
+    return { result: '' };
+  };
+}
+
+/**
+ * Command Test Assertion Helpers
+ * Shared assertion functions for file operation command tests
+ */
+
+export function assertCommandSuccess(result: any, filePath: string): void {
+  assert.strictEqual(result.success, true, 'Command should succeed');
+  assert.strictEqual(result.filePath, filePath, 'Should return correct file path');
+}
+
+export function assertFileExists(filePath: string): void {
+  assert.ok(fs.existsSync(filePath), 'File should exist');
+}
+
+export function assertFileContains(
+  filePath: string,
+  patterns: string | string[],
+  description?: string
+): void {
+  const content = fs.readFileSync(filePath, 'utf8');
+  const patternArray = Array.isArray(patterns) ? patterns : [patterns];
+
+  patternArray.forEach(pattern => {
+    assert.ok(
+      content.includes(pattern),
+      description || `File should contain: ${pattern}`
+    );
+  });
+}
+
+export function assertFileDoesNotContain(
+  filePath: string,
+  pattern: string,
+  description?: string
+): void {
+  const content = fs.readFileSync(filePath, 'utf8');
+  assert.ok(
+    !content.includes(pattern),
+    description || `File should not contain: ${pattern}`
+  );
 }
