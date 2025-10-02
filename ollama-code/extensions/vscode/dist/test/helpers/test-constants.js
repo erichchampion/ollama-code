@@ -4,7 +4,7 @@
  * Centralized configuration values for extension testing
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GIT_HOOK_TYPES = exports.GIT_HOOKS_FILE_PERMISSIONS = exports.GIT_HOOKS_TEST_CONSTANTS = exports.PROVIDER_TEST_TIMEOUTS = exports.EXPECTED_CONFIG_KEYS = exports.EXPECTED_COMMANDS = exports.TEST_DELAYS = exports.JSONRPC_ERROR_CODES = exports.MCP_TEST_CONSTANTS = exports.WEBSOCKET_TEST_CONSTANTS = exports.EXTENSION_TEST_CONSTANTS = void 0;
+exports.COMMIT_SUBJECT_TEMPLATES = exports.COMMIT_EMOJI_MAP = exports.COMMIT_MESSAGE_TEST_CONSTANTS = exports.GIT_HOOK_TYPES = exports.GIT_HOOKS_FILE_PERMISSIONS = exports.GIT_HOOKS_TEST_CONSTANTS = exports.PROVIDER_TEST_TIMEOUTS = exports.EXPECTED_CONFIG_KEYS = exports.EXPECTED_COMMANDS = exports.TEST_DELAYS = exports.JSONRPC_ERROR_CODES = exports.MCP_TEST_CONSTANTS = exports.WEBSOCKET_TEST_CONSTANTS = exports.EXTENSION_TEST_CONSTANTS = void 0;
 /**
  * Extension identification constants
  */
@@ -191,4 +191,55 @@ exports.GIT_HOOKS_FILE_PERMISSIONS = {
  * Git hook types
  */
 exports.GIT_HOOK_TYPES = ['pre-commit', 'commit-msg', 'pre-push', 'post-merge'];
+/**
+ * Commit message generation test constants
+ * Centralized configuration values for commit message generation testing
+ */
+exports.COMMIT_MESSAGE_TEST_CONSTANTS = {
+    /** Default commit message max length (conventional standard) */
+    DEFAULT_MAX_LENGTH: 72,
+    /** Extended max length for longer messages */
+    EXTENDED_MAX_LENGTH: 100,
+    /** Short max length for testing constraints */
+    SHORT_MAX_LENGTH: 50,
+    /** Default confidence score for generated messages */
+    DEFAULT_CONFIDENCE: 0.85,
+    /** Default impact level for changes */
+    DEFAULT_IMPACT_LEVEL: 'minor',
+    /** Default scope for testing */
+    DEFAULT_SCOPE: 'core',
+    /** Number of alternative messages to generate */
+    ALTERNATIVE_MESSAGE_COUNT: 2,
+    /** Default body text for mock messages */
+    DEFAULT_BODY: 'Detailed description of changes',
+    /** Default footer text for mock messages */
+    DEFAULT_FOOTER: 'BREAKING CHANGE: API changes',
+};
+/**
+ * Commit type emoji mapping
+ * Maps conventional commit types to their emoji equivalents
+ */
+exports.COMMIT_EMOJI_MAP = {
+    feat: '✨',
+    fix: '🐛',
+    docs: '📝',
+    style: '💄',
+    refactor: '♻️',
+    perf: '⚡️',
+    test: '✅',
+    build: '🏗️',
+    ci: '👷',
+    chore: '🔧',
+    revert: '⏪',
+    wip: '🚧',
+};
+/**
+ * Commit message subject templates for testing
+ */
+exports.COMMIT_SUBJECT_TEMPLATES = {
+    FEAT: 'Add new functionality',
+    FIX: 'Fix critical bug',
+    TEST: 'Add test coverage',
+    DEFAULT: 'Update code',
+};
 //# sourceMappingURL=test-constants.js.map

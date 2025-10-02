@@ -7,156 +7,20 @@
 
 import * as assert from 'assert';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-import { createTestGitRepo, withGitRepo, createAndStageFile } from '../helpers/gitHooksTestHelper';
-
-// Import types from commit message generator
-type CommitType = 'feat' | 'fix' | 'docs' | 'style' | 'refactor' | 'perf' | 'test' | 'build' | 'ci' | 'chore' | 'revert' | 'wip';
-
-interface CommitMessageConfig {
-  repositoryPath: string;
-  style: 'conventional' | 'descriptive' | 'minimal' | 'emoji' | 'custom';
-  maxLength: number;
-  includeScope: boolean;
-  includeBody: boolean;
-  includeFooter: boolean;
-  customTemplate?: string;
-  aiProvider?: string;
-}
-
-interface GeneratedCommitMessage {
-  message: string;
-  type: CommitType;
-  scope: string | null;
-  subject: string;
-  body: string | null;
-  footer: string | null;
-  confidence: number;
-  alternatives: string[];
-  analysis: any;
-}
-
-// Mock CommitMessageGenerator for testing
-class CommitMessageGenerator {
-  private config: CommitMessageConfig;
-
-  constructor(config: CommitMessageConfig) {
-    this.config = config;
-  }
-
-  async generateCommitMessage(): Promise<GeneratedCommitMessage> {
-    // Mock implementation - analyze staged files
-    const fs = require('fs/promises');
-    const path = require('path');
-
-    // Simulate analysis of staged changes
-    return this.generateMockMessage('feat', 'Add new feature');
-  }
-
-  async generateFromDiff(diffText: string): Promise<GeneratedCommitMessage> {
-    // Analyze diff content to determine commit type
-    const type = this.analyzeCommitType(diffText);
-    const subject = this.analyzeSubject(diffText);
-
-    return this.generateMockMessage(type, subject);
-  }
-
-  async generateWithContext(branchName?: string, history?: string[]): Promise<GeneratedCommitMessage> {
-    // Generate message considering context
-    const type = branchName?.startsWith('feat/') ? 'feat' :
-                 branchName?.startsWith('fix/') ? 'fix' : 'chore';
-
-    return this.generateMockMessage(type, 'Update based on context');
-  }
-
-  private generateMockMessage(type: CommitType, subject: string): GeneratedCommitMessage {
-    const scope = this.config.includeScope ? 'core' : null;
-    const body = this.config.includeBody ? 'Detailed description of changes' : null;
-    const footer = this.config.includeFooter ? 'BREAKING CHANGE: API changes' : null;
-
-    let message = '';
-    if (this.config.style === 'conventional') {
-      message = scope ? `${type}(${scope}): ${subject}` : `${type}: ${subject}`;
-    } else if (this.config.style === 'emoji') {
-      const emoji = this.getCommitEmoji(type);
-      message = `${emoji} ${subject}`;
-    } else {
-      message = subject;
-    }
-
-    if (body && this.config.includeBody) {
-      message += `\n\n${body}`;
-    }
-    if (footer && this.config.includeFooter) {
-      message += `\n\n${footer}`;
-    }
-
-    return {
-      message,
-      type,
-      scope,
-      subject,
-      body,
-      footer,
-      confidence: 0.85,
-      alternatives: [
-        `${type}: Alternative message 1`,
-        `${type}: Alternative message 2`
-      ],
-      analysis: {
-        changedFiles: [],
-        overallChangeType: type,
-        scope,
-        impactLevel: 'minor',
-        summary: subject,
-        suggestions: []
-      }
-    };
-  }
-
-  private analyzeCommitType(diffText: string): CommitType {
-    if (diffText.includes('function') || diffText.includes('class')) {
-      return 'feat';
-    } else if (diffText.includes('fix') || diffText.includes('bug')) {
-      return 'fix';
-    } else if (diffText.includes('.md')) {
-      return 'docs';
-    } else if (diffText.includes('test')) {
-      return 'test';
-    }
-    return 'chore';
-  }
-
-  private analyzeSubject(diffText: string): string {
-    // Extract subject from diff
-    if (diffText.includes('function')) {
-      return 'Add new functionality';
-    } else if (diffText.includes('fix')) {
-      return 'Fix critical bug';
-    } else if (diffText.includes('test')) {
-      return 'Add test coverage';
-    }
-    return 'Update code';
-  }
-
-  private getCommitEmoji(type: CommitType): string {
-    const emojiMap: Record<CommitType, string> = {
-      feat: '✨',
-      fix: '🐛',
-      docs: '📝',
-      style: '💄',
-      refactor: '♻️',
-      perf: '⚡️',
-      test: '✅',
-      build: '🏗️',
-      ci: '👷',
-      chore: '🔧',
-      revert: '⏪',
-      wip: '🚧'
-    };
-    return emojiMap[type] || '📦';
-  }
-}
+import { PROVIDER_TEST_TIMEOUTS, COMMIT_MESSAGE_TEST_CONSTANTS } from '../helpers/test-constants';
+import {
+  withGitRepo,
+  createAndStageFile,
+  createCommitMessageConfig,
+  assertValidCommitMessage,
+  assertConventionalFormat,
+  assertEmojiFormat,
+} from '../helpers/gitHooksTestHelper';
+import {
+  CommitMessageGenerator,
+  type CommitMessageConfig,
+  type GeneratedCommitMessage,
+} from '../helpers/commitMessageGeneratorWrapper';
 
 suite('Commit Message Generation Tests', () => {
   let testWorkspacePath: string;
@@ -184,22 +48,15 @@ export function calculateTotal(items: number[]): number {
 `;
         await createAndStageFile(repoPath, 'src/calculator.ts', featureCode);
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
+        const config = createCommitMessageConfig(repoPath, {
           style: 'descriptive',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: true,
-          includeFooter: false
-        };
+          includeBody: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
 
-        assert.ok(result.message, 'Should generate message');
-        assert.ok(result.message.length > 0, 'Message should not be empty');
-        assert.ok(result.message.length <= config.maxLength, 'Message should respect max length');
-        assert.ok(result.confidence >= 0 && result.confidence <= 1, 'Confidence should be 0-1');
+        assertValidCommitMessage(result, config);
       });
     });
 
@@ -209,26 +66,18 @@ export function calculateTotal(items: number[]): number {
       await withGitRepo('msg-gen-conventional', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const newFeature = true;');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 100,
-          includeScope: true,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          maxLength: COMMIT_MESSAGE_TEST_CONSTANTS.EXTENDED_MAX_LENGTH,
+          includeScope: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
 
-        // Should follow conventional commit format: type(scope): subject
-        assert.ok(result.message, 'Should generate message');
+        assertValidCommitMessage(result, config);
         assert.ok(['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore'].includes(result.type),
           'Should have valid commit type');
-
-        // Check format: type(scope): subject or type: subject
-        const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip)(\([a-z-]+\))?: .+/;
-        assert.ok(conventionalPattern.test(result.message), 'Should match conventional commit format');
+        assertConventionalFormat(result.message);
       });
     });
 
@@ -238,22 +87,14 @@ export function calculateTotal(items: number[]): number {
       await withGitRepo('msg-gen-emoji', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/new-feature.ts', 'export const feature = "new";');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'emoji',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          style: 'emoji'
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
 
-        // Should start with emoji
-        const emojiPattern = /^[\u{1F300}-\u{1F9FF}]/u;
-        assert.ok(emojiPattern.test(result.message), 'Should start with emoji');
-        assert.ok(result.message.length > 2, 'Should have text after emoji');
+        assertEmojiFormat(result.message);
       });
     });
 
@@ -263,21 +104,16 @@ export function calculateTotal(items: number[]): number {
       await withGitRepo('msg-gen-issue-ref', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/bugfix.ts', 'export const fixed = true;');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 100,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: true // Footer will contain issue reference
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          maxLength: COMMIT_MESSAGE_TEST_CONSTANTS.EXTENDED_MAX_LENGTH,
+          includeFooter: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
 
         // If footer enabled, should include reference
         if (result.footer) {
-          // Footer may contain issue refs like "Closes #123" or "Fixes #456"
           assert.ok(result.footer.length > 0, 'Footer should contain content');
         }
         assert.ok(result.message, 'Should generate message');
@@ -293,14 +129,11 @@ export function calculateTotal(items: number[]): number {
         await createAndStageFile(repoPath, 'src/controller.ts', 'export class Controller {}');
         await createAndStageFile(repoPath, 'src/model.ts', 'export interface Model {}');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 100,
+        const config = createCommitMessageConfig(repoPath, {
+          maxLength: COMMIT_MESSAGE_TEST_CONSTANTS.EXTENDED_MAX_LENGTH,
           includeScope: true,
-          includeBody: true,
-          includeFooter: false
-        };
+          includeBody: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
@@ -320,14 +153,7 @@ export function calculateTotal(items: number[]): number {
       await withGitRepo('msg-gen-alternatives', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = true;');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath);
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
@@ -351,14 +177,7 @@ export function fixCalculation(value: number): number {
 `;
         await createAndStageFile(repoPath, 'src/bugfix.ts', bugfixCode);
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath);
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
@@ -376,23 +195,18 @@ export function fixCalculation(value: number): number {
       await withGitRepo('msg-gen-max-length', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = "test";');
 
-        const maxLength = 50; // Short limit
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength,
-          includeScope: true,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          maxLength: COMMIT_MESSAGE_TEST_CONSTANTS.SHORT_MAX_LENGTH,
+          includeScope: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
 
         // First line (subject) should respect max length
         const firstLine = result.message.split('\n')[0];
-        assert.ok(firstLine.length <= maxLength,
-          `First line should be <= ${maxLength} chars, got ${firstLine.length}`);
+        assert.ok(firstLine.length <= config.maxLength,
+          `First line should be <= ${config.maxLength} chars, got ${firstLine.length}`);
       });
     });
   });
@@ -405,14 +219,7 @@ export function fixCalculation(value: number): number {
         // Documentation change
         await createAndStageFile(repoPath, 'README.md', '# Documentation\n\nUpdated docs');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath);
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
@@ -428,14 +235,9 @@ export function fixCalculation(value: number): number {
       await withGitRepo('msg-gen-history', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = true;');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: true,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          includeScope: true
+        });
 
         // Mock commit history
         const mockHistory = [
@@ -461,14 +263,7 @@ export function fixCalculation(value: number): number {
       await withGitRepo('msg-gen-branch', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = true;');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath);
 
         const generator = new CommitMessageGenerator(config);
 
@@ -489,22 +284,18 @@ export function fixCalculation(value: number): number {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = true;');
 
         const customTemplate = '[{TYPE}] {SUBJECT}\n\nWhat: {WHAT}\nWhy: {WHY}';
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
+        const config = createCommitMessageConfig(repoPath, {
           style: 'custom',
-          maxLength: 100,
-          includeScope: false,
+          maxLength: COMMIT_MESSAGE_TEST_CONSTANTS.EXTENDED_MAX_LENGTH,
           includeBody: true,
-          includeFooter: false,
           customTemplate
-        };
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
 
         // Should follow custom template structure
         assert.ok(result.message, 'Should generate message with custom template');
-        // Template should be applied (in real implementation)
         assert.ok(result.message.length > 0, 'Should have content');
       });
     });
@@ -516,14 +307,9 @@ export function fixCalculation(value: number): number {
         // Create file in specific module
         await createAndStageFile(repoPath, 'src/auth/login.ts', 'export const login = () => {};');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: true,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          includeScope: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
@@ -544,14 +330,9 @@ export function fixCalculation(value: number): number {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = true;');
         await createAndStageFile(repoPath, 'src/feature.test.ts', 'test("feature", () => {});');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: true,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath, {
+          includeBody: true
+        });
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();
@@ -571,14 +352,7 @@ export function fixCalculation(value: number): number {
       await withGitRepo('msg-gen-confidence', async (repoPath) => {
         await createAndStageFile(repoPath, 'src/feature.ts', 'export const feature = true;');
 
-        const config: CommitMessageConfig = {
-          repositoryPath: repoPath,
-          style: 'conventional',
-          maxLength: 72,
-          includeScope: false,
-          includeBody: false,
-          includeFooter: false
-        };
+        const config = createCommitMessageConfig(repoPath);
 
         const generator = new CommitMessageGenerator(config);
         const result = await generator.generateCommitMessage();

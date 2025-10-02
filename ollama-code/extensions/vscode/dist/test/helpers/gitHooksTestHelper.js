@@ -63,6 +63,10 @@ exports.getHookPermissions = getHookPermissions;
 exports.createAndStageFile = createAndStageFile;
 exports.withGitRepo = withGitRepo;
 exports.createGitHooksConfig = createGitHooksConfig;
+exports.createCommitMessageConfig = createCommitMessageConfig;
+exports.assertValidCommitMessage = assertValidCommitMessage;
+exports.assertConventionalFormat = assertConventionalFormat;
+exports.assertEmojiFormat = assertEmojiFormat;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const child_process_1 = require("child_process");
@@ -391,5 +395,50 @@ function createGitHooksConfig(repoPath, overrides = {}) {
         backupExistingHooks: false,
         ...overrides,
     };
+}
+/**
+ * Create a Commit Message configuration with sensible defaults
+ * Reduces code duplication by providing a base config that can be overridden
+ */
+function createCommitMessageConfig(repositoryPath, overrides = {}) {
+    return {
+        repositoryPath,
+        style: 'conventional',
+        maxLength: test_constants_1.COMMIT_MESSAGE_TEST_CONSTANTS.DEFAULT_MAX_LENGTH,
+        includeScope: false,
+        includeBody: false,
+        includeFooter: false,
+        ...overrides,
+    };
+}
+/**
+ * Assert that a generated commit message is valid
+ */
+function assertValidCommitMessage(result, config) {
+    const assert = require('assert');
+    assert.ok(result.message, 'Should generate message');
+    assert.ok(result.message.length > 0, 'Message should not be empty');
+    if (config.maxLength) {
+        const firstLine = result.message.split('\n')[0];
+        assert.ok(firstLine.length <= config.maxLength, `First line should be <= ${config.maxLength} chars, got ${firstLine.length}`);
+    }
+    assert.ok(result.confidence >= 0 && result.confidence <= 1, 'Confidence should be between 0 and 1');
+}
+/**
+ * Assert that a message matches conventional commit format
+ */
+function assertConventionalFormat(message) {
+    const assert = require('assert');
+    const pattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|wip)(\([a-z-]+\))?: .+/;
+    assert.ok(pattern.test(message), 'Should match conventional commit format');
+}
+/**
+ * Assert that a message starts with an emoji
+ */
+function assertEmojiFormat(message) {
+    const assert = require('assert');
+    const emojiPattern = /^[\u{1F300}-\u{1F9FF}]/u;
+    assert.ok(emojiPattern.test(message), 'Should start with emoji');
+    assert.ok(message.length > 2, 'Should have text after emoji');
 }
 //# sourceMappingURL=gitHooksTestHelper.js.map
