@@ -694,3 +694,288 @@ export function createCodeGenerationHandler() {
     return { result: '' };
   };
 }
+
+/**
+ * Test generation constants
+ */
+export const TEST_GENERATION_CONSTANTS = {
+  DEFAULT_FRAMEWORK: 'jest',
+  DEFAULT_COVERAGE: 'basic',
+  DEFAULT_FUNCTION_NAME: 'example',
+  DEFAULT_COMPONENT_NAME: 'Component',
+  FALLBACK_TEST_TEMPLATE: '// Generated test file\n// TODO: Implement tests\n',
+
+  FRAMEWORK_EXTENSIONS: {
+    REACT: ['.jsx', '.tsx'],
+    JAVASCRIPT: ['.js', '.ts'],
+    TYPESCRIPT: ['.ts', '.tsx']
+  },
+
+  FRAMEWORK_KEYWORDS: {
+    REACT: ['component', 'Component'],
+    TEST_DIRECTORY: ['/test/', '/tests/', '/__tests__/']
+  },
+
+  TEST_NAMING: {
+    JEST: '.test',
+    MOCHA: '.spec'
+  }
+} as const;
+
+/**
+ * Extract function names from source code
+ */
+export function extractFunctionNames(sourceCode: string, defaultName: string = TEST_GENERATION_CONSTANTS.DEFAULT_FUNCTION_NAME): string[] {
+  const functionRegex = /(?:function|const|let|var)\s+(\w+)\s*(?:=\s*(?:async\s*)?\([^)]*\)\s*=>|=\s*function|\([^)]*\)\s*{)/g;
+  const matches: string[] = [];
+  let match;
+
+  while ((match = functionRegex.exec(sourceCode)) !== null) {
+    if (match[1] && !matches.includes(match[1])) {
+      matches.push(match[1]);
+    }
+  }
+
+  return matches.length > 0 ? matches : [defaultName];
+}
+
+/**
+ * Extract component name from React source code
+ */
+export function extractComponentName(sourceCode: string, defaultName: string = TEST_GENERATION_CONSTANTS.DEFAULT_COMPONENT_NAME): string {
+  // Try to find export const ComponentName or export function ComponentName
+  const exportMatch = sourceCode.match(/export\s+(?:const|function)\s+(\w+)/);
+  if (exportMatch) {
+    return exportMatch[1];
+  }
+
+  // Try to find Component declaration
+  const componentMatch = sourceCode.match(/(?:const|function)\s+([A-Z]\w+)/);
+  if (componentMatch) {
+    return componentMatch[1];
+  }
+
+  return defaultName;
+}
+
+/**
+ * Test generation templates for testing
+ * Centralized templates for multi-framework test generation
+ */
+export const TEST_GENERATION_TEMPLATES = {
+  jest: {
+    basic: (functions: string[]) => `import { ${functions.join(', ')} } from './source';
+
+describe('Function Tests', () => {
+${functions.map(fn => `  describe('${fn}', () => {
+    it('should work correctly', () => {
+      const result = ${fn}();
+      expect(result).toBeDefined();
+    });
+  });`).join('\n\n')}
+});
+`,
+
+    withMocks: (functions: string[], mockPath: string = './dependency') =>
+      `import { ${functions.join(', ')} } from './source';\n\n` +
+      `// Mock dependencies\njest.mock('${mockPath}');\n\n` +
+      `describe('Function Tests', () => {
+${functions.map(fn => `  describe('${fn}', () => {
+    it('should work correctly', () => {
+      const result = ${fn}();
+      expect(result).toBeDefined();
+    });
+  });`).join('\n\n')}
+});
+`,
+
+    comprehensive: (functions: string[]) => `import { ${functions.join(', ')} } from './source';
+
+describe('Function Tests', () => {
+${functions.map(fn => `  describe('${fn}', () => {
+    it('should work correctly', () => {
+      const result = ${fn}();
+      expect(result).toBeDefined();
+    });
+
+    it('should handle edge cases', () => {
+      expect(() => ${fn}(null)).not.toThrow();
+    });
+  });`).join('\n\n')}
+});
+`,
+
+    sample: `import { add, subtract } from './math';
+
+describe('Math Functions', () => {
+  describe('add', () => {
+    it('should add two numbers correctly', () => {
+      expect(add(2, 3)).toBe(5);
+    });
+
+    it('should handle negative numbers', () => {
+      expect(add(-1, 1)).toBe(0);
+    });
+  });
+
+  describe('subtract', () => {
+    it('should subtract two numbers correctly', () => {
+      expect(subtract(5, 3)).toBe(2);
+    });
+  });
+});
+`
+  },
+
+  react: {
+    basic: (componentName: string) => `import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { ${componentName} } from './${componentName}';
+
+describe('${componentName}', () => {
+  it('should render without crashing', () => {
+    render(<${componentName} />);
+  });
+
+  it('should display content', () => {
+    render(<${componentName} />);
+    expect(screen.getByText(/./i)).toBeInTheDocument();
+  });
+});
+`,
+
+    comprehensive: (componentName: string) => `import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { ${componentName} } from './${componentName}';
+
+describe('${componentName}', () => {
+  it('should render without crashing', () => {
+    render(<${componentName} />);
+  });
+
+  it('should display content', () => {
+    render(<${componentName} />);
+    expect(screen.getByText(/./i)).toBeInTheDocument();
+  });
+
+  it('should handle user interactions', () => {
+    render(<${componentName} />);
+    const button = screen.queryByRole('button');
+    if (button) fireEvent.click(button);
+  });
+
+  it('should handle props correctly', () => {
+    const props = { title: 'Test' };
+    render(<${componentName} {...props} />);
+    expect(screen.getByText(/test/i)).toBeInTheDocument();
+  });
+});
+`,
+
+    sample: `import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './Button';
+
+describe('Button', () => {
+  it('should render without crashing', () => {
+    render(<Button />);
+  });
+
+  it('should display button text', () => {
+    render(<Button label="Click Me" />);
+    expect(screen.getByText(/click me/i)).toBeInTheDocument();
+  });
+
+  it('should call onClick when clicked', () => {
+    const handleClick = jest.fn();
+    render(<Button onClick={handleClick} />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+});
+`
+  },
+
+  mocha: {
+    basic: (functions: string[]) => `const { expect } = require('chai');
+const { ${functions.join(', ')} } = require('./source');
+
+describe('Function Tests', () => {
+${functions.map(fn => `  describe('${fn}', () => {
+    it('should work correctly', () => {
+      const result = ${fn}();
+      expect(result).to.exist;
+    });
+  });`).join('\n\n')}
+});
+`,
+
+    comprehensive: (functions: string[]) => `const { expect } = require('chai');
+const { ${functions.join(', ')} } = require('./source');
+
+describe('Function Tests', () => {
+${functions.map(fn => `  describe('${fn}', () => {
+    it('should work correctly', () => {
+      const result = ${fn}();
+      expect(result).to.exist;
+    });
+
+    it('should handle edge cases', () => {
+      expect(() => ${fn}(null)).to.not.throw();
+    });
+  });`).join('\n\n')}
+});
+`,
+
+    sample: `const { expect } = require('chai');
+const { calculateSum } = require('./calculator');
+
+describe('Calculator', () => {
+  describe('calculateSum', () => {
+    it('should calculate sum correctly', () => {
+      expect(calculateSum(2, 3)).to.equal(5);
+    });
+
+    it('should handle zero', () => {
+      expect(calculateSum(0, 0)).to.equal(0);
+    });
+  });
+});
+`
+  },
+
+  generic: {
+    fallback: TEST_GENERATION_CONSTANTS.FALLBACK_TEST_TEMPLATE,
+    default: `// Generated test file\ndescribe('Tests', () => {\n  it('should pass', () => {\n    expect(true).toBe(true);\n  });\n});\n`
+  }
+} as const;
+
+/**
+ * Create test generation handler for testing
+ */
+export function createTestGenerationHandler() {
+  return async (request: any) => {
+    if (request.type === 'generate-tests') {
+      const { framework } = request;
+
+      // Jest tests
+      if (framework === 'jest') {
+        return { result: TEST_GENERATION_TEMPLATES.jest.sample };
+      }
+
+      // React tests
+      if (framework === 'jest-react') {
+        return { result: TEST_GENERATION_TEMPLATES.react.sample };
+      }
+
+      // Mocha tests
+      if (framework === 'mocha') {
+        return { result: TEST_GENERATION_TEMPLATES.mocha.sample };
+      }
+
+      // Default
+      return { result: TEST_GENERATION_TEMPLATES.generic.default };
+    }
+    return { result: '' };
+  };
+}

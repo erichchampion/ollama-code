@@ -20,7 +20,12 @@ import {
   assertFileExists,
   assertFileContains,
   assertCodeContains,
-  TEST_DATA_CONSTANTS
+  TEST_DATA_CONSTANTS,
+  TEST_GENERATION_TEMPLATES,
+  TEST_GENERATION_CONSTANTS,
+  extractFunctionNames,
+  extractComponentName,
+  createTestGenerationHandler
 } from '../helpers/providerTestHelper';
 
 /**
@@ -111,21 +116,22 @@ class CreateTestsCommand {
     const ext = path.extname(sourceFile);
 
     // Check for React files
-    if (ext === '.jsx' || ext === '.tsx' || sourceFile.includes('component')) {
+    if (TEST_GENERATION_CONSTANTS.FRAMEWORK_EXTENSIONS.REACT.includes(ext as any) ||
+        sourceFile.toLowerCase().includes('component')) {
       return 'jest-react';
     }
 
     // Default to Jest for JS/TS files
-    if (ext === '.js' || ext === '.ts') {
-      return 'jest';
+    if (TEST_GENERATION_CONSTANTS.FRAMEWORK_EXTENSIONS.JAVASCRIPT.includes(ext as any)) {
+      return TEST_GENERATION_CONSTANTS.DEFAULT_FRAMEWORK;
     }
 
     // Mocha for test files in test/ directory
-    if (sourceFile.includes('/test/')) {
+    if (TEST_GENERATION_CONSTANTS.FRAMEWORK_KEYWORDS.TEST_DIRECTORY.some(dir => sourceFile.includes(dir))) {
       return 'mocha';
     }
 
-    return 'jest';
+    return TEST_GENERATION_CONSTANTS.DEFAULT_FRAMEWORK;
   }
 
   /**
@@ -138,23 +144,23 @@ class CreateTestsCommand {
 
     // Jest uses .test.js pattern
     if (framework.startsWith('jest')) {
-      return path.join(dir, `${base}.test${ext}`);
+      return path.join(dir, `${base}${TEST_GENERATION_CONSTANTS.TEST_NAMING.JEST}${ext}`);
     }
 
     // Mocha uses .spec.js pattern
     if (framework === 'mocha') {
-      return path.join(dir, `${base}.spec${ext}`);
+      return path.join(dir, `${base}${TEST_GENERATION_CONSTANTS.TEST_NAMING.MOCHA}${ext}`);
     }
 
     // Default
-    return path.join(dir, `${base}.test${ext}`);
+    return path.join(dir, `${base}${TEST_GENERATION_CONSTANTS.TEST_NAMING.JEST}${ext}`);
   }
 
   /**
    * Generate fallback tests when AI is unavailable
    */
   private generateFallbackTests(sourceCode: string, framework: string, options: any): string {
-    const coverage = options.coverage || 'basic';
+    const coverage = options.coverage || TEST_GENERATION_CONSTANTS.DEFAULT_COVERAGE;
 
     if (framework === 'jest') {
       return this.generateJestTests(sourceCode, coverage, options.mocks);
@@ -163,133 +169,38 @@ class CreateTestsCommand {
     } else if (framework === 'mocha') {
       return this.generateMochaTests(sourceCode, coverage);
     } else {
-      return `// Generated test file\n// TODO: Implement tests\n`;
+      return TEST_GENERATION_CONSTANTS.FALLBACK_TEST_TEMPLATE;
     }
   }
 
   private generateJestTests(sourceCode: string, coverage: string, includeMocks: boolean): string {
-    // Extract function names for basic test structure
-    const functions = this.extractFunctionNames(sourceCode);
+    const functions = extractFunctionNames(sourceCode);
 
-    let tests = `import { ${functions.join(', ')} } from './source';\n\n`;
-
-    if (includeMocks) {
-      tests += `// Mock dependencies\njest.mock('./dependency');\n\n`;
+    if (coverage === 'comprehensive') {
+      return includeMocks
+        ? TEST_GENERATION_TEMPLATES.jest.withMocks(functions)
+        : TEST_GENERATION_TEMPLATES.jest.comprehensive(functions);
     }
 
-    tests += `describe('Function Tests', () => {\n`;
-
-    functions.forEach(fn => {
-      tests += `  describe('${fn}', () => {\n`;
-      tests += `    it('should work correctly', () => {\n`;
-      tests += `      const result = ${fn}();\n`;
-      tests += `      expect(result).toBeDefined();\n`;
-      tests += `    });\n`;
-
-      if (coverage === 'comprehensive') {
-        tests += `\n    it('should handle edge cases', () => {\n`;
-        tests += `      expect(() => ${fn}(null)).not.toThrow();\n`;
-        tests += `    });\n`;
-      }
-
-      tests += `  });\n`;
-    });
-
-    tests += `});\n`;
-    return tests;
+    return includeMocks
+      ? TEST_GENERATION_TEMPLATES.jest.withMocks(functions)
+      : TEST_GENERATION_TEMPLATES.jest.basic(functions);
   }
 
   private generateReactTests(sourceCode: string, coverage: string): string {
-    const componentName = this.extractComponentName(sourceCode);
+    const componentName = extractComponentName(sourceCode);
 
-    let tests = `import React from 'react';\n`;
-    tests += `import { render, screen, fireEvent } from '@testing-library/react';\n`;
-    tests += `import { ${componentName} } from './${componentName}';\n\n`;
-
-    tests += `describe('${componentName}', () => {\n`;
-    tests += `  it('should render without crashing', () => {\n`;
-    tests += `    render(<${componentName} />);\n`;
-    tests += `  });\n\n`;
-
-    tests += `  it('should display content', () => {\n`;
-    tests += `    render(<${componentName} />);\n`;
-    tests += `    expect(screen.getByText(/./i)).toBeInTheDocument();\n`;
-    tests += `  });\n`;
-
-    if (coverage === 'comprehensive') {
-      tests += `\n  it('should handle user interactions', () => {\n`;
-      tests += `    render(<${componentName} />);\n`;
-      tests += `    const button = screen.queryByRole('button');\n`;
-      tests += `    if (button) fireEvent.click(button);\n`;
-      tests += `  });\n`;
-
-      tests += `\n  it('should handle props correctly', () => {\n`;
-      tests += `    const props = { title: 'Test' };\n`;
-      tests += `    render(<${componentName} {...props} />);\n`;
-      tests += `    expect(screen.getByText(/test/i)).toBeInTheDocument();\n`;
-      tests += `  });\n`;
-    }
-
-    tests += `});\n`;
-    return tests;
+    return coverage === 'comprehensive'
+      ? TEST_GENERATION_TEMPLATES.react.comprehensive(componentName)
+      : TEST_GENERATION_TEMPLATES.react.basic(componentName);
   }
 
   private generateMochaTests(sourceCode: string, coverage: string): string {
-    const functions = this.extractFunctionNames(sourceCode);
+    const functions = extractFunctionNames(sourceCode);
 
-    let tests = `const { expect } = require('chai');\n`;
-    tests += `const { ${functions.join(', ')} } = require('./source');\n\n`;
-
-    tests += `describe('Function Tests', () => {\n`;
-
-    functions.forEach(fn => {
-      tests += `  describe('${fn}', () => {\n`;
-      tests += `    it('should work correctly', () => {\n`;
-      tests += `      const result = ${fn}();\n`;
-      tests += `      expect(result).to.exist;\n`;
-      tests += `    });\n`;
-
-      if (coverage === 'comprehensive') {
-        tests += `\n    it('should handle edge cases', () => {\n`;
-        tests += `      expect(() => ${fn}(null)).to.not.throw();\n`;
-        tests += `    });\n`;
-      }
-
-      tests += `  });\n`;
-    });
-
-    tests += `});\n`;
-    return tests;
-  }
-
-  private extractFunctionNames(sourceCode: string): string[] {
-    const functionRegex = /(?:function|const|let|var)\s+(\w+)\s*(?:=\s*(?:async\s*)?\([^)]*\)\s*=>|=\s*function|\([^)]*\)\s*{)/g;
-    const matches: string[] = [];
-    let match;
-
-    while ((match = functionRegex.exec(sourceCode)) !== null) {
-      if (match[1] && !matches.includes(match[1])) {
-        matches.push(match[1]);
-      }
-    }
-
-    return matches.length > 0 ? matches : ['example'];
-  }
-
-  private extractComponentName(sourceCode: string): string {
-    // Try to find export const ComponentName or export function ComponentName
-    const exportMatch = sourceCode.match(/export\s+(?:const|function)\s+(\w+)/);
-    if (exportMatch) {
-      return exportMatch[1];
-    }
-
-    // Try to find Component declaration
-    const componentMatch = sourceCode.match(/(?:const|function)\s+([A-Z]\w+)/);
-    if (componentMatch) {
-      return componentMatch[1];
-    }
-
-    return 'Component';
+    return coverage === 'comprehensive'
+      ? TEST_GENERATION_TEMPLATES.mocha.comprehensive(functions)
+      : TEST_GENERATION_TEMPLATES.mocha.basic(functions);
   }
 }
 
@@ -302,95 +213,7 @@ suite('create-tests Command Tests', () => {
   setup(async function() {
     this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create AI handler for test generation
-    const testGenHandler = async (request: any) => {
-      if (request.type === 'generate-tests') {
-        const { framework, coverage, includeMocks } = request;
-
-        // Jest tests
-        if (framework === 'jest') {
-          return {
-            result: `import { add, subtract } from './math';
-
-describe('Math Functions', () => {
-  describe('add', () => {
-    it('should add two numbers correctly', () => {
-      expect(add(2, 3)).toBe(5);
-    });
-
-    it('should handle negative numbers', () => {
-      expect(add(-1, 1)).toBe(0);
-    });
-  });
-
-  describe('subtract', () => {
-    it('should subtract two numbers correctly', () => {
-      expect(subtract(5, 3)).toBe(2);
-    });
-  });
-});
-`
-          };
-        }
-
-        // React tests
-        if (framework === 'jest-react') {
-          return {
-            result: `import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { Button } from './Button';
-
-describe('Button', () => {
-  it('should render without crashing', () => {
-    render(<Button />);
-  });
-
-  it('should display button text', () => {
-    render(<Button label="Click Me" />);
-    expect(screen.getByText(/click me/i)).toBeInTheDocument();
-  });
-
-  it('should call onClick when clicked', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
-});
-`
-          };
-        }
-
-        // Mocha tests
-        if (framework === 'mocha') {
-          return {
-            result: `const { expect } = require('chai');
-const { calculateSum } = require('./calculator');
-
-describe('Calculator', () => {
-  describe('calculateSum', () => {
-    it('should calculate sum correctly', () => {
-      expect(calculateSum(2, 3)).to.equal(5);
-    });
-
-    it('should handle zero', () => {
-      expect(calculateSum(0, 0)).to.equal(0);
-    });
-  });
-});
-`
-          };
-        }
-
-        // Default
-        return {
-          result: `// Generated test file\ndescribe('Tests', () => {\n  it('should pass', () => {\n    expect(true).toBe(true);\n  });\n});\n`
-        };
-      }
-      return { result: '' };
-    };
-
-    mockClient = createMockOllamaClient(true, testGenHandler);
+    mockClient = createMockOllamaClient(true, createTestGenerationHandler());
     mockLogger = createMockLogger();
     createTestsCmd = new CreateTestsCommand(mockClient, mockLogger);
 
