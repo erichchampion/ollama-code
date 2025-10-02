@@ -467,3 +467,230 @@ export function assertFileDoesNotContain(
     description || `File should not contain: ${pattern}`
   );
 }
+
+/**
+ * Assert that in-memory code contains specified patterns
+ * Used for checking generated code before it's written to a file
+ */
+export function assertCodeContains(
+  code: string,
+  patterns: string | string[],
+  description?: string
+): void {
+  const patternArray = Array.isArray(patterns) ? patterns : [patterns];
+
+  patternArray.forEach(pattern => {
+    assert.ok(
+      code.includes(pattern),
+      description || `Code should contain: ${pattern}`
+    );
+  });
+}
+
+/**
+ * Code generation templates for testing
+ * Centralized templates for multi-framework code generation
+ */
+export const CODE_GENERATION_TEMPLATES = {
+  express: {
+    api: `const express = require('express');
+const router = express.Router();
+
+/**
+ * GET endpoint - Retrieve data
+ */
+router.get('/data', async (req, res) => {
+  try {
+    // TODO: Implement data retrieval
+    const data = { message: 'Success' };
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST endpoint - Create data
+ */
+router.post('/data', async (req, res) => {
+  try {
+    // TODO: Implement data creation
+    const result = req.body;
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
+`,
+    simple: `const express = require('express');
+const app = express();
+
+app.get('/api/users', (req, res) => {
+  res.json({ users: [] });
+});
+
+app.listen(3000);`
+  },
+  react: {
+    component: (componentName: string, description: string) => `import React from 'react';
+
+interface ${componentName}Props {
+  title: string;
+  onAction?: () => void;
+}
+
+/**
+ * ${componentName} component
+ * ${description}
+ */
+export const ${componentName}: React.FC<${componentName}Props> = ({ title, onAction }) => {
+  const handleClick = () => {
+    if (onAction) {
+      onAction();
+    }
+  };
+
+  return (
+    <div className="${componentName.toLowerCase()}">
+      <h2>{title}</h2>
+      <button onClick={handleClick}>Click Me</button>
+    </div>
+  );
+};
+`,
+    simple: `import React from 'react';
+
+export const Component: React.FC = () => {
+  return <div>Hello World</div>;
+};`
+  },
+  python: {
+    class: (description: string) => `"""
+${description}
+"""
+
+from typing import Optional, List
+
+class DataProcessor:
+    """Process and manage data operations"""
+
+    def __init__(self, name: str):
+        """
+        Initialize DataProcessor
+
+        Args:
+            name: Processor name
+        """
+        self.name = name
+        self.data: List[dict] = []
+
+    def process(self, item: dict) -> dict:
+        """
+        Process a single item
+
+        Args:
+            item: Data item to process
+
+        Returns:
+            Processed item
+        """
+        # TODO: Implement processing logic
+        return item
+
+    def get_data(self) -> List[dict]:
+        """
+        Retrieve all data
+
+        Returns:
+            List of data items
+        """
+        return self.data
+`,
+    simple: `class Calculator:
+    def add(self, a: int, b: int) -> int:
+        return a + b`
+  },
+  vue: {
+    component: `<template>
+  <div>{{ message }}</div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      message: 'Hello Vue'
+    };
+  }
+};
+</script>`
+  },
+  generic: {
+    function: `// Generated code\nfunction example() {\n  console.log('Hello');\n}\n`,
+    fallback: (description: string) => `// Generated code for: ${description}\n// TODO: Implement functionality\n`
+  }
+} as const;
+
+/**
+ * Code generation constants
+ */
+export const CODE_GENERATION_CONSTANTS = {
+  DEFAULT_LANGUAGE: 'javascript',
+  DEFAULT_COMPONENT_NAME: 'GeneratedComponent'
+} as const;
+
+/**
+ * Extract name from description (e.g., "Button component" -> "Button")
+ */
+export function extractNameFromDescription(
+  description: string,
+  suffix: string = 'component',
+  defaultName: string = 'Generated'
+): string {
+  const regex = new RegExp(`(\\w+)\\s+${suffix}`, 'i');
+  const match = description.match(regex);
+
+  if (match) {
+    return match[1].charAt(0).toUpperCase() + match[1].slice(1);
+  }
+
+  return defaultName + suffix.charAt(0).toUpperCase() + suffix.slice(1);
+}
+
+/**
+ * Create code generation handler for testing
+ */
+export function createCodeGenerationHandler() {
+  return async (request: any) => {
+    if (request.type === 'generate-code') {
+      const { prompt, context } = request;
+      const lowerPrompt = prompt.toLowerCase();
+
+      // Express API
+      if (lowerPrompt.includes('rest api') || lowerPrompt.includes('express')) {
+        return { result: CODE_GENERATION_TEMPLATES.express.simple };
+      }
+
+      // React component
+      if (context.framework?.toLowerCase() === 'react' || lowerPrompt.includes('react')) {
+        return { result: CODE_GENERATION_TEMPLATES.react.simple };
+      }
+
+      // Python
+      if (context.language?.toLowerCase() === 'python' || lowerPrompt.includes('python')) {
+        return { result: CODE_GENERATION_TEMPLATES.python.simple };
+      }
+
+      // Vue component
+      if (context.framework?.toLowerCase() === 'vue') {
+        return { result: CODE_GENERATION_TEMPLATES.vue.component };
+      }
+
+      // Default
+      return { result: CODE_GENERATION_TEMPLATES.generic.function };
+    }
+    return { result: '' };
+  };
+}

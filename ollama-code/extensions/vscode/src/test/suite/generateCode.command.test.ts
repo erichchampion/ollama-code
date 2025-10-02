@@ -19,6 +19,11 @@ import {
   assertCommandSuccess,
   assertFileExists,
   assertFileContains,
+  assertCodeContains,
+  CODE_GENERATION_TEMPLATES,
+  CODE_GENERATION_CONSTANTS,
+  extractNameFromDescription,
+  createCodeGenerationHandler,
   TEST_DATA_CONSTANTS
 } from '../helpers/providerTestHelper';
 
@@ -75,7 +80,7 @@ class GenerateCodeCommand {
 
       // Validate syntax if requested
       if (options.validate) {
-        this.validateSyntax(generatedCode, options.language || 'javascript');
+        this.validateSyntax(generatedCode, options.language || CODE_GENERATION_CONSTANTS.DEFAULT_LANGUAGE);
       }
 
       // Save to file if output path specified
@@ -111,7 +116,7 @@ class GenerateCodeCommand {
    */
   private generateFallbackCode(description: string, options: any): string {
     const framework = options.framework?.toLowerCase() || '';
-    const language = options.language?.toLowerCase() || 'javascript';
+    const language = options.language?.toLowerCase() || CODE_GENERATION_CONSTANTS.DEFAULT_LANGUAGE;
 
     if (description.toLowerCase().includes('rest api') || description.toLowerCase().includes('express')) {
       return this.generateExpressAPI();
@@ -125,120 +130,16 @@ class GenerateCodeCommand {
   }
 
   private generateExpressAPI(): string {
-    return `const express = require('express');
-const router = express.Router();
-
-/**
- * GET endpoint - Retrieve data
- */
-router.get('/data', async (req, res) => {
-  try {
-    // TODO: Implement data retrieval
-    const data = { message: 'Success' };
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST endpoint - Create data
- */
-router.post('/data', async (req, res) => {
-  try {
-    // TODO: Implement data creation
-    const result = req.body;
-    res.status(201).json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-module.exports = router;
-`;
+    return CODE_GENERATION_TEMPLATES.express.api;
   }
 
   private generateReactComponent(description: string): string {
-    const componentName = this.extractComponentName(description);
-    return `import React from 'react';
-
-interface ${componentName}Props {
-  title: string;
-  onAction?: () => void;
-}
-
-/**
- * ${componentName} component
- * ${description}
- */
-export const ${componentName}: React.FC<${componentName}Props> = ({ title, onAction }) => {
-  const handleClick = () => {
-    if (onAction) {
-      onAction();
-    }
-  };
-
-  return (
-    <div className="${componentName.toLowerCase()}">
-      <h2>{title}</h2>
-      <button onClick={handleClick}>Click Me</button>
-    </div>
-  );
-};
-`;
+    const componentName = extractNameFromDescription(description);
+    return CODE_GENERATION_TEMPLATES.react.component(componentName, description);
   }
 
   private generatePythonClass(description: string): string {
-    return `"""
-${description}
-"""
-
-from typing import Optional, List
-
-class DataProcessor:
-    """Process and manage data operations"""
-
-    def __init__(self, name: str):
-        """
-        Initialize DataProcessor
-
-        Args:
-            name: Processor name
-        """
-        self.name = name
-        self.data: List[dict] = []
-
-    def process(self, item: dict) -> dict:
-        """
-        Process a single item
-
-        Args:
-            item: Data item to process
-
-        Returns:
-            Processed item
-        """
-        # TODO: Implement processing logic
-        return item
-
-    def get_data(self) -> List[dict]:
-        """
-        Retrieve all data
-
-        Returns:
-            List of data items
-        """
-        return self.data
-`;
-  }
-
-  private extractComponentName(description: string): string {
-    // Try to extract component name from description
-    const match = description.match(/(\w+)\s+component/i);
-    if (match) {
-      return match[1].charAt(0).toUpperCase() + match[1].slice(1);
-    }
-    return 'GeneratedComponent';
+    return CODE_GENERATION_TEMPLATES.python.class(description);
   }
 
   /**
@@ -269,74 +170,7 @@ suite('generate-code Command Tests', () => {
   setup(async function() {
     this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create AI handler for code generation
-    const codeGenHandler = async (request: any) => {
-      if (request.type === 'generate-code') {
-        const { prompt, context } = request;
-        const lowerPrompt = prompt.toLowerCase();
-
-        // Express API
-        if (lowerPrompt.includes('rest api') || lowerPrompt.includes('express')) {
-          return {
-            result: `const express = require('express');
-const app = express();
-
-app.get('/api/users', (req, res) => {
-  res.json({ users: [] });
-});
-
-app.listen(3000);`
-          };
-        }
-
-        // React component
-        if (context.framework?.toLowerCase() === 'react' || lowerPrompt.includes('react')) {
-          return {
-            result: `import React from 'react';
-
-export const Component: React.FC = () => {
-  return <div>Hello World</div>;
-};`
-          };
-        }
-
-        // Python
-        if (context.language?.toLowerCase() === 'python' || lowerPrompt.includes('python')) {
-          return {
-            result: `class Calculator:
-    def add(self, a: int, b: int) -> int:
-        return a + b`
-          };
-        }
-
-        // Vue component
-        if (context.framework?.toLowerCase() === 'vue') {
-          return {
-            result: `<template>
-  <div>{{ message }}</div>
-</template>
-
-<script>
-export default {
-  data() {
-    return {
-      message: 'Hello Vue'
-    };
-  }
-};
-</script>`
-          };
-        }
-
-        // Default
-        return {
-          result: `// Generated code\nfunction example() {\n  console.log('Hello');\n}\n`
-        };
-      }
-      return { result: '' };
-    };
-
-    mockClient = createMockOllamaClient(true, codeGenHandler);
+    mockClient = createMockOllamaClient(true, createCodeGenerationHandler());
     mockLogger = createMockLogger();
     generateCodeCmd = new GenerateCodeCommand(mockClient, mockLogger);
 
@@ -356,13 +190,7 @@ export default {
 
       assert.strictEqual(result.success, true, 'Command should succeed');
       assert.ok(result.code, 'Should return generated code');
-      assertFileContains = (code: string, patterns: string | string[]) => {
-        const patternArray = Array.isArray(patterns) ? patterns : [patterns];
-        patternArray.forEach(pattern => {
-          assert.ok(code.includes(pattern), `Code should contain: ${pattern}`);
-        });
-      };
-      assertFileContains(result.code!, ['express', 'app.get', 'app.listen']);
+      assertCodeContains(result.code!, ['express', 'app.get', 'app.listen']);
     });
 
     test('Should generate React component with TypeScript', async function() {
