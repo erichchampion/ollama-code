@@ -68,6 +68,14 @@ suite('Architecture Issues Tests', () => {
             assert.ok(vulnerabilities[0].references.length > 0);
             assert.ok(vulnerabilities[0].description.toLowerCase().includes('class'));
         });
+        test('Should detect TypeScript class with return type annotations', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const vulnerableCode = securityTestConstants_1.VULNERABILITY_CODE_TEMPLATES.ARCHITECTURE.LARGE_CLASS_15_METHODS_TYPESCRIPT();
+            const vulnerabilities = await (0, securityTestHelper_1.testLargeClassDetection)(testWorkspacePath, 'arch-large-class-typescript.ts', vulnerableCode);
+            assert.ok(vulnerabilities.length > 0, 'Should detect TypeScript large class');
+            assert.strictEqual(vulnerabilities[0].cweId, securityTestConstants_1.CWE_IDS.LARGE_CLASS);
+            assert.strictEqual(vulnerabilities[0].severity, securityTestConstants_1.SEVERITY_LEVELS.MEDIUM);
+        });
     });
     suite('Tight Coupling Detection', () => {
         test('Should detect excessive imports indicating tight coupling', async function () {

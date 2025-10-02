@@ -832,6 +832,25 @@ class UserManager {
   calculateMetrics() {}
 }
 `,
+    LARGE_CLASS_15_METHODS_TYPESCRIPT: () => `
+class UserManager {
+  constructor() {}
+  createUser(): User {}
+  updateUser(id: string): Promise<void> {}
+  deleteUser(id: string): boolean {}
+  getUser(id: string): User {}
+  listUsers(): User[] {}
+  validateUser(user: User): boolean {}
+  authenticateUser(credentials: Credentials): Promise<AuthResult> {}
+  authorizeUser(user: User, resource: string): boolean {}
+  sendEmail(to: string, subject: string): void {}
+  logActivity(activity: Activity): void {}
+  generateReport(type: ReportType): Report {}
+  exportData(format: string): string {}
+  importData(data: string): void {}
+  calculateMetrics(): Metrics {}
+}
+`,
     TIGHT_COUPLING_MANY_IMPORTS: () => `
 import { DatabaseService } from './database';
 import { EmailService } from './email';

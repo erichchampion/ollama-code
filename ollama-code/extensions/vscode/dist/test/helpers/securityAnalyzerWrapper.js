@@ -512,12 +512,16 @@ const SECURITY_RULES = [
     {
         id: 'large_class',
         name: 'Large Class (God Object)',
-        description: 'Class has more than 10 methods, indicating low cohesion',
+        description: 'Class has more than 10 methods, indicating low cohesion (Threshold: 10+ methods)',
         severity: 'medium',
         category: 'architecture',
         cweId: 1048,
-        // Match class with 10+ method definitions
-        pattern: /class\s+\w+\s*\{[\s\S]*?(?:^\s*\w+\s*\([^)]*\)\s*\{[\s\S]*?\n\s*\}[\s\S]*?){10,}/m,
+        // Match class with 10+ method definitions (threshold hardcoded in pattern)
+        // Supports both JavaScript and TypeScript syntax:
+        // - JavaScript: methodName(params) { }
+        // - TypeScript: methodName(params): ReturnType { }
+        // The (?:\s*:\s*[^{]+)? captures optional TypeScript return type annotation
+        pattern: /class\s+\w+\s*\{[\s\S]*?(?:^\s*\w+\s*\([^)]*\)(?:\s*:\s*[^{]+)?\s*\{[\s\S]*?\n\s*\}[\s\S]*?){10,}/m,
         filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
         confidence: 'medium',
         recommendation: 'Break down large classes following Single Responsibility Principle. Extract related methods into separate classes',
@@ -529,11 +533,12 @@ const SECURITY_RULES = [
     {
         id: 'tight_coupling',
         name: 'Tight Coupling',
-        description: 'Module has excessive dependencies (high fan-out)',
+        description: 'Module has excessive dependencies (high fan-out) (Threshold: 6+ imports)',
         severity: 'medium',
         category: 'architecture',
         cweId: 1047,
-        // Match 6+ import statements at the top of file
+        // Match 6+ import statements at the top of file (threshold hardcoded in pattern)
+        // Threshold of 6+ imports indicates tight coupling and high fan-out
         pattern: /^(?:import\s+.*?from\s+['"][^'"]+['"];?\s*\n){6,}/m,
         filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
         confidence: 'low',
@@ -563,19 +568,24 @@ const SECURITY_RULES = [
     {
         id: 'circular_dependency',
         name: 'Circular Dependency',
-        description: 'Circular import detected between modules',
+        description: 'Potential circular import detected between modules (Note: regex-based detection has limitations - use build tools like madge for comprehensive analysis)',
         severity: 'high',
         category: 'architecture',
         cweId: 1047,
-        // This is difficult to detect with regex alone - looking for suspicious patterns
-        // where file imports from another and that file likely imports back
-        pattern: /import\s+\{[^}]*\}\s+from\s+['"]\.(\/\w+)?\/file[AB]['"]/,
+        // Detects suspicious bidirectional import patterns by looking for:
+        // 1. Multiple imports from relative paths in same file
+        // 2. Imports that reference sibling modules (./filename pattern)
+        // Note: True circular dependency detection requires multi-file static analysis.
+        // This pattern detects files with multiple relative imports that may form cycles.
+        // For comprehensive detection, use tools like madge, dpdm, or ESLint plugin-import.
+        pattern: /(?:import\s+\{[^}]*\}\s+from\s+['"]\.\/\w+['"];?\s*\n){2,}/,
         filePatterns: securityTestConstants_1.FILE_PATTERNS.ALL_CODE,
         confidence: 'low',
-        recommendation: 'Refactor to eliminate circular dependencies. Extract shared code to separate module or use dependency inversion',
+        recommendation: 'Refactor to eliminate circular dependencies. Extract shared code to separate module or use dependency inversion. Use madge or dpdm for comprehensive circular dependency detection',
         references: [
             'https://cwe.mitre.org/data/definitions/1047.html',
-            'https://en.wikipedia.org/wiki/Circular_dependency'
+            'https://en.wikipedia.org/wiki/Circular_dependency',
+            'https://github.com/pahen/madge'
         ]
     },
     // Note: duplicate_code rule removed - regex patterns are too simplistic for accurate
