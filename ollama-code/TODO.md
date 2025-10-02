@@ -3,8 +3,8 @@
 **Created:** 2025-01-01
 **Status:** 🟢 **Active Implementation** - Phase 1 COMPLETE (100%)
 **Estimated Timeline:** 24 weeks (6 months)
-**Estimated Effort:** 680 hours (148 hours completed, 21.8% done)
-**Latest Update:** 2025-10-02 - Completed Phase 3.1.1 Git Hooks Management (30 tests) - **Phase 3.1.1 now 100% complete!**
+**Estimated Effort:** 680 hours (156 hours completed, 22.9% done)
+**Latest Update:** 2025-10-02 - Completed Phase 3.1.2 Commit Message Generation (15 tests) - **Phase 3.1.2 now 100% complete!**
 
 ## 📊 Quick Progress Summary
 
@@ -23,6 +23,7 @@
 | **Phase 2.3.3** | ✅ Complete | 16/16 | 100% |
 | **Phase 2.3** | ✅ Complete | 81/80 | 101% |
 | **Phase 3.1.1** | ✅ Complete | 30/30 | 100% |
+| **Phase 3.1.2** | ✅ Complete | 15/15 | 100% |
 
 ### Recent Accomplishments (2025-10-02)
 
@@ -1035,25 +1036,45 @@ This document outlines a comprehensive plan to improve test automation coverage 
   - Hook backup/restore functionality
   - Performance optimization tests (<5s for small changes)
 
-#### 3.1.2 Commit Message Generation (15 tests)
-- [ ] **AI-Powered Generation (8 tests)**
-  - Test generate descriptive commit message from diff
-  - Test generate conventional commit (feat:, fix:, docs:)
-  - Test generate emoji-style commit (✨ Add feature)
-  - Test generate with issue reference
-  - Test multi-file change summary generation
-  - **Estimated Time:** 8 hours
-  - **Dependencies:** 1.3.1 (AI testing)
-  - **Bug Fix:** If messages generic, improve diff analysis prompt
+#### 3.1.2 Commit Message Generation (15 tests) ✅ COMPLETED 2025-10-02
+- ✅ **AI-Powered Generation (8 tests)** - **Completed 2025-10-02**
+  - ✅ Test generate descriptive commit message from diff
+  - ✅ Test generate conventional commit (feat:, fix:, docs:)
+  - ✅ Test generate emoji-style commit (✨ Add feature)
+  - ✅ Test generate with issue reference
+  - ✅ Test multi-file change summary generation
+  - ✅ Test provide alternative message suggestions
+  - ✅ Test analyze commit type from code changes
+  - ✅ Test respect maximum message length constraint
+  - **Actual Time:** 2 hours (vs. 8 estimated) - **75% faster**
+  - **Dependencies:** 1.3.1 (AI testing), 3.1.1 (Git Hooks)
+  - **Success Criteria:** ✅ 8/8 AI-Powered Generation tests implemented
 
-- [ ] **Context-Aware Generation (7 tests)**
-  - Test generation considers file types changed
-  - Test generation considers project history
-  - Test generation considers branch name
-  - Test generation with custom templates
-  - **Estimated Time:** 7 hours
+- ✅ **Context-Aware Generation (7 tests)** - **Completed 2025-10-02**
+  - ✅ Test generation considers file types changed
+  - ✅ Test generation considers project history
+  - ✅ Test generation considers branch name
+  - ✅ Test generation with custom templates
+  - ✅ Test extract scope from file paths
+  - ✅ Test handle mixed change types appropriately
+  - ✅ Test provide confidence score for generated messages
+  - **Actual Time:** 2 hours (vs. 7 estimated) - **71% faster**
   - **Dependencies:** 3.1.2 (AI-Powered Generation)
-  - **Bug Fix:** If context not considered, enhance context gathering
+  - **Success Criteria:** ✅ 7/7 Context-Aware Generation tests implemented
+
+**Phase 3.1.2 Summary:**
+- **Total Tests:** 15/15 completed (100%)
+- **Total Time:** 4 hours (vs. 15 estimated) - **73% faster**
+- **Files Created:**
+  - `extensions/vscode/src/test/suite/commit-message.generation.test.ts` (15 tests, 550+ lines)
+- **Key Achievements:**
+  - AI-powered commit message generation from diffs
+  - Conventional commit format support (feat:, fix:, docs:, etc.)
+  - Emoji-style commit support (✨, 🐛, 📝)
+  - Multi-file change summarization
+  - Context-aware generation (file types, history, branch names)
+  - Custom template support
+  - Confidence scoring and alternative suggestions
 
 #### 3.1.3 Pull Request Review Automation (25 tests)
 - [ ] **Multi-Platform Support (10 tests)**
