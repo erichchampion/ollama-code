@@ -2,6 +2,8 @@
 /**
  * Security - Injection Vulnerabilities Tests
  * OWASP Top 10 - Injection vulnerability detection tests
+ *
+ * Tests production SecurityAnalyzer for injection vulnerability detection
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -38,260 +40,14 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = __importStar(require("assert"));
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
 const extensionTestHelper_1 = require("../helpers/extensionTestHelper");
 const test_constants_1 = require("../helpers/test-constants");
-const providerTestHelper_1 = require("../helpers/providerTestHelper");
-/**
- * Security vulnerability severity levels
- */
-var VulnerabilitySeverity;
-(function (VulnerabilitySeverity) {
-    VulnerabilitySeverity["CRITICAL"] = "critical";
-    VulnerabilitySeverity["HIGH"] = "high";
-    VulnerabilitySeverity["MEDIUM"] = "medium";
-    VulnerabilitySeverity["LOW"] = "low";
-    VulnerabilitySeverity["INFO"] = "info";
-})(VulnerabilitySeverity || (VulnerabilitySeverity = {}));
-/**
- * Mock security scanner for injection vulnerabilities
- */
-class InjectionSecurityScanner {
-    constructor(client, logger) {
-        this.client = client;
-        this.logger = logger;
-    }
-    /**
-     * Scan code for injection vulnerabilities
-     */
-    async scanForInjections(filePath) {
-        if (!fs.existsSync(filePath)) {
-            throw new Error(`File does not exist: ${filePath}`);
-        }
-        const code = fs.readFileSync(filePath, 'utf8');
-        const vulnerabilities = [];
-        // SQL Injection detection
-        vulnerabilities.push(...this.detectSQLInjection(code));
-        // NoSQL Injection detection
-        vulnerabilities.push(...this.detectNoSQLInjection(code));
-        // Command Injection detection
-        vulnerabilities.push(...this.detectCommandInjection(code));
-        // LDAP Injection detection
-        vulnerabilities.push(...this.detectLDAPInjection(code));
-        // XPath Injection detection
-        vulnerabilities.push(...this.detectXPathInjection(code));
-        // Template Injection detection
-        vulnerabilities.push(...this.detectTemplateInjection(code));
-        return vulnerabilities;
-    }
-    /**
-     * Detect SQL injection vulnerabilities
-     */
-    detectSQLInjection(code) {
-        const vulnerabilities = [];
-        const lines = code.split('\n');
-        lines.forEach((line, index) => {
-            // Direct string concatenation in SQL queries
-            if (/(?:query|execute|sql)\s*=?\s*[`'"]\s*SELECT.*\+|(?:query|execute|sql)\s*=?\s*[`'"].*\$\{|(?:query|execute|sql)\s*\+=/.test(line)) {
-                vulnerabilities.push({
-                    type: 'SQL_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential SQL injection: Direct string concatenation in query',
-                    recommendation: 'Use parameterized queries or prepared statements'
-                });
-            }
-            // req.query/req.params/req.body used directly in SQL
-            if (/(?:query|execute|sql).*(?:req\.query|req\.params|req\.body)/.test(line) &&
-                !line.includes('?') && !line.includes('$1')) {
-                vulnerabilities.push({
-                    type: 'SQL_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential SQL injection: User input used directly in query',
-                    recommendation: 'Use parameterized queries with placeholders ($1, $2, etc.)'
-                });
-            }
-        });
-        return vulnerabilities;
-    }
-    /**
-     * Detect NoSQL injection vulnerabilities (MongoDB)
-     */
-    detectNoSQLInjection(code) {
-        const vulnerabilities = [];
-        const lines = code.split('\n');
-        lines.forEach((line, index) => {
-            // Direct user input in MongoDB queries
-            if (/\.find\s*\(\s*(?:req\.query|req\.params|req\.body)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'NOSQL_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential NoSQL injection: User input used directly in query object',
-                    recommendation: 'Validate and sanitize user input, use schema validation'
-                });
-            }
-            // $where operator with user input
-            if (/\$where.*(?:req\.query|req\.params|req\.body)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'NOSQL_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential NoSQL injection: User input in $where operator',
-                    recommendation: 'Avoid $where operator or strictly validate input'
-                });
-            }
-        });
-        return vulnerabilities;
-    }
-    /**
-     * Detect command injection vulnerabilities
-     */
-    detectCommandInjection(code) {
-        const vulnerabilities = [];
-        const lines = code.split('\n');
-        lines.forEach((line, index) => {
-            // exec/execSync with user input
-            if (/exec(?:Sync)?\s*\([^)]*(?:req\.query|req\.params|req\.body|process\.env)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'COMMAND_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential command injection: User input in exec() call',
-                    recommendation: 'Use execFile() with argument array or validate input strictly'
-                });
-            }
-            // spawn with shell: true and user input
-            if (/spawn\s*\([^)]*,\s*\{[^}]*shell:\s*true/.test(line) &&
-                /(?:req\.query|req\.params|req\.body)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'COMMAND_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential command injection: User input in spawn() with shell:true',
-                    recommendation: 'Use spawn() without shell option or validate input strictly'
-                });
-            }
-            // eval() with user input
-            if (/eval\s*\([^)]*(?:req\.query|req\.params|req\.body)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'COMMAND_INJECTION',
-                    severity: VulnerabilitySeverity.CRITICAL,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential code injection: eval() with user input',
-                    recommendation: 'Never use eval() with user input, use safer alternatives'
-                });
-            }
-        });
-        return vulnerabilities;
-    }
-    /**
-     * Detect LDAP injection vulnerabilities
-     */
-    detectLDAPInjection(code) {
-        const vulnerabilities = [];
-        const lines = code.split('\n');
-        lines.forEach((line, index) => {
-            // LDAP filter with user input
-            if (/(?:ldap|search).*filter.*(?:req\.query|req\.params|req\.body)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'LDAP_INJECTION',
-                    severity: VulnerabilitySeverity.HIGH,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential LDAP injection: User input in LDAP filter',
-                    recommendation: 'Escape LDAP special characters or use LDAP libraries with built-in escaping'
-                });
-            }
-            // LDAP DN construction with user input
-            if (/(?:dn|baseDN).*=.*(?:req\.query|req\.params|req\.body)/.test(line)) {
-                vulnerabilities.push({
-                    type: 'LDAP_INJECTION',
-                    severity: VulnerabilitySeverity.HIGH,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential LDAP injection: User input in DN construction',
-                    recommendation: 'Validate and escape user input for LDAP DNs'
-                });
-            }
-        });
-        return vulnerabilities;
-    }
-    /**
-     * Detect XPath injection vulnerabilities
-     */
-    detectXPathInjection(code) {
-        const vulnerabilities = [];
-        const lines = code.split('\n');
-        lines.forEach((line, index) => {
-            // XPath expression with user input
-            if (/(?:xpath|select).*(?:req\.query|req\.params|req\.body)/.test(line) &&
-                !line.includes('escape')) {
-                vulnerabilities.push({
-                    type: 'XPATH_INJECTION',
-                    severity: VulnerabilitySeverity.HIGH,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential XPath injection: User input in XPath expression',
-                    recommendation: 'Use parameterized XPath queries or escape user input'
-                });
-            }
-        });
-        return vulnerabilities;
-    }
-    /**
-     * Detect template injection vulnerabilities
-     */
-    detectTemplateInjection(code) {
-        const vulnerabilities = [];
-        const lines = code.split('\n');
-        lines.forEach((line, index) => {
-            // Template rendering with user input
-            if (/(?:render|compile|template).*(?:req\.query|req\.params|req\.body)/.test(line) &&
-                !line.includes('escape') && !line.includes('sanitize')) {
-                vulnerabilities.push({
-                    type: 'TEMPLATE_INJECTION',
-                    severity: VulnerabilitySeverity.HIGH,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential template injection: User input in template rendering',
-                    recommendation: 'Escape user input or use sandboxed template engines'
-                });
-            }
-            // Handlebars/Mustache with triple braces and user input
-            if (/\{\{\{.*(?:req\.query|req\.params|req\.body).*\}\}\}/.test(line)) {
-                vulnerabilities.push({
-                    type: 'TEMPLATE_INJECTION',
-                    severity: VulnerabilitySeverity.HIGH,
-                    line: index + 1,
-                    code: line.trim(),
-                    message: 'Potential template injection: Unescaped user input in template',
-                    recommendation: 'Use double braces {{}} for auto-escaping'
-                });
-            }
-        });
-        return vulnerabilities;
-    }
-}
+const securityTestHelper_1 = require("../helpers/securityTestHelper");
+const securityTestConstants_1 = require("../helpers/securityTestConstants");
 suite('Security - Injection Vulnerabilities Tests', () => {
-    let scanner;
-    let mockClient;
-    let mockLogger;
     let testWorkspacePath;
     setup(async function () {
         this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.SETUP);
-        mockClient = (0, providerTestHelper_1.createMockOllamaClient)(true);
-        mockLogger = (0, providerTestHelper_1.createMockLogger)();
-        scanner = new InjectionSecurityScanner(mockClient, mockLogger);
         testWorkspacePath = await (0, extensionTestHelper_1.createTestWorkspace)('security-injection-tests');
     });
     teardown(async function () {
@@ -305,13 +61,13 @@ suite('Security - Injection Vulnerabilities Tests', () => {
 const query = "SELECT * FROM users WHERE id = " + req.params.id;
 db.execute(query);
 `;
-            const testFile = path.join(testWorkspacePath, 'sql-concat.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
-            assert.ok(vulnerabilities.length > 0, 'Should detect SQL injection');
-            const sqlInjection = vulnerabilities.find(v => v.type === 'SQL_INJECTION');
-            assert.ok(sqlInjection, 'Should identify as SQL injection');
-            assert.strictEqual(sqlInjection?.severity, VulnerabilitySeverity.CRITICAL);
+            const vulnerabilities = await (0, securityTestHelper_1.testSQLInjectionDetection)(testWorkspacePath, 'sql-concat.js', vulnerableCode);
+            // Validate security metadata
+            (0, securityTestHelper_1.assertSecurityMetadata)(vulnerabilities[0]);
+            // Verify OWASP and CWE mappings
+            assert.strictEqual(vulnerabilities[0].cweId, securityTestConstants_1.CWE_IDS.SQL_INJECTION);
+            assert.ok(vulnerabilities[0].owaspCategory?.includes('A03:2021'));
+            assert.ok(vulnerabilities[0].references.length > 0);
         });
         test('Should detect SQL injection with template literals', async function () {
             this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
@@ -319,11 +75,17 @@ db.execute(query);
 const query = \`SELECT * FROM users WHERE username = '\${req.body.username}'\`;
 db.query(query);
 `;
-            const testFile = path.join(testWorkspacePath, 'sql-template.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
+            const vulnerabilities = await (0, securityTestHelper_1.testSQLInjectionDetection)(testWorkspacePath, 'sql-template.js', vulnerableCode);
             assert.ok(vulnerabilities.length > 0, 'Should detect SQL injection');
-            assert.ok(vulnerabilities[0].message.includes('SQL injection'));
+            assert.ok(vulnerabilities[0].description.toLowerCase().includes('sql'));
+        });
+        test('Should NOT detect parameterized SQL queries', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const safeCode = `
+const query = 'SELECT * FROM users WHERE id = $1';
+db.query(query, [userId]);
+`;
+            await (0, securityTestHelper_1.testNoVulnerabilitiesDetected)(testWorkspacePath, 'sql-safe.js', safeCode, 'injection');
         });
     });
     suite('NoSQL Injection Detection', () => {
@@ -332,24 +94,28 @@ db.query(query);
             const vulnerableCode = `
 const user = await User.find(req.query);
 `;
-            const testFile = path.join(testWorkspacePath, 'nosql-direct.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
-            assert.ok(vulnerabilities.length > 0, 'Should detect NoSQL injection');
-            const nosqlInjection = vulnerabilities.find(v => v.type === 'NOSQL_INJECTION');
-            assert.ok(nosqlInjection, 'Should identify as NoSQL injection');
-            assert.strictEqual(nosqlInjection?.severity, VulnerabilitySeverity.CRITICAL);
+            const vulnerabilities = await (0, securityTestHelper_1.testNoSQLInjectionDetection)(testWorkspacePath, 'nosql-direct.js', vulnerableCode, {
+                confidence: 'high',
+            });
+            (0, securityTestHelper_1.assertSecurityMetadata)(vulnerabilities[0]);
+            assert.strictEqual(vulnerabilities[0].severity, 'critical');
         });
         test('Should detect NoSQL injection with $where operator', async function () {
             this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
             const vulnerableCode = `
 const users = await User.find({ $where: req.body.filter });
 `;
-            const testFile = path.join(testWorkspacePath, 'nosql-where.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
+            const vulnerabilities = await (0, securityTestHelper_1.testNoSQLInjectionDetection)(testWorkspacePath, 'nosql-where.js', vulnerableCode);
             assert.ok(vulnerabilities.length > 0, 'Should detect NoSQL injection');
-            assert.ok(vulnerabilities[0].message.includes('$where'));
+            assert.ok(vulnerabilities[0].recommendation.length > 0);
+        });
+        test('Should NOT detect safe MongoDB queries', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const safeCode = `
+const sanitizedQuery = validator.escape(req.query.search);
+const user = await User.findOne({ username: sanitizedQuery });
+`;
+            await (0, securityTestHelper_1.testNoVulnerabilitiesDetected)(testWorkspacePath, 'nosql-safe.js', safeCode, 'injection');
         });
     });
     suite('Command Injection Detection', () => {
@@ -359,35 +125,40 @@ const users = await User.find({ $where: req.body.filter });
 const { exec } = require('child_process');
 exec('ls ' + req.query.dir);
 `;
-            const testFile = path.join(testWorkspacePath, 'cmd-exec.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
-            assert.ok(vulnerabilities.length > 0, 'Should detect command injection');
-            const cmdInjection = vulnerabilities.find(v => v.type === 'COMMAND_INJECTION');
-            assert.ok(cmdInjection, 'Should identify as command injection');
-            assert.strictEqual(cmdInjection?.severity, VulnerabilitySeverity.CRITICAL);
+            const vulnerabilities = await (0, securityTestHelper_1.testCommandInjectionDetection)(testWorkspacePath, 'cmd-exec.js', vulnerableCode, {
+                shouldContainRecommendation: 'validate',
+            });
+            (0, securityTestHelper_1.assertSecurityMetadata)(vulnerabilities[0]);
+            assert.strictEqual(vulnerabilities[0].cweId, securityTestConstants_1.CWE_IDS.COMMAND_INJECTION);
+            assert.strictEqual(vulnerabilities[0].severity, 'critical');
         });
         test('Should detect command injection in spawn() with shell:true', async function () {
             this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
             const vulnerableCode = `
 spawn(req.params.cmd, [], { shell: true });
 `;
-            const testFile = path.join(testWorkspacePath, 'cmd-spawn.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
+            const vulnerabilities = await (0, securityTestHelper_1.testCommandInjectionDetection)(testWorkspacePath, 'cmd-spawn.js', vulnerableCode);
             assert.ok(vulnerabilities.length > 0, 'Should detect command injection');
-            assert.ok(vulnerabilities[0].message.includes('spawn'));
+            assert.ok(vulnerabilities[0].references.some(ref => ref.includes('cwe.mitre.org')));
         });
         test('Should detect code injection in eval()', async function () {
             this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
             const vulnerableCode = `
 eval(req.body.code);
 `;
-            const testFile = path.join(testWorkspacePath, 'code-eval.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
+            const vulnerabilities = await (0, securityTestHelper_1.testCommandInjectionDetection)(testWorkspacePath, 'code-eval.js', vulnerableCode);
             assert.ok(vulnerabilities.length > 0, 'Should detect code injection');
-            assert.ok(vulnerabilities[0].message.includes('eval'));
+            assert.strictEqual(vulnerabilities[0].severity, 'critical');
+        });
+        test('Should NOT detect safe execFile usage', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const safeCode = `
+const { execFile } = require('child_process');
+const allowedCommands = ['ls', 'pwd'];
+const cmd = allowedCommands.includes(req.query.cmd) ? req.query.cmd : 'ls';
+execFile(cmd, ['-la']);
+`;
+            await (0, securityTestHelper_1.testNoVulnerabilitiesDetected)(testWorkspacePath, 'cmd-safe.js', safeCode, 'injection');
         });
     });
     suite('LDAP Injection Detection', () => {
@@ -397,13 +168,20 @@ eval(req.body.code);
 const filter = 'uid=' + req.params.username;
 ldapClient.search(baseDN, { filter }, callback);
 `;
-            const testFile = path.join(testWorkspacePath, 'ldap-filter.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
-            assert.ok(vulnerabilities.length > 0, 'Should detect LDAP injection');
-            const ldapInjection = vulnerabilities.find(v => v.type === 'LDAP_INJECTION');
-            assert.ok(ldapInjection, 'Should identify as LDAP injection');
-            assert.strictEqual(ldapInjection?.severity, VulnerabilitySeverity.HIGH);
+            const vulnerabilities = await (0, securityTestHelper_1.testLDAPInjectionDetection)(testWorkspacePath, 'ldap-filter.js', vulnerableCode);
+            (0, securityTestHelper_1.assertSecurityMetadata)(vulnerabilities[0]);
+            assert.strictEqual(vulnerabilities[0].cweId, securityTestConstants_1.CWE_IDS.LDAP_INJECTION);
+            assert.strictEqual(vulnerabilities[0].severity, 'high');
+            assert.ok(vulnerabilities[0].owaspCategory?.includes(securityTestConstants_1.OWASP_CATEGORIES.A03_INJECTION));
+        });
+        test('Should NOT detect escaped LDAP filters', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const safeCode = `
+const escapedUsername = ldap.escapeFilter(req.params.username);
+const filter = 'uid=' + escapedUsername;
+ldapClient.search(baseDN, { filter }, callback);
+`;
+            await (0, securityTestHelper_1.testNoVulnerabilitiesDetected)(testWorkspacePath, 'ldap-safe.js', safeCode, 'injection');
         });
     });
     suite('XPath Injection Detection', () => {
@@ -413,13 +191,20 @@ ldapClient.search(baseDN, { filter }, callback);
 const xpath = '/users/user[username="' + req.query.user + '"]';
 const result = doc.select(xpath);
 `;
-            const testFile = path.join(testWorkspacePath, 'xpath-injection.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
-            assert.ok(vulnerabilities.length > 0, 'Should detect XPath injection');
-            const xpathInjection = vulnerabilities.find(v => v.type === 'XPATH_INJECTION');
-            assert.ok(xpathInjection, 'Should identify as XPath injection');
-            assert.strictEqual(xpathInjection?.severity, VulnerabilitySeverity.HIGH);
+            const vulnerabilities = await (0, securityTestHelper_1.testXPathInjectionDetection)(testWorkspacePath, 'xpath-injection.js', vulnerableCode);
+            (0, securityTestHelper_1.assertSecurityMetadata)(vulnerabilities[0]);
+            assert.strictEqual(vulnerabilities[0].cweId, securityTestConstants_1.CWE_IDS.XPATH_INJECTION);
+            assert.strictEqual(vulnerabilities[0].severity, 'high');
+            assert.ok(vulnerabilities[0].references.length > 0);
+        });
+        test('Should NOT detect parameterized XPath queries', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const safeCode = `
+const escapedUser = xpath.escape(req.query.user);
+const xpath = '/users/user[username="' + escapedUser + '"]';
+const result = doc.select(xpath);
+`;
+            await (0, securityTestHelper_1.testNoVulnerabilitiesDetected)(testWorkspacePath, 'xpath-safe.js', safeCode, 'injection');
         });
     });
     suite('Template Injection Detection', () => {
@@ -429,24 +214,62 @@ const result = doc.select(xpath);
 const template = req.body.template;
 const compiled = Handlebars.compile(template);
 `;
-            const testFile = path.join(testWorkspacePath, 'template-injection.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
-            assert.ok(vulnerabilities.length > 0, 'Should detect template injection');
-            const templateInjection = vulnerabilities.find(v => v.type === 'TEMPLATE_INJECTION');
-            assert.ok(templateInjection, 'Should identify as template injection');
-            assert.strictEqual(templateInjection?.severity, VulnerabilitySeverity.HIGH);
+            const vulnerabilities = await (0, securityTestHelper_1.testTemplateInjectionDetection)(testWorkspacePath, 'template-injection.js', vulnerableCode);
+            (0, securityTestHelper_1.assertSecurityMetadata)(vulnerabilities[0]);
+            assert.strictEqual(vulnerabilities[0].cweId, securityTestConstants_1.CWE_IDS.TEMPLATE_INJECTION);
+            assert.strictEqual(vulnerabilities[0].severity, 'high');
+            assert.ok(vulnerabilities[0].owaspCategory?.includes('A03:2021'));
         });
         test('Should detect unescaped template variables', async function () {
             this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
             const vulnerableCode = `
 const html = '{{{ req.body.userInput }}}';
 `;
-            const testFile = path.join(testWorkspacePath, 'template-unescaped.js');
-            fs.writeFileSync(testFile, vulnerableCode, 'utf8');
-            const vulnerabilities = await scanner.scanForInjections(testFile);
+            const vulnerabilities = await (0, securityTestHelper_1.testTemplateInjectionDetection)(testWorkspacePath, 'template-unescaped.js', vulnerableCode);
             assert.ok(vulnerabilities.length > 0, 'Should detect unescaped template injection');
-            assert.ok(vulnerabilities[0].message.includes('Unescaped'));
+            assert.strictEqual(vulnerabilities[0].severity, 'high');
+        });
+        test('Should NOT detect escaped template usage', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const safeCode = `
+const sanitizedInput = sanitize(req.body.userInput);
+const html = '{{ safeInput }}'; // Auto-escaped by Handlebars
+`;
+            await (0, securityTestHelper_1.testNoVulnerabilitiesDetected)(testWorkspacePath, 'template-safe.js', safeCode, 'injection');
+        });
+    });
+    suite('Security Metadata Validation', () => {
+        test('All injection vulnerabilities should have OWASP A03:2021 mapping', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const vulnerableCode = `
+const query = "SELECT * FROM users WHERE id = " + req.params.id;
+exec('ls ' + req.query.dir);
+`;
+            const vulnerabilities = await (0, securityTestHelper_1.testSQLInjectionDetection)(testWorkspacePath, 'multiple-injections.js', vulnerableCode, { minVulnerabilities: 1 });
+            for (const vuln of vulnerabilities) {
+                assert.ok(vuln.owaspCategory?.includes('A03:2021'), `Injection vulnerability should map to OWASP A03:2021, got: ${vuln.owaspCategory}`);
+            }
+        });
+        test('All critical vulnerabilities should have reference links', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const vulnerableCode = `eval(req.body.code);`;
+            const vulnerabilities = await (0, securityTestHelper_1.testCommandInjectionDetection)(testWorkspacePath, 'critical-vuln.js', vulnerableCode);
+            const criticalVuln = vulnerabilities.find(v => v.severity === 'critical');
+            assert.ok(criticalVuln, 'Should find critical vulnerability');
+            assert.ok(criticalVuln.references.length >= 2, 'Should have at least 2 references');
+            assert.ok(criticalVuln.references.some(ref => ref.includes('owasp.org')), 'Should have OWASP reference');
+            assert.ok(criticalVuln.references.some(ref => ref.includes('cwe.mitre.org')), 'Should have CWE reference');
+        });
+        test('All vulnerabilities should have confidence levels', async function () {
+            this.timeout(test_constants_1.PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+            const vulnerableCode = `
+const query = \`SELECT * FROM users WHERE id = '\${req.params.id}'\`;
+db.query(query);
+`;
+            const vulnerabilities = await (0, securityTestHelper_1.testSQLInjectionDetection)(testWorkspacePath, 'confidence-test.js', vulnerableCode);
+            for (const vuln of vulnerabilities) {
+                assert.ok(['high', 'medium', 'low'].includes(vuln.confidence), `Confidence should be high/medium/low, got: ${vuln.confidence}`);
+            }
         });
     });
 });
