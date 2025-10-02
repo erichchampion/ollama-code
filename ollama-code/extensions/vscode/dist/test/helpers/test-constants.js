@@ -4,7 +4,7 @@
  * Centralized configuration values for extension testing
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PROVIDER_TEST_TIMEOUTS = exports.EXPECTED_CONFIG_KEYS = exports.EXPECTED_COMMANDS = exports.TEST_DELAYS = exports.JSONRPC_ERROR_CODES = exports.MCP_TEST_CONSTANTS = exports.WEBSOCKET_TEST_CONSTANTS = exports.EXTENSION_TEST_CONSTANTS = void 0;
+exports.GIT_HOOK_TYPES = exports.GIT_HOOKS_FILE_PERMISSIONS = exports.GIT_HOOKS_TEST_CONSTANTS = exports.PROVIDER_TEST_TIMEOUTS = exports.EXPECTED_CONFIG_KEYS = exports.EXPECTED_COMMANDS = exports.TEST_DELAYS = exports.JSONRPC_ERROR_CODES = exports.MCP_TEST_CONSTANTS = exports.WEBSOCKET_TEST_CONSTANTS = exports.EXTENSION_TEST_CONSTANTS = void 0;
 /**
  * Extension identification constants
  */
@@ -156,4 +156,39 @@ exports.PROVIDER_TEST_TIMEOUTS = {
     /** Simulated slow hover response (triggers timeout) */
     SIMULATED_SLOW_HOVER: 5000,
 };
+/**
+ * Git Hooks test constants
+ * Centralized configuration values for Git hooks management testing
+ */
+exports.GIT_HOOKS_TEST_CONSTANTS = {
+    /** Default analysis timeout for hooks */
+    DEFAULT_ANALYSIS_TIMEOUT: 30000,
+    /** Maximum hook execution time for performance tests */
+    MAX_HOOK_EXECUTION_TIME: 5000,
+    /** Test Git repositories base directory */
+    TEST_REPOS_DIR: '.test-git-repos',
+    /** Test workspaces base directory */
+    TEST_WORKSPACES_DIR: '.test-workspaces',
+    /** Hook marker comment */
+    HOOK_MARKER: '# ollama-code generated hook',
+    /** Backup file extension */
+    BACKUP_EXTENSION: '.backup',
+    /** Test Git user email */
+    TEST_GIT_EMAIL: 'test@example.com',
+    /** Test Git user name */
+    TEST_GIT_NAME: 'Test User',
+};
+/**
+ * Git Hooks file permission constants
+ */
+exports.GIT_HOOKS_FILE_PERMISSIONS = {
+    /** Executable permission (rwxr-xr-x) */
+    EXECUTABLE: 0o755,
+    /** Execute bit mask for checking executability */
+    EXECUTE_BIT: 0o111,
+};
+/**
+ * Git hook types
+ */
+exports.GIT_HOOK_TYPES = ['pre-commit', 'commit-msg', 'pre-push', 'post-merge'];
 //# sourceMappingURL=test-constants.js.map

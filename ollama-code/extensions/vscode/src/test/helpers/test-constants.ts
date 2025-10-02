@@ -163,3 +163,42 @@ export const PROVIDER_TEST_TIMEOUTS = {
   /** Simulated slow hover response (triggers timeout) */
   SIMULATED_SLOW_HOVER: 5000,
 } as const;
+
+/**
+ * Git Hooks test constants
+ * Centralized configuration values for Git hooks management testing
+ */
+export const GIT_HOOKS_TEST_CONSTANTS = {
+  /** Default analysis timeout for hooks */
+  DEFAULT_ANALYSIS_TIMEOUT: 30000,
+  /** Maximum hook execution time for performance tests */
+  MAX_HOOK_EXECUTION_TIME: 5000,
+  /** Test Git repositories base directory */
+  TEST_REPOS_DIR: '.test-git-repos',
+  /** Test workspaces base directory */
+  TEST_WORKSPACES_DIR: '.test-workspaces',
+  /** Hook marker comment */
+  HOOK_MARKER: '# ollama-code generated hook',
+  /** Backup file extension */
+  BACKUP_EXTENSION: '.backup',
+  /** Test Git user email */
+  TEST_GIT_EMAIL: 'test@example.com',
+  /** Test Git user name */
+  TEST_GIT_NAME: 'Test User',
+} as const;
+
+/**
+ * Git Hooks file permission constants
+ */
+export const GIT_HOOKS_FILE_PERMISSIONS = {
+  /** Executable permission (rwxr-xr-x) */
+  EXECUTABLE: 0o755,
+  /** Execute bit mask for checking executability */
+  EXECUTE_BIT: 0o111,
+} as const;
+
+/**
+ * Git hook types
+ */
+export const GIT_HOOK_TYPES = ['pre-commit', 'commit-msg', 'pre-push', 'post-merge'] as const;
+export type GitHookType = (typeof GIT_HOOK_TYPES)[number];

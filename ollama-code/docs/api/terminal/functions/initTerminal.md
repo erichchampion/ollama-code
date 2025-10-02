@@ -8,7 +8,7 @@
 
 > **initTerminal**(`config`): `Promise`\<[`TerminalInterface`](../interfaces/TerminalInterface.md)\>
 
-Defined in: [terminal/index.ts:21](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/terminal/index.ts#L21)
+Defined in: [terminal/index.ts:21](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/terminal/index.ts#L21)
 
 Initialize the terminal interface
 

@@ -8,6 +8,6 @@
 
 > **PromptOptions** = [`InputPromptOptions`](../interfaces/InputPromptOptions.md) \| [`PasswordPromptOptions`](../interfaces/PasswordPromptOptions.md) \| [`ConfirmPromptOptions`](../interfaces/ConfirmPromptOptions.md) \| [`ListPromptOptions`](../interfaces/ListPromptOptions.md) \| [`CheckboxPromptOptions`](../interfaces/CheckboxPromptOptions.md) \| [`EditorPromptOptions`](../interfaces/EditorPromptOptions.md)
 
-Defined in: [terminal/types.ts:180](https://github.com/erichchampion/ollama-code/blob/f6c86092ceb05c9cf6b0f52863f31d0a214195fb/ollama-code/src/terminal/types.ts#L180)
+Defined in: [terminal/types.ts:180](https://github.com/erichchampion/ollama-code/blob/b99cb69c24326793ea2d4f713f56de8fdfcd084d/ollama-code/src/terminal/types.ts#L180)
 
 Combined prompt options type
