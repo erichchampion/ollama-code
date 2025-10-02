@@ -151,6 +151,164 @@ export const SECURITY_RULE_IDS = {
 } as const;
 
 /**
+ * File patterns for security scanning
+ * Used to ensure consistent file pattern matching across all security rules
+ */
+export const FILE_PATTERNS = {
+  /** Web languages: JavaScript, TypeScript, React */
+  WEB_LANGUAGES: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'] as const,
+
+  /** Backend languages: JS, TS, Python, Java, PHP */
+  BACKEND_LANGUAGES: ['**/*.js', '**/*.ts', '**/*.py', '**/*.java', '**/*.php'] as const,
+
+  /** Shell scripts */
+  SHELL_SCRIPTS: ['**/*.sh', '**/*.bash'] as const,
+
+  /** All code files */
+  ALL_CODE: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx', '**/*.py', '**/*.java', '**/*.php', '**/*.sh'] as const,
+
+  /** React-specific files */
+  REACT_FILES: ['**/*.jsx', '**/*.tsx'] as const,
+
+  /** TypeScript files */
+  TYPESCRIPT_FILES: ['**/*.ts', '**/*.tsx'] as const,
+} as const;
+
+/**
+ * Vulnerability code templates
+ * Reusable code snippets for testing vulnerability detection
+ */
+export const VULNERABILITY_CODE_TEMPLATES = {
+  SQL_INJECTION: {
+    STRING_CONCAT: (source: string) => `
+const query = "SELECT * FROM users WHERE id = " + ${source};
+db.execute(query);
+`,
+    TEMPLATE_LITERAL: (source: string) => `
+const query = \`SELECT * FROM users WHERE username = '\${${source}}'\`;
+db.query(query);
+`,
+    SAFE_PARAMETERIZED: (source: string) => `
+const query = 'SELECT * FROM users WHERE id = $1';
+db.query(query, [${source}]);
+`,
+  },
+
+  NOSQL_INJECTION: {
+    DIRECT_INPUT: (source: string) => `
+const user = await User.find(${source});
+`,
+    WHERE_OPERATOR: (source: string) => `
+const users = await User.find({ $where: ${source} });
+`,
+    SAFE_SANITIZED: (source: string) => `
+const sanitizedQuery = validator.escape(${source});
+const user = await User.findOne({ username: sanitizedQuery });
+`,
+  },
+
+  COMMAND_INJECTION: {
+    EXEC: (source: string) => `
+const { exec } = require('child_process');
+exec('ls ' + ${source});
+`,
+    SPAWN_SHELL: (source: string) => `
+spawn(${source}, [], { shell: true });
+`,
+    EVAL: (source: string) => `
+eval(${source});
+`,
+    SAFE_EXECFILE: (source: string) => `
+const { execFile } = require('child_process');
+const allowedCommands = ['ls', 'pwd'];
+const cmd = allowedCommands.includes(${source}) ? ${source} : 'ls';
+execFile(cmd, ['-la']);
+`,
+  },
+
+  LDAP_INJECTION: {
+    FILTER_CONCAT: (source: string) => `
+const filter = 'uid=' + ${source};
+ldapClient.search(baseDN, { filter }, callback);
+`,
+    SAFE_ESCAPED: (source: string) => `
+const escapedUsername = ldap.escapeFilter(${source});
+const filter = 'uid=' + escapedUsername;
+ldapClient.search(baseDN, { filter }, callback);
+`,
+  },
+
+  XPATH_INJECTION: {
+    CONCAT: (source: string) => `
+const xpath = '/users/user[username="' + ${source} + '"]';
+const result = doc.select(xpath);
+`,
+    SAFE_ESCAPED: (source: string) => `
+const escapedUser = xpath.escape(${source});
+const xpath = '/users/user[username="' + escapedUser + '"]';
+const result = doc.select(xpath);
+`,
+  },
+
+  TEMPLATE_INJECTION: {
+    COMPILE: (source: string) => `
+const template = ${source};
+const compiled = Handlebars.compile(template);
+`,
+    UNESCAPED: (source: string) => `
+const html = '{{{ ${source} }}}';
+`,
+    SAFE_SANITIZED: (source: string) => `
+const sanitizedInput = sanitize(${source});
+const html = '{{ safeInput }}'; // Auto-escaped by Handlebars
+`,
+  },
+
+  XSS: {
+    INNER_HTML: (source: string) => `
+const userInput = ${source};
+document.getElementById('output').innerHTML = userInput;
+`,
+    OUTER_HTML: (source: string) => `
+const userInput = ${source};
+element.outerHTML = userInput;
+`,
+    DOCUMENT_WRITE: (source: string) => `
+const content = ${source};
+document.write(content);
+`,
+    DOM_LOCATION: (source: string) => `
+const hash = ${source};
+document.getElementById('output').innerHTML = hash;
+`,
+    REACT_DANGEROUS: (source: string) => `
+function UserContent({ userInput }) {
+  return (
+    <div dangerouslySetInnerHTML={{ __html: ${source} }} />
+  );
+}
+`,
+    SAFE_TEXT_CONTENT: (source: string) => `
+const message = ${source};
+document.getElementById('output').textContent = message; // Safe - textContent escapes HTML
+`,
+    SAFE_SANITIZED: (source: string) => `
+import DOMPurify from 'dompurify';
+const message = ${source};
+const sanitized = DOMPurify.sanitize(message);
+document.getElementById('output').innerHTML = sanitized;
+`,
+    SAFE_REACT: (source: string) => `
+function UserContent({ userInput }) {
+  return (
+    <div>{${source}}</div> // Safe - React escapes by default
+  );
+}
+`,
+  },
+} as const;
+
+/**
  * Expected vulnerability counts for test suites
  */
 export const EXPECTED_VULNERABILITY_COUNTS = {

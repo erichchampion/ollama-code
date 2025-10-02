@@ -4,7 +4,7 @@
  * Shared constants for security vulnerability testing
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EXPECTED_VULNERABILITY_COUNTS = exports.SECURITY_RULE_IDS = exports.CONFIDENCE_LEVELS = exports.SEVERITY_LEVELS = exports.USER_INPUT_SOURCES = exports.ESCAPE_KEYWORDS = exports.PARAMETERIZATION_MARKERS = exports.VULNERABILITY_CATEGORIES = exports.OWASP_CATEGORIES = exports.CWE_IDS = void 0;
+exports.EXPECTED_VULNERABILITY_COUNTS = exports.VULNERABILITY_CODE_TEMPLATES = exports.FILE_PATTERNS = exports.SECURITY_RULE_IDS = exports.CONFIDENCE_LEVELS = exports.SEVERITY_LEVELS = exports.USER_INPUT_SOURCES = exports.ESCAPE_KEYWORDS = exports.PARAMETERIZATION_MARKERS = exports.VULNERABILITY_CATEGORIES = exports.OWASP_CATEGORIES = exports.CWE_IDS = void 0;
 /**
  * CWE (Common Weakness Enumeration) IDs for security vulnerabilities
  * @see https://cwe.mitre.org/
@@ -142,6 +142,151 @@ exports.SECURITY_RULE_IDS = {
     SSRF: 'ssrf_vulnerability',
     XXE: 'xxe_vulnerability',
     CSRF: 'csrf_vulnerability',
+};
+/**
+ * File patterns for security scanning
+ * Used to ensure consistent file pattern matching across all security rules
+ */
+exports.FILE_PATTERNS = {
+    /** Web languages: JavaScript, TypeScript, React */
+    WEB_LANGUAGES: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'],
+    /** Backend languages: JS, TS, Python, Java, PHP */
+    BACKEND_LANGUAGES: ['**/*.js', '**/*.ts', '**/*.py', '**/*.java', '**/*.php'],
+    /** Shell scripts */
+    SHELL_SCRIPTS: ['**/*.sh', '**/*.bash'],
+    /** All code files */
+    ALL_CODE: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx', '**/*.py', '**/*.java', '**/*.php', '**/*.sh'],
+    /** React-specific files */
+    REACT_FILES: ['**/*.jsx', '**/*.tsx'],
+    /** TypeScript files */
+    TYPESCRIPT_FILES: ['**/*.ts', '**/*.tsx'],
+};
+/**
+ * Vulnerability code templates
+ * Reusable code snippets for testing vulnerability detection
+ */
+exports.VULNERABILITY_CODE_TEMPLATES = {
+    SQL_INJECTION: {
+        STRING_CONCAT: (source) => `
+const query = "SELECT * FROM users WHERE id = " + ${source};
+db.execute(query);
+`,
+        TEMPLATE_LITERAL: (source) => `
+const query = \`SELECT * FROM users WHERE username = '\${${source}}'\`;
+db.query(query);
+`,
+        SAFE_PARAMETERIZED: (source) => `
+const query = 'SELECT * FROM users WHERE id = $1';
+db.query(query, [${source}]);
+`,
+    },
+    NOSQL_INJECTION: {
+        DIRECT_INPUT: (source) => `
+const user = await User.find(${source});
+`,
+        WHERE_OPERATOR: (source) => `
+const users = await User.find({ $where: ${source} });
+`,
+        SAFE_SANITIZED: (source) => `
+const sanitizedQuery = validator.escape(${source});
+const user = await User.findOne({ username: sanitizedQuery });
+`,
+    },
+    COMMAND_INJECTION: {
+        EXEC: (source) => `
+const { exec } = require('child_process');
+exec('ls ' + ${source});
+`,
+        SPAWN_SHELL: (source) => `
+spawn(${source}, [], { shell: true });
+`,
+        EVAL: (source) => `
+eval(${source});
+`,
+        SAFE_EXECFILE: (source) => `
+const { execFile } = require('child_process');
+const allowedCommands = ['ls', 'pwd'];
+const cmd = allowedCommands.includes(${source}) ? ${source} : 'ls';
+execFile(cmd, ['-la']);
+`,
+    },
+    LDAP_INJECTION: {
+        FILTER_CONCAT: (source) => `
+const filter = 'uid=' + ${source};
+ldapClient.search(baseDN, { filter }, callback);
+`,
+        SAFE_ESCAPED: (source) => `
+const escapedUsername = ldap.escapeFilter(${source});
+const filter = 'uid=' + escapedUsername;
+ldapClient.search(baseDN, { filter }, callback);
+`,
+    },
+    XPATH_INJECTION: {
+        CONCAT: (source) => `
+const xpath = '/users/user[username="' + ${source} + '"]';
+const result = doc.select(xpath);
+`,
+        SAFE_ESCAPED: (source) => `
+const escapedUser = xpath.escape(${source});
+const xpath = '/users/user[username="' + escapedUser + '"]';
+const result = doc.select(xpath);
+`,
+    },
+    TEMPLATE_INJECTION: {
+        COMPILE: (source) => `
+const template = ${source};
+const compiled = Handlebars.compile(template);
+`,
+        UNESCAPED: (source) => `
+const html = '{{{ ${source} }}}';
+`,
+        SAFE_SANITIZED: (source) => `
+const sanitizedInput = sanitize(${source});
+const html = '{{ safeInput }}'; // Auto-escaped by Handlebars
+`,
+    },
+    XSS: {
+        INNER_HTML: (source) => `
+const userInput = ${source};
+document.getElementById('output').innerHTML = userInput;
+`,
+        OUTER_HTML: (source) => `
+const userInput = ${source};
+element.outerHTML = userInput;
+`,
+        DOCUMENT_WRITE: (source) => `
+const content = ${source};
+document.write(content);
+`,
+        DOM_LOCATION: (source) => `
+const hash = ${source};
+document.getElementById('output').innerHTML = hash;
+`,
+        REACT_DANGEROUS: (source) => `
+function UserContent({ userInput }) {
+  return (
+    <div dangerouslySetInnerHTML={{ __html: ${source} }} />
+  );
+}
+`,
+        SAFE_TEXT_CONTENT: (source) => `
+const message = ${source};
+document.getElementById('output').textContent = message; // Safe - textContent escapes HTML
+`,
+        SAFE_SANITIZED: (source) => `
+import DOMPurify from 'dompurify';
+const message = ${source};
+const sanitized = DOMPurify.sanitize(message);
+document.getElementById('output').innerHTML = sanitized;
+`,
+        SAFE_REACT: (source) => `
+function UserContent({ userInput }) {
+  return (
+    <div>{${source}}</div> // Safe - React escapes by default
+  );
+}
+`,
+    },
 };
 /**
  * Expected vulnerability counts for test suites

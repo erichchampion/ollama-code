@@ -50,6 +50,11 @@ exports.testNoVulnerabilitiesDetected = testNoVulnerabilitiesDetected;
 exports.assertSecurityMetadata = assertSecurityMetadata;
 exports.assertVulnerabilityLine = assertVulnerabilityLine;
 exports.createMultiVulnerabilityFile = createMultiVulnerabilityFile;
+exports.assertOWASPCategory = assertOWASPCategory;
+exports.assertAllVulnerabilitiesHaveOWASP = assertAllVulnerabilitiesHaveOWASP;
+exports.assertCWEId = assertCWEId;
+exports.assertAllVulnerabilitiesHaveCWE = assertAllVulnerabilitiesHaveCWE;
+exports.createSecurityTestFile = createSecurityTestFile;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const assert = __importStar(require("assert"));
@@ -193,6 +198,8 @@ async function testNoVulnerabilitiesDetected(workspacePath, filename, safeCode, 
     await fs.writeFile(testFile, safeCode, 'utf8');
     const analyzer = new securityAnalyzerWrapper_1.SecurityAnalyzer();
     const vulnerabilities = await analyzer.analyzeFile(testFile);
+    // CRITICAL: Verify analyzer returned valid array (Bug #2 fix)
+    assert.ok(Array.isArray(vulnerabilities), 'SecurityAnalyzer must return array (returned undefined or null)');
     if (category) {
         const categoryVulns = vulnerabilities.filter(v => v.category === category);
         assert.strictEqual(categoryVulns.length, 0, `Expected no ${category} vulnerabilities for safe code, found ${categoryVulns.length}`);
@@ -248,5 +255,39 @@ async function createMultiVulnerabilityFile(workspacePath, filename, vulnerabili
     const testFile = path.join(workspacePath, filename);
     await fs.writeFile(testFile, code, 'utf8');
     return testFile;
+}
+/**
+ * Assert vulnerability has expected OWASP category
+ */
+function assertOWASPCategory(vulnerability, expectedCategory) {
+    assert.ok(vulnerability.owaspCategory?.includes(expectedCategory), `Expected OWASP ${expectedCategory}, got: ${vulnerability.owaspCategory}`);
+}
+/**
+ * Assert all vulnerabilities have expected OWASP category
+ */
+function assertAllVulnerabilitiesHaveOWASP(vulnerabilities, expectedCategory) {
+    for (const vuln of vulnerabilities) {
+        assertOWASPCategory(vuln, expectedCategory);
+    }
+}
+/**
+ * Assert vulnerability has CWE ID
+ */
+function assertCWEId(vulnerability, expectedCweId) {
+    assert.strictEqual(vulnerability.cweId, expectedCweId, `Expected CWE-${expectedCweId}, got: CWE-${vulnerability.cweId}`);
+}
+/**
+ * Assert all vulnerabilities have expected CWE ID
+ */
+function assertAllVulnerabilitiesHaveCWE(vulnerabilities, expectedCweId) {
+    for (const vuln of vulnerabilities) {
+        assertCWEId(vuln, expectedCweId);
+    }
+}
+/**
+ * Create security test filename with proper extension
+ */
+function createSecurityTestFile(category, testName, language = 'js') {
+    return `${category}-${testName}.${language}`;
 }
 //# sourceMappingURL=securityTestHelper.js.map

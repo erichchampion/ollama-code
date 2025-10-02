@@ -326,6 +326,12 @@ export async function testNoVulnerabilitiesDetected(
   const analyzer = new SecurityAnalyzer();
   const vulnerabilities = await analyzer.analyzeFile(testFile);
 
+  // CRITICAL: Verify analyzer returned valid array (Bug #2 fix)
+  assert.ok(
+    Array.isArray(vulnerabilities),
+    'SecurityAnalyzer must return array (returned undefined or null)'
+  );
+
   if (category) {
     const categoryVulns = vulnerabilities.filter(v => v.category === category);
     assert.strictEqual(
@@ -434,4 +440,66 @@ export async function createMultiVulnerabilityFile(
   await fs.writeFile(testFile, code, 'utf8');
 
   return testFile;
+}
+
+/**
+ * Assert vulnerability has expected OWASP category
+ */
+export function assertOWASPCategory(
+  vulnerability: SecurityVulnerability,
+  expectedCategory: string
+): void {
+  assert.ok(
+    vulnerability.owaspCategory?.includes(expectedCategory),
+    `Expected OWASP ${expectedCategory}, got: ${vulnerability.owaspCategory}`
+  );
+}
+
+/**
+ * Assert all vulnerabilities have expected OWASP category
+ */
+export function assertAllVulnerabilitiesHaveOWASP(
+  vulnerabilities: SecurityVulnerability[],
+  expectedCategory: string
+): void {
+  for (const vuln of vulnerabilities) {
+    assertOWASPCategory(vuln, expectedCategory);
+  }
+}
+
+/**
+ * Assert vulnerability has CWE ID
+ */
+export function assertCWEId(
+  vulnerability: SecurityVulnerability,
+  expectedCweId: number
+): void {
+  assert.strictEqual(
+    vulnerability.cweId,
+    expectedCweId,
+    `Expected CWE-${expectedCweId}, got: CWE-${vulnerability.cweId}`
+  );
+}
+
+/**
+ * Assert all vulnerabilities have expected CWE ID
+ */
+export function assertAllVulnerabilitiesHaveCWE(
+  vulnerabilities: SecurityVulnerability[],
+  expectedCweId: number
+): void {
+  for (const vuln of vulnerabilities) {
+    assertCWEId(vuln, expectedCweId);
+  }
+}
+
+/**
+ * Create security test filename with proper extension
+ */
+export function createSecurityTestFile(
+  category: string,
+  testName: string,
+  language: 'js' | 'ts' | 'jsx' | 'tsx' | 'py' = 'js'
+): string {
+  return `${category}-${testName}.${language}`;
 }

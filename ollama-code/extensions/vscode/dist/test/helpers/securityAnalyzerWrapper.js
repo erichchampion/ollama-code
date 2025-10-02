@@ -43,6 +43,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SecurityAnalyzer = void 0;
 const fs_1 = require("fs");
 const path = __importStar(require("path"));
+const securityTestConstants_1 = require("./securityTestConstants");
 /**
  * Production security rules (subset for testing)
  * Full implementation is in src/ai/security-analyzer.ts
@@ -58,7 +59,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 89,
         pattern: /(query|sql|execute)\s*\(\s*['"`][^'"`]*\$\{|['"`][^'"`]*\+.*\+.*['"`]|query.*=.*['"`].*\+.*req\.|SELECT.*FROM.*WHERE.*\+|INSERT.*INTO.*VALUES.*\+/i,
-        filePatterns: ['**/*.js', '**/*.ts', '**/*.py', '**/*.java', '**/*.php'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.BACKEND_LANGUAGES,
         confidence: 'medium',
         recommendation: 'Use parameterized queries or prepared statements to prevent SQL injection',
         references: [
@@ -76,7 +77,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 78,
         pattern: /(exec|spawn|system|eval|shell_exec|passthru)\s*\([^)]*(?:req\.|params\.|query\.|body\.|\$_GET|\$_POST)/i,
-        filePatterns: ['**/*.js', '**/*.ts', '**/*.py', '**/*.java', '**/*.php'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.BACKEND_LANGUAGES,
         confidence: 'high',
         recommendation: 'Validate and sanitize all user input before executing system commands',
         references: [
@@ -94,7 +95,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 89,
         pattern: /\.find\s*\(\s*(?:req\.|params\.|query\.|body\.)|\$where.*(?:req\.|params\.|query\.|body\.)/i,
-        filePatterns: ['**/*.js', '**/*.ts'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
         confidence: 'high',
         recommendation: 'Validate and sanitize user input, use schema validation for MongoDB queries',
         references: [
@@ -112,7 +113,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 90,
         pattern: /(?:ldap|search).*filter.*(?:req\.|params\.|query\.|body\.)|(?:dn|baseDN).*=.*(?:req\.|params\.|query\.|body\.)/i,
-        filePatterns: ['**/*.js', '**/*.ts'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
         confidence: 'medium',
         recommendation: 'Escape LDAP special characters or use LDAP libraries with built-in escaping',
         references: [
@@ -130,7 +131,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 643,
         pattern: /(?:xpath|select).*(?:req\.|params\.|query\.|body\.)/i,
-        filePatterns: ['**/*.js', '**/*.ts'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
         confidence: 'medium',
         recommendation: 'Use parameterized XPath queries or escape user input',
         references: [
@@ -148,7 +149,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 94,
         pattern: /(?:render|compile|template).*(?:req\.|params\.|query\.|body\.)|\{\{\{.*(?:req\.|params\.|query\.|body\.).*\}\}\}/i,
-        filePatterns: ['**/*.js', '**/*.ts'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
         confidence: 'medium',
         recommendation: 'Escape user input or use sandboxed template engines',
         references: [
@@ -166,7 +167,7 @@ const SECURITY_RULES = [
         owaspCategory: 'A03:2021 – Injection',
         cweId: 79,
         pattern: /\.innerHTML\s*=.*(?:req\.|params\.|query\.|body\.|location\.|window\.location)|\.outerHTML\s*=.*(?:req\.|params\.|query\.|body\.|location\.)|document\.write\s*\(.*(?:req\.|params\.|query\.|body\.|location\.)|dangerouslySetInnerHTML.*(?:req\.|params\.|query\.|body\.)/i,
-        filePatterns: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'],
+        filePatterns: securityTestConstants_1.FILE_PATTERNS.WEB_LANGUAGES,
         confidence: 'high',
         recommendation: 'Sanitize user input before rendering, use textContent instead of innerHTML, or use a library like DOMPurify',
         references: [
