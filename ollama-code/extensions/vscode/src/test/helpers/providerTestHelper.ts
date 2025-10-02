@@ -217,5 +217,109 @@ export const TEST_DATA_CONSTANTS = {
     TIMESTAMP_DIFFERENTIATION: 10,
     /** Milliseconds spacing for rapid message tests */
     RAPID_MESSAGE_SPACING: 5
+  },
+
+  /** File operation test constants */
+  FILE_OPERATION_CONSTANTS: {
+    /** Minimum depth for deep path tests */
+    MIN_DEEP_PATH_DEPTH: 4,
+    /** Maximum file name length for validation */
+    MAX_FILE_NAME_LENGTH: 255
   }
 } as const;
+
+/**
+ * File extension to language mapping
+ * Used for language detection in file operation commands
+ */
+export const FILE_EXTENSION_LANGUAGE_MAP: Record<string, string> = {
+  '.js': 'JavaScript',
+  '.ts': 'TypeScript',
+  '.jsx': 'React JSX',
+  '.tsx': 'React TSX',
+  '.py': 'Python',
+  '.java': 'Java',
+  '.go': 'Go',
+  '.rs': 'Rust',
+  '.md': 'Markdown',
+  '.json': 'JSON',
+  '.html': 'HTML',
+  '.css': 'CSS',
+  '.cpp': 'C++',
+  '.c': 'C',
+  '.rb': 'Ruby',
+  '.php': 'PHP'
+} as const;
+
+/**
+ * Detect programming language from file extension
+ * @param extension - File extension (e.g., '.js', '.ts')
+ * @returns Language name or 'text' if unknown
+ */
+export function detectLanguageFromExtension(extension: string): string {
+  return FILE_EXTENSION_LANGUAGE_MAP[extension] || 'text';
+}
+
+/**
+ * File generation templates for testing
+ * Centralized templates to eliminate duplication across command tests
+ */
+export const FILE_GENERATION_TEMPLATES = {
+  javascript: {
+    fallback: (fileName: string, description: string) =>
+      `// ${description}\n\nfunction ${fileName}() {\n  // TODO: Implement ${description}\n}\n\nmodule.exports = { ${fileName} };\n`,
+    generated: (functionName = 'example') =>
+      `// Generated JavaScript file\nfunction ${functionName}() {\n  console.log('Hello World');\n}\n\nmodule.exports = { ${functionName} };\n`
+  },
+  typescript: {
+    fallback: (fileName: string, description: string) =>
+      `// ${description}\n\nexport function ${fileName}(): void {\n  // TODO: Implement ${description}\n}\n`,
+    generated: () =>
+      `// Generated TypeScript file\nexport function example(): void {\n  console.log('Hello World');\n}\n`
+  },
+  reactTsx: {
+    fallback: (componentName: string, description: string) =>
+      `import React from 'react';\n\ninterface ${componentName}Props {\n  // Add props here\n}\n\nexport const ${componentName}: React.FC<${componentName}Props> = (props) => {\n  return (\n    <div>\n      {/* ${description} */}\n    </div>\n  );\n};\n`,
+    generated: (componentName = 'Example') =>
+      `import React from 'react';\n\ninterface ${componentName}Props {\n  title: string;\n}\n\nexport const ${componentName}: React.FC<${componentName}Props> = ({ title }) => {\n  return <div>{title}</div>;\n};\n`
+  },
+  python: {
+    fallback: (fileName: string, description: string) =>
+      `"""${description}"""\n\ndef ${fileName}():\n    """TODO: Implement ${description}"""\n    pass\n`,
+    generated: () =>
+      `"""Generated Python file"""\n\ndef example():\n    print("Hello World")\n`
+  },
+  test: {
+    generated: () =>
+      `import { describe, it, expect } from '@jest/globals';\n\ndescribe('Example Test', () => {\n  it('should pass', () => {\n    expect(true).toBe(true);\n  });\n});\n`
+  },
+  generic: {
+    fallback: (description: string) => `# ${description}\n`,
+    generated: (prompt: string) => `// ${prompt}\n`
+  }
+} as const;
+
+/**
+ * Create a file generation AI handler for testing
+ * @returns AI request handler function
+ */
+export function createFileGenerationHandler() {
+  return async (request: any) => {
+    if (request.type === 'generate') {
+      const { context } = request;
+
+      if (context.language === 'JavaScript') {
+        return { result: FILE_GENERATION_TEMPLATES.javascript.generated() };
+      } else if (context.language === 'TypeScript') {
+        return { result: FILE_GENERATION_TEMPLATES.typescript.generated() };
+      } else if (context.language === 'React TSX') {
+        return { result: FILE_GENERATION_TEMPLATES.reactTsx.generated() };
+      } else if (context.template === 'test') {
+        return { result: FILE_GENERATION_TEMPLATES.test.generated() };
+      } else {
+        return { result: FILE_GENERATION_TEMPLATES.generic.generated(request.prompt) };
+      }
+    }
+    return { result: '' };
+  };
+}

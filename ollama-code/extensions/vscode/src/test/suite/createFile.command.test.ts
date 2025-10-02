@@ -10,11 +10,41 @@ import { OllamaCodeClient } from '../../client/ollamaCodeClient';
 import { Logger } from '../../utils/logger';
 import {
   createTestWorkspace,
-  cleanupTestWorkspace,
-  createTestFile
+  cleanupTestWorkspace
 } from '../helpers/extensionTestHelper';
 import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-import { createMockOllamaClient, createMockLogger } from '../helpers/providerTestHelper';
+import {
+  createMockOllamaClient,
+  createMockLogger,
+  detectLanguageFromExtension,
+  FILE_GENERATION_TEMPLATES,
+  createFileGenerationHandler,
+  TEST_DATA_CONSTANTS
+} from '../helpers/providerTestHelper';
+
+/**
+ * Assertion helper functions for file command testing
+ */
+function assertCommandSuccess(result: any, filePath: string): void {
+  assert.strictEqual(result.success, true, 'Command should succeed');
+  assert.strictEqual(result.filePath, filePath, 'Should return correct file path');
+}
+
+function assertFileExists(filePath: string): void {
+  assert.ok(fs.existsSync(filePath), 'File should be created');
+}
+
+function assertFileContains(filePath: string, patterns: string | string[], description?: string): void {
+  const content = fs.readFileSync(filePath, 'utf8');
+  const patternArray = Array.isArray(patterns) ? patterns : [patterns];
+
+  patternArray.forEach(pattern => {
+    assert.ok(
+      content.includes(pattern),
+      description || `File should contain: ${pattern}`
+    );
+  });
+}
 
 /**
  * Mock create-file command handler
@@ -50,10 +80,16 @@ class CreateFileCommand {
         throw new Error('File path is required');
       }
 
-      // Check for path traversal attacks
-      const normalizedPath = path.normalize(filePath);
-      if (normalizedPath.includes('..') && !normalizedPath.startsWith(process.cwd())) {
-        throw new Error('Path traversal attack detected');
+      // Check for path traversal attacks (check BEFORE normalization)
+      if (filePath.includes('..')) {
+        const normalizedPath = path.normalize(filePath);
+        const resolvedPath = path.resolve(normalizedPath);
+        const workingDir = process.cwd();
+
+        // Ensure resolved path is within working directory
+        if (!resolvedPath.startsWith(workingDir)) {
+          throw new Error('Path traversal attack detected');
+        }
       }
 
       // Check if file already exists
@@ -107,37 +143,23 @@ class CreateFileCommand {
   }
 
   private detectLanguage(extension: string): string {
-    const languageMap: Record<string, string> = {
-      '.js': 'JavaScript',
-      '.ts': 'TypeScript',
-      '.jsx': 'React JSX',
-      '.tsx': 'React TSX',
-      '.py': 'Python',
-      '.java': 'Java',
-      '.go': 'Go',
-      '.rs': 'Rust',
-      '.md': 'Markdown',
-      '.json': 'JSON',
-      '.html': 'HTML',
-      '.css': 'CSS'
-    };
-    return languageMap[extension] || 'text';
+    return detectLanguageFromExtension(extension);
   }
 
   private generateFallbackContent(filePath: string, description: string, language: string): string {
     const fileName = path.basename(filePath, path.extname(filePath));
 
     if (language === 'JavaScript') {
-      return `// ${description}\n\nfunction ${fileName}() {\n  // TODO: Implement ${description}\n}\n\nmodule.exports = { ${fileName} };\n`;
+      return FILE_GENERATION_TEMPLATES.javascript.fallback(fileName, description);
     } else if (language === 'TypeScript') {
-      return `// ${description}\n\nexport function ${fileName}(): void {\n  // TODO: Implement ${description}\n}\n`;
+      return FILE_GENERATION_TEMPLATES.typescript.fallback(fileName, description);
     } else if (language === 'React TSX') {
       const componentName = fileName.charAt(0).toUpperCase() + fileName.slice(1);
-      return `import React from 'react';\n\ninterface ${componentName}Props {\n  // Add props here\n}\n\nexport const ${componentName}: React.FC<${componentName}Props> = (props) => {\n  return (\n    <div>\n      {/* ${description} */}\n    </div>\n  );\n};\n`;
+      return FILE_GENERATION_TEMPLATES.reactTsx.fallback(componentName, description);
     } else if (language === 'Python') {
-      return `"""${description}"""\n\ndef ${fileName}():\n    """TODO: Implement ${description}"""\n    pass\n`;
+      return FILE_GENERATION_TEMPLATES.python.fallback(fileName, description);
     } else {
-      return `# ${description}\n`;
+      return FILE_GENERATION_TEMPLATES.generic.fallback(description);
     }
   }
 }
@@ -151,27 +173,8 @@ suite('create-file Command Tests', () => {
   setup(async function() {
     this.timeout(PROVIDER_TEST_TIMEOUTS.SETUP);
 
-    // Create AI handler for file generation
-    const fileGenerationHandler = async (request: any) => {
-      if (request.type === 'generate') {
-        const { prompt, context } = request;
-
-        if (context.language === 'JavaScript') {
-          return { result: `// Generated JavaScript file\nfunction example() {\n  console.log('Hello World');\n}\n\nmodule.exports = { example };\n` };
-        } else if (context.language === 'TypeScript') {
-          return { result: `// Generated TypeScript file\nexport function example(): void {\n  console.log('Hello World');\n}\n` };
-        } else if (context.language === 'React TSX') {
-          return { result: `import React from 'react';\n\ninterface ExampleProps {\n  title: string;\n}\n\nexport const Example: React.FC<ExampleProps> = ({ title }) => {\n  return <div>{title}</div>;\n};\n` };
-        } else if (context.template === 'test') {
-          return { result: `import { describe, it, expect } from '@jest/globals';\n\ndescribe('Example Test', () => {\n  it('should pass', () => {\n    expect(true).toBe(true);\n  });\n});\n` };
-        } else {
-          return { result: `// ${prompt}\n` };
-        }
-      }
-      return { result: '' };
-    };
-
-    mockClient = createMockOllamaClient(true, fileGenerationHandler);
+    // Use centralized file generation handler
+    mockClient = createMockOllamaClient(true, createFileGenerationHandler());
     mockLogger = createMockLogger();
     createFileCmd = new CreateFileCommand(mockClient, mockLogger);
 
@@ -190,13 +193,9 @@ suite('create-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'example.js');
       const result = await createFileCmd.execute(filePath, 'A simple utility function');
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
-      assert.strictEqual(result.filePath, filePath, 'Should return correct file path');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
-
-      const content = fs.readFileSync(filePath, 'utf8');
-      assert.ok(content.includes('function'), 'Should contain function definition');
-      assert.ok(content.includes('module.exports'), 'Should have module.exports');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
+      assertFileContains(filePath, ['function', 'module.exports']);
     });
 
     test('Should create TypeScript file with type definitions', async function() {
@@ -205,12 +204,11 @@ suite('create-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'example.ts');
       const result = await createFileCmd.execute(filePath, 'A typed utility function');
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
+      assertFileContains(filePath, ['export', 'function']);
 
       const content = fs.readFileSync(filePath, 'utf8');
-      assert.ok(content.includes('export'), 'Should have export statement');
-      assert.ok(content.includes('function'), 'Should contain function definition');
       assert.ok(content.includes('void') || content.includes(':'), 'Should have type annotations');
     });
 
@@ -220,13 +218,12 @@ suite('create-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'Button.tsx');
       const result = await createFileCmd.execute(filePath, 'A reusable button component');
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
+      assertFileContains(filePath, ['React', 'Props']);
 
       const content = fs.readFileSync(filePath, 'utf8');
-      assert.ok(content.includes('React'), 'Should import React');
       assert.ok(content.includes('interface') || content.includes('type'), 'Should have prop types');
-      assert.ok(content.includes('Props'), 'Should define Props interface');
       assert.ok(content.includes('FC') || content.includes('FunctionComponent'), 'Should use FC type');
     });
 
@@ -238,8 +235,8 @@ suite('create-file Command Tests', () => {
         template: 'test'
       });
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
 
       const content = fs.readFileSync(filePath, 'utf8');
       assert.ok(content.includes('describe') || content.includes('test') || content.includes('it'), 'Should have test structure');
@@ -254,9 +251,8 @@ suite('create-file Command Tests', () => {
 
       const result = await createFileCmd.execute(filePath, description);
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
-      assert.strictEqual(result.filePath, filePath, 'Should use explicit path');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
 
       const content = fs.readFileSync(filePath, 'utf8');
       assert.ok(content.length > 0, 'File should have content');
@@ -270,9 +266,9 @@ suite('create-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'src', 'utils.js');
       const result = await createFileCmd.execute(filePath, 'Utility functions');
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
+      assertCommandSuccess(result, filePath);
       assert.ok(fs.existsSync(path.dirname(filePath)), 'Parent directory should be created');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
+      assertFileExists(filePath);
     });
 
     test('Should handle nested directory creation', async function() {
@@ -281,11 +277,11 @@ suite('create-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'src', 'components', 'ui', 'Button.tsx');
       const result = await createFileCmd.execute(filePath, 'UI Button component');
 
-      assert.strictEqual(result.success, true, 'Command should succeed');
+      assertCommandSuccess(result, filePath);
 
       const expectedDir = path.join(testWorkspacePath, 'src', 'components', 'ui');
       assert.ok(fs.existsSync(expectedDir), 'Nested directories should be created');
-      assert.ok(fs.existsSync(filePath), 'File should be created in nested path');
+      assertFileExists(filePath);
     });
 
     test('Should handle creation in non-existent paths with error handling', async function() {
@@ -294,11 +290,11 @@ suite('create-file Command Tests', () => {
       const filePath = path.join(testWorkspacePath, 'deep', 'nested', 'path', 'file.js');
       const result = await createFileCmd.execute(filePath, 'File in deep path');
 
-      assert.strictEqual(result.success, true, 'Command should succeed even with deep nesting');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
 
       const dirDepth = filePath.split(path.sep).length - testWorkspacePath.split(path.sep).length;
-      assert.ok(dirDepth >= 4, 'Should create multiple nested directories');
+      assert.ok(dirDepth >= TEST_DATA_CONSTANTS.FILE_OPERATION_CONSTANTS.MIN_DEEP_PATH_DEPTH, 'Should create multiple nested directories');
     });
 
     test('Should prevent path traversal attacks', async function() {
@@ -323,7 +319,7 @@ suite('create-file Command Tests', () => {
 
       // Path should be normalized to testWorkspacePath/src/helpers.js
       const expectedPath = path.join(testWorkspacePath, 'src', 'helpers.js');
-      assert.ok(fs.existsSync(expectedPath), 'File should be created at normalized path');
+      assertFileExists(expectedPath);
     });
   });
 
@@ -335,7 +331,7 @@ suite('create-file Command Tests', () => {
 
       // Create file first
       await createFileCmd.execute(filePath, 'First file');
-      assert.ok(fs.existsSync(filePath), 'File should be created initially');
+      assertFileExists(filePath);
 
       // Try to create again without overwrite
       const result = await createFileCmd.execute(filePath, 'Second file');
@@ -357,7 +353,7 @@ suite('create-file Command Tests', () => {
       // Overwrite with flag
       const result = await createFileCmd.execute(filePath, 'New content', { overwrite: true });
 
-      assert.strictEqual(result.success, true, 'Command should succeed with overwrite flag');
+      assertCommandSuccess(result, filePath);
       const newContent = fs.readFileSync(filePath, 'utf8');
       assert.notStrictEqual(newContent, originalContent, 'Content should be different');
     });
@@ -393,12 +389,9 @@ suite('create-file Command Tests', () => {
       const result = await failingCmd.execute(filePath, 'Test file');
 
       // Should succeed using fallback content
-      assert.strictEqual(result.success, true, 'Command should succeed with fallback');
-      assert.ok(fs.existsSync(filePath), 'File should be created');
-
-      const content = fs.readFileSync(filePath, 'utf8');
-      assert.ok(content.length > 0, 'File should have fallback content');
-      assert.ok(content.includes('TODO'), 'Fallback content should include TODO');
+      assertCommandSuccess(result, filePath);
+      assertFileExists(filePath);
+      assertFileContains(filePath, 'TODO', 'Fallback content should include TODO');
     });
 
     test('Should handle client disconnection error', async function() {
