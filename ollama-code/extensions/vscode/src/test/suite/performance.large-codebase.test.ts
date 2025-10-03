@@ -10,7 +10,13 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { performance } from 'perf_hooks';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import {
+  PROVIDER_TEST_TIMEOUTS,
+  BYTE_CONVERSION,
+  PERFORMANCE_TEST_CONSTANTS,
+  CODE_GENERATION_CONSTANTS,
+  PERFORMANCE_EXPECTATIONS,
+} from '../helpers/test-constants';
 
 /**
  * Performance benchmark thresholds
@@ -128,13 +134,12 @@ class MemoryMonitor {
     this.initialMemory = process.memoryUsage().heapUsed;
     this.peakMemory = this.initialMemory;
 
-    // Monitor memory every 100ms
     this.interval = setInterval(() => {
       const current = process.memoryUsage().heapUsed;
       if (current > this.peakMemory) {
         this.peakMemory = current;
       }
-    }, 100);
+    }, PERFORMANCE_TEST_CONSTANTS.MEMORY_MONITOR_INTERVAL_MS);
   }
 
   stop(): { initialMB: number; peakMB: number; deltaMB: number } {
@@ -143,12 +148,51 @@ class MemoryMonitor {
       this.interval = null;
     }
 
-    const initialMB = this.initialMemory / 1024 / 1024;
-    const peakMB = this.peakMemory / 1024 / 1024;
-    const deltaMB = peakMB - initialMB;
-
-    return { initialMB, peakMB, deltaMB };
+    return {
+      initialMB: bytesToMB(this.initialMemory),
+      peakMB: bytesToMB(this.peakMemory),
+      deltaMB: bytesToMB(this.peakMemory) - bytesToMB(this.initialMemory),
+    };
   }
+
+  /**
+   * Cleanup resources - ensures interval is cleared even if stop() not called
+   */
+  destroy(): void {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+  }
+}
+
+/**
+ * Convert bytes to megabytes
+ */
+function bytesToMB(bytes: number): number {
+  return bytes / BYTE_CONVERSION.BYTES_TO_MB;
+}
+
+/**
+ * Measure performance of an async function
+ */
+async function measurePerformance<T>(
+  fn: () => Promise<T>
+): Promise<{ result: T; durationMs: number }> {
+  const startTime = performance.now();
+  const result = await fn();
+  const endTime = performance.now();
+  return { result, durationMs: endTime - startTime };
+}
+
+/**
+ * Analysis result interface
+ */
+interface AnalysisResult {
+  fileCount: number;
+  functionCount: number;
+  classCount: number;
+  componentCount: number;
 }
 
 /**
@@ -159,42 +203,64 @@ async function generateSyntheticCodebase(
   fileCount: number,
   complexity: 'simple' | 'medium' | 'complex'
 ): Promise<void> {
-  const filesPerDirectory = 50;
-  const directories = Math.ceil(fileCount / filesPerDirectory);
+  const directories = Math.ceil(fileCount / PERFORMANCE_TEST_CONSTANTS.FILES_PER_DIRECTORY);
 
   for (let dirIdx = 0; dirIdx < directories; dirIdx++) {
-    const dirPath = path.join(basePath, `module${dirIdx}`);
+    const dirPath = path.join(
+      basePath,
+      `${CODE_GENERATION_CONSTANTS.MODULE_DIR_PREFIX}${dirIdx}`
+    );
     await fs.promises.mkdir(dirPath, { recursive: true });
 
-    const filesInDir = Math.min(filesPerDirectory, fileCount - dirIdx * filesPerDirectory);
+    const filesInDir = Math.min(
+      PERFORMANCE_TEST_CONSTANTS.FILES_PER_DIRECTORY,
+      fileCount - dirIdx * PERFORMANCE_TEST_CONSTANTS.FILES_PER_DIRECTORY
+    );
 
     for (let fileIdx = 0; fileIdx < filesInDir; fileIdx++) {
-      const fileName = `file${fileIdx}.ts`;
+      const fileName = `${CODE_GENERATION_CONSTANTS.FILE_NAME_PREFIX}${fileIdx}.ts`;
       const filePath = path.join(dirPath, fileName);
 
       let content: string;
 
       switch (complexity) {
         case 'simple':
-          content = CODE_TEMPLATES.SIMPLE_FUNCTION(`function${dirIdx}_${fileIdx}`);
+          content = CODE_TEMPLATES.SIMPLE_FUNCTION(
+            `${CODE_GENERATION_CONSTANTS.FUNCTION_NAME_PREFIX}${dirIdx}_${fileIdx}`
+          );
           break;
 
         case 'medium':
           content = CODE_TEMPLATES.SIMPLE_FUNCTION(
-            `function${dirIdx}_${fileIdx}`,
-            fileIdx > 0 ? [`function${dirIdx}_${fileIdx - 1}`] : []
+            `${CODE_GENERATION_CONSTANTS.FUNCTION_NAME_PREFIX}${dirIdx}_${fileIdx}`,
+            fileIdx > 0
+              ? [`${CODE_GENERATION_CONSTANTS.FUNCTION_NAME_PREFIX}${dirIdx}_${fileIdx - 1}`]
+              : []
           );
           break;
 
         case 'complex':
-          if (fileIdx % 3 === 0) {
-            content = CODE_TEMPLATES.COMPLEX_CLASS(`Class${dirIdx}_${fileIdx}`, 10);
-          } else if (fileIdx % 3 === 1) {
-            content = CODE_TEMPLATES.REACT_COMPONENT(`Component${dirIdx}_${fileIdx}`);
+          if (
+            fileIdx % CODE_GENERATION_CONSTANTS.FILE_TYPE_DISTRIBUTION_MODULO ===
+            CODE_GENERATION_CONSTANTS.CLASS_FILE_REMAINDER
+          ) {
+            content = CODE_TEMPLATES.COMPLEX_CLASS(
+              `${CODE_GENERATION_CONSTANTS.CLASS_NAME_PREFIX}${dirIdx}_${fileIdx}`,
+              CODE_GENERATION_CONSTANTS.DEFAULT_METHOD_COUNT
+            );
+          } else if (
+            fileIdx % CODE_GENERATION_CONSTANTS.FILE_TYPE_DISTRIBUTION_MODULO ===
+            CODE_GENERATION_CONSTANTS.COMPONENT_FILE_REMAINDER
+          ) {
+            content = CODE_TEMPLATES.REACT_COMPONENT(
+              `${CODE_GENERATION_CONSTANTS.COMPONENT_NAME_PREFIX}${dirIdx}_${fileIdx}`
+            );
           } else {
             content = CODE_TEMPLATES.SIMPLE_FUNCTION(
-              `function${dirIdx}_${fileIdx}`,
-              fileIdx > 0 ? [`function${dirIdx}_${fileIdx - 1}`] : []
+              `${CODE_GENERATION_CONSTANTS.FUNCTION_NAME_PREFIX}${dirIdx}_${fileIdx}`,
+              fileIdx > 0
+                ? [`${CODE_GENERATION_CONSTANTS.FUNCTION_NAME_PREFIX}${dirIdx}_${fileIdx - 1}`]
+                : []
             );
           }
           break;
@@ -214,12 +280,7 @@ async function analyzeCodebase(
     enableIncrementalAnalysis?: boolean;
     reportProgress?: (progress: number) => void;
   } = {}
-): Promise<{
-  fileCount: number;
-  functionCount: number;
-  classCount: number;
-  componentCount: number;
-}> {
+): Promise<AnalysisResult> {
   let fileCount = 0;
   let functionCount = 0;
   let classCount = 0;
@@ -260,6 +321,59 @@ async function analyzeCodebase(
   return { fileCount, functionCount, classCount, componentCount };
 }
 
+/**
+ * Create test codebase with specified parameters
+ */
+async function createTestCodebase(
+  testWorkspacePath: string,
+  name: string,
+  fileCount: number,
+  complexity: 'simple' | 'medium' | 'complex'
+): Promise<string> {
+  const codebasePath = path.join(testWorkspacePath, `${name}-codebase`);
+  await fs.promises.mkdir(codebasePath, { recursive: true });
+  await generateSyntheticCodebase(codebasePath, fileCount, complexity);
+  return codebasePath;
+}
+
+/**
+ * Performance test configuration
+ */
+interface PerformanceTestConfig {
+  name: string;
+  fileCount: number;
+  complexity: 'simple' | 'medium' | 'complex';
+  maxAnalysisTimeMs: number;
+}
+
+/**
+ * Run a standard performance test
+ */
+async function runPerformanceTest(
+  testWorkspacePath: string,
+  config: PerformanceTestConfig
+): Promise<void> {
+  const codebasePath = await createTestCodebase(
+    testWorkspacePath,
+    config.name,
+    config.fileCount,
+    config.complexity
+  );
+
+  const { result, durationMs: analysisTimeMs } = await measurePerformance(() =>
+    analyzeCodebase(codebasePath)
+  );
+
+  // Standard assertions
+  assert.strictEqual(result.fileCount, config.fileCount, 'Should analyze all files');
+  assert.ok(
+    analysisTimeMs < config.maxAnalysisTimeMs,
+    `Analysis should complete in <${config.maxAnalysisTimeMs}ms, took ${analysisTimeMs.toFixed(0)}ms`
+  );
+
+  console.log(`✓ ${config.name} codebase analyzed in ${(analysisTimeMs / 1000).toFixed(2)}s`);
+}
+
 suite('Performance - Large Codebase Tests', () => {
   let testWorkspacePath: string;
 
@@ -277,112 +391,45 @@ suite('Performance - Large Codebase Tests', () => {
     test('Should analyze small codebase (100 files) in <5 seconds', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'small-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      // Generate synthetic codebase
-      await generateSyntheticCodebase(
-        codebasePath,
-        PERFORMANCE_THRESHOLDS.SMALL_CODEBASE.FILE_COUNT,
-        'simple'
-      );
-
-      // Measure analysis time
-      const startTime = performance.now();
-      const result = await analyzeCodebase(codebasePath);
-      const endTime = performance.now();
-
-      const analysisTimeMs = endTime - startTime;
-
-      // Assertions
-      assert.strictEqual(
-        result.fileCount,
-        PERFORMANCE_THRESHOLDS.SMALL_CODEBASE.FILE_COUNT,
-        'Should analyze all files'
-      );
-      assert.ok(
-        analysisTimeMs < PERFORMANCE_THRESHOLDS.SMALL_CODEBASE.MAX_ANALYSIS_TIME_MS,
-        `Analysis should complete in <${PERFORMANCE_THRESHOLDS.SMALL_CODEBASE.MAX_ANALYSIS_TIME_MS}ms, took ${analysisTimeMs.toFixed(0)}ms`
-      );
-
-      console.log(`✓ Small codebase analyzed in ${(analysisTimeMs / 1000).toFixed(2)}s`);
+      await runPerformanceTest(testWorkspacePath, {
+        name: 'small',
+        fileCount: PERFORMANCE_THRESHOLDS.SMALL_CODEBASE.FILE_COUNT,
+        complexity: 'simple',
+        maxAnalysisTimeMs: PERFORMANCE_THRESHOLDS.SMALL_CODEBASE.MAX_ANALYSIS_TIME_MS,
+      });
     });
 
     test('Should analyze medium codebase (1000 files) in <30 seconds', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'medium-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      // Generate synthetic codebase
-      await generateSyntheticCodebase(
-        codebasePath,
-        PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.FILE_COUNT,
-        'medium'
-      );
-
-      // Measure analysis time
-      const startTime = performance.now();
-      const result = await analyzeCodebase(codebasePath);
-      const endTime = performance.now();
-
-      const analysisTimeMs = endTime - startTime;
-
-      // Assertions
-      assert.strictEqual(
-        result.fileCount,
-        PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.FILE_COUNT,
-        'Should analyze all files'
-      );
-      assert.ok(
-        analysisTimeMs < PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.MAX_ANALYSIS_TIME_MS,
-        `Analysis should complete in <${PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.MAX_ANALYSIS_TIME_MS}ms, took ${analysisTimeMs.toFixed(0)}ms`
-      );
-
-      console.log(`✓ Medium codebase analyzed in ${(analysisTimeMs / 1000).toFixed(2)}s`);
+      await runPerformanceTest(testWorkspacePath, {
+        name: 'medium',
+        fileCount: PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.FILE_COUNT,
+        complexity: 'medium',
+        maxAnalysisTimeMs: PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.MAX_ANALYSIS_TIME_MS,
+      });
     });
 
     test('Should analyze large codebase (5000 files) in <2 minutes', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'large-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      // Generate synthetic codebase
-      await generateSyntheticCodebase(
-        codebasePath,
-        PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.FILE_COUNT,
-        'complex'
-      );
-
-      // Measure analysis time
-      const startTime = performance.now();
-      const result = await analyzeCodebase(codebasePath);
-      const endTime = performance.now();
-
-      const analysisTimeMs = endTime - startTime;
-
-      // Assertions
-      assert.strictEqual(
-        result.fileCount,
-        PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.FILE_COUNT,
-        'Should analyze all files'
-      );
-      assert.ok(
-        analysisTimeMs < PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_ANALYSIS_TIME_MS,
-        `Analysis should complete in <${PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_ANALYSIS_TIME_MS}ms, took ${analysisTimeMs.toFixed(0)}ms`
-      );
-
-      console.log(`✓ Large codebase analyzed in ${(analysisTimeMs / 1000).toFixed(2)}s`);
+      await runPerformanceTest(testWorkspacePath, {
+        name: 'large',
+        fileCount: PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.FILE_COUNT,
+        complexity: 'complex',
+        maxAnalysisTimeMs: PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_ANALYSIS_TIME_MS,
+      });
     });
 
     test('Should provide progress reporting during indexing', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'progress-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      await generateSyntheticCodebase(codebasePath, 500, 'medium');
+      const codebasePath = await createTestCodebase(
+        testWorkspacePath,
+        'progress',
+        PERFORMANCE_TEST_CONSTANTS.PROGRESS_TEST_FILE_COUNT,
+        'medium'
+      );
 
       const progressUpdates: number[] = [];
       const progressCallback = (filesProcessed: number) => {
@@ -393,7 +440,11 @@ suite('Performance - Large Codebase Tests', () => {
 
       // Assertions
       assert.ok(progressUpdates.length > 0, 'Should receive progress updates');
-      assert.strictEqual(progressUpdates[progressUpdates.length - 1], 500, 'Final progress should be 500');
+      assert.strictEqual(
+        progressUpdates[progressUpdates.length - 1],
+        PERFORMANCE_TEST_CONSTANTS.PROGRESS_TEST_FILE_COUNT,
+        `Final progress should be ${PERFORMANCE_TEST_CONSTANTS.PROGRESS_TEST_FILE_COUNT}`
+      );
       assert.ok(
         progressUpdates.every((val, idx) => idx === 0 || val >= progressUpdates[idx - 1]),
         'Progress should be monotonically increasing'
@@ -405,63 +456,73 @@ suite('Performance - Large Codebase Tests', () => {
     test('Should use <2GB memory on large codebase', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'memory-test-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      await generateSyntheticCodebase(
-        codebasePath,
+      const codebasePath = await createTestCodebase(
+        testWorkspacePath,
+        'memory-test',
         PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.FILE_COUNT,
         'complex'
       );
 
       // Monitor memory usage
       const memoryMonitor = new MemoryMonitor();
-      memoryMonitor.start();
 
-      await analyzeCodebase(codebasePath);
+      try {
+        memoryMonitor.start();
+        await analyzeCodebase(codebasePath);
+        const memoryUsage = memoryMonitor.stop();
 
-      const memoryUsage = memoryMonitor.stop();
+        // Assertions
+        assert.ok(
+          memoryUsage.peakMB < PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_MEMORY_MB,
+          `Peak memory should be <${PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_MEMORY_MB}MB, was ${memoryUsage.peakMB.toFixed(2)}MB`
+        );
 
-      // Assertions
-      assert.ok(
-        memoryUsage.peakMB < PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_MEMORY_MB,
-        `Peak memory should be <${PERFORMANCE_THRESHOLDS.LARGE_CODEBASE.MAX_MEMORY_MB}MB, was ${memoryUsage.peakMB.toFixed(2)}MB`
-      );
-
-      console.log(
-        `✓ Memory usage: ${memoryUsage.initialMB.toFixed(2)}MB → ${memoryUsage.peakMB.toFixed(2)}MB (Δ${memoryUsage.deltaMB.toFixed(2)}MB)`
-      );
+        console.log(
+          `✓ Memory usage: ${memoryUsage.initialMB.toFixed(2)}MB → ${memoryUsage.peakMB.toFixed(2)}MB (Δ${memoryUsage.deltaMB.toFixed(2)}MB)`
+        );
+      } finally {
+        // Ensure cleanup even if test fails
+        memoryMonitor.destroy();
+      }
     });
 
     test('Should show improved performance with incremental analysis', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'incremental-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      await generateSyntheticCodebase(codebasePath, 1000, 'medium');
+      const codebasePath = await createTestCodebase(
+        testWorkspacePath,
+        'incremental',
+        PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.FILE_COUNT,
+        'medium'
+      );
 
       // Initial full analysis
-      const fullAnalysisStart = performance.now();
-      await analyzeCodebase(codebasePath, { enableIncrementalAnalysis: false });
-      const fullAnalysisTime = performance.now() - fullAnalysisStart;
+      const { durationMs: fullAnalysisTime } = await measurePerformance(() =>
+        analyzeCodebase(codebasePath, { enableIncrementalAnalysis: false })
+      );
 
       // Modify a single file
-      const modifiedFilePath = path.join(codebasePath, 'module0', 'file0.ts');
+      const modifiedFilePath = path.join(
+        codebasePath,
+        `${CODE_GENERATION_CONSTANTS.MODULE_DIR_PREFIX}0`,
+        `${CODE_GENERATION_CONSTANTS.FILE_NAME_PREFIX}0.ts`
+      );
       const modifiedContent = CODE_TEMPLATES.SIMPLE_FUNCTION('modifiedFunction');
       await fs.promises.writeFile(modifiedFilePath, modifiedContent, 'utf-8');
 
       // Incremental analysis (simulated - would only analyze changed file)
-      const incrementalStart = performance.now();
-      await analyzeCodebase(path.join(codebasePath, 'module0'), {
-        enableIncrementalAnalysis: true,
-      });
-      const incrementalTime = performance.now() - incrementalStart;
+      const { durationMs: incrementalTime } = await measurePerformance(() =>
+        analyzeCodebase(
+          path.join(codebasePath, `${CODE_GENERATION_CONSTANTS.MODULE_DIR_PREFIX}0`),
+          { enableIncrementalAnalysis: true }
+        )
+      );
 
       // Assertions
       assert.ok(
-        incrementalTime < fullAnalysisTime / 10,
-        `Incremental analysis should be >10x faster than full analysis. Full: ${fullAnalysisTime.toFixed(0)}ms, Incremental: ${incrementalTime.toFixed(0)}ms`
+        incrementalTime <
+          fullAnalysisTime / PERFORMANCE_EXPECTATIONS.MIN_INCREMENTAL_SPEEDUP_FACTOR,
+        `Incremental analysis should be >${PERFORMANCE_EXPECTATIONS.MIN_INCREMENTAL_SPEEDUP_FACTOR}x faster than full analysis. Full: ${fullAnalysisTime.toFixed(0)}ms, Incremental: ${incrementalTime.toFixed(0)}ms`
       );
 
       console.log(
@@ -472,15 +533,16 @@ suite('Performance - Large Codebase Tests', () => {
     test('Should handle mixed file types efficiently', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'mixed-types-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
+      const codebasePath = await createTestCodebase(
+        testWorkspacePath,
+        'mixed-types',
+        PERFORMANCE_THRESHOLDS.MEDIUM_CODEBASE.FILE_COUNT,
+        'complex'
+      );
 
-      // Generate mixed content
-      await generateSyntheticCodebase(codebasePath, 1000, 'complex');
-
-      const startTime = performance.now();
-      const result = await analyzeCodebase(codebasePath);
-      const analysisTime = performance.now() - startTime;
+      const { result, durationMs: analysisTime } = await measurePerformance(() =>
+        analyzeCodebase(codebasePath)
+      );
 
       // Assertions
       assert.ok(result.functionCount > 0, 'Should detect functions');
@@ -499,36 +561,38 @@ suite('Performance - Large Codebase Tests', () => {
     test('Should maintain performance consistency across multiple runs', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const codebasePath = path.join(testWorkspacePath, 'consistency-codebase');
-      await fs.promises.mkdir(codebasePath, { recursive: true });
-
-      await generateSyntheticCodebase(codebasePath, 500, 'medium');
+      const codebasePath = await createTestCodebase(
+        testWorkspacePath,
+        'consistency',
+        PERFORMANCE_TEST_CONSTANTS.PROGRESS_TEST_FILE_COUNT,
+        'medium'
+      );
 
       const runTimes: number[] = [];
-      const runCount = 5;
 
-      for (let i = 0; i < runCount; i++) {
-        const startTime = performance.now();
-        await analyzeCodebase(codebasePath);
-        const runTime = performance.now() - startTime;
-        runTimes.push(runTime);
+      for (let i = 0; i < PERFORMANCE_TEST_CONSTANTS.CONSISTENCY_RUN_COUNT; i++) {
+        const { durationMs } = await measurePerformance(() => analyzeCodebase(codebasePath));
+        runTimes.push(durationMs);
       }
 
       // Calculate statistics
-      const avgTime = runTimes.reduce((sum, time) => sum + time, 0) / runCount;
+      const avgTime =
+        runTimes.reduce((sum, time) => sum + time, 0) /
+        PERFORMANCE_TEST_CONSTANTS.CONSISTENCY_RUN_COUNT;
       const variance =
-        runTimes.reduce((sum, time) => sum + Math.pow(time - avgTime, 2), 0) / runCount;
+        runTimes.reduce((sum, time) => sum + Math.pow(time - avgTime, 2), 0) /
+        PERFORMANCE_TEST_CONSTANTS.CONSISTENCY_RUN_COUNT;
       const stdDev = Math.sqrt(variance);
       const coefficientOfVariation = (stdDev / avgTime) * 100;
 
       // Assertions
       assert.ok(
-        coefficientOfVariation < 20,
-        `Performance should be consistent (CV < 20%), got ${coefficientOfVariation.toFixed(2)}%`
+        coefficientOfVariation < PERFORMANCE_EXPECTATIONS.MAX_COEFFICIENT_OF_VARIATION,
+        `Performance should be consistent (CV < ${PERFORMANCE_EXPECTATIONS.MAX_COEFFICIENT_OF_VARIATION}%), got ${coefficientOfVariation.toFixed(2)}%`
       );
 
       console.log(
-        `✓ ${runCount} runs: avg ${avgTime.toFixed(0)}ms, σ=${stdDev.toFixed(0)}ms, CV=${coefficientOfVariation.toFixed(2)}%`
+        `✓ ${PERFORMANCE_TEST_CONSTANTS.CONSISTENCY_RUN_COUNT} runs: avg ${avgTime.toFixed(0)}ms, σ=${stdDev.toFixed(0)}ms, CV=${coefficientOfVariation.toFixed(2)}%`
       );
     });
   });

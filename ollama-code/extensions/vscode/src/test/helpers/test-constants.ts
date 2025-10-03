@@ -1125,3 +1125,69 @@ export const STEP_OUTPUT_TEMPLATES = {
   /** User confirmed action */
   USER_CONFIRMED: (outcome: string) => `User confirmed: ${outcome}`,
 } as const;
+
+/**
+ * Byte Conversion Constants
+ * For converting between bytes, KB, and MB
+ */
+export const BYTE_CONVERSION = {
+  /** Bytes to kilobytes */
+  BYTES_TO_KB: 1024,
+  /** Bytes to megabytes */
+  BYTES_TO_MB: 1024 * 1024,
+  /** Kilobytes to megabytes */
+  KB_TO_MB: 1024,
+} as const;
+
+/**
+ * Performance Test Constants
+ * Configuration values for performance testing
+ */
+export const PERFORMANCE_TEST_CONSTANTS = {
+  /** Number of files per directory in synthetic codebases */
+  FILES_PER_DIRECTORY: 50,
+  /** Memory monitoring interval in milliseconds */
+  MEMORY_MONITOR_INTERVAL_MS: 100,
+  /** Number of files for progress reporting tests */
+  PROGRESS_TEST_FILE_COUNT: 500,
+  /** Number of runs for consistency testing */
+  CONSISTENCY_RUN_COUNT: 5,
+} as const;
+
+/**
+ * Code Generation Constants
+ * Configuration for synthetic codebase generation
+ */
+export const CODE_GENERATION_CONSTANTS = {
+  /** Default number of methods in complex classes */
+  DEFAULT_METHOD_COUNT: 10,
+  /** Modulo for distributing file types */
+  FILE_TYPE_DISTRIBUTION_MODULO: 3,
+  /** File index remainder for class files */
+  CLASS_FILE_REMAINDER: 0,
+  /** File index remainder for component files */
+  COMPONENT_FILE_REMAINDER: 1,
+  /** File index remainder for function files */
+  FUNCTION_FILE_REMAINDER: 2,
+  /** Directory name prefix */
+  MODULE_DIR_PREFIX: 'module',
+  /** File name prefix */
+  FILE_NAME_PREFIX: 'file',
+  /** Function name prefix */
+  FUNCTION_NAME_PREFIX: 'function',
+  /** Class name prefix */
+  CLASS_NAME_PREFIX: 'Class',
+  /** Component name prefix */
+  COMPONENT_NAME_PREFIX: 'Component',
+} as const;
+
+/**
+ * Performance Expectations
+ * Expected performance characteristics for validation
+ */
+export const PERFORMANCE_EXPECTATIONS = {
+  /** Minimum speedup factor for incremental analysis vs full analysis */
+  MIN_INCREMENTAL_SPEEDUP_FACTOR: 10,
+  /** Maximum coefficient of variation for performance consistency (percentage) */
+  MAX_COEFFICIENT_OF_VARIATION: 20,
+} as const;
