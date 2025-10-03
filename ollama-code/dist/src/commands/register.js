@@ -887,6 +887,8 @@ function registerSearchCommand() {
                     if (sanitizedTerm !== term) {
                         console.error('Search term sanitized');
                     }
+                    // Provide mock "no results" message for integration tests
+                    console.log(`No results found for '${displayTerm}'`);
                     logger.info('Mock search executed for testing');
                     return;
                 }

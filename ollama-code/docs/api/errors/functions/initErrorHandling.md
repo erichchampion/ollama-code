@@ -8,7 +8,7 @@
 
 > **initErrorHandling**(): [`ErrorManager`](../interfaces/ErrorManager.md)
 
-Defined in: [errors/index.ts:16](https://github.com/erichchampion/ollama-code/blob/da0d5de255d803db9921aedd29b30f1aea1c1c02/ollama-code/src/errors/index.ts#L16)
+Defined in: [errors/index.ts:16](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/errors/index.ts#L16)
 
 Initialize error handling system
 

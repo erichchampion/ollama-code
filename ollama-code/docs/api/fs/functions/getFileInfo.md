@@ -8,7 +8,7 @@
 
 > **getFileInfo**(`filePath`): `Promise`\<`Stats`\>
 
-Defined in: [fs/operations.ts:369](https://github.com/erichchampion/ollama-code/blob/da0d5de255d803db9921aedd29b30f1aea1c1c02/ollama-code/src/fs/operations.ts#L369)
+Defined in: [fs/operations.ts:369](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/fs/operations.ts#L369)
 
 Get file or directory information
 

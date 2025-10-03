@@ -8,7 +8,7 @@
 
 > **generateCommandHelp**(`command`): `string`
 
-Defined in: [commands/index.ts:350](https://github.com/erichchampion/ollama-code/blob/da0d5de255d803db9921aedd29b30f1aea1c1c02/ollama-code/src/commands/index.ts#L350)
+Defined in: [commands/index.ts:350](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/commands/index.ts#L350)
 
 Generate help text for a command
 
