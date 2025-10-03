@@ -1295,3 +1295,65 @@ export const DISTRIBUTED_PROCESSING_LIMITS = {
   /** Maximum execution time for task processing (ms) */
   MAX_EXECUTION_TIME_MS: 300000, // 5 minutes
 } as const;
+
+/**
+ * File Watching Constants
+ * Configuration for file system change detection and debouncing
+ */
+export const FILE_WATCHING_CONSTANTS = {
+  /** Debounce delay for batch change handling (ms) */
+  DEBOUNCE_DELAY_MS: 100,
+  /** Wait time for file system events to propagate (ms) */
+  FS_EVENT_PROPAGATION_MS: 200,
+  /** Maximum wait time for watcher to detect changes (ms) */
+  MAX_DETECTION_WAIT_MS: 2000,
+  /** Batch change count for thrashing test */
+  BATCH_CHANGE_COUNT: 50,
+  /** Number of concurrent changes for conflict test */
+  CONCURRENT_CHANGE_COUNT: 10,
+  /** Polling interval for watcher detection (ms) */
+  POLLING_INTERVAL_MS: 50,
+} as const;
+
+/**
+ * Knowledge Graph Query Constants
+ * Configuration for semantic queries and graph operations
+ */
+export const KNOWLEDGE_GRAPH_CONSTANTS = {
+  /** Minimum semantic similarity score (0-1) */
+  MIN_SEMANTIC_SCORE: 0.6,
+  /** Maximum results to return from queries */
+  MAX_RESULTS: 50,
+  /** Default query timeout (ms) */
+  QUERY_TIMEOUT_MS: 5000,
+} as const;
+
+/**
+ * Semantic Scoring Constants
+ * Score adjustments for semantic similarity algorithm
+ */
+export const SEMANTIC_SCORING = {
+  /** Base minimum score threshold */
+  MIN_SCORE: 0.6,
+  /** Score boost for intent matching */
+  INTENT_BOOST: 0.2,
+  /** Score boost for exact name match */
+  EXACT_MATCH_BOOST: 0.3,
+  /** Maximum possible score */
+  MAX_SCORE: 1.0,
+} as const;
+
+/**
+ * Graph Traversal Constants
+ * Configuration for graph traversal operations
+ */
+export const TRAVERSAL_CONSTANTS = {
+  /** Maximum traversal depth */
+  MAX_DEPTH: 10,
+  /** Maximum nodes to visit */
+  MAX_NODES: 1000,
+  /** Traversal timeout (ms) */
+  TIMEOUT_MS: 5000,
+  /** Maximum stalls before error (for stall detection) */
+  MAX_STALLS: 100,
+} as const;

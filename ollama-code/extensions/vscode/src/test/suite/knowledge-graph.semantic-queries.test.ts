@@ -13,91 +13,19 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-
-/**
- * Knowledge graph constants
- */
-const KNOWLEDGE_GRAPH_CONSTANTS = {
-  /** Minimum semantic similarity score (0-1) */
-  MIN_SEMANTIC_SCORE: 0.6,
-  /** Maximum results to return */
-  MAX_RESULTS: 50,
-  /** Default query timeout (ms) */
-  QUERY_TIMEOUT_MS: 5000,
-} as const;
-
-/**
- * Node types in the knowledge graph
- */
-enum NodeType {
-  FUNCTION = 'function',
-  CLASS = 'class',
-  VARIABLE = 'variable',
-  INTERFACE = 'interface',
-  API_ENDPOINT = 'api_endpoint',
-  DATABASE_QUERY = 'database_query',
-  ERROR_HANDLER = 'error_handler',
-  AUTH_CHECK = 'auth_check',
-}
-
-/**
- * Relationship types in the knowledge graph
- */
-enum RelationType {
-  CALLS = 'calls',
-  IMPORTS = 'imports',
-  EXTENDS = 'extends',
-  IMPLEMENTS = 'implements',
-  USES = 'uses',
-  HANDLES = 'handles',
-  AUTHENTICATES = 'authenticates',
-}
-
-/**
- * Knowledge graph node
- */
-interface GraphNode {
-  id: string;
-  type: NodeType;
-  name: string;
-  filePath: string;
-  lineNumber: number;
-  metadata: Record<string, any>;
-}
-
-/**
- * Knowledge graph relationship
- */
-interface GraphRelationship {
-  id: string;
-  type: RelationType;
-  sourceId: string;
-  targetId: string;
-  metadata: Record<string, any>;
-}
-
-/**
- * Semantic query
- */
-interface SemanticQuery {
-  query: string;
-  constraints?: {
-    nodeTypes?: NodeType[];
-    filePatterns?: string[];
-    minScore?: number;
-  };
-  limit?: number;
-}
-
-/**
- * Query result
- */
-interface QueryResult {
-  node: GraphNode;
-  score: number;
-  matches: string[];
-}
+import {
+  PROVIDER_TEST_TIMEOUTS,
+  KNOWLEDGE_GRAPH_CONSTANTS,
+  SEMANTIC_SCORING,
+} from '../helpers/test-constants';
+import {
+  NodeType,
+  RelationType,
+  GraphNode,
+  GraphRelationship,
+  SemanticQuery,
+  QueryResult,
+} from '../helpers/graph-types';
 
 /**
  * Mock Knowledge Graph for testing
@@ -201,15 +129,15 @@ class MockKnowledgeGraph {
 
     // Boost score if node type matches query intent
     if (this.matchesIntent(node, queryTerms)) {
-      score += 0.2;
+      score += SEMANTIC_SCORING.INTENT_BOOST;
     }
 
     // Boost score for exact name matches
     if (nodeName === queryTerms.join(' ')) {
-      score += 0.3;
+      score += SEMANTIC_SCORING.EXACT_MATCH_BOOST;
     }
 
-    return Math.min(score, 1.0);
+    return Math.min(score, SEMANTIC_SCORING.MAX_SCORE);
   }
 
   /**
@@ -583,7 +511,7 @@ suite('Knowledge Graph - Semantic Queries Tests', () => {
         'Should find API endpoint nodes'
       );
       assert.ok(
-        results.some(r => r.node.metadata.method),
+        results.some(r => r.node.metadata?.method),
         'Should find nodes with HTTP methods'
       );
 

@@ -16,23 +16,10 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-
-/**
- * File watching constants
- */
-const FILE_WATCHING_CONSTANTS = {
-  /** Debounce delay for batch change handling (ms) */
-  DEBOUNCE_DELAY_MS: 100,
-  /** Wait time for file system events to propagate (ms) */
-  FS_EVENT_PROPAGATION_MS: 200,
-  /** Maximum wait time for watcher to detect changes (ms) */
-  MAX_DETECTION_WAIT_MS: 2000,
-  /** Batch change count for thrashing test */
-  BATCH_CHANGE_COUNT: 50,
-  /** Number of concurrent changes for conflict test */
-  CONCURRENT_CHANGE_COUNT: 10,
-} as const;
+import {
+  PROVIDER_TEST_TIMEOUTS,
+  FILE_WATCHING_CONSTANTS,
+} from '../helpers/test-constants';
 
 /**
  * File change event types
@@ -190,7 +177,9 @@ class TestFileWatcher {
    */
   async waitForDebounce(): Promise<void> {
     if (this.debounceTimer) {
-      await new Promise(resolve => setTimeout(resolve, FILE_WATCHING_CONSTANTS.DEBOUNCE_DELAY_MS + 50));
+      await new Promise(resolve =>
+        setTimeout(resolve, FILE_WATCHING_CONSTANTS.DEBOUNCE_DELAY_MS + FILE_WATCHING_CONSTANTS.POLLING_INTERVAL_MS)
+      );
     }
   }
 
@@ -198,14 +187,25 @@ class TestFileWatcher {
    * Dispose watcher and cleanup
    */
   dispose(): void {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
+    try {
+      if (this.debounceTimer) {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = null;
+      }
+    } catch (e) {
+      console.error('Error clearing debounce timer:', e);
     }
-    this.disposables.forEach(d => d.dispose());
-    this.disposables = [];
-    this.watcher = null;
-    this.events = [];
-    this.pendingEvents.clear();
+
+    try {
+      this.disposables.forEach(d => d.dispose());
+    } catch (e) {
+      console.error('Error disposing resources:', e);
+    } finally {
+      this.disposables = [];
+      this.watcher = null;
+      this.events = [];
+      this.pendingEvents.clear();
+    }
   }
 }
 

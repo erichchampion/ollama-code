@@ -12,92 +12,16 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-
-/**
- * Traversal constants
- */
-const TRAVERSAL_CONSTANTS = {
-  /** Maximum traversal depth */
-  MAX_DEPTH: 10,
-  /** Maximum nodes to visit */
-  MAX_NODES: 1000,
-  /** Traversal timeout (ms) */
-  TIMEOUT_MS: 5000,
-} as const;
-
-/**
- * Node types
- */
-enum NodeType {
-  FUNCTION = 'function',
-  CLASS = 'class',
-  VARIABLE = 'variable',
-  MODULE = 'module',
-}
-
-/**
- * Relationship types
- */
-enum RelationType {
-  CALLS = 'calls',
-  IMPORTS = 'imports',
-  DEPENDS_ON = 'depends_on',
-  READS = 'reads',
-  WRITES = 'writes',
-  RETURNS = 'returns',
-  EXTENDS = 'extends',
-}
-
-/**
- * Graph node
- */
-interface GraphNode {
-  id: string;
-  type: NodeType;
-  name: string;
-  filePath: string;
-  lineNumber: number;
-  metadata?: Record<string, any>;
-}
-
-/**
- * Graph relationship
- */
-interface GraphRelationship {
-  id: string;
-  type: RelationType;
-  sourceId: string;
-  targetId: string;
-  metadata?: Record<string, any>;
-}
-
-/**
- * Traversal result
- */
-interface TraversalResult {
-  path: GraphNode[];
-  depth: number;
-  relationships: GraphRelationship[];
-}
-
-/**
- * Data flow path
- */
-interface DataFlowPath {
-  variable: string;
-  path: GraphNode[];
-  operations: string[];
-}
-
-/**
- * Control flow path
- */
-interface ControlFlowPath {
-  condition: string;
-  truePath: GraphNode[];
-  falsePath: GraphNode[];
-}
+import { PROVIDER_TEST_TIMEOUTS, TRAVERSAL_CONSTANTS } from '../helpers/test-constants';
+import {
+  NodeType,
+  RelationType,
+  GraphNode,
+  GraphRelationship,
+  TraversalResult,
+  DataFlowPath,
+  ControlFlowPath,
+} from '../helpers/graph-types';
 
 /**
  * Knowledge Graph for traversal testing
@@ -140,9 +64,13 @@ class KnowledgeGraph {
   }
 
   /**
-   * Traverse function call chain from a starting node
+   * Generic graph traversal with relationship filter
    */
-  traverseCallChain(startNodeId: string, maxDepth: number = TRAVERSAL_CONSTANTS.MAX_DEPTH): TraversalResult[] {
+  private genericTraverse(
+    startNodeId: string,
+    maxDepth: number,
+    relationshipFilter: (rel: GraphRelationship) => boolean
+  ): TraversalResult[] {
     const results: TraversalResult[] = [];
     const visited = new Set<string>();
 
@@ -157,13 +85,13 @@ class KnowledgeGraph {
 
       const currentPath = [...path, node];
 
-      // Get outgoing CALLS relationships
+      // Get outgoing relationships that match the filter
       const outgoingRels = this.outgoing.get(nodeId) || new Set();
-      const callRels = Array.from(outgoingRels)
+      const filteredRels = Array.from(outgoingRels)
         .map(relId => this.relationships.get(relId)!)
-        .filter(rel => rel.type === RelationType.CALLS);
+        .filter(relationshipFilter);
 
-      if (callRels.length === 0) {
+      if (filteredRels.length === 0) {
         // Leaf node - add path to results
         results.push({
           path: currentPath,
@@ -174,7 +102,7 @@ class KnowledgeGraph {
       }
 
       // Continue traversal
-      for (const rel of callRels) {
+      for (const rel of filteredRels) {
         dfs(rel.targetId, currentPath, [...relationships, rel], depth + 1);
       }
     };
@@ -184,47 +112,25 @@ class KnowledgeGraph {
   }
 
   /**
+   * Traverse function call chain from a starting node
+   */
+  traverseCallChain(startNodeId: string, maxDepth: number = TRAVERSAL_CONSTANTS.MAX_DEPTH): TraversalResult[] {
+    return this.genericTraverse(
+      startNodeId,
+      maxDepth,
+      rel => rel.type === RelationType.CALLS
+    );
+  }
+
+  /**
    * Traverse dependency graph
    */
   traverseDependencies(startNodeId: string, maxDepth: number = TRAVERSAL_CONSTANTS.MAX_DEPTH): TraversalResult[] {
-    const results: TraversalResult[] = [];
-    const visited = new Set<string>();
-
-    const dfs = (nodeId: string, path: GraphNode[], relationships: GraphRelationship[], depth: number) => {
-      if (depth > maxDepth || visited.has(nodeId)) {
-        return;
-      }
-
-      visited.add(nodeId);
-      const node = this.nodes.get(nodeId);
-      if (!node) return;
-
-      const currentPath = [...path, node];
-
-      // Get outgoing DEPENDS_ON or IMPORTS relationships
-      const outgoingRels = this.outgoing.get(nodeId) || new Set();
-      const depRels = Array.from(outgoingRels)
-        .map(relId => this.relationships.get(relId)!)
-        .filter(rel => rel.type === RelationType.DEPENDS_ON || rel.type === RelationType.IMPORTS);
-
-      if (depRels.length === 0) {
-        // Leaf node
-        results.push({
-          path: currentPath,
-          depth,
-          relationships: [...relationships],
-        });
-        return;
-      }
-
-      // Continue traversal
-      for (const rel of depRels) {
-        dfs(rel.targetId, currentPath, [...relationships, rel], depth + 1);
-      }
-    };
-
-    dfs(startNodeId, [], [], 0);
-    return results;
+    return this.genericTraverse(
+      startNodeId,
+      maxDepth,
+      rel => rel.type === RelationType.DEPENDS_ON || rel.type === RelationType.IMPORTS
+    );
   }
 
   /**
