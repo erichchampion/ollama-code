@@ -966,3 +966,65 @@ export const SOLUTION_STRATEGIES = {
     ],
   },
 } as const;
+
+/**
+ * Multi-Step Execution Constants
+ * Configuration values for multi-step workflow execution
+ */
+export const MULTI_STEP_CONSTANTS = {
+  /** Default maximum execution time in seconds */
+  DEFAULT_MAX_EXECUTION_TIME: 3600,
+  /** Default step delay in milliseconds */
+  DEFAULT_STEP_DELAY: 0,
+  /** Mock execution delay multiplier */
+  MOCK_EXECUTION_MULTIPLIER: 100,
+  /** Mock approval delay in milliseconds */
+  MOCK_APPROVAL_DELAY: 10,
+  /** Mock rollback delay in milliseconds */
+  MOCK_ROLLBACK_DELAY: 10,
+} as const;
+
+/**
+ * Multi-Step Workflow Templates
+ * Predefined workflow templates for testing
+ */
+export const WORKFLOW_TEMPLATES = {
+  CREATE_REACT_APP: {
+    NAME: 'Create React App',
+    STEPS: [
+      { id: 'step-1', name: 'Initialize project', type: 'command' as const, duration: 5 },
+      { id: 'step-2', name: 'Install dependencies', type: 'command' as const, duration: 30 },
+      { id: 'step-3', name: 'Create component files', type: 'file_operation' as const, duration: 2 },
+      { id: 'step-4', name: 'Configure build', type: 'file_operation' as const, duration: 3 },
+      { id: 'step-5', name: 'Run tests', type: 'validation' as const, duration: 10 },
+    ],
+  },
+  SETUP_AUTHENTICATION: {
+    NAME: 'Set up Authentication',
+    STEPS: [
+      { id: 'auth-1', name: 'Install auth packages', type: 'command' as const, duration: 15 },
+      { id: 'auth-2', name: 'Create auth middleware', type: 'file_operation' as const, duration: 5 },
+      { id: 'auth-3', name: 'Configure environment', type: 'file_operation' as const, duration: 2 },
+      { id: 'auth-4', name: 'Run security tests', type: 'validation' as const, duration: 8 },
+    ],
+  },
+  ADD_TESTING_FRAMEWORK: {
+    NAME: 'Add Testing Framework',
+    STEPS: [
+      { id: 'test-1', name: 'Install test packages', type: 'command' as const, duration: 20 },
+      { id: 'test-2', name: 'Create test config', type: 'file_operation' as const, duration: 3 },
+      { id: 'test-3', name: 'Run sample tests', type: 'validation' as const, duration: 5 },
+    ],
+  },
+  DEPLOY_TO_PRODUCTION: {
+    NAME: 'Deploy to Production',
+    STEPS: [
+      { id: 'deploy-1', name: 'Build production bundle', type: 'command' as const, duration: 60 },
+      { id: 'deploy-2', name: 'Run pre-deploy tests', type: 'validation' as const, duration: 30 },
+      { id: 'deploy-3', name: 'Upload to server', type: 'command' as const, duration: 45 },
+      { id: 'deploy-4', name: 'User approval', type: 'user_confirmation' as const, duration: 0, requiresApproval: true },
+      { id: 'deploy-5', name: 'Restart services', type: 'command' as const, duration: 10 },
+      { id: 'deploy-6', name: 'Verify deployment', type: 'validation' as const, duration: 15 },
+    ],
+  },
+} as const;
