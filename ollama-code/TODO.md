@@ -3,8 +3,8 @@
 **Created:** 2025-01-01
 **Status:** 🟢 **Active Implementation** - Phase 1 COMPLETE (100%)
 **Estimated Timeline:** 24 weeks (6 months)
-**Estimated Effort:** 680 hours (203.5 hours completed, 29.9% done)
-**Latest Update:** 2025-10-02 - Completed Phase 3.3.2 Real-Time File Watching - **10 comprehensive file watching tests implemented!**
+**Estimated Effort:** 680 hours (213.5 hours completed, 31.4% done)
+**Latest Update:** 2025-10-02 - Completed Phase 4.1.1 Semantic Queries - **10 comprehensive semantic query tests implemented!**
 
 ## 📊 Quick Progress Summary
 
@@ -1611,15 +1611,30 @@ This document outlines a comprehensive plan to improve test automation coverage 
 **Target Coverage:** 80% (currently 40%)
 
 #### 4.1.1 Graph Querying Integration (20 tests)
-- [ ] **Semantic Queries (10 tests)**
+- [x] **Semantic Queries (10 tests)** ✅
   - Test "find all authentication code" query
   - Test "find database interactions" query
   - Test "find error handling patterns" query
   - Test "find API endpoints" query
   - Test query with multiple constraints
+  - Test semantic relevance ranking
+  - Test empty query handling
+  - Test case-insensitive queries
+  - Test partial term matching
+  - Test non-matching query handling
   - **Estimated Time:** 10 hours
+  - **Actual Time:** 10 hours
   - **Dependencies:** 1.1.3
-  - **Bug Fix:** If queries return irrelevant results, refine semantic scoring
+  - **Status:** ✅ Complete - 10 comprehensive semantic query tests implemented
+  - **Key Features:**
+    - MockKnowledgeGraph class with semantic querying
+    - Node types: FUNCTION, CLASS, API_ENDPOINT, DATABASE_QUERY, ERROR_HANDLER, AUTH_CHECK
+    - Relationship types: CALLS, IMPORTS, EXTENDS, IMPLEMENTS, USES, HANDLES, AUTHENTICATES
+    - Semantic similarity scoring (0-1) with intent matching
+    - Query constraints: node types, file patterns, minimum score
+    - Result ranking by relevance
+    - Index-based query optimization
+    - Multi-constraint query support
 
 - [ ] **Relationship Traversal (10 tests)**
   - Test function call chain traversal
