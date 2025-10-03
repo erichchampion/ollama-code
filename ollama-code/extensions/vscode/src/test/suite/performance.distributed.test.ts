@@ -10,7 +10,18 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { performance } from 'perf_hooks';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import {
+  PROVIDER_TEST_TIMEOUTS,
+  TASK_PROCESSING_CONSTANTS,
+  TEST_DATA_GENERATION,
+  TEST_FILE_COUNTS,
+  WORKER_CONFIGURATION,
+  WORKER_FAILURE_RATES,
+  TASK_PRIORITY_LEVELS,
+  WORKLOAD_EXPECTATIONS,
+  DISTRIBUTED_PROCESSING_LIMITS,
+  PERFORMANCE_EXPECTATIONS,
+} from '../helpers/test-constants';
 
 /**
  * Distributed processing constants
@@ -94,8 +105,9 @@ interface WorkloadStats {
 class WorkerManager {
   private workers: Map<string, Worker> = new Map();
   private taskQueue: Task[] = [];
-  private results: TaskResult[] = new Map() as any;
+  private results: Map<string, TaskResult> = new Map();
   private workerFailureRate: number = 0;
+  private activePromises: Set<Promise<void>> = new Set();
 
   constructor(workerCount: number, failureRate: number = 0) {
     this.workerFailureRate = failureRate;
@@ -131,24 +143,32 @@ class WorkerManager {
    * Process all tasks in parallel
    */
   async processTasks(): Promise<TaskResult[]> {
-    const results: TaskResult[] = [];
+    const startTime = Date.now();
+    let iterations = 0;
 
     while (this.taskQueue.length > 0 || this.hasActiveTasks()) {
+      // Safety check: prevent infinite loops
+      if (iterations++ > DISTRIBUTED_PROCESSING_LIMITS.MAX_PROCESSING_ITERATIONS) {
+        throw new Error(
+          `Process tasks exceeded max iterations (${DISTRIBUTED_PROCESSING_LIMITS.MAX_PROCESSING_ITERATIONS})`
+        );
+      }
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed > DISTRIBUTED_PROCESSING_LIMITS.MAX_EXECUTION_TIME_MS) {
+        throw new Error(
+          `Process tasks exceeded time limit (${elapsed}ms > ${DISTRIBUTED_PROCESSING_LIMITS.MAX_EXECUTION_TIME_MS}ms)`
+        );
+      }
+
       // Assign tasks to idle workers
       await this.assignTasksToIdleWorkers();
 
       // Wait a bit before checking again
-      await this.delay(10);
+      await this.delay(TASK_PROCESSING_CONSTANTS.TASK_QUEUE_POLLING_INTERVAL_MS);
     }
 
-    // Collect all results
-    for (const worker of this.workers.values()) {
-      if (worker.state === WorkerState.COMPLETED || worker.state === WorkerState.IDLE) {
-        // Results already collected during processing
-      }
-    }
-
-    return Array.from((this.results as any).values());
+    return Array.from(this.results.values());
   }
 
   /**
@@ -167,10 +187,16 @@ class WorkerManager {
       worker.state = WorkerState.BUSY;
 
       // Process task asynchronously (don't await)
-      this.processTask(worker, task).catch(error => {
-        worker.errors.push(error.message);
-        worker.state = WorkerState.FAILED;
-      });
+      const promise = this.processTask(worker, task)
+        .catch(error => {
+          worker.errors.push(error.message);
+          worker.state = WorkerState.FAILED;
+        })
+        .finally(() => {
+          this.activePromises.delete(promise);
+        });
+
+      this.activePromises.add(promise);
     }
   }
 
@@ -201,7 +227,7 @@ class WorkerManager {
         processingTime,
       };
 
-      (this.results as any).set(task.id, taskResult);
+      this.results.set(task.id, taskResult);
 
       // Update worker state
       worker.tasksProcessed++;
@@ -219,7 +245,7 @@ class WorkerManager {
         processingTime,
       };
 
-      (this.results as any).set(task.id, taskResult);
+      this.results.set(task.id, taskResult);
 
       // Update worker state
       worker.errors.push(taskResult.error!);
@@ -237,7 +263,10 @@ class WorkerManager {
       const content = await fs.promises.readFile(task.filePath, 'utf-8');
 
       // Simulate processing time based on file size
-      const processingTime = Math.min(content.length / 1000, 50);
+      const processingTime = Math.min(
+        content.length / TASK_PROCESSING_CONSTANTS.FILE_SIZE_TO_MS_DIVISOR,
+        TASK_PROCESSING_CONSTANTS.MAX_PROCESSING_TIME_MS
+      );
       await this.delay(processingTime);
 
       return {
@@ -247,7 +276,7 @@ class WorkerManager {
     }
 
     // Simulate generic processing
-    await this.delay(10);
+    await this.delay(TASK_PROCESSING_CONSTANTS.DEFAULT_PROCESSING_DELAY_MS);
     return { processed: true };
   }
 
@@ -282,12 +311,11 @@ class WorkerManager {
     const avgTasks = totalTasks / workers.length;
 
     // Calculate balance (100 = perfect, 0 = one worker did everything)
-    const workloadBalance =
-      maxTasks > 0 ? Math.round((minTasks / maxTasks) * 100) : 100;
+    const workloadBalance = maxTasks > 0 ? Math.round((minTasks / maxTasks) * 100) : 100;
 
-    const results = Array.from((this.results as any).values()) as TaskResult[];
-    const completedTasks = results.filter((r: TaskResult) => r.success).length;
-    const failedTasks = results.filter((r: TaskResult) => !r.success).length;
+    const results = Array.from(this.results.values());
+    const completedTasks = results.filter(r => r.success).length;
+    const failedTasks = results.filter(r => !r.success).length;
 
     return {
       totalTasks,
@@ -315,15 +343,20 @@ class WorkerManager {
    * Get results
    */
   getResults(): TaskResult[] {
-    return Array.from((this.results as any).values());
+    return Array.from(this.results.values());
   }
 
   /**
-   * Shutdown all workers
+   * Shutdown all workers - wait for active tasks to complete
    */
-  shutdown(): void {
+  async shutdown(): Promise<void> {
+    // Wait for all active tasks to complete
+    await Promise.allSettled(Array.from(this.activePromises));
+
     this.workers.clear();
     this.taskQueue = [];
+    this.results.clear();
+    this.activePromises.clear();
   }
 
   /**
@@ -356,7 +389,7 @@ export function testFunction${i}(input: string): string {
 export const testData${i} = {
   id: ${i},
   name: 'Test ${i}',
-  value: ${i * 100},
+  value: ${i * TEST_DATA_GENERATION.VALUE_MULTIPLIER},
 };
 `;
 
@@ -365,6 +398,94 @@ export const testData${i} = {
   }
 
   return filePaths;
+}
+
+/**
+ * Helper: Create test tasks from file paths
+ */
+interface TaskCreationOptions {
+  fileCount: number;
+  priorityFn?: (idx: number) => number;
+}
+
+async function createTestTasks(
+  testWorkspacePath: string,
+  options: TaskCreationOptions
+): Promise<{ tasks: Task[]; filePaths: string[] }> {
+  const filePaths = await generateTestFiles(testWorkspacePath, options.fileCount);
+
+  const tasks: Task[] = filePaths.map((filePath, idx) => ({
+    id: `task-${idx}`,
+    filePath,
+    priority: options.priorityFn ? options.priorityFn(idx) : TASK_PRIORITY_LEVELS.LOW,
+  }));
+
+  return { tasks, filePaths };
+}
+
+/**
+ * Helper: Run distributed processing test
+ */
+interface DistributedTestConfig {
+  workerCount: number;
+  failureRate?: number;
+  measureTime?: boolean;
+}
+
+async function runDistributedTest(
+  tasks: Task[],
+  config: DistributedTestConfig
+): Promise<{
+  manager: WorkerManager;
+  results: TaskResult[];
+  processingTime?: number;
+}> {
+  const manager = new WorkerManager(
+    config.workerCount,
+    config.failureRate || WORKER_FAILURE_RATES.NO_FAILURES
+  );
+  manager.addTasks(tasks);
+
+  const startTime = config.measureTime ? performance.now() : 0;
+  await manager.processTasks();
+  const processingTime = config.measureTime ? performance.now() - startTime : undefined;
+
+  const results = manager.getResults();
+
+  return { manager, results, processingTime };
+}
+
+/**
+ * Helper: Manage worker lifecycle with automatic cleanup
+ */
+async function withWorkerManager<T>(
+  workerCount: number,
+  failureRate: number,
+  fn: (manager: WorkerManager) => Promise<T>
+): Promise<T> {
+  const manager = new WorkerManager(workerCount, failureRate);
+  try {
+    return await fn(manager);
+  } finally {
+    await manager.shutdown();
+  }
+}
+
+/**
+ * Helper: Get successful results
+ */
+function getSuccessfulResults(results: TaskResult[]): TaskResult[] {
+  return results.filter(r => r.success && r.result);
+}
+
+/**
+ * Helper: Get results by task ID range
+ */
+function getResultsByTaskRange(results: TaskResult[], min: number, max: number): TaskResult[] {
+  return results.filter(r => {
+    const taskNum = parseInt(r.taskId.split('-')[1]);
+    return taskNum >= min && taskNum < max;
+  });
 }
 
 suite('Performance - Distributed Processing Tests', () => {
@@ -384,28 +505,15 @@ suite('Performance - Distributed Processing Tests', () => {
     test('Should process files in parallel across workers', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      // Generate test files
-      const filePaths = await generateTestFiles(
-        testWorkspacePath,
-        DISTRIBUTED_PROCESSING_CONSTANTS.PARALLEL_FILE_COUNT
-      );
+      const { tasks } = await createTestTasks(testWorkspacePath, {
+        fileCount: DISTRIBUTED_PROCESSING_CONSTANTS.PARALLEL_FILE_COUNT,
+        priorityFn: idx => idx % TASK_PRIORITY_LEVELS.PRIORITY_VARIATION_MODULO,
+      });
 
-      // Create tasks
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: idx % 3, // Varying priorities
-      }));
-
-      // Process with workers
-      const manager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT);
-      manager.addTasks(tasks);
-
-      const startTime = performance.now();
-      await manager.processTasks();
-      const parallelTime = performance.now() - startTime;
-
-      const results = manager.getResults();
+      const { manager, results, processingTime } = await runDistributedTest(tasks, {
+        workerCount: DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT,
+        measureTime: true,
+      });
 
       // Assertions
       assert.strictEqual(
@@ -413,259 +521,256 @@ suite('Performance - Distributed Processing Tests', () => {
         DISTRIBUTED_PROCESSING_CONSTANTS.PARALLEL_FILE_COUNT,
         'Should process all files'
       );
-      assert.ok(
-        results.every(r => r.success),
-        'All tasks should succeed'
-      );
+      assert.ok(results.every(r => r.success), 'All tasks should succeed');
 
       console.log(
-        `✓ Processed ${results.length} files in parallel in ${parallelTime.toFixed(0)}ms`
+        `✓ Processed ${results.length} files in parallel in ${processingTime!.toFixed(0)}ms`
       );
 
-      manager.shutdown();
+      await manager.shutdown();
     });
 
     test('Should distribute workload evenly across workers', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      // Generate test files
       const taskCount =
         DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT *
         DISTRIBUTED_PROCESSING_CONSTANTS.TASKS_PER_WORKER;
-      const filePaths = await generateTestFiles(testWorkspacePath, taskCount);
 
-      // Create tasks with equal priority
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: 1, // All same priority
-      }));
+      await withWorkerManager(
+        DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT,
+        WORKER_FAILURE_RATES.NO_FAILURES,
+        async manager => {
+          const { tasks } = await createTestTasks(testWorkspacePath, {
+            fileCount: taskCount,
+          });
 
-      // Process with workers
-      const manager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT);
-      manager.addTasks(tasks);
-      await manager.processTasks();
+          manager.addTasks(tasks);
+          await manager.processTasks();
 
-      const stats = manager.getWorkloadStats();
+          const stats = manager.getWorkloadStats();
 
-      // Assertions
-      assert.strictEqual(stats.totalTasks, taskCount, 'Should process all tasks');
-      assert.strictEqual(stats.completedTasks, taskCount, 'All tasks should complete');
-      assert.strictEqual(stats.failedTasks, 0, 'No tasks should fail');
-      assert.ok(
-        stats.workloadBalance >= 70,
-        `Workload should be reasonably balanced (got ${stats.workloadBalance}%)`
+          // Assertions
+          assert.strictEqual(stats.totalTasks, taskCount, 'Should process all tasks');
+          assert.strictEqual(stats.completedTasks, taskCount, 'All tasks should complete');
+          assert.strictEqual(stats.failedTasks, 0, 'No tasks should fail');
+          assert.ok(
+            stats.workloadBalance >= WORKLOAD_EXPECTATIONS.MIN_BALANCE_PERCENTAGE,
+            `Workload should be reasonably balanced (got ${stats.workloadBalance}%)`
+          );
+
+          console.log(
+            `✓ Workload distribution: ${stats.minTasksPerWorker}-${stats.maxTasksPerWorker} tasks/worker (${stats.workloadBalance}% balanced)`
+          );
+        }
       );
-
-      console.log(
-        `✓ Workload distribution: ${stats.minTasksPerWorker}-${stats.maxTasksPerWorker} tasks/worker (${stats.workloadBalance}% balanced)`
-      );
-
-      manager.shutdown();
     });
 
     test('Should recover from worker failures', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      // Generate test files
-      const filePaths = await generateTestFiles(testWorkspacePath, 20);
+      await withWorkerManager(
+        DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT,
+        WORKER_FAILURE_RATES.TEST_FAILURE_RATE,
+        async manager => {
+          const { tasks } = await createTestTasks(testWorkspacePath, {
+            fileCount: TEST_FILE_COUNTS.WORKER_RECOVERY_TEST,
+          });
 
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: 1,
-      }));
+          manager.addTasks(tasks);
+          await manager.processTasks();
 
-      // Create manager with 30% worker failure rate
-      const manager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT, 0.3);
-      manager.addTasks(tasks);
-      await manager.processTasks();
+          const results = manager.getResults();
+          const stats = manager.getWorkloadStats();
 
-      const results = manager.getResults();
-      const stats = manager.getWorkloadStats();
+          // Assertions
+          assert.strictEqual(
+            results.length,
+            TEST_FILE_COUNTS.WORKER_RECOVERY_TEST,
+            'Should attempt all tasks'
+          );
+          assert.ok(stats.failedTasks > 0, 'Some tasks should fail due to worker failures');
+          assert.ok(
+            stats.failedTasks < stats.totalTasks,
+            'Not all tasks should fail (workers should recover)'
+          );
 
-      // Assertions
-      assert.strictEqual(results.length, 20, 'Should attempt all tasks');
-      assert.ok(stats.failedTasks > 0, 'Some tasks should fail due to worker failures');
-      assert.ok(
-        stats.failedTasks < stats.totalTasks,
-        'Not all tasks should fail (workers should recover)'
+          console.log(
+            `✓ Worker recovery: ${stats.completedTasks}/${stats.totalTasks} completed, ${stats.failedTasks} failed`
+          );
+        }
       );
-
-      console.log(
-        `✓ Worker recovery: ${stats.completedTasks}/${stats.totalTasks} completed, ${stats.failedTasks} failed`
-      );
-
-      manager.shutdown();
     });
 
     test('Should aggregate results from all workers', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      // Generate test files with varying sizes
-      const filePaths = await generateTestFiles(testWorkspacePath, 50);
+      await withWorkerManager(
+        DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT,
+        WORKER_FAILURE_RATES.NO_FAILURES,
+        async manager => {
+          const { tasks } = await createTestTasks(testWorkspacePath, {
+            fileCount: TEST_FILE_COUNTS.AGGREGATION_TEST,
+          });
 
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: 1,
-      }));
+          manager.addTasks(tasks);
+          await manager.processTasks();
 
-      const manager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT);
-      manager.addTasks(tasks);
-      await manager.processTasks();
+          const results = manager.getResults();
+          const successfulResults = getSuccessfulResults(results);
 
-      const results = manager.getResults();
+          // Aggregate results
+          const totalLines = successfulResults.reduce((sum, r) => sum + (r.result.lines || 0), 0);
+          const totalSize = successfulResults.reduce((sum, r) => sum + (r.result.size || 0), 0);
+          const averageProcessingTime =
+            results.reduce((sum, r) => sum + r.processingTime, 0) / results.length;
 
-      // Aggregate results
-      const totalLines = results
-        .filter(r => r.success && r.result)
-        .reduce((sum, r) => sum + (r.result.lines || 0), 0);
+          // Assertions
+          assert.ok(totalLines > 0, 'Should aggregate line counts from all workers');
+          assert.ok(totalSize > 0, 'Should aggregate file sizes from all workers');
+          assert.ok(results.every(r => r.success), 'All tasks should succeed');
 
-      const totalSize = results
-        .filter(r => r.success && r.result)
-        .reduce((sum, r) => sum + (r.result.size || 0), 0);
-
-      const averageProcessingTime =
-        results.reduce((sum, r) => sum + r.processingTime, 0) / results.length;
-
-      // Assertions
-      assert.ok(totalLines > 0, 'Should aggregate line counts from all workers');
-      assert.ok(totalSize > 0, 'Should aggregate file sizes from all workers');
-      assert.ok(results.every(r => r.success), 'All tasks should succeed');
-
-      console.log(
-        `✓ Aggregated results: ${totalLines} lines, ${totalSize} bytes, avg ${averageProcessingTime.toFixed(2)}ms/task`
+          console.log(
+            `✓ Aggregated results: ${totalLines} lines, ${totalSize} bytes, avg ${averageProcessingTime.toFixed(2)}ms/task`
+          );
+        }
       );
-
-      manager.shutdown();
     });
 
     test('Should respect task priority in distribution', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const filePaths = await generateTestFiles(testWorkspacePath, 30);
+      await withWorkerManager(
+        DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT,
+        WORKER_FAILURE_RATES.NO_FAILURES,
+        async manager => {
+          const { tasks } = await createTestTasks(testWorkspacePath, {
+            fileCount: TEST_FILE_COUNTS.MEDIUM_TEST,
+            priorityFn: idx =>
+              idx < TASK_PRIORITY_LEVELS.HIGH_TASK_THRESHOLD
+                ? TASK_PRIORITY_LEVELS.HIGH
+                : idx < TASK_PRIORITY_LEVELS.MEDIUM_TASK_THRESHOLD
+                  ? TASK_PRIORITY_LEVELS.MEDIUM
+                  : TASK_PRIORITY_LEVELS.LOW,
+          });
 
-      // Create tasks with different priorities
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: idx < 10 ? 10 : idx < 20 ? 5 : 1, // High, medium, low
-      }));
+          manager.addTasks(tasks);
+          await manager.processTasks();
 
-      const manager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT);
-      manager.addTasks(tasks);
+          const results = manager.getResults();
 
-      const startTime = performance.now();
-      await manager.processTasks();
+          // Get priority-specific results
+          const highPriorityResults = getResultsByTaskRange(
+            results,
+            0,
+            TASK_PRIORITY_LEVELS.HIGH_TASK_THRESHOLD
+          );
+          const lowPriorityResults = getResultsByTaskRange(
+            results,
+            TASK_PRIORITY_LEVELS.MEDIUM_TASK_THRESHOLD,
+            TEST_FILE_COUNTS.MEDIUM_TEST
+          );
 
-      const results = manager.getResults();
+          const avgHighPriorityTime =
+            highPriorityResults.reduce((sum, r) => sum + r.processingTime, 0) /
+            highPriorityResults.length;
+          const avgLowPriorityTime =
+            lowPriorityResults.reduce((sum, r) => sum + r.processingTime, 0) /
+            lowPriorityResults.length;
 
-      // High priority tasks should be processed first
-      const highPriorityResults = results.filter(r => parseInt(r.taskId.split('-')[1]) < 10);
-      const lowPriorityResults = results.filter(r => parseInt(r.taskId.split('-')[1]) >= 20);
+          // Assertions
+          assert.strictEqual(results.length, TEST_FILE_COUNTS.MEDIUM_TEST, 'Should process all tasks');
 
-      const avgHighPriorityTime =
-        highPriorityResults.reduce((sum, r) => sum + r.processingTime, 0) /
-        highPriorityResults.length;
-      const avgLowPriorityTime =
-        lowPriorityResults.reduce((sum, r) => sum + r.processingTime, 0) /
-        lowPriorityResults.length;
-
-      // Assertions
-      assert.strictEqual(results.length, 30, 'Should process all tasks');
-
-      console.log(
-        `✓ Priority-based processing: High priority avg ${avgHighPriorityTime.toFixed(2)}ms, Low priority avg ${avgLowPriorityTime.toFixed(2)}ms`
+          console.log(
+            `✓ Priority-based processing: High priority avg ${avgHighPriorityTime.toFixed(2)}ms, Low priority avg ${avgLowPriorityTime.toFixed(2)}ms`
+          );
+        }
       );
-
-      manager.shutdown();
     });
 
     test('Should timeout if tasks exceed time limit', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const filePaths = await generateTestFiles(testWorkspacePath, 10);
+      await withWorkerManager(
+        DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT,
+        WORKER_FAILURE_RATES.NO_FAILURES,
+        async manager => {
+          const { tasks } = await createTestTasks(testWorkspacePath, {
+            fileCount: TEST_FILE_COUNTS.SMALL_TEST,
+          });
 
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: 1,
-      }));
+          manager.addTasks(tasks);
 
-      const manager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT);
-      manager.addTasks(tasks);
+          // Set a promise that will timeout
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('Task processing timeout')),
+              DISTRIBUTED_PROCESSING_CONSTANTS.TASK_COMPLETION_TIMEOUT_MS
+            )
+          );
 
-      // Set a promise that will timeout
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error('Task processing timeout')),
-          DISTRIBUTED_PROCESSING_CONSTANTS.TASK_COMPLETION_TIMEOUT_MS
-        )
+          const processingPromise = manager.processTasks();
+
+          try {
+            // Race between processing and timeout
+            await Promise.race([processingPromise, timeoutPromise]);
+
+            // If we get here, processing completed before timeout
+            const results = manager.getResults();
+            assert.ok(
+              results.length > 0,
+              'Should complete at least some tasks before timeout check'
+            );
+
+            console.log(
+              `✓ Processing completed within timeout (${DISTRIBUTED_PROCESSING_CONSTANTS.TASK_COMPLETION_TIMEOUT_MS}ms)`
+            );
+          } catch (error) {
+            // Timeout occurred - this is actually acceptable behavior for this test
+            console.log(
+              `✓ Timeout mechanism works (tasks exceeded ${DISTRIBUTED_PROCESSING_CONSTANTS.TASK_COMPLETION_TIMEOUT_MS}ms)`
+            );
+          }
+        }
       );
-
-      const processingPromise = manager.processTasks();
-
-      try {
-        // Race between processing and timeout
-        await Promise.race([processingPromise, timeoutPromise]);
-
-        // If we get here, processing completed before timeout
-        const results = manager.getResults();
-        assert.ok(
-          results.length > 0,
-          'Should complete at least some tasks before timeout check'
-        );
-
-        console.log(
-          `✓ Processing completed within timeout (${DISTRIBUTED_PROCESSING_CONSTANTS.TASK_COMPLETION_TIMEOUT_MS}ms)`
-        );
-      } catch (error) {
-        // Timeout occurred - this is actually acceptable behavior for this test
-        console.log(
-          `✓ Timeout mechanism works (tasks exceeded ${DISTRIBUTED_PROCESSING_CONSTANTS.TASK_COMPLETION_TIMEOUT_MS}ms)`
-        );
-      }
-
-      manager.shutdown();
     });
 
     test('Should show performance improvement over sequential processing', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.EXTENDED_TEST);
 
-      const filePaths = await generateTestFiles(testWorkspacePath, 40);
+      const { tasks } = await createTestTasks(testWorkspacePath, {
+        fileCount: TEST_FILE_COUNTS.LARGE_TEST,
+      });
 
-      const tasks: Task[] = filePaths.map((filePath, idx) => ({
-        id: `task-${idx}`,
-        filePath,
-        priority: 1,
-      }));
-
-      // Sequential processing (1 worker)
-      const sequentialManager = new WorkerManager(1);
+      // Sequential processing
+      const sequentialManager = new WorkerManager(WORKER_CONFIGURATION.SEQUENTIAL_WORKER_COUNT);
       sequentialManager.addTasks(tasks.map(t => ({ ...t })));
       const seqStart = performance.now();
       await sequentialManager.processTasks();
       const sequentialTime = performance.now() - seqStart;
-      sequentialManager.shutdown();
+      await sequentialManager.shutdown();
 
-      // Parallel processing (4 workers)
-      const parallelManager = new WorkerManager(DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT);
+      // Parallel processing
+      const parallelManager = new WorkerManager(WORKER_CONFIGURATION.PARALLEL_WORKER_COUNT);
       parallelManager.addTasks(tasks.map(t => ({ ...t })));
       const parStart = performance.now();
       await parallelManager.processTasks();
       const parallelTime = performance.now() - parStart;
-      parallelManager.shutdown();
+      await parallelManager.shutdown();
 
       const speedup = sequentialTime / parallelTime;
-      const efficiency = (speedup / DISTRIBUTED_PROCESSING_CONSTANTS.WORKER_COUNT) * 100;
+      const efficiency =
+        (speedup / WORKER_CONFIGURATION.PARALLEL_WORKER_COUNT) * 100;
 
       // Assertions
       assert.ok(
         parallelTime < sequentialTime,
         'Parallel processing should be faster than sequential'
       );
-      assert.ok(speedup > 1.5, `Should show significant speedup (got ${speedup.toFixed(2)}x)`);
+      assert.ok(
+        speedup > PERFORMANCE_EXPECTATIONS.MIN_PARALLEL_SPEEDUP,
+        `Should show significant speedup (got ${speedup.toFixed(2)}x)`
+      );
 
       console.log(
         `✓ Performance: Sequential ${sequentialTime.toFixed(0)}ms, Parallel ${parallelTime.toFixed(0)}ms (${speedup.toFixed(2)}x speedup, ${efficiency.toFixed(1)}% efficiency)`

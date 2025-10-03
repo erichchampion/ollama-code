@@ -1190,4 +1190,108 @@ export const PERFORMANCE_EXPECTATIONS = {
   MIN_INCREMENTAL_SPEEDUP_FACTOR: 10,
   /** Maximum coefficient of variation for performance consistency (percentage) */
   MAX_COEFFICIENT_OF_VARIATION: 20,
+  /** Minimum parallel speedup factor over sequential processing */
+  MIN_PARALLEL_SPEEDUP: 1.5,
+} as const;
+
+/**
+ * Task Processing Constants
+ * Configuration for task processing simulation
+ */
+export const TASK_PROCESSING_CONSTANTS = {
+  /** Divisor for converting file size to processing time (ms) */
+  FILE_SIZE_TO_MS_DIVISOR: 1000,
+  /** Maximum simulated processing time (ms) */
+  MAX_PROCESSING_TIME_MS: 50,
+  /** Default processing delay for generic tasks (ms) */
+  DEFAULT_PROCESSING_DELAY_MS: 10,
+  /** Polling interval for task queue (ms) */
+  TASK_QUEUE_POLLING_INTERVAL_MS: 10,
+} as const;
+
+/**
+ * Test Data Generation Constants
+ * Constants for generating test data
+ */
+export const TEST_DATA_GENERATION = {
+  /** Multiplier for test data values */
+  VALUE_MULTIPLIER: 100,
+} as const;
+
+/**
+ * Test File Counts
+ * Standard file counts for different test scenarios
+ */
+export const TEST_FILE_COUNTS = {
+  /** Small test file count */
+  SMALL_TEST: 10,
+  /** Worker recovery test file count */
+  WORKER_RECOVERY_TEST: 20,
+  /** Medium test file count */
+  MEDIUM_TEST: 30,
+  /** Large test file count */
+  LARGE_TEST: 40,
+  /** Result aggregation test file count */
+  AGGREGATION_TEST: 50,
+} as const;
+
+/**
+ * Worker Configuration
+ * Constants for worker management
+ */
+export const WORKER_CONFIGURATION = {
+  /** Number of workers for sequential processing */
+  SEQUENTIAL_WORKER_COUNT: 1,
+  /** Number of workers for parallel processing */
+  PARALLEL_WORKER_COUNT: 4,
+} as const;
+
+/**
+ * Worker Failure Rates
+ * Failure rate configurations for testing
+ */
+export const WORKER_FAILURE_RATES = {
+  /** No failures */
+  NO_FAILURES: 0,
+  /** Test failure rate (30%) */
+  TEST_FAILURE_RATE: 0.3,
+} as const;
+
+/**
+ * Task Priority Levels
+ * Priority level definitions and thresholds
+ */
+export const TASK_PRIORITY_LEVELS = {
+  /** High priority level */
+  HIGH: 10,
+  /** Medium priority level */
+  MEDIUM: 5,
+  /** Low priority level */
+  LOW: 1,
+  /** Threshold for high priority tasks */
+  HIGH_TASK_THRESHOLD: 10,
+  /** Threshold for medium priority tasks */
+  MEDIUM_TASK_THRESHOLD: 20,
+  /** Modulo for priority variation */
+  PRIORITY_VARIATION_MODULO: 3,
+} as const;
+
+/**
+ * Workload Expectations
+ * Expected characteristics for workload distribution
+ */
+export const WORKLOAD_EXPECTATIONS = {
+  /** Minimum acceptable workload balance percentage */
+  MIN_BALANCE_PERCENTAGE: 70,
+} as const;
+
+/**
+ * Distributed Processing Safety Limits
+ * Limits to prevent infinite loops and resource exhaustion
+ */
+export const DISTRIBUTED_PROCESSING_LIMITS = {
+  /** Maximum iterations in task processing loop */
+  MAX_PROCESSING_ITERATIONS: 10000,
+  /** Maximum execution time for task processing (ms) */
+  MAX_EXECUTION_TIME_MS: 300000, // 5 minutes
 } as const;
