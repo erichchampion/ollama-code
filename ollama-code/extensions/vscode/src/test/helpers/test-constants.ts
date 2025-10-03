@@ -1496,3 +1496,133 @@ export const PATTERN_TEST_DATA = {
     METHODS: ['adapt', 'convert', 'transform'],
   },
 } as const;
+
+/**
+ * Anti-Pattern Detection Thresholds
+ * Configurable thresholds for anti-pattern detection
+ */
+export const ANTI_PATTERN_THRESHOLDS = {
+  /** God Object thresholds */
+  GOD_OBJECT: {
+    METHOD_COUNT: 20,
+    DEPENDENCY_COUNT: 10,
+    CRITICAL_METHODS: 40,
+    CRITICAL_DEPENDENCIES: 20,
+    HIGH_METHODS: 30,
+    HIGH_DEPENDENCIES: 15,
+  },
+  /** Spaghetti Code thresholds */
+  SPAGHETTI_CODE: {
+    COMPLEXITY: 15,
+    CRITICAL_COMPLEXITY: 30,
+    HIGH_COMPLEXITY: 20,
+  },
+  /** Circular Dependency thresholds */
+  CIRCULAR_DEPENDENCY: {
+    LONG_CYCLE_LENGTH: 4,
+    CONFIDENCE: 1.0,
+  },
+  /** Feature Envy thresholds */
+  FEATURE_ENVY: {
+    CALL_THRESHOLD: 5,
+    HIGH_CALL_COUNT: 10,
+  },
+  /** Shotgun Surgery thresholds */
+  SHOTGUN_SURGERY: {
+    FILE_THRESHOLD: 5,
+    HIGH_FILE_COUNT: 10,
+  },
+  /** Long Parameter List thresholds */
+  LONG_PARAMETER_LIST: {
+    PARAM_THRESHOLD: 5,
+    HIGH_PARAM_COUNT: 8,
+  },
+  /** Data Clumps thresholds */
+  DATA_CLUMPS: {
+    MIN_PARAM_GROUP_SIZE: 3,
+    MIN_OCCURRENCES: 3,
+    HIGH_OCCURRENCES: 5,
+  },
+} as const;
+
+/**
+ * Anti-Pattern Recommendation Messages
+ * Standard recommendations for each anti-pattern type
+ */
+export const ANTI_PATTERN_RECOMMENDATIONS = {
+  GOD_OBJECT: 'Split class into smaller, focused classes following Single Responsibility Principle',
+  SPAGHETTI_CODE: 'Refactor into smaller functions, extract conditional logic, reduce nesting',
+  CIRCULAR_DEPENDENCY: 'Break circular dependencies using dependency inversion or extracting shared interfaces',
+  FEATURE_ENVY: 'Move method to the class it envies, or extract a new class if appropriate',
+  SHOTGUN_SURGERY: 'Consolidate related functionality into cohesive modules',
+  LONG_PARAMETER_LIST: 'Introduce parameter object or builder pattern to reduce parameter count',
+  DATA_CLUMPS: 'Extract data clump into a class or data structure',
+} as const;
+
+/**
+ * Anti-Pattern Test Data
+ * Test-specific data for anti-pattern detection tests
+ */
+export const ANTI_PATTERN_TEST_DATA = {
+  /** God Object test data */
+  GOD_OBJECT: {
+    METHOD_COUNT: 25,
+    DEPENDENCY_COUNT: 12,
+    CLASS_NAME: 'UserManager',
+    FILE_NAME: 'UserManager.ts',
+    LINE_NUMBER: 1,
+  },
+  /** Spaghetti Code test data */
+  SPAGHETTI_CODE: {
+    COMPLEXITY: 18,
+    LINE_COUNT: 150,
+    FUNCTION_NAME: 'processData',
+    FILE_NAME: 'processor.ts',
+    LINE_NUMBER: 10,
+  },
+  /** Circular Dependency test data */
+  CIRCULAR_DEPENDENCY: {
+    MODULE_NAMES: ['ModuleA', 'ModuleB', 'ModuleC'],
+    FILE_NAMES: ['moduleA.ts', 'moduleB.ts', 'moduleC.ts'],
+    LINE_NUMBER: 1,
+  },
+  /** Feature Envy test data */
+  FEATURE_ENVY: {
+    CALL_COUNT: 6,
+    FUNCTION_NAME: 'calculateTotal',
+    FILE_NAME: 'calculator.ts',
+    TARGET_CLASS: 'Product',
+    TARGET_FILE: 'Product.ts',
+    LINE_NUMBER: 5,
+    TARGET_LINE_NUMBER: 10,
+  },
+  /** Shotgun Surgery test data */
+  SHOTGUN_SURGERY: {
+    FILE_COUNT: 6,
+    FEATURE_NAME: 'authentication',
+    LINE_NUMBER: 1,
+  },
+  /** Long Parameter List test data */
+  LONG_PARAMETER_LIST: {
+    PARAM_COUNT: 8,
+    FUNCTION_NAME: 'createUser',
+    FILE_NAME: 'user.ts',
+    LINE_NUMBER: 15,
+    PARAMETERS: ['name', 'email', 'phone', 'address', 'city', 'state', 'zip', 'country'],
+  },
+  /** Data Clumps test data */
+  DATA_CLUMPS: {
+    FUNCTION_COUNT: 4,
+    COMMON_PARAMS: ['x', 'y', 'z'],
+    LINE_NUMBER: 10,
+  },
+} as const;
+
+/**
+ * Common constants for anti-pattern detection
+ */
+export const ANTI_PATTERN_COMMON = {
+  UNKNOWN_VALUE: 'unknown',
+  MAX_CONFIDENCE: 1.0,
+  CONFIDENCE_DIVISOR: 2,
+} as const;

@@ -14,8 +14,14 @@
 
 import * as assert from 'assert';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
-import { NodeType, GraphNode, GraphRelationship, RelationType } from '../helpers/graph-types';
+import {
+  PROVIDER_TEST_TIMEOUTS,
+  ANTI_PATTERN_THRESHOLDS,
+  ANTI_PATTERN_RECOMMENDATIONS,
+  ANTI_PATTERN_TEST_DATA,
+  ANTI_PATTERN_COMMON,
+} from '../helpers/test-constants';
+import { NodeType, GraphNode, GraphRelationship, RelationType, NodeMetadata } from '../helpers/graph-types';
 
 /**
  * Anti-pattern types
@@ -53,6 +59,83 @@ interface AntiPatternMatch {
     externalCalls?: number;
     affectedFiles?: number;
   };
+}
+
+/**
+ * Calculate severity level based on value and thresholds
+ */
+function calculateSeverity(
+  value: number,
+  thresholds: { critical?: number; high: number; medium: number }
+): 'low' | 'medium' | 'high' | 'critical' {
+  if (thresholds.critical !== undefined && value >= thresholds.critical) {
+    return 'critical';
+  }
+  if (value >= thresholds.high) {
+    return 'high';
+  }
+  if (value >= thresholds.medium) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+/**
+ * Calculate confidence score (0-1) based on value and threshold
+ */
+function calculateConfidence(value: number, threshold: number): number {
+  return Math.min(value / threshold, ANTI_PATTERN_COMMON.MAX_CONFIDENCE);
+}
+
+/**
+ * Calculate average confidence from multiple ratios
+ */
+function calculateAverageConfidence(...ratios: number[]): number {
+  const avg = ratios.reduce((sum, r) => sum + r, 0) / ratios.length;
+  return Math.min(avg, ANTI_PATTERN_COMMON.MAX_CONFIDENCE);
+}
+
+/**
+ * Create a test graph node
+ */
+function createTestNode(
+  id: string,
+  type: NodeType,
+  name: string,
+  testWorkspacePath: string,
+  fileName: string,
+  lineNumber: number = 1,
+  metadata?: NodeMetadata
+): GraphNode {
+  return {
+    id,
+    type,
+    name,
+    filePath: `${testWorkspacePath}/${fileName}`,
+    lineNumber,
+    metadata,
+  };
+}
+
+/**
+ * Add multiple relationships to detector
+ */
+function addMultipleRelationships(
+  detector: AntiPatternDetector,
+  count: number,
+  idPrefix: string,
+  type: RelationType,
+  sourceId: string,
+  targetIdPrefix: string
+): void {
+  for (let i = 0; i < count; i++) {
+    detector.addRelationship({
+      id: `${idPrefix}-${i}`,
+      type,
+      sourceId,
+      targetId: `${targetIdPrefix}-${i}`,
+    });
+  }
 }
 
 /**
@@ -99,8 +182,7 @@ class AntiPatternDetector {
    */
   private detectGodObjects(): AntiPatternMatch[] {
     const matches: AntiPatternMatch[] = [];
-    const GOD_OBJECT_METHOD_THRESHOLD = 20;
-    const GOD_OBJECT_DEPENDENCY_THRESHOLD = 10;
+    const thresholds = ANTI_PATTERN_THRESHOLDS.GOD_OBJECT;
 
     for (const node of this.nodes.values()) {
       if (node.type !== NodeType.CLASS) {
@@ -112,17 +194,35 @@ class AntiPatternDetector {
         rel => rel.sourceId === node.id && rel.type === RelationType.DEPENDS_ON
       ).length;
 
-      if (methodCount >= GOD_OBJECT_METHOD_THRESHOLD || dependencies >= GOD_OBJECT_DEPENDENCY_THRESHOLD) {
-        const severity = methodCount >= 40 || dependencies >= 20 ? 'critical' :
-                        methodCount >= 30 || dependencies >= 15 ? 'high' : 'medium';
+      if (methodCount >= thresholds.METHOD_COUNT || dependencies >= thresholds.DEPENDENCY_COUNT) {
+        const methodSeverity = calculateSeverity(methodCount, {
+          critical: thresholds.CRITICAL_METHODS,
+          high: thresholds.HIGH_METHODS,
+          medium: thresholds.METHOD_COUNT,
+        });
+
+        const depSeverity = calculateSeverity(dependencies, {
+          critical: thresholds.CRITICAL_DEPENDENCIES,
+          high: thresholds.HIGH_DEPENDENCIES,
+          medium: thresholds.DEPENDENCY_COUNT,
+        });
+
+        // Use the higher severity
+        const severity = methodSeverity === 'critical' || depSeverity === 'critical' ? 'critical' :
+                        methodSeverity === 'high' || depSeverity === 'high' ? 'high' : 'medium';
+
+        const confidence = calculateAverageConfidence(
+          methodCount / thresholds.METHOD_COUNT,
+          dependencies / thresholds.DEPENDENCY_COUNT
+        );
 
         matches.push({
           type: AntiPatternType.GOD_OBJECT,
           severity,
-          confidence: Math.min((methodCount / GOD_OBJECT_METHOD_THRESHOLD + dependencies / GOD_OBJECT_DEPENDENCY_THRESHOLD) / 2, 1),
+          confidence,
           nodes: [node],
           description: `Class '${node.name}' has too many responsibilities (${methodCount} methods, ${dependencies} dependencies)`,
-          recommendation: 'Split class into smaller, focused classes following Single Responsibility Principle',
+          recommendation: ANTI_PATTERN_RECOMMENDATIONS.GOD_OBJECT,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
@@ -144,7 +244,7 @@ class AntiPatternDetector {
    */
   private detectSpaghettiCode(): AntiPatternMatch[] {
     const matches: AntiPatternMatch[] = [];
-    const COMPLEXITY_THRESHOLD = 15;
+    const thresholds = ANTI_PATTERN_THRESHOLDS.SPAGHETTI_CODE;
 
     for (const node of this.nodes.values()) {
       if (node.type !== NodeType.FUNCTION) {
@@ -154,17 +254,20 @@ class AntiPatternDetector {
       const complexity = node.metadata?.cyclomaticComplexity || 0;
       const lineCount = node.metadata?.lineCount || 0;
 
-      if (complexity >= COMPLEXITY_THRESHOLD) {
-        const severity = complexity >= 30 ? 'critical' :
-                        complexity >= 20 ? 'high' : 'medium';
+      if (complexity >= thresholds.COMPLEXITY) {
+        const severity = calculateSeverity(complexity, {
+          critical: thresholds.CRITICAL_COMPLEXITY,
+          high: thresholds.HIGH_COMPLEXITY,
+          medium: thresholds.COMPLEXITY,
+        });
 
         matches.push({
           type: AntiPatternType.SPAGHETTI_CODE,
           severity,
-          confidence: Math.min(complexity / COMPLEXITY_THRESHOLD, 1),
+          confidence: calculateConfidence(complexity, thresholds.COMPLEXITY),
           nodes: [node],
           description: `Function '${node.name}' has excessive cyclomatic complexity (${complexity})`,
-          recommendation: 'Refactor into smaller functions, extract conditional logic, reduce nesting',
+          recommendation: ANTI_PATTERN_RECOMMENDATIONS.SPAGHETTI_CODE,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
@@ -188,6 +291,8 @@ class AntiPatternDetector {
     const matches: AntiPatternMatch[] = [];
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
+    const foundCycles = new Set<string>(); // Track unique cycles
+    const thresholds = ANTI_PATTERN_THRESHOLDS.CIRCULAR_DEPENDENCY;
 
     const detectCycle = (nodeId: string, path: GraphNode[]): boolean => {
       if (recursionStack.has(nodeId)) {
@@ -195,21 +300,30 @@ class AntiPatternDetector {
         const cycleStartIndex = path.findIndex(n => n.id === nodeId);
         const cyclePath = path.slice(cycleStartIndex);
 
-        matches.push({
-          type: AntiPatternType.CIRCULAR_DEPENDENCY,
-          severity: cyclePath.length > 4 ? 'high' : 'medium',
-          confidence: 1.0,
-          nodes: cyclePath,
-          description: `Circular dependency detected: ${cyclePath.map(n => n.name).join(' → ')} → ${path[cycleStartIndex].name}`,
-          recommendation: 'Break circular dependencies using dependency inversion or extracting shared interfaces',
-          location: {
-            filePath: cyclePath[0].filePath,
-            lineNumber: cyclePath[0].lineNumber,
-          },
-          metrics: {
-            dependencyCount: cyclePath.length,
-          },
-        });
+        // Create canonical representation (sorted IDs) to detect duplicates
+        const cycleIds = cyclePath.map(n => n.id).sort().join('→');
+
+        if (!foundCycles.has(cycleIds)) {
+          foundCycles.add(cycleIds);
+
+          const severity = cyclePath.length > thresholds.LONG_CYCLE_LENGTH ? 'high' : 'medium';
+
+          matches.push({
+            type: AntiPatternType.CIRCULAR_DEPENDENCY,
+            severity,
+            confidence: thresholds.CONFIDENCE,
+            nodes: cyclePath,
+            description: `Circular dependency detected: ${cyclePath.map(n => n.name).join(' → ')} → ${path[cycleStartIndex].name}`,
+            recommendation: ANTI_PATTERN_RECOMMENDATIONS.CIRCULAR_DEPENDENCY,
+            location: {
+              filePath: cyclePath[0].filePath,
+              lineNumber: cyclePath[0].lineNumber,
+            },
+            metrics: {
+              dependencyCount: cyclePath.length,
+            },
+          });
+        }
 
         return true;
       }
@@ -259,6 +373,7 @@ class AntiPatternDetector {
    */
   private detectFeatureEnvy(): AntiPatternMatch[] {
     const matches: AntiPatternMatch[] = [];
+    const thresholds = ANTI_PATTERN_THRESHOLDS.FEATURE_ENVY;
 
     for (const node of this.nodes.values()) {
       if (node.type !== NodeType.FUNCTION) {
@@ -275,21 +390,23 @@ class AntiPatternDetector {
       for (const call of externalCalls) {
         const targetNode = this.nodes.get(call.targetId);
         if (targetNode) {
-          const className = targetNode.metadata?.className || 'unknown';
+          const className = targetNode.metadata?.className || ANTI_PATTERN_COMMON.UNKNOWN_VALUE;
           callsByClass.set(className, (callsByClass.get(className) || 0) + 1);
         }
       }
 
       // Check if any external class is used more than threshold
       for (const [className, count] of callsByClass.entries()) {
-        if (count >= 5) {
+        if (count >= thresholds.CALL_THRESHOLD) {
+          const severity = count >= thresholds.HIGH_CALL_COUNT ? 'high' : 'medium';
+
           matches.push({
             type: AntiPatternType.FEATURE_ENVY,
-            severity: count >= 10 ? 'high' : 'medium',
-            confidence: Math.min(count / 5, 1),
+            severity,
+            confidence: calculateConfidence(count, thresholds.CALL_THRESHOLD),
             nodes: [node],
             description: `Function '${node.name}' makes ${count} calls to '${className}' - consider moving to that class`,
-            recommendation: 'Move method to the class it envies, or extract a new class if appropriate',
+            recommendation: ANTI_PATTERN_RECOMMENDATIONS.FEATURE_ENVY,
             location: {
               filePath: node.filePath,
               lineNumber: node.lineNumber,
@@ -311,11 +428,12 @@ class AntiPatternDetector {
    */
   private detectShotgunSurgery(): AntiPatternMatch[] {
     const matches: AntiPatternMatch[] = [];
+    const thresholds = ANTI_PATTERN_THRESHOLDS.SHOTGUN_SURGERY;
 
     // Group nodes by feature/responsibility
     const featureGroups = new Map<string, GraphNode[]>();
     for (const node of this.nodes.values()) {
-      const feature = node.metadata?.feature || 'unknown';
+      const feature = node.metadata?.feature || ANTI_PATTERN_COMMON.UNKNOWN_VALUE;
       if (!featureGroups.has(feature)) {
         featureGroups.set(feature, []);
       }
@@ -326,14 +444,16 @@ class AntiPatternDetector {
     for (const [feature, nodes] of featureGroups.entries()) {
       const uniqueFiles = new Set(nodes.map(n => n.filePath));
 
-      if (uniqueFiles.size >= 5) {
+      if (uniqueFiles.size >= thresholds.FILE_THRESHOLD) {
+        const severity = uniqueFiles.size >= thresholds.HIGH_FILE_COUNT ? 'high' : 'medium';
+
         matches.push({
           type: AntiPatternType.SHOTGUN_SURGERY,
-          severity: uniqueFiles.size >= 10 ? 'high' : 'medium',
-          confidence: Math.min(uniqueFiles.size / 5, 1),
+          severity,
+          confidence: calculateConfidence(uniqueFiles.size, thresholds.FILE_THRESHOLD),
           nodes,
           description: `Feature '${feature}' scattered across ${uniqueFiles.size} files`,
-          recommendation: 'Consolidate related functionality into cohesive modules',
+          recommendation: ANTI_PATTERN_RECOMMENDATIONS.SHOTGUN_SURGERY,
           location: {
             filePath: nodes[0].filePath,
             lineNumber: nodes[0].lineNumber,
@@ -354,7 +474,7 @@ class AntiPatternDetector {
    */
   private detectLongParameterLists(): AntiPatternMatch[] {
     const matches: AntiPatternMatch[] = [];
-    const LONG_PARAM_THRESHOLD = 5;
+    const thresholds = ANTI_PATTERN_THRESHOLDS.LONG_PARAMETER_LIST;
 
     for (const node of this.nodes.values()) {
       if (node.type !== NodeType.FUNCTION) {
@@ -363,14 +483,16 @@ class AntiPatternDetector {
 
       const paramCount = node.metadata?.parameters?.length || 0;
 
-      if (paramCount >= LONG_PARAM_THRESHOLD) {
+      if (paramCount >= thresholds.PARAM_THRESHOLD) {
+        const severity = paramCount >= thresholds.HIGH_PARAM_COUNT ? 'high' : 'medium';
+
         matches.push({
           type: AntiPatternType.LONG_PARAMETER_LIST,
-          severity: paramCount >= 8 ? 'high' : 'medium',
-          confidence: Math.min(paramCount / LONG_PARAM_THRESHOLD, 1),
+          severity,
+          confidence: calculateConfidence(paramCount, thresholds.PARAM_THRESHOLD),
           nodes: [node],
           description: `Function '${node.name}' has ${paramCount} parameters`,
-          recommendation: 'Introduce parameter object or builder pattern to reduce parameter count',
+          recommendation: ANTI_PATTERN_RECOMMENDATIONS.LONG_PARAMETER_LIST,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
@@ -391,13 +513,19 @@ class AntiPatternDetector {
    */
   private detectDataClumps(): AntiPatternMatch[] {
     const matches: AntiPatternMatch[] = [];
+    const thresholds = ANTI_PATTERN_THRESHOLDS.DATA_CLUMPS;
 
     // Collect parameter groups from functions
     const parameterGroups = new Map<string, GraphNode[]>();
     for (const node of this.nodes.values()) {
-      if (node.type !== NodeType.FUNCTION && node.metadata?.parameters) {
-        const params = node.metadata.parameters.slice(0, 3).sort().join(',');
-        if (params.split(',').length >= 3) {
+      // ✅ FIXED: Changed !== to === (critical bug fix!)
+      if (node.type === NodeType.FUNCTION && node.metadata?.parameters) {
+        const params = node.metadata.parameters
+          .slice(0, thresholds.MIN_PARAM_GROUP_SIZE)
+          .sort()
+          .join(',');
+
+        if (params.split(',').length >= thresholds.MIN_PARAM_GROUP_SIZE) {
           if (!parameterGroups.has(params)) {
             parameterGroups.set(params, []);
           }
@@ -408,14 +536,16 @@ class AntiPatternDetector {
 
     // Check for repeated parameter groups
     for (const [params, nodes] of parameterGroups.entries()) {
-      if (nodes.length >= 3) {
+      if (nodes.length >= thresholds.MIN_OCCURRENCES) {
+        const severity = nodes.length >= thresholds.HIGH_OCCURRENCES ? 'high' : 'medium';
+
         matches.push({
           type: AntiPatternType.DATA_CLUMPS,
-          severity: nodes.length >= 5 ? 'high' : 'medium',
-          confidence: Math.min(nodes.length / 3, 1),
+          severity,
+          confidence: calculateConfidence(nodes.length, thresholds.MIN_OCCURRENCES),
           nodes,
           description: `Parameter group (${params}) appears in ${nodes.length} functions`,
-          recommendation: 'Extract data clump into a class or data structure',
+          recommendation: ANTI_PATTERN_RECOMMENDATIONS.DATA_CLUMPS,
           location: {
             filePath: nodes[0].filePath,
             lineNumber: nodes[0].lineNumber,
@@ -459,39 +589,42 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect God Object anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
+      const testData = ANTI_PATTERN_TEST_DATA.GOD_OBJECT;
+
       // Create a class with too many methods and dependencies
-      const godClass: GraphNode = {
-        id: 'god-class',
-        type: NodeType.CLASS,
-        name: 'UserManager',
-        filePath: `${testWorkspacePath}/UserManager.ts`,
-        lineNumber: 1,
-        metadata: {
-          methods: Array.from({ length: 25 }, (_, i) => `method${i + 1}`),
-        },
-      };
+      const godClass = createTestNode(
+        'god-class',
+        NodeType.CLASS,
+        testData.CLASS_NAME,
+        testWorkspacePath,
+        testData.FILE_NAME,
+        testData.LINE_NUMBER,
+        {
+          methods: Array.from({ length: testData.METHOD_COUNT }, (_, i) => `method${i + 1}`),
+        }
+      );
 
       detector.addNode(godClass);
 
-      // Add 12 dependencies
-      for (let i = 0; i < 12; i++) {
-        detector.addRelationship({
-          id: `dep-${i}`,
-          type: RelationType.DEPENDS_ON,
-          sourceId: 'god-class',
-          targetId: `external-${i}`,
-        });
-      }
+      // Add dependencies
+      addMultipleRelationships(
+        detector,
+        testData.DEPENDENCY_COUNT,
+        'dep',
+        RelationType.DEPENDS_ON,
+        'god-class',
+        'external'
+      );
 
       const antiPatterns = detector.detectAntiPatterns();
       const godObject = antiPatterns.find(p => p.type === AntiPatternType.GOD_OBJECT);
 
       assert.ok(godObject, 'Should detect God Object');
-      assert.strictEqual(godObject!.nodes[0].name, 'UserManager');
+      assert.strictEqual(godObject!.nodes[0].name, testData.CLASS_NAME);
       assert.ok(['medium', 'high', 'critical'].includes(godObject!.severity));
       assert.ok(godObject!.confidence > 0.5);
-      assert.strictEqual(godObject!.metrics?.methodCount, 25);
-      assert.strictEqual(godObject!.metrics?.dependencyCount, 12);
+      assert.strictEqual(godObject!.metrics?.methodCount, testData.METHOD_COUNT);
+      assert.strictEqual(godObject!.metrics?.dependencyCount, testData.DEPENDENCY_COUNT);
       assert.ok(godObject!.recommendation.toLowerCase().includes('split'));
 
       console.log(`✓ God Object detected: ${godObject!.description}`);
@@ -500,18 +633,20 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect Spaghetti Code anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      // Create a function with high cyclomatic complexity
-      const complexFunction: GraphNode = {
-        id: 'complex-func',
-        type: NodeType.FUNCTION,
-        name: 'processData',
-        filePath: `${testWorkspacePath}/processor.ts`,
-        lineNumber: 10,
-        metadata: {
-          cyclomaticComplexity: 18,
-          lineCount: 150,
-        },
-      };
+      const testData = ANTI_PATTERN_TEST_DATA.SPAGHETTI_CODE;
+
+      const complexFunction = createTestNode(
+        'complex-func',
+        NodeType.FUNCTION,
+        testData.FUNCTION_NAME,
+        testWorkspacePath,
+        testData.FILE_NAME,
+        testData.LINE_NUMBER,
+        {
+          cyclomaticComplexity: testData.COMPLEXITY,
+          lineCount: testData.LINE_COUNT,
+        }
+      );
 
       detector.addNode(complexFunction);
 
@@ -519,10 +654,10 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
       const spaghettiCode = antiPatterns.find(p => p.type === AntiPatternType.SPAGHETTI_CODE);
 
       assert.ok(spaghettiCode, 'Should detect Spaghetti Code');
-      assert.strictEqual(spaghettiCode!.nodes[0].name, 'processData');
+      assert.strictEqual(spaghettiCode!.nodes[0].name, testData.FUNCTION_NAME);
       assert.ok(['medium', 'high', 'critical'].includes(spaghettiCode!.severity));
-      assert.strictEqual(spaghettiCode!.metrics?.cyclomaticComplexity, 18);
-      assert.ok(spaghettiCode!.recommendation.toLowerCase().includes('refactor'));
+      assert.strictEqual(spaghettiCode!.metrics?.cyclomaticComplexity, testData.COMPLEXITY);
+      assert.ok(spaghettiCode!.recommendation.includes(ANTI_PATTERN_RECOMMENDATIONS.SPAGHETTI_CODE));
 
       console.log(`✓ Spaghetti Code detected: ${spaghettiCode!.description}`);
     });
@@ -530,30 +665,32 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect Circular Dependency anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
+      const testData = ANTI_PATTERN_TEST_DATA.CIRCULAR_DEPENDENCY;
+
       // Create circular dependency: A → B → C → A
-      const moduleA: GraphNode = {
-        id: 'module-a',
-        type: NodeType.MODULE,
-        name: 'ModuleA',
-        filePath: `${testWorkspacePath}/moduleA.ts`,
-        lineNumber: 1,
-      };
+      const moduleA = createTestNode(
+        'module-a',
+        NodeType.MODULE,
+        testData.MODULE_NAMES[0],
+        testWorkspacePath,
+        testData.FILE_NAMES[0]
+      );
 
-      const moduleB: GraphNode = {
-        id: 'module-b',
-        type: NodeType.MODULE,
-        name: 'ModuleB',
-        filePath: `${testWorkspacePath}/moduleB.ts`,
-        lineNumber: 1,
-      };
+      const moduleB = createTestNode(
+        'module-b',
+        NodeType.MODULE,
+        testData.MODULE_NAMES[1],
+        testWorkspacePath,
+        testData.FILE_NAMES[1]
+      );
 
-      const moduleC: GraphNode = {
-        id: 'module-c',
-        type: NodeType.MODULE,
-        name: 'ModuleC',
-        filePath: `${testWorkspacePath}/moduleC.ts`,
-        lineNumber: 1,
-      };
+      const moduleC = createTestNode(
+        'module-c',
+        NodeType.MODULE,
+        testData.MODULE_NAMES[2],
+        testWorkspacePath,
+        testData.FILE_NAMES[2]
+      );
 
       detector.addNode(moduleA);
       detector.addNode(moduleB);
@@ -584,10 +721,10 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
       const circularDep = antiPatterns.find(p => p.type === AntiPatternType.CIRCULAR_DEPENDENCY);
 
       assert.ok(circularDep, 'Should detect Circular Dependency');
-      assert.strictEqual(circularDep!.confidence, 1.0);
+      assert.strictEqual(circularDep!.confidence, ANTI_PATTERN_THRESHOLDS.CIRCULAR_DEPENDENCY.CONFIDENCE);
       assert.ok(circularDep!.nodes.length >= 3);
       assert.ok(circularDep!.description.includes('Circular dependency'));
-      assert.ok(circularDep!.recommendation.toLowerCase().includes('break'));
+      assert.ok(circularDep!.recommendation.includes(ANTI_PATTERN_RECOMMENDATIONS.CIRCULAR_DEPENDENCY));
 
       console.log(`✓ Circular Dependency detected: ${circularDep!.description}`);
     });
@@ -595,29 +732,32 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect Feature Envy anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      // Create a function that makes many calls to external class
-      const envyFunction: GraphNode = {
-        id: 'envy-func',
-        type: NodeType.FUNCTION,
-        name: 'calculateTotal',
-        filePath: `${testWorkspacePath}/calculator.ts`,
-        lineNumber: 5,
-      };
+      const testData = ANTI_PATTERN_TEST_DATA.FEATURE_ENVY;
+
+      const envyFunction = createTestNode(
+        'envy-func',
+        NodeType.FUNCTION,
+        testData.FUNCTION_NAME,
+        testWorkspacePath,
+        testData.FILE_NAME,
+        testData.LINE_NUMBER
+      );
 
       detector.addNode(envyFunction);
 
       // Create target methods in external class
-      for (let i = 0; i < 6; i++) {
-        const targetMethod: GraphNode = {
-          id: `target-${i}`,
-          type: NodeType.FUNCTION,
-          name: `getPrice${i}`,
-          filePath: `${testWorkspacePath}/Product.ts`,
-          lineNumber: 10 + i,
-          metadata: {
-            className: 'Product',
-          },
-        };
+      for (let i = 0; i < testData.CALL_COUNT; i++) {
+        const targetMethod = createTestNode(
+          `target-${i}`,
+          NodeType.FUNCTION,
+          `getPrice${i}`,
+          testWorkspacePath,
+          testData.TARGET_FILE,
+          10 + i,
+          {
+            className: testData.TARGET_CLASS,
+          }
+        );
 
         detector.addNode(targetMethod);
 
@@ -633,10 +773,10 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
       const featureEnvy = antiPatterns.find(p => p.type === AntiPatternType.FEATURE_ENVY);
 
       assert.ok(featureEnvy, 'Should detect Feature Envy');
-      assert.strictEqual(featureEnvy!.nodes[0].name, 'calculateTotal');
-      assert.ok(featureEnvy!.metrics?.externalCalls! >= 5);
-      assert.ok(featureEnvy!.description.includes('Product'));
-      assert.ok(featureEnvy!.recommendation.toLowerCase().includes('move'));
+      assert.strictEqual(featureEnvy!.nodes[0].name, testData.FUNCTION_NAME);
+      assert.ok(featureEnvy!.metrics?.externalCalls! >= ANTI_PATTERN_THRESHOLDS.FEATURE_ENVY.CALL_THRESHOLD);
+      assert.ok(featureEnvy!.description.includes(testData.TARGET_CLASS));
+      assert.ok(featureEnvy!.recommendation.includes(ANTI_PATTERN_RECOMMENDATIONS.FEATURE_ENVY));
 
       console.log(`✓ Feature Envy detected: ${featureEnvy!.description}`);
     });
@@ -644,19 +784,21 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect Shotgun Surgery anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
+      const testData = ANTI_PATTERN_TEST_DATA.SHOTGUN_SURGERY;
+
       // Create feature scattered across multiple files
-      const feature = 'authentication';
-      for (let i = 0; i < 6; i++) {
-        const node: GraphNode = {
-          id: `auth-node-${i}`,
-          type: NodeType.FUNCTION,
-          name: `authFunction${i}`,
-          filePath: `${testWorkspacePath}/file${i}.ts`,
-          lineNumber: 1,
-          metadata: {
-            feature,
-          },
-        };
+      for (let i = 0; i < testData.FILE_COUNT; i++) {
+        const node = createTestNode(
+          `auth-node-${i}`,
+          NodeType.FUNCTION,
+          `authFunction${i}`,
+          testWorkspacePath,
+          `file${i}.ts`,
+          1,
+          {
+            feature: testData.FEATURE_NAME,
+          }
+        );
 
         detector.addNode(node);
       }
@@ -665,9 +807,9 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
       const shotgunSurgery = antiPatterns.find(p => p.type === AntiPatternType.SHOTGUN_SURGERY);
 
       assert.ok(shotgunSurgery, 'Should detect Shotgun Surgery');
-      assert.ok(shotgunSurgery!.metrics?.affectedFiles! >= 5);
-      assert.ok(shotgunSurgery!.description.includes('authentication'));
-      assert.ok(shotgunSurgery!.recommendation.toLowerCase().includes('consolidate'));
+      assert.ok(shotgunSurgery!.metrics?.affectedFiles! >= ANTI_PATTERN_THRESHOLDS.SHOTGUN_SURGERY.FILE_THRESHOLD);
+      assert.ok(shotgunSurgery!.description.includes(testData.FEATURE_NAME));
+      assert.ok(shotgunSurgery!.recommendation.includes(ANTI_PATTERN_RECOMMENDATIONS.SHOTGUN_SURGERY));
 
       console.log(`✓ Shotgun Surgery detected: ${shotgunSurgery!.description}`);
     });
@@ -675,17 +817,19 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect Long Parameter List anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      // Create function with too many parameters
-      const longParamFunction: GraphNode = {
-        id: 'long-param-func',
-        type: NodeType.FUNCTION,
-        name: 'createUser',
-        filePath: `${testWorkspacePath}/user.ts`,
-        lineNumber: 15,
-        metadata: {
-          parameters: ['name', 'email', 'phone', 'address', 'city', 'state', 'zip', 'country'],
-        },
-      };
+      const testData = ANTI_PATTERN_TEST_DATA.LONG_PARAMETER_LIST;
+
+      const longParamFunction = createTestNode(
+        'long-param-func',
+        NodeType.FUNCTION,
+        testData.FUNCTION_NAME,
+        testWorkspacePath,
+        testData.FILE_NAME,
+        testData.LINE_NUMBER,
+        {
+          parameters: [...testData.PARAMETERS],
+        }
+      );
 
       detector.addNode(longParamFunction);
 
@@ -693,9 +837,9 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
       const longParamList = antiPatterns.find(p => p.type === AntiPatternType.LONG_PARAMETER_LIST);
 
       assert.ok(longParamList, 'Should detect Long Parameter List');
-      assert.strictEqual(longParamList!.nodes[0].name, 'createUser');
-      assert.strictEqual(longParamList!.metrics?.parameterCount, 8);
-      assert.ok(longParamList!.recommendation.toLowerCase().includes('parameter object'));
+      assert.strictEqual(longParamList!.nodes[0].name, testData.FUNCTION_NAME);
+      assert.strictEqual(longParamList!.metrics?.parameterCount, testData.PARAMETERS.length);
+      assert.ok(longParamList!.recommendation.includes(ANTI_PATTERN_RECOMMENDATIONS.LONG_PARAMETER_LIST));
 
       console.log(`✓ Long Parameter List detected: ${longParamList!.description}`);
     });
@@ -703,19 +847,21 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
     test('Should detect Data Clumps anti-pattern', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
+      const testData = ANTI_PATTERN_TEST_DATA.DATA_CLUMPS;
+
       // Create multiple functions with same parameter group
-      const commonParams = ['x', 'y', 'z'];
-      for (let i = 0; i < 4; i++) {
-        const func: GraphNode = {
-          id: `func-${i}`,
-          type: NodeType.FUNCTION,
-          name: `process${i}`,
-          filePath: `${testWorkspacePath}/processor${i}.ts`,
-          lineNumber: 10,
-          metadata: {
-            parameters: [...commonParams, `extra${i}`],
-          },
-        };
+      for (let i = 0; i < testData.FUNCTION_COUNT; i++) {
+        const func = createTestNode(
+          `func-${i}`,
+          NodeType.FUNCTION,
+          `process${i}`,
+          testWorkspacePath,
+          `processor${i}.ts`,
+          testData.LINE_NUMBER,
+          {
+            parameters: [...testData.COMMON_PARAMS, `extra${i}`],
+          }
+        );
 
         detector.addNode(func);
       }
@@ -724,9 +870,9 @@ suite('Pattern Identification - Anti-Pattern Detection Tests', () => {
       const dataClumps = antiPatterns.find(p => p.type === AntiPatternType.DATA_CLUMPS);
 
       assert.ok(dataClumps, 'Should detect Data Clumps');
-      assert.ok(dataClumps!.nodes.length >= 3);
-      assert.ok(dataClumps!.description.includes('x,y,z'));
-      assert.ok(dataClumps!.recommendation.toLowerCase().includes('extract'));
+      assert.ok(dataClumps!.nodes.length >= ANTI_PATTERN_THRESHOLDS.DATA_CLUMPS.MIN_OCCURRENCES);
+      assert.ok(dataClumps!.description.includes(testData.COMMON_PARAMS.join(',')));
+      assert.ok(dataClumps!.recommendation.includes(ANTI_PATTERN_RECOMMENDATIONS.DATA_CLUMPS));
 
       console.log(`✓ Data Clumps detected: ${dataClumps!.description}`);
     });
