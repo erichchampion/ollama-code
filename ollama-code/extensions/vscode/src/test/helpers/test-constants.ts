@@ -1357,3 +1357,142 @@ export const TRAVERSAL_CONSTANTS = {
   /** Maximum stalls before error (for stall detection) */
   MAX_STALLS: 100,
 } as const;
+
+/**
+ * Pattern Detection Constants
+ * Configuration for architecture pattern detection scoring
+ */
+export const PATTERN_DETECTION_SCORING = {
+  /** Confidence weight for each required node matched */
+  NODE_MATCH_WEIGHT: 0.3,
+  /** Confidence weight for method matches (as fraction of total methods) */
+  METHOD_MATCH_WEIGHT: 0.4,
+  /** Minimum confidence threshold for pattern detection */
+  MIN_CONFIDENCE: 0.3,
+  /** Maximum confidence score */
+  MAX_CONFIDENCE: 1.0,
+} as const;
+
+/**
+ * Pattern Type Display Names
+ * Human-readable names for pattern types
+ */
+export const PATTERN_TYPE_NAMES = {
+  MVC: 'Model-View-Controller',
+  REPOSITORY: 'Repository',
+  SINGLETON: 'Singleton',
+  FACTORY: 'Factory',
+  OBSERVER: 'Observer',
+  STRATEGY: 'Strategy',
+  DECORATOR: 'Decorator',
+  ADAPTER: 'Adapter',
+} as const;
+
+/**
+ * Pattern Detection Test Data
+ * File paths and line numbers for test pattern nodes
+ */
+export const PATTERN_TEST_DATA = {
+  /** MVC Pattern test data */
+  MVC: {
+    CONTROLLER: {
+      DIR: 'controllers',
+      FILE: 'UserController.ts',
+      LINE_NUMBER: 10,
+      METHODS: ['index', 'show', 'create', 'update', 'delete'],
+    },
+    MODEL: {
+      DIR: 'models',
+      FILE: 'UserModel.ts',
+      LINE_NUMBER: 5,
+      METHODS: ['validate', 'save', 'toJSON'],
+    },
+    VIEW: {
+      DIR: 'views',
+      FILE: 'UserView.ts',
+      LINE_NUMBER: 8,
+      METHODS: ['render', 'update'],
+    },
+  },
+
+  /** Repository Pattern test data */
+  REPOSITORY: {
+    INTERFACE: {
+      DIR: 'repositories',
+      FILE: 'IUserRepository.ts',
+      LINE_NUMBER: 3,
+      METHODS: ['findById', 'findAll', 'save', 'delete', 'update'],
+    },
+    CLASS: {
+      DIR: 'repositories',
+      FILE: 'UserRepository.ts',
+      LINE_NUMBER: 10,
+      METHODS: ['findById', 'findAll', 'save', 'delete', 'update'],
+    },
+  },
+
+  /** Singleton Pattern test data */
+  SINGLETON: {
+    DIR: 'database',
+    FILE: 'DatabaseConnection.ts',
+    LINE_NUMBER: 5,
+    METHODS: ['getInstance', 'connect', 'disconnect'],
+    DESCRIPTION: 'Private constructor with getInstance method',
+  },
+
+  /** Factory Pattern test data */
+  FACTORY: {
+    DIR: 'factories',
+    FILE: 'UserFactory.ts',
+    LINE_NUMBER: 5,
+    METHODS: ['create', 'createFromData', 'make'],
+  },
+
+  /** Observer Pattern test data */
+  OBSERVER: {
+    SUBJECT: {
+      DIR: 'observers',
+      FILE: 'EventSubject.ts',
+      LINE_NUMBER: 5,
+      METHODS: ['subscribe', 'unsubscribe', 'notify'],
+    },
+    OBSERVER: {
+      DIR: 'observers',
+      FILE: 'EventObserver.ts',
+      LINE_NUMBER: 15,
+      METHODS: ['update'],
+    },
+  },
+
+  /** Strategy Pattern test data */
+  STRATEGY: {
+    INTERFACE: {
+      DIR: 'strategies',
+      FILE: 'PaymentStrategy.ts',
+      LINE_NUMBER: 3,
+      METHODS: ['execute', 'validate'],
+    },
+    CLASS: {
+      DIR: 'strategies',
+      FILE: 'CreditCardStrategy.ts',
+      LINE_NUMBER: 10,
+      METHODS: ['execute', 'validate'],
+    },
+  },
+
+  /** Decorator Pattern test data */
+  DECORATOR: {
+    DIR: 'decorators',
+    FILE: 'LoggerDecorator.ts',
+    LINE_NUMBER: 5,
+    METHODS: ['decorate', 'wrap'],
+  },
+
+  /** Adapter Pattern test data */
+  ADAPTER: {
+    DIR: 'adapters',
+    FILE: 'LegacySystemAdapter.ts',
+    LINE_NUMBER: 8,
+    METHODS: ['adapt', 'convert', 'transform'],
+  },
+} as const;

@@ -48,7 +48,7 @@ export interface NodeMetadata {
   path?: string;
   handler?: string;
   condition?: string;
-  methods?: string[];
+  methods?: readonly string[];
 }
 
 /**

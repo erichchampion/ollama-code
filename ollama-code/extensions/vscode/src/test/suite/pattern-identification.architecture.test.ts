@@ -16,7 +16,11 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import {
+  PROVIDER_TEST_TIMEOUTS,
+  PATTERN_DETECTION_SCORING,
+  PATTERN_TEST_DATA,
+} from '../helpers/test-constants';
 import { NodeType, GraphNode } from '../helpers/graph-types';
 
 /**
@@ -101,7 +105,7 @@ class PatternDetector {
     this.patterns.push({
       type: PatternType.SINGLETON,
       requiredNodes: [
-        { type: NodeType.CLASS, namePattern: /.+/ },
+        { type: NodeType.CLASS, namePattern: /Singleton$|.*Connection$|.*Manager$/i },
       ],
       requiredMethods: ['getInstance'],
       description: 'Singleton pattern ensuring single instance',
@@ -202,7 +206,7 @@ class PatternDetector {
       }
 
       matchingNodes.push(found);
-      confidence += 0.3;
+      confidence += PATTERN_DETECTION_SCORING.NODE_MATCH_WEIGHT;
     }
 
     // Check required methods
@@ -211,14 +215,6 @@ class PatternDetector {
       let foundMethods = 0;
 
       for (const node of matchingNodes) {
-        if (node.metadata?.parameters) {
-          for (const method of signature.requiredMethods) {
-            if (node.name.toLowerCase().includes(method.toLowerCase())) {
-              foundMethods++;
-            }
-          }
-        }
-
         // Check methods in metadata
         if (node.metadata?.methods) {
           const methods = node.metadata.methods as string[];
@@ -229,15 +225,15 @@ class PatternDetector {
       }
 
       if (foundMethods > 0) {
-        confidence += (foundMethods / methodCount) * 0.4;
+        confidence += (foundMethods / methodCount) * PATTERN_DETECTION_SCORING.METHOD_MATCH_WEIGHT;
       }
     }
 
     // Normalize confidence to 0-1
-    confidence = Math.min(confidence, 1.0);
+    confidence = Math.min(confidence, PATTERN_DETECTION_SCORING.MAX_CONFIDENCE);
 
     // Only return if confidence is reasonable
-    if (confidence < 0.3) {
+    if (confidence < PATTERN_DETECTION_SCORING.MIN_CONFIDENCE) {
       return null;
     }
 
@@ -263,187 +259,296 @@ class PatternDetector {
 }
 
 /**
+ * Generic helper: Create a graph node
+ */
+function createNode(
+  id: string,
+  type: NodeType,
+  name: string,
+  testWorkspacePath: string,
+  dir: string,
+  file: string,
+  lineNumber: number,
+  methods: readonly string[],
+  description?: string
+): GraphNode {
+  return {
+    id,
+    type,
+    name,
+    filePath: path.join(testWorkspacePath, dir, file),
+    lineNumber,
+    metadata: {
+      methods,
+      ...(description && { description }),
+    },
+  };
+}
+
+/**
  * Helper: Create MVC pattern nodes
  */
 function createMVCPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'user-controller',
-    type: NodeType.CLASS,
-    name: 'UserController',
-    filePath: path.join(testWorkspacePath, 'controllers', 'UserController.ts'),
-    lineNumber: 10,
-    metadata: {
-      methods: ['index', 'show', 'create', 'update', 'delete'],
-    },
-  });
+  const { CONTROLLER, MODEL, VIEW } = PATTERN_TEST_DATA.MVC;
 
-  detector.addNode({
-    id: 'user-model',
-    type: NodeType.CLASS,
-    name: 'UserModel',
-    filePath: path.join(testWorkspacePath, 'models', 'UserModel.ts'),
-    lineNumber: 5,
-    metadata: {
-      methods: ['validate', 'save', 'toJSON'],
-    },
-  });
+  detector.addNode(
+    createNode(
+      'user-controller',
+      NodeType.CLASS,
+      'UserController',
+      testWorkspacePath,
+      CONTROLLER.DIR,
+      CONTROLLER.FILE,
+      CONTROLLER.LINE_NUMBER,
+      CONTROLLER.METHODS
+    )
+  );
 
-  detector.addNode({
-    id: 'user-view',
-    type: NodeType.CLASS,
-    name: 'UserView',
-    filePath: path.join(testWorkspacePath, 'views', 'UserView.ts'),
-    lineNumber: 8,
-    metadata: {
-      methods: ['render', 'update'],
-    },
-  });
+  detector.addNode(
+    createNode(
+      'user-model',
+      NodeType.CLASS,
+      'UserModel',
+      testWorkspacePath,
+      MODEL.DIR,
+      MODEL.FILE,
+      MODEL.LINE_NUMBER,
+      MODEL.METHODS
+    )
+  );
+
+  detector.addNode(
+    createNode(
+      'user-view',
+      NodeType.CLASS,
+      'UserView',
+      testWorkspacePath,
+      VIEW.DIR,
+      VIEW.FILE,
+      VIEW.LINE_NUMBER,
+      VIEW.METHODS
+    )
+  );
 }
 
 /**
  * Helper: Create Repository pattern nodes
  */
 function createRepositoryPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'user-repo-interface',
-    type: NodeType.INTERFACE,
-    name: 'IUserRepository',
-    filePath: path.join(testWorkspacePath, 'repositories', 'IUserRepository.ts'),
-    lineNumber: 3,
-    metadata: {
-      methods: ['findById', 'findAll', 'save', 'delete', 'update'],
-    },
-  });
+  const { INTERFACE, CLASS } = PATTERN_TEST_DATA.REPOSITORY;
 
-  detector.addNode({
-    id: 'user-repo',
-    type: NodeType.CLASS,
-    name: 'UserRepository',
-    filePath: path.join(testWorkspacePath, 'repositories', 'UserRepository.ts'),
-    lineNumber: 10,
-    metadata: {
-      methods: ['findById', 'findAll', 'save', 'delete', 'update'],
-    },
-  });
+  detector.addNode(
+    createNode(
+      'user-repo-interface',
+      NodeType.INTERFACE,
+      'IUserRepository',
+      testWorkspacePath,
+      INTERFACE.DIR,
+      INTERFACE.FILE,
+      INTERFACE.LINE_NUMBER,
+      INTERFACE.METHODS
+    )
+  );
+
+  detector.addNode(
+    createNode(
+      'user-repo',
+      NodeType.CLASS,
+      'UserRepository',
+      testWorkspacePath,
+      CLASS.DIR,
+      CLASS.FILE,
+      CLASS.LINE_NUMBER,
+      CLASS.METHODS
+    )
+  );
 }
 
 /**
  * Helper: Create Singleton pattern nodes
  */
 function createSingletonPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'db-connection',
-    type: NodeType.CLASS,
-    name: 'DatabaseConnection',
-    filePath: path.join(testWorkspacePath, 'database', 'DatabaseConnection.ts'),
-    lineNumber: 5,
-    metadata: {
-      methods: ['getInstance', 'connect', 'disconnect'],
-      description: 'Private constructor with getInstance method',
-    },
-  });
+  const singleton = PATTERN_TEST_DATA.SINGLETON;
+
+  detector.addNode(
+    createNode(
+      'db-connection',
+      NodeType.CLASS,
+      'DatabaseConnection',
+      testWorkspacePath,
+      singleton.DIR,
+      singleton.FILE,
+      singleton.LINE_NUMBER,
+      singleton.METHODS,
+      singleton.DESCRIPTION
+    )
+  );
 }
 
 /**
  * Helper: Create Factory pattern nodes
  */
 function createFactoryPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'user-factory',
-    type: NodeType.CLASS,
-    name: 'UserFactory',
-    filePath: path.join(testWorkspacePath, 'factories', 'UserFactory.ts'),
-    lineNumber: 5,
-    metadata: {
-      methods: ['create', 'createFromData', 'make'],
-    },
-  });
+  const factory = PATTERN_TEST_DATA.FACTORY;
+
+  detector.addNode(
+    createNode(
+      'user-factory',
+      NodeType.CLASS,
+      'UserFactory',
+      testWorkspacePath,
+      factory.DIR,
+      factory.FILE,
+      factory.LINE_NUMBER,
+      factory.METHODS
+    )
+  );
 }
 
 /**
  * Helper: Create Observer pattern nodes
  */
 function createObserverPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'event-subject',
-    type: NodeType.CLASS,
-    name: 'EventSubject',
-    filePath: path.join(testWorkspacePath, 'observers', 'EventSubject.ts'),
-    lineNumber: 5,
-    metadata: {
-      methods: ['subscribe', 'unsubscribe', 'notify'],
-    },
-  });
+  const { SUBJECT, OBSERVER } = PATTERN_TEST_DATA.OBSERVER;
 
-  detector.addNode({
-    id: 'event-observer',
-    type: NodeType.CLASS,
-    name: 'EventObserver',
-    filePath: path.join(testWorkspacePath, 'observers', 'EventObserver.ts'),
-    lineNumber: 15,
-    metadata: {
-      methods: ['update'],
-    },
-  });
+  detector.addNode(
+    createNode(
+      'event-subject',
+      NodeType.CLASS,
+      'EventSubject',
+      testWorkspacePath,
+      SUBJECT.DIR,
+      SUBJECT.FILE,
+      SUBJECT.LINE_NUMBER,
+      SUBJECT.METHODS
+    )
+  );
+
+  detector.addNode(
+    createNode(
+      'event-observer',
+      NodeType.CLASS,
+      'EventObserver',
+      testWorkspacePath,
+      OBSERVER.DIR,
+      OBSERVER.FILE,
+      OBSERVER.LINE_NUMBER,
+      OBSERVER.METHODS
+    )
+  );
 }
 
 /**
  * Helper: Create Strategy pattern nodes
  */
 function createStrategyPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'payment-strategy-interface',
-    type: NodeType.INTERFACE,
-    name: 'PaymentStrategy',
-    filePath: path.join(testWorkspacePath, 'strategies', 'PaymentStrategy.ts'),
-    lineNumber: 3,
-    metadata: {
-      methods: ['execute', 'validate'],
-    },
-  });
+  const { INTERFACE, CLASS } = PATTERN_TEST_DATA.STRATEGY;
 
-  detector.addNode({
-    id: 'credit-card-strategy',
-    type: NodeType.CLASS,
-    name: 'CreditCardStrategy',
-    filePath: path.join(testWorkspacePath, 'strategies', 'CreditCardStrategy.ts'),
-    lineNumber: 10,
-    metadata: {
-      methods: ['execute', 'validate'],
-    },
-  });
+  detector.addNode(
+    createNode(
+      'payment-strategy-interface',
+      NodeType.INTERFACE,
+      'PaymentStrategy',
+      testWorkspacePath,
+      INTERFACE.DIR,
+      INTERFACE.FILE,
+      INTERFACE.LINE_NUMBER,
+      INTERFACE.METHODS
+    )
+  );
+
+  detector.addNode(
+    createNode(
+      'credit-card-strategy',
+      NodeType.CLASS,
+      'CreditCardStrategy',
+      testWorkspacePath,
+      CLASS.DIR,
+      CLASS.FILE,
+      CLASS.LINE_NUMBER,
+      CLASS.METHODS
+    )
+  );
 }
 
 /**
  * Helper: Create Decorator pattern nodes
  */
 function createDecoratorPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'logger-decorator',
-    type: NodeType.CLASS,
-    name: 'LoggerDecorator',
-    filePath: path.join(testWorkspacePath, 'decorators', 'LoggerDecorator.ts'),
-    lineNumber: 5,
-    metadata: {
-      methods: ['decorate', 'wrap'],
-    },
-  });
+  const decorator = PATTERN_TEST_DATA.DECORATOR;
+
+  detector.addNode(
+    createNode(
+      'logger-decorator',
+      NodeType.CLASS,
+      'LoggerDecorator',
+      testWorkspacePath,
+      decorator.DIR,
+      decorator.FILE,
+      decorator.LINE_NUMBER,
+      decorator.METHODS
+    )
+  );
 }
 
 /**
  * Helper: Create Adapter pattern nodes
  */
 function createAdapterPattern(testWorkspacePath: string, detector: PatternDetector): void {
-  detector.addNode({
-    id: 'legacy-adapter',
-    type: NodeType.CLASS,
-    name: 'LegacySystemAdapter',
-    filePath: path.join(testWorkspacePath, 'adapters', 'LegacySystemAdapter.ts'),
-    lineNumber: 8,
-    metadata: {
-      methods: ['adapt', 'convert', 'transform'],
-    },
-  });
+  const adapter = PATTERN_TEST_DATA.ADAPTER;
+
+  detector.addNode(
+    createNode(
+      'legacy-adapter',
+      NodeType.CLASS,
+      'LegacySystemAdapter',
+      testWorkspacePath,
+      adapter.DIR,
+      adapter.FILE,
+      adapter.LINE_NUMBER,
+      adapter.METHODS
+    )
+  );
+}
+
+/**
+ * Generic helper: Test pattern detection
+ */
+function testPatternDetection(
+  testContext: Mocha.Context,
+  testWorkspacePath: string,
+  detector: PatternDetector,
+  patternType: PatternType,
+  createPatternFn: (path: string, det: PatternDetector) => void,
+  minNodes: number,
+  expectedNodeNames: string[]
+): void {
+  testContext.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+
+  createPatternFn(testWorkspacePath, detector);
+
+  const patterns = detector.detectPatterns();
+  const pattern = patterns.find(p => p.type === patternType);
+
+  // Assertions
+  assert.ok(pattern, `Should detect ${patternType} pattern`);
+  assert.strictEqual(pattern!.type, patternType);
+  assert.ok(
+    pattern!.confidence >= PATTERN_DETECTION_SCORING.MIN_CONFIDENCE,
+    'Should have reasonable confidence'
+  );
+  assert.ok(pattern!.nodes.length >= minNodes, `Should identify at least ${minNodes} nodes`);
+
+  // Check for expected node names
+  for (const nodeName of expectedNodeNames) {
+    assert.ok(
+      pattern!.nodes.some(n => n.name.includes(nodeName)),
+      `Should include ${nodeName}`
+    );
+  }
+
+  console.log(`✓ ${patternType} pattern detected (confidence: ${pattern!.confidence.toFixed(2)})`);
+  console.log(`  Nodes: ${pattern!.nodes.map(n => n.name).join(', ')}`);
 }
 
 suite('Pattern Identification - Architecture Patterns Tests', () => {
@@ -464,165 +569,107 @@ suite('Pattern Identification - Architecture Patterns Tests', () => {
 
   suite('Architecture Pattern Detection', () => {
     test('Should detect MVC pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createMVCPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const mvcPattern = patterns.find(p => p.type === PatternType.MVC);
-
-      // Assertions
-      assert.ok(mvcPattern, 'Should detect MVC pattern');
-      assert.strictEqual(mvcPattern!.type, PatternType.MVC);
-      assert.ok(mvcPattern!.confidence >= 0.3, 'Should have reasonable confidence');
-      assert.ok(mvcPattern!.nodes.length >= 3, 'Should identify Controller, Model, and View');
-      assert.ok(
-        mvcPattern!.nodes.some(n => n.name.includes('Controller')),
-        'Should include Controller'
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.MVC,
+        createMVCPattern,
+        3,
+        ['Controller', 'Model', 'View']
       );
-      assert.ok(
-        mvcPattern!.nodes.some(n => n.name.includes('Model')),
-        'Should include Model'
-      );
-      assert.ok(
-        mvcPattern!.nodes.some(n => n.name.includes('View')),
-        'Should include View'
-      );
-
-      console.log(`✓ MVC pattern detected (confidence: ${mvcPattern!.confidence.toFixed(2)})`);
-      console.log(`  Nodes: ${mvcPattern!.nodes.map(n => n.name).join(', ')}`);
     });
 
     test('Should detect Repository pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createRepositoryPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const repoPattern = patterns.find(p => p.type === PatternType.REPOSITORY);
-
-      // Assertions
-      assert.ok(repoPattern, 'Should detect Repository pattern');
-      assert.strictEqual(repoPattern!.type, PatternType.REPOSITORY);
-      assert.ok(repoPattern!.confidence >= 0.3, 'Should have reasonable confidence');
-      assert.ok(
-        repoPattern!.nodes.some(n => n.name.includes('Repository')),
-        'Should identify Repository class'
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.REPOSITORY,
+        createRepositoryPattern,
+        2,
+        ['Repository']
       );
-
-      console.log(`✓ Repository pattern detected (confidence: ${repoPattern!.confidence.toFixed(2)})`);
     });
 
     test('Should detect Singleton pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.SINGLETON,
+        createSingletonPattern,
+        1,
+        ['Connection']
+      );
 
-      createSingletonPattern(testWorkspacePath, detector);
-
+      // Additional assertion for getInstance method
       const patterns = detector.detectPatterns();
       const singletonPattern = patterns.find(p => p.type === PatternType.SINGLETON);
-
-      // Assertions
-      assert.ok(singletonPattern, 'Should detect Singleton pattern');
-      assert.strictEqual(singletonPattern!.type, PatternType.SINGLETON);
-      assert.ok(singletonPattern!.confidence >= 0.3, 'Should have reasonable confidence');
       assert.ok(
         singletonPattern!.nodes[0].metadata?.methods?.includes('getInstance'),
         'Should have getInstance method'
       );
-
-      console.log(`✓ Singleton pattern detected (confidence: ${singletonPattern!.confidence.toFixed(2)})`);
     });
 
     test('Should detect Factory pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createFactoryPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const factoryPattern = patterns.find(p => p.type === PatternType.FACTORY);
-
-      // Assertions
-      assert.ok(factoryPattern, 'Should detect Factory pattern');
-      assert.strictEqual(factoryPattern!.type, PatternType.FACTORY);
-      assert.ok(
-        factoryPattern!.nodes.some(n => n.name.includes('Factory')),
-        'Should identify Factory class'
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.FACTORY,
+        createFactoryPattern,
+        1,
+        ['Factory']
       );
-
-      console.log(`✓ Factory pattern detected (confidence: ${factoryPattern!.confidence.toFixed(2)})`);
     });
 
     test('Should detect Observer pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createObserverPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const observerPattern = patterns.find(p => p.type === PatternType.OBSERVER);
-
-      // Assertions
-      assert.ok(observerPattern, 'Should detect Observer pattern');
-      assert.strictEqual(observerPattern!.type, PatternType.OBSERVER);
-      assert.ok(observerPattern!.nodes.length >= 2, 'Should identify Subject and Observer');
-
-      console.log(`✓ Observer pattern detected (confidence: ${observerPattern!.confidence.toFixed(2)})`);
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.OBSERVER,
+        createObserverPattern,
+        2,
+        ['Subject', 'Observer']
+      );
     });
 
     test('Should detect Strategy pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createStrategyPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const strategyPattern = patterns.find(p => p.type === PatternType.STRATEGY);
-
-      // Assertions
-      assert.ok(strategyPattern, 'Should detect Strategy pattern');
-      assert.strictEqual(strategyPattern!.type, PatternType.STRATEGY);
-      assert.ok(
-        strategyPattern!.nodes.some(n => n.name.includes('Strategy')),
-        'Should identify Strategy interface or class'
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.STRATEGY,
+        createStrategyPattern,
+        2,
+        ['Strategy']
       );
-
-      console.log(`✓ Strategy pattern detected (confidence: ${strategyPattern!.confidence.toFixed(2)})`);
     });
 
     test('Should detect Decorator pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createDecoratorPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const decoratorPattern = patterns.find(p => p.type === PatternType.DECORATOR);
-
-      // Assertions
-      assert.ok(decoratorPattern, 'Should detect Decorator pattern');
-      assert.strictEqual(decoratorPattern!.type, PatternType.DECORATOR);
-      assert.ok(
-        decoratorPattern!.nodes.some(n => n.name.includes('Decorator')),
-        'Should identify Decorator class'
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.DECORATOR,
+        createDecoratorPattern,
+        1,
+        ['Decorator']
       );
-
-      console.log(`✓ Decorator pattern detected (confidence: ${decoratorPattern!.confidence.toFixed(2)})`);
     });
 
     test('Should detect Adapter pattern', async function () {
-      this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
-
-      createAdapterPattern(testWorkspacePath, detector);
-
-      const patterns = detector.detectPatterns();
-      const adapterPattern = patterns.find(p => p.type === PatternType.ADAPTER);
-
-      // Assertions
-      assert.ok(adapterPattern, 'Should detect Adapter pattern');
-      assert.strictEqual(adapterPattern!.type, PatternType.ADAPTER);
-      assert.ok(
-        adapterPattern!.nodes.some(n => n.name.includes('Adapter')),
-        'Should identify Adapter class'
+      testPatternDetection(
+        this,
+        testWorkspacePath,
+        detector,
+        PatternType.ADAPTER,
+        createAdapterPattern,
+        1,
+        ['Adapter']
       );
-
-      console.log(`✓ Adapter pattern detected (confidence: ${adapterPattern!.confidence.toFixed(2)})`);
     });
   });
 });
