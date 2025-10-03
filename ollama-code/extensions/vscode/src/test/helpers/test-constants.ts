@@ -1808,3 +1808,169 @@ export const BEST_PRACTICES_PRIORITY_ORDER = {
   medium: 2,
   low: 1,
 } as const;
+
+// ============================================================================
+// Multi-Provider AI Integration Constants
+// ============================================================================
+
+/**
+ * Provider Capabilities and Profiles
+ * Realistic profiles for each AI provider including costs, latency, and supported query types
+ */
+export const PROVIDER_CAPABILITIES = {
+  OLLAMA: {
+    COST_PER_1K_TOKENS: 0,
+    AVG_LATENCY_MS: 2000,
+    MAX_TOKENS: 4096,
+    RELIABILITY: 0.95,
+    QUERY_TYPES: ['code_generation', 'code_review', 'explanation', 'refactoring', 'debug'] as const,
+  },
+  OPENAI: {
+    COST_PER_1K_TOKENS: 0.002, // GPT-4 pricing
+    AVG_LATENCY_MS: 800,
+    MAX_TOKENS: 8192,
+    RELIABILITY: 0.99,
+    QUERY_TYPES: ['code_generation', 'code_review', 'explanation', 'refactoring', 'debug', 'translation'] as const,
+  },
+  ANTHROPIC: {
+    COST_PER_1K_TOKENS: 0.003, // Claude pricing
+    AVG_LATENCY_MS: 600,
+    MAX_TOKENS: 100000,
+    RELIABILITY: 0.98,
+    QUERY_TYPES: ['code_generation', 'code_review', 'explanation', 'refactoring', 'debug'] as const,
+  },
+  GEMINI: {
+    COST_PER_1K_TOKENS: 0.001, // Gemini pricing
+    AVG_LATENCY_MS: 1000,
+    MAX_TOKENS: 30000,
+    RELIABILITY: 0.97,
+    QUERY_TYPES: ['code_generation', 'explanation', 'translation'] as const,
+  },
+} as const;
+
+/**
+ * Routing Strategy Weights
+ * Weights for different factors in routing decisions
+ */
+export const ROUTING_WEIGHTS = {
+  BALANCED: {
+    COST: 0.3,
+    LATENCY: 0.4,
+    RELIABILITY: 0.3,
+  },
+} as const;
+
+/**
+ * Routing Test Data
+ * Standard test values for routing tests
+ */
+export const ROUTING_TEST_DATA = {
+  TOKEN_ESTIMATES: {
+    SMALL: 500,
+    MEDIUM: 1000,
+    LARGE: 2000,
+    XLARGE: 3000,
+    XXLARGE: 5000,
+    XXXLARGE: 10000,
+  },
+  COST_CONSTRAINTS: {
+    VERY_LOW: 0.005, // 0.5 cents
+    LOW: 0.015,      // 1.5 cents
+  },
+  LATENCY_CONSTRAINTS: {
+    VERY_LOW: 500,   // 500ms
+    LOW: 900,        // 900ms
+  },
+} as const;
+
+/**
+ * Response Fusion Thresholds
+ * Thresholds for similarity detection, conflict resolution, and quality validation
+ */
+export const RESPONSE_FUSION_THRESHOLDS = {
+  SIMILARITY: {
+    CONFLICT_DETECTION: 0.7,      // Below this = conflict
+    CLUSTERING: 0.7,              // Above this = same cluster
+    HIGH_CONSENSUS: 0.8,          // Above this = consensus strategy
+  },
+  CONFIDENCE: {
+    SIGNIFICANT_DIFFERENCE: 0.15, // Confidence diff to prefer one provider
+    HIGH_CONFIDENCE_DIFF: 0.2,    // Use highest confidence strategy
+  },
+  QUALITY: {
+    DEFAULT_THRESHOLD: 0.6,       // Default minimum quality
+    STRICT_THRESHOLD: 0.7,        // Strict quality validation
+    HIGH_THRESHOLD: 0.8,          // High quality threshold
+  },
+} as const;
+
+/**
+ * Response Fusion Weights
+ * Weights for quality score calculation
+ */
+export const RESPONSE_FUSION_WEIGHTS = {
+  QUALITY_SCORE: {
+    LENGTH: 0.3,
+    CONSENSUS: 0.7,
+  },
+  PENALTIES: {
+    CONFLICT_PER_COUNT: 0.1,
+  },
+} as const;
+
+/**
+ * Response Fusion Parameters
+ * General parameters for response fusion algorithms
+ */
+export const RESPONSE_FUSION_PARAMS = {
+  OPTIMAL_RESPONSE_LENGTH: 100,      // Character count for length score normalization
+  CONSENSUS_CONFIDENCE_BOOST: 0.2,   // Confidence boost for high consensus
+} as const;
+
+/**
+ * Response Fusion Test Data
+ * Standard test values for response fusion tests
+ */
+export const RESPONSE_FUSION_TEST_DATA = {
+  CONFIDENCE_VALUES: {
+    VERY_HIGH: 0.95,
+    HIGH: 0.92,
+    MEDIUM_HIGH: 0.90,
+    MEDIUM: 0.88,
+    MEDIUM_STANDARD: 0.85,
+    MEDIUM_LOW: 0.70,
+    LOW: 0.65,
+    VERY_LOW: 0.60,
+    EXTREMELY_LOW: 0.58,
+  },
+  RESPONSE_TIMES: {
+    FAST: 200,
+    MEDIUM: 300,
+    SLOW: 500,
+  },
+  TOKEN_COUNTS: {
+    TINY: 2,
+    SMALL: 3,
+    SMALL_MEDIUM: 6,
+    MEDIUM_SMALL: 7,
+    MEDIUM: 8,
+    MEDIUM_LARGE: 9,
+    LARGE: 10,
+    XLARGE: 11,
+    XXLARGE: 12,
+    XXXLARGE: 14,
+  },
+} as const;
+
+/**
+ * Contradiction Keywords
+ * Keywords that indicate contradictory statements in responses
+ */
+export const CONTRADICTION_KEYWORDS = [
+  'not',
+  'never',
+  'no',
+  'incorrect',
+  'wrong',
+  'avoid',
+] as const;

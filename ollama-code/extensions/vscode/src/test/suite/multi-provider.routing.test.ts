@@ -11,7 +11,12 @@
 
 import * as assert from 'assert';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import {
+	PROVIDER_TEST_TIMEOUTS,
+	PROVIDER_CAPABILITIES,
+	ROUTING_WEIGHTS,
+	ROUTING_TEST_DATA,
+} from '../helpers/test-constants';
 
 /**
  * Query types for provider selection
@@ -78,41 +83,41 @@ class ProviderRouter {
   private providerHealth: Map<ProviderType, boolean> = new Map();
 
   constructor() {
-    // Initialize default provider capabilities
+    // Initialize default provider capabilities from constants
     this.providers.set(ProviderType.OLLAMA, {
       provider: ProviderType.OLLAMA,
-      queryTypes: [QueryType.CODE_GENERATION, QueryType.CODE_REVIEW, QueryType.EXPLANATION, QueryType.REFACTORING, QueryType.DEBUG],
-      costPerToken: 0, // Free (local)
-      avgLatencyMs: 2000,
-      maxTokens: 4096,
-      reliability: 0.95,
+      queryTypes: [...PROVIDER_CAPABILITIES.OLLAMA.QUERY_TYPES] as QueryType[],
+      costPerToken: PROVIDER_CAPABILITIES.OLLAMA.COST_PER_1K_TOKENS,
+      avgLatencyMs: PROVIDER_CAPABILITIES.OLLAMA.AVG_LATENCY_MS,
+      maxTokens: PROVIDER_CAPABILITIES.OLLAMA.MAX_TOKENS,
+      reliability: PROVIDER_CAPABILITIES.OLLAMA.RELIABILITY,
     });
 
     this.providers.set(ProviderType.OPENAI, {
       provider: ProviderType.OPENAI,
-      queryTypes: [QueryType.CODE_GENERATION, QueryType.CODE_REVIEW, QueryType.EXPLANATION, QueryType.REFACTORING, QueryType.DEBUG, QueryType.TRANSLATION],
-      costPerToken: 0.002, // GPT-4 pricing
-      avgLatencyMs: 800,
-      maxTokens: 8192,
-      reliability: 0.99,
+      queryTypes: [...PROVIDER_CAPABILITIES.OPENAI.QUERY_TYPES] as QueryType[],
+      costPerToken: PROVIDER_CAPABILITIES.OPENAI.COST_PER_1K_TOKENS,
+      avgLatencyMs: PROVIDER_CAPABILITIES.OPENAI.AVG_LATENCY_MS,
+      maxTokens: PROVIDER_CAPABILITIES.OPENAI.MAX_TOKENS,
+      reliability: PROVIDER_CAPABILITIES.OPENAI.RELIABILITY,
     });
 
     this.providers.set(ProviderType.ANTHROPIC, {
       provider: ProviderType.ANTHROPIC,
-      queryTypes: [QueryType.CODE_GENERATION, QueryType.CODE_REVIEW, QueryType.EXPLANATION, QueryType.REFACTORING, QueryType.DEBUG],
-      costPerToken: 0.003, // Claude pricing
-      avgLatencyMs: 600,
-      maxTokens: 100000,
-      reliability: 0.98,
+      queryTypes: [...PROVIDER_CAPABILITIES.ANTHROPIC.QUERY_TYPES] as QueryType[],
+      costPerToken: PROVIDER_CAPABILITIES.ANTHROPIC.COST_PER_1K_TOKENS,
+      avgLatencyMs: PROVIDER_CAPABILITIES.ANTHROPIC.AVG_LATENCY_MS,
+      maxTokens: PROVIDER_CAPABILITIES.ANTHROPIC.MAX_TOKENS,
+      reliability: PROVIDER_CAPABILITIES.ANTHROPIC.RELIABILITY,
     });
 
     this.providers.set(ProviderType.GEMINI, {
       provider: ProviderType.GEMINI,
-      queryTypes: [QueryType.CODE_GENERATION, QueryType.EXPLANATION, QueryType.TRANSLATION],
-      costPerToken: 0.001, // Gemini pricing
-      avgLatencyMs: 1000,
-      maxTokens: 30000,
-      reliability: 0.97,
+      queryTypes: [...PROVIDER_CAPABILITIES.GEMINI.QUERY_TYPES] as QueryType[],
+      costPerToken: PROVIDER_CAPABILITIES.GEMINI.COST_PER_1K_TOKENS,
+      avgLatencyMs: PROVIDER_CAPABILITIES.GEMINI.AVG_LATENCY_MS,
+      maxTokens: PROVIDER_CAPABILITIES.GEMINI.MAX_TOKENS,
+      reliability: PROVIDER_CAPABILITIES.GEMINI.RELIABILITY,
     });
 
     // Initialize all providers as healthy
@@ -129,138 +134,146 @@ class ProviderRouter {
   }
 
   /**
+   * Get capable and healthy providers for a query type
+   * Helper method to eliminate duplication across routing methods
+   */
+  private getCapableProviders(
+    context: QueryContext,
+    excludeProviders: ProviderType[] = []
+  ): ProviderCapability[] {
+    const capable = Array.from(this.providers.values()).filter(
+      p => p.queryTypes.includes(context.type) &&
+           this.providerHealth.get(p.provider) &&
+           !excludeProviders.includes(p.provider)
+    );
+
+    if (capable.length === 0) {
+      const reason = excludeProviders.length > 0
+        ? `No available providers after failover attempts: ${excludeProviders.join(', ')}`
+        : `No providers available for query type: ${context.type}`;
+      throw new Error(reason);
+    }
+
+    return capable;
+  }
+
+  /**
+   * Calculate cost for a provider given token count
+   * FIX BUG: Properly calculate cost per 1000 tokens
+   */
+  private calculateCost(provider: ProviderCapability, tokens: number): number {
+    // costPerToken is in cents per 1000 tokens, so we calculate:
+    // cost = (cents per 1k tokens) * (tokens / 1000)
+    return provider.costPerToken * (tokens / 1000);
+  }
+
+  /**
+   * Build routing decision from selected provider
+   * Helper method to eliminate duplication across routing methods
+   */
+  private buildRoutingDecision(
+    primary: ProviderCapability,
+    fallbacks: ProviderCapability[],
+    context: QueryContext,
+    reason: string
+  ): RoutingDecision {
+    return {
+      primaryProvider: primary.provider,
+      fallbackProviders: fallbacks.map(p => p.provider),
+      reason,
+      estimatedCost: this.calculateCost(primary, context.tokensEstimate),
+      estimatedLatency: primary.avgLatencyMs,
+    };
+  }
+
+  /**
    * Route query based on type with automatic provider selection
    */
   routeByQueryType(context: QueryContext): RoutingDecision {
-    const capableProviders = Array.from(this.providers.values()).filter(
-      p => p.queryTypes.includes(context.type) && this.providerHealth.get(p.provider)
-    );
-
-    if (capableProviders.length === 0) {
-      throw new Error(`No providers available for query type: ${context.type}`);
-    }
+    const capableProviders = this.getCapableProviders(context);
 
     // Sort by reliability (descending)
     capableProviders.sort((a, b) => b.reliability - a.reliability);
 
-    const primary = capableProviders[0];
-    const fallbacks = capableProviders.slice(1).map(p => p.provider);
-
-    return {
-      primaryProvider: primary.provider,
-      fallbackProviders: fallbacks,
-      reason: `Selected based on query type ${context.type} and reliability ${primary.reliability}`,
-      estimatedCost: primary.costPerToken * context.tokensEstimate / 1000,
-      estimatedLatency: primary.avgLatencyMs,
-    };
+    return this.buildRoutingDecision(
+      capableProviders[0],
+      capableProviders.slice(1),
+      context,
+      `Selected based on query type ${context.type} and reliability ${capableProviders[0].reliability}`
+    );
   }
 
   /**
    * Route with failover strategy
    */
   routeWithFailover(context: QueryContext, failedProviders: ProviderType[] = []): RoutingDecision {
-    const availableProviders = Array.from(this.providers.values()).filter(
-      p => p.queryTypes.includes(context.type) &&
-           this.providerHealth.get(p.provider) &&
-           !failedProviders.includes(p.provider)
-    );
-
-    if (availableProviders.length === 0) {
-      throw new Error(`No available providers after failover attempts: ${failedProviders.join(', ')}`);
-    }
+    const availableProviders = this.getCapableProviders(context, failedProviders);
 
     // Sort by reliability (descending)
     availableProviders.sort((a, b) => b.reliability - a.reliability);
 
-    const primary = availableProviders[0];
-    const fallbacks = availableProviders.slice(1).map(p => p.provider);
-
-    return {
-      primaryProvider: primary.provider,
-      fallbackProviders: fallbacks,
-      reason: `Failover routing after failures: ${failedProviders.join(', ')}`,
-      estimatedCost: primary.costPerToken * context.tokensEstimate / 1000,
-      estimatedLatency: primary.avgLatencyMs,
-    };
+    return this.buildRoutingDecision(
+      availableProviders[0],
+      availableProviders.slice(1),
+      context,
+      `Failover routing after failures: ${failedProviders.join(', ')}`
+    );
   }
 
   /**
    * Route with cost-aware strategy (minimize cost)
    */
   routeCostAware(context: QueryContext): RoutingDecision {
-    const capableProviders = Array.from(this.providers.values()).filter(
-      p => p.queryTypes.includes(context.type) && this.providerHealth.get(p.provider)
-    );
-
-    if (capableProviders.length === 0) {
-      throw new Error(`No providers available for query type: ${context.type}`);
-    }
+    const capableProviders = this.getCapableProviders(context);
 
     // Sort by cost (ascending)
     capableProviders.sort((a, b) => a.costPerToken - b.costPerToken);
 
     const primary = capableProviders[0];
-    const fallbacks = capableProviders.slice(1).map(p => p.provider);
-
-    const estimatedCost = primary.costPerToken * context.tokensEstimate / 1000;
+    const estimatedCost = this.calculateCost(primary, context.tokensEstimate);
 
     // Check cost constraint
     if (context.maxCostCents !== undefined && estimatedCost > context.maxCostCents) {
       throw new Error(`No providers available within cost constraint: ${context.maxCostCents} cents`);
     }
 
-    return {
-      primaryProvider: primary.provider,
-      fallbackProviders: fallbacks,
-      reason: `Cost-optimized selection: ${primary.costPerToken} cents/1k tokens`,
-      estimatedCost,
-      estimatedLatency: primary.avgLatencyMs,
-    };
+    return this.buildRoutingDecision(
+      primary,
+      capableProviders.slice(1),
+      context,
+      `Cost-optimized selection: ${primary.costPerToken} cents/1k tokens`
+    );
   }
 
   /**
    * Route with performance-aware strategy (minimize latency)
    */
   routePerformanceAware(context: QueryContext): RoutingDecision {
-    const capableProviders = Array.from(this.providers.values()).filter(
-      p => p.queryTypes.includes(context.type) && this.providerHealth.get(p.provider)
-    );
-
-    if (capableProviders.length === 0) {
-      throw new Error(`No providers available for query type: ${context.type}`);
-    }
+    const capableProviders = this.getCapableProviders(context);
 
     // Sort by latency (ascending)
     capableProviders.sort((a, b) => a.avgLatencyMs - b.avgLatencyMs);
 
     const primary = capableProviders[0];
-    const fallbacks = capableProviders.slice(1).map(p => p.provider);
 
     // Check latency constraint
     if (context.maxLatencyMs !== undefined && primary.avgLatencyMs > context.maxLatencyMs) {
       throw new Error(`No providers available within latency constraint: ${context.maxLatencyMs}ms`);
     }
 
-    return {
-      primaryProvider: primary.provider,
-      fallbackProviders: fallbacks,
-      reason: `Performance-optimized selection: ${primary.avgLatencyMs}ms average latency`,
-      estimatedCost: primary.costPerToken * context.tokensEstimate / 1000,
-      estimatedLatency: primary.avgLatencyMs,
-    };
+    return this.buildRoutingDecision(
+      primary,
+      capableProviders.slice(1),
+      context,
+      `Performance-optimized selection: ${primary.avgLatencyMs}ms average latency`
+    );
   }
 
   /**
    * Route with balanced strategy (cost/performance tradeoff)
    */
   routeBalanced(context: QueryContext): RoutingDecision {
-    const capableProviders = Array.from(this.providers.values()).filter(
-      p => p.queryTypes.includes(context.type) && this.providerHealth.get(p.provider)
-    );
-
-    if (capableProviders.length === 0) {
-      throw new Error(`No providers available for query type: ${context.type}`);
-    }
+    const capableProviders = this.getCapableProviders(context);
 
     // Calculate normalized scores (0-1) for cost and performance
     const costs = capableProviders.map(p => p.costPerToken);
@@ -277,8 +290,11 @@ class ProviderRouter {
       const latencyScore = maxLatency === minLatency ? 0 : (p.avgLatencyMs - minLatency) / (maxLatency - minLatency);
       const reliabilityScore = 1 - p.reliability; // Invert so lower is better
 
-      // Weighted score (30% cost, 40% latency, 30% reliability)
-      const score = costScore * 0.3 + latencyScore * 0.4 + reliabilityScore * 0.3;
+      // Weighted score using constants
+      const score =
+        costScore * ROUTING_WEIGHTS.BALANCED.COST +
+        latencyScore * ROUTING_WEIGHTS.BALANCED.LATENCY +
+        reliabilityScore * ROUTING_WEIGHTS.BALANCED.RELIABILITY;
 
       return { provider: p, score };
     });
@@ -287,15 +303,14 @@ class ProviderRouter {
     scoredProviders.sort((a, b) => a.score - b.score);
 
     const primary = scoredProviders[0].provider;
-    const fallbacks = scoredProviders.slice(1).map(sp => sp.provider.provider);
+    const fallbacks = scoredProviders.slice(1).map(sp => sp.provider);
 
-    return {
-      primaryProvider: primary.provider,
-      fallbackProviders: fallbacks,
-      reason: `Balanced routing (cost/performance/reliability)`,
-      estimatedCost: primary.costPerToken * context.tokensEstimate / 1000,
-      estimatedLatency: primary.avgLatencyMs,
-    };
+    return this.buildRoutingDecision(
+      primary,
+      fallbacks,
+      context,
+      `Balanced routing (cost/performance/reliability)`
+    );
   }
 }
 
@@ -320,7 +335,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 1000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.MEDIUM,
         priority: 'medium',
       };
 
@@ -339,7 +354,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.TRANSLATION,
-        tokensEstimate: 500,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.SMALL,
         priority: 'low',
       };
 
@@ -362,7 +377,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 1000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.MEDIUM,
         priority: 'high',
       };
 
@@ -382,7 +397,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_REVIEW,
-        tokensEstimate: 2000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.LARGE,
         priority: 'high',
       };
 
@@ -405,7 +420,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.EXPLANATION,
-        tokensEstimate: 1500,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.MEDIUM + 500,
         priority: 'medium',
       };
 
@@ -448,7 +463,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 5000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.XXLARGE,
         priority: 'low',
       };
 
@@ -470,9 +485,9 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 10000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.XXXLARGE,
         priority: 'medium',
-        maxCostCents: 0.015, // 1.5 cents max (should select Gemini at 0.001/1k = 0.01 cents)
+        maxCostCents: ROUTING_TEST_DATA.COST_CONSTRAINTS.LOW, // 1.5 cents max (should select Gemini at 0.001/1k = 0.01 cents)
       };
 
       const decision = router.routeCostAware(context);
@@ -491,9 +506,9 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 10000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.XXXLARGE,
         priority: 'high',
-        maxCostCents: 0.005, // 0.5 cents - impossible with paid providers
+        maxCostCents: ROUTING_TEST_DATA.COST_CONSTRAINTS.VERY_LOW, // 0.5 cents - impossible with paid providers
       };
 
       assert.throws(
@@ -512,15 +527,15 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_REVIEW,
-        tokensEstimate: 2000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.LARGE,
         priority: 'high',
       };
 
       const decision = router.routePerformanceAware(context);
 
-      // Anthropic has lowest latency at 600ms
+      // Anthropic has lowest latency
       assert.strictEqual(decision.primaryProvider, ProviderType.ANTHROPIC, 'Should select Anthropic (fastest)');
-      assert.strictEqual(decision.estimatedLatency, 600, 'Should have 600ms latency');
+      assert.strictEqual(decision.estimatedLatency, PROVIDER_CAPABILITIES.ANTHROPIC.AVG_LATENCY_MS, 'Should have Anthropic latency');
       assert.ok(decision.reason.includes('Performance-optimized'), 'Reason should mention performance');
 
       console.log(`✓ Selected ${decision.primaryProvider} with latency ${decision.estimatedLatency}ms`);
@@ -531,9 +546,9 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 1000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.MEDIUM,
         priority: 'high',
-        maxLatencyMs: 900, // Should exclude Ollama (2000ms) and Gemini (1000ms)
+        maxLatencyMs: ROUTING_TEST_DATA.LATENCY_CONSTRAINTS.LOW, // Should exclude Ollama (2000ms) and Gemini (1000ms)
       };
 
       const decision = router.routePerformanceAware(context);
@@ -549,9 +564,9 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 1000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.MEDIUM,
         priority: 'high',
-        maxLatencyMs: 500, // Impossible - fastest is Anthropic at 600ms
+        maxLatencyMs: ROUTING_TEST_DATA.LATENCY_CONSTRAINTS.VERY_LOW, // Impossible - fastest is Anthropic at 600ms
       };
 
       assert.throws(
@@ -570,7 +585,7 @@ suite('Multi-Provider AI Integration - Provider Routing Tests', () => {
 
       const context: QueryContext = {
         type: QueryType.CODE_GENERATION,
-        tokensEstimate: 3000,
+        tokensEstimate: ROUTING_TEST_DATA.TOKEN_ESTIMATES.XLARGE,
         priority: 'medium',
       };
 

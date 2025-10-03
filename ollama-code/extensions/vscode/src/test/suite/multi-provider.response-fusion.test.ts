@@ -5,7 +5,14 @@
 
 import * as assert from 'assert';
 import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import {
+	PROVIDER_TEST_TIMEOUTS,
+	RESPONSE_FUSION_THRESHOLDS,
+	RESPONSE_FUSION_WEIGHTS,
+	RESPONSE_FUSION_PARAMS,
+	RESPONSE_FUSION_TEST_DATA,
+	CONTRADICTION_KEYWORDS,
+} from '../helpers/test-constants';
 
 suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 	let testWorkspacePath: string;
@@ -115,7 +122,7 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 					const similarity = this.calculateSimilarity(responseA.response, responseB.response);
 
 					// If similarity is low, we have a conflict
-					if (similarity < 0.7) {
+					if (similarity < RESPONSE_FUSION_THRESHOLDS.SIMILARITY.CONFLICT_DETECTION) {
 						const conflict = this.analyzeConflict(responseA, responseB);
 						conflicts.push(conflict);
 					}
@@ -146,10 +153,11 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 			let resolution: ResponseConflict['resolution'];
 			let rationale: string;
 
-			if (responseA.confidence > responseB.confidence + 0.15) {
+			const confidenceDiff = RESPONSE_FUSION_THRESHOLDS.CONFIDENCE.SIGNIFICANT_DIFFERENCE;
+			if (responseA.confidence > responseB.confidence + confidenceDiff) {
 				resolution = 'prefer_a';
 				rationale = `${responseA.provider} has significantly higher confidence (${responseA.confidence.toFixed(2)} vs ${responseB.confidence.toFixed(2)})`;
-			} else if (responseB.confidence > responseA.confidence + 0.15) {
+			} else if (responseB.confidence > responseA.confidence + confidenceDiff) {
 				resolution = 'prefer_b';
 				rationale = `${responseB.provider} has significantly higher confidence (${responseB.confidence.toFixed(2)} vs ${responseA.confidence.toFixed(2)})`;
 			} else if (this.canMerge(responseA.response, responseB.response)) {
@@ -176,8 +184,7 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 		 */
 		private canMerge(responseA: string, responseB: string): boolean {
 			// Simple heuristic: can merge if responses don't contradict
-			const contradictionKeywords = ['not', 'never', 'no', 'incorrect', 'wrong', 'avoid'];
-			const hasContradiction = contradictionKeywords.some(keyword =>
+			const hasContradiction = CONTRADICTION_KEYWORDS.some(keyword =>
 				responseA.toLowerCase().includes(keyword) || responseB.toLowerCase().includes(keyword)
 			);
 			return !hasContradiction;
@@ -192,7 +199,7 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 		): FusedResponse['fusionStrategy'] {
 			// If high consensus, use consensus strategy
 			const avgSimilarity = this.calculateAverageSimilarity(responses);
-			if (avgSimilarity > 0.8) {
+			if (avgSimilarity > RESPONSE_FUSION_THRESHOLDS.SIMILARITY.HIGH_CONSENSUS) {
 				return 'consensus';
 			}
 
@@ -200,7 +207,7 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 			const confidences = responses.map(r => r.confidence);
 			const maxConfidence = Math.max(...confidences);
 			const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
-			if (maxConfidence > avgConfidence + 0.2) {
+			if (maxConfidence > avgConfidence + RESPONSE_FUSION_THRESHOLDS.CONFIDENCE.HIGH_CONFIDENCE_DIFF) {
 				return 'highest_confidence';
 			}
 
@@ -273,7 +280,7 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				let foundCluster = false;
 				for (const cluster of clusters) {
 					const similarity = this.calculateSimilarity(response.response, cluster[0].response);
-					if (similarity > 0.7) {
+					if (similarity > RESPONSE_FUSION_THRESHOLDS.SIMILARITY.CLUSTERING) {
 						cluster.push(response);
 						foundCluster = true;
 						break;
@@ -329,7 +336,7 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				case 'consensus':
 					// Higher consensus = higher confidence
 					const avgConfidence = responses.reduce((sum, r) => sum + r.confidence, 0) / responses.length;
-					const consensusBoost = this.calculateConsensus(responses) * 0.2;
+					const consensusBoost = this.calculateConsensus(responses) * RESPONSE_FUSION_PARAMS.CONSENSUS_CONFIDENCE_BOOST;
 					return Math.min(1.0, avgConfidence + consensusBoost);
 
 				case 'weighted_average':
@@ -357,22 +364,25 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 		private calculateQualityScore(response: string, consensusLevel: number, conflictCount: number): number {
 			// Quality factors:
 			// 1. Response length (not too short, not too long)
-			const lengthScore = Math.min(1.0, response.length / 100);
+			const lengthScore = Math.min(1.0, response.length / RESPONSE_FUSION_PARAMS.OPTIMAL_RESPONSE_LENGTH);
 
 			// 2. Consensus level (higher is better)
 			const consensusScore = consensusLevel;
 
 			// 3. Conflict count (fewer is better)
-			const conflictPenalty = conflictCount * 0.1;
+			const conflictPenalty = conflictCount * RESPONSE_FUSION_WEIGHTS.PENALTIES.CONFLICT_PER_COUNT;
 
-			const rawScore = (lengthScore * 0.3 + consensusScore * 0.7) - conflictPenalty;
+			const rawScore =
+				(lengthScore * RESPONSE_FUSION_WEIGHTS.QUALITY_SCORE.LENGTH +
+				 consensusScore * RESPONSE_FUSION_WEIGHTS.QUALITY_SCORE.CONSENSUS) -
+				conflictPenalty;
 			return Math.max(0, Math.min(1.0, rawScore));
 		}
 
 		/**
 		 * Validate quality of fused response
 		 */
-		validateQuality(fusedResponse: FusedResponse, minQualityThreshold: number = 0.6): boolean {
+		validateQuality(fusedResponse: FusedResponse, minQualityThreshold: number = RESPONSE_FUSION_THRESHOLDS.QUALITY.DEFAULT_THRESHOLD): boolean {
 			return fusedResponse.qualityScore >= minQualityThreshold;
 		}
 
@@ -408,23 +418,23 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use a for loop to iterate over the array',
-					confidence: 0.85,
-					responseTimeMs: 500,
-					tokenCount: 10,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.LARGE,
 				},
 				{
 					provider: 'openai',
 					response: 'Use a for loop to iterate over the array elements',
-					confidence: 0.90,
-					responseTimeMs: 200,
-					tokenCount: 11,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.XLARGE,
 				},
 				{
 					provider: 'anthropic',
 					response: 'Use a for loop to iterate over array items',
-					confidence: 0.88,
-					responseTimeMs: 300,
-					tokenCount: 9,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.MEDIUM,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.MEDIUM_LARGE,
 				},
 			];
 
@@ -432,8 +442,8 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 
 			assert.ok(fused.primaryResponse.includes('for loop'), 'Fused response should mention for loop');
 			assert.ok(fused.contributingProviders.length === 3, 'Should include all 3 providers');
-			assert.ok(fused.consensusLevel > 0.8, 'Should have high consensus level');
-			assert.ok(fused.confidence >= 0.85, 'Confidence should be at least as high as individual responses');
+			assert.ok(fused.consensusLevel > RESPONSE_FUSION_THRESHOLDS.SIMILARITY.HIGH_CONSENSUS, 'Should have high consensus level');
+			assert.ok(fused.confidence >= RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD, 'Confidence should be at least as high as individual responses');
 		});
 
 		test('Should handle single provider response', async function () {
@@ -444,16 +454,16 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use array.map() for transformation',
-					confidence: 0.85,
-					responseTimeMs: 500,
-					tokenCount: 6,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL_MEDIUM,
 				},
 			];
 
 			const fused = fusion.fuseResponses(responses);
 
 			assert.strictEqual(fused.primaryResponse, responses[0].response);
-			assert.strictEqual(fused.confidence, 0.85);
+			assert.strictEqual(fused.confidence, RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD);
 			assert.strictEqual(fused.consensusLevel, 1.0, 'Single response should have perfect consensus');
 			assert.strictEqual(fused.conflicts.length, 0, 'Single response should have no conflicts');
 		});
@@ -483,23 +493,23 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use imperative for loop for best performance',
-					confidence: 0.85,
-					responseTimeMs: 500,
-					tokenCount: 8,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.MEDIUM,
 				},
 				{
 					provider: 'openai',
 					response: 'Use functional array.map() for better readability',
-					confidence: 0.88,
-					responseTimeMs: 200,
-					tokenCount: 7,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.MEDIUM_SMALL,
 				},
 			];
 
 			const fused = fusion.fuseResponses(responses);
 
 			assert.ok(fused.conflicts.length > 0, 'Should detect conflict between imperative and functional approach');
-			assert.ok(fused.consensusLevel < 0.7, 'Should have low consensus due to conflict');
+			assert.ok(fused.consensusLevel < RESPONSE_FUSION_THRESHOLDS.SIMILARITY.CONFLICT_DETECTION, 'Should have low consensus due to conflict');
 		});
 
 		test('Should resolve conflicts using confidence levels', async function () {
@@ -510,16 +520,16 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use approach A',
-					confidence: 0.95,
-					responseTimeMs: 500,
-					tokenCount: 3,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.VERY_HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL,
 				},
 				{
 					provider: 'openai',
 					response: 'Use approach B',
-					confidence: 0.70,
-					responseTimeMs: 200,
-					tokenCount: 3,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_LOW,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL,
 				},
 			];
 
@@ -565,31 +575,31 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use array.filter() to remove elements matching the condition',
-					confidence: 0.90,
-					responseTimeMs: 500,
-					tokenCount: 10,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.LARGE,
 				},
 				{
 					provider: 'openai',
 					response: 'Use array.filter() to remove elements matching the condition',
-					confidence: 0.92,
-					responseTimeMs: 200,
-					tokenCount: 10,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.LARGE,
 				},
 				{
 					provider: 'anthropic',
 					response: 'Use array.filter() to remove matching elements',
-					confidence: 0.88,
-					responseTimeMs: 300,
-					tokenCount: 8,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.MEDIUM,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.MEDIUM,
 				},
 			];
 
 			const fused = fusion.fuseResponses(highQualityResponses);
-			const isValid = fusion.validateQuality(fused, 0.7);
+			const isValid = fusion.validateQuality(fused, RESPONSE_FUSION_THRESHOLDS.QUALITY.STRICT_THRESHOLD);
 
 			assert.ok(isValid, 'High consensus responses should pass quality validation');
-			assert.ok(fused.qualityScore > 0.7, `Quality score should be > 0.7, got ${fused.qualityScore}`);
+			assert.ok(fused.qualityScore > RESPONSE_FUSION_THRESHOLDS.QUALITY.STRICT_THRESHOLD, `Quality score should be > ${RESPONSE_FUSION_THRESHOLDS.QUALITY.STRICT_THRESHOLD}, got ${fused.qualityScore}`);
 		});
 
 		test('Should fail quality validation for low consensus', async function () {
@@ -600,31 +610,31 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use for loop',
-					confidence: 0.60,
-					responseTimeMs: 500,
-					tokenCount: 3,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.VERY_LOW,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL,
 				},
 				{
 					provider: 'openai',
 					response: 'Use while loop',
-					confidence: 0.65,
-					responseTimeMs: 200,
-					tokenCount: 3,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.LOW,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL,
 				},
 				{
 					provider: 'anthropic',
 					response: 'Use recursion',
-					confidence: 0.58,
-					responseTimeMs: 300,
-					tokenCount: 2,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.EXTREMELY_LOW,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.MEDIUM,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.TINY,
 				},
 			];
 
 			const fused = fusion.fuseResponses(lowQualityResponses);
-			const isValid = fusion.validateQuality(fused, 0.8);
+			const isValid = fusion.validateQuality(fused, RESPONSE_FUSION_THRESHOLDS.QUALITY.HIGH_THRESHOLD);
 
 			assert.ok(!isValid, 'Low consensus responses should fail strict quality validation');
-			assert.ok(fused.qualityScore < 0.8, 'Quality score should be low for conflicting responses');
+			assert.ok(fused.qualityScore < RESPONSE_FUSION_THRESHOLDS.QUALITY.HIGH_THRESHOLD, 'Quality score should be low for conflicting responses');
 		});
 
 		test('Should calculate quality scores based on multiple factors', async function () {
@@ -635,16 +645,16 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Implement proper error handling with try-catch blocks and validate all user inputs',
-					confidence: 0.90,
-					responseTimeMs: 500,
-					tokenCount: 14,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.XXXLARGE,
 				},
 				{
 					provider: 'openai',
 					response: 'Implement proper error handling with try-catch and validate user inputs',
-					confidence: 0.92,
-					responseTimeMs: 200,
-					tokenCount: 12,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.XXLARGE,
 				},
 			];
 
@@ -654,8 +664,8 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 			// 1. Good response length
 			// 2. High consensus
 			// 3. Few conflicts
-			assert.ok(fused.qualityScore > 0.7, 'Quality score should reflect high consensus and good content');
-			assert.ok(fused.consensusLevel > 0.8, 'Consensus level should be high');
+			assert.ok(fused.qualityScore > RESPONSE_FUSION_THRESHOLDS.QUALITY.STRICT_THRESHOLD, 'Quality score should reflect high consensus and good content');
+			assert.ok(fused.consensusLevel > RESPONSE_FUSION_THRESHOLDS.SIMILARITY.HIGH_CONSENSUS, 'Consensus level should be high');
 		});
 	});
 
@@ -672,23 +682,23 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 				{
 					provider: 'ollama',
 					response: 'Use const for immutable values',
-					confidence: 0.85,
-					responseTimeMs: 500,
-					tokenCount: 6,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.SLOW,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL_MEDIUM,
 				},
 				{
 					provider: 'openai',
 					response: 'Use const for immutable values',
-					confidence: 0.88,
-					responseTimeMs: 200,
-					tokenCount: 6,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.FAST,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL_MEDIUM,
 				},
 				{
 					provider: 'anthropic',
 					response: 'Use const for immutable values',
-					confidence: 0.90,
-					responseTimeMs: 300,
-					tokenCount: 6,
+					confidence: RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_HIGH,
+					responseTimeMs: RESPONSE_FUSION_TEST_DATA.RESPONSE_TIMES.MEDIUM,
+					tokenCount: RESPONSE_FUSION_TEST_DATA.TOKEN_COUNTS.SMALL_MEDIUM,
 				},
 			];
 
@@ -696,7 +706,8 @@ suite('Multi-Provider AI Integration - Response Fusion Tests', () => {
 
 			// Consensus strategy should boost confidence
 			assert.strictEqual(fused.fusionStrategy, 'consensus', 'Should use consensus strategy');
-			assert.ok(fused.confidence >= 0.87, 'Consensus should maintain or boost confidence');
+			// Confidence should be boosted by consensus (0.85 + 0.2 * high_consensus = ~1.05, capped at 1.0)
+			assert.ok(fused.confidence >= RESPONSE_FUSION_TEST_DATA.CONFIDENCE_VALUES.MEDIUM_STANDARD, 'Consensus should maintain or boost confidence');
 		});
 	});
 });
