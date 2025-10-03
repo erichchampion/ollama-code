@@ -1626,3 +1626,185 @@ export const ANTI_PATTERN_COMMON = {
   MAX_CONFIDENCE: 1.0,
   CONFIDENCE_DIVISOR: 2,
 } as const;
+
+/**
+ * Best Practices Thresholds
+ * Threshold values for recommendation generation
+ */
+export const BEST_PRACTICES_THRESHOLDS = {
+  EFFORT_CALCULATION: {
+    HIGH_MULTIPLIER: 2,
+    MEDIUM_MULTIPLIER: 1.5,
+  },
+  LARGE_FUNCTION: {
+    LINE_COUNT_THRESHOLD: 100,
+    HIGH_PRIORITY_LINES: 200,
+  },
+  SECURITY_PATTERNS: {
+    AUTH_KEYWORDS: ['auth', 'login', 'authenticate', 'signin'] as const,
+    QUERY_KEYWORDS: ['query', 'sql', 'execute'] as const,
+    VALIDATION_KEYWORDS: ['validate', 'sanitize', 'check'] as const,
+  },
+} as const;
+
+/**
+ * Best Practices Actionable Steps
+ * Pre-defined actionable steps for each recommendation type
+ */
+export const BEST_PRACTICES_ACTIONABLE_STEPS = {
+  GOD_OBJECT: [
+    'Identify cohesive method groups within the class',
+    'Extract each group into a separate class with a single responsibility',
+    'Use dependency injection to manage relationships',
+    'Update all references to use the new classes',
+    'Add unit tests for each new class',
+  ] as const,
+  SPAGHETTI_CODE: [
+    'Extract conditional logic into separate functions',
+    'Use early returns to reduce nesting',
+    'Apply the Strategy pattern for complex conditionals',
+    'Create helper functions for repeated logic',
+    'Add unit tests for each extracted function',
+  ] as const,
+  LONG_PARAMETER_LIST: [
+    'Group related parameters into a configuration object',
+    'Create an interface for the parameter object',
+    'Update function signature to accept the object',
+    'Update all call sites to use the new signature',
+    'Add JSDoc documentation for the parameter object',
+  ] as const,
+  LARGE_FUNCTION: [
+    'Profile the function to identify performance bottlenecks',
+    'Extract hot paths into separate optimized functions',
+    'Consider memoization for expensive calculations',
+    'Use lazy evaluation where applicable',
+    'Add performance tests to track improvements',
+  ] as const,
+  CIRCULAR_DEPENDENCY: [
+    'Identify the shared functionality causing the cycle',
+    'Extract shared code into a separate module',
+    'Use dependency inversion to break the cycle',
+    'Consider using interfaces to decouple dependencies',
+    'Update module imports to use the new structure',
+  ] as const,
+  AUTH_VALIDATION: [
+    'Add input validation for all user-provided data',
+    'Implement rate limiting to prevent brute force attacks',
+    'Use parameterized queries to prevent SQL injection',
+    'Sanitize inputs to prevent XSS attacks',
+    'Add security-focused unit tests',
+  ] as const,
+  SQL_PREPARED_STATEMENTS: [
+    'Replace string concatenation with parameterized queries',
+    'Use an ORM or query builder with built-in SQL injection protection',
+    'Validate and sanitize all user inputs',
+    'Implement input whitelisting where applicable',
+    'Add penetration tests for SQL injection',
+  ] as const,
+} as const;
+
+/**
+ * Best Practices Titles
+ * Template functions for recommendation titles
+ */
+export const BEST_PRACTICES_TITLES = {
+  GOD_OBJECT: (name: string) => `Split God Object: ${name}`,
+  SPAGHETTI_CODE: (name: string) => `Reduce Complexity: ${name}`,
+  LONG_PARAMETER_LIST: (name: string) => `Introduce Parameter Object: ${name}`,
+  LARGE_FUNCTION: (name: string) => `Optimize Large Function: ${name}`,
+  CIRCULAR_DEPENDENCY: () => `Break Circular Dependency`,
+  AUTH_VALIDATION: (name: string) => `Add Input Validation: ${name}`,
+  SQL_PREPARED_STATEMENTS: (name: string) => `Use Prepared Statements: ${name}`,
+} as const;
+
+/**
+ * Best Practices Descriptions
+ * Template functions for recommendation descriptions
+ */
+export const BEST_PRACTICES_DESCRIPTIONS = {
+  GOD_OBJECT: (name: string, methodCount: number, dependencies: number) =>
+    `Class '${name}' has ${methodCount} methods and ${dependencies} dependencies, violating Single Responsibility Principle. Consider splitting into multiple focused classes.`,
+
+  SPAGHETTI_CODE: (name: string, complexity: number) =>
+    `Function '${name}' has cyclomatic complexity of ${complexity}, making it hard to maintain and test. Consider breaking it down into smaller functions.`,
+
+  LONG_PARAMETER_LIST: (name: string, paramCount: number) =>
+    `Function '${name}' has ${paramCount} parameters. Consider grouping related parameters into a configuration object.`,
+
+  LARGE_FUNCTION: (name: string, lineCount: number) =>
+    `Function '${name}' is ${lineCount} lines long. Large functions are harder to optimize and maintain.`,
+
+  CIRCULAR_DEPENDENCY: (path: string[]) =>
+    `Circular dependency detected: ${path.join(' → ')}. This can cause module loading issues and performance degradation.`,
+
+  AUTH_VALIDATION: (name: string) =>
+    `Authentication function '${name}' may be missing input validation. Always validate and sanitize user inputs.`,
+
+  SQL_PREPARED_STATEMENTS: (name: string) =>
+    `Database function '${name}' should use prepared statements to prevent SQL injection vulnerabilities.`,
+} as const;
+
+/**
+ * Best Practices Code Examples
+ * Before/after code examples for recommendations
+ */
+export const BEST_PRACTICES_CODE_EXAMPLES = {
+  GOD_OBJECT: (name: string, methodCount: number) => ({
+    before: `class ${name} {\n  // ${methodCount} methods\n  // Too many responsibilities\n}`,
+    after: `class UserAuthentication { ... }\nclass UserProfile { ... }\nclass UserPermissions { ... }`,
+  }),
+
+  LONG_PARAMETER_LIST: (name: string, params: string[]) => ({
+    before: `function ${name}(${params.join(', ')}) { ... }`,
+    after: `interface ${name}Config {\n  ${params.map(p => `${p}: any`).join(';\n  ')}\n}\nfunction ${name}(config: ${name}Config) { ... }`,
+  }),
+
+  SQL_PREPARED_STATEMENTS: () => ({
+    before: `db.query(\`SELECT * FROM users WHERE id = \${userId}\`)`,
+    after: `db.query('SELECT * FROM users WHERE id = ?', [userId])`,
+  }),
+} as const;
+
+/**
+ * Best Practices Scoring
+ * Fixed scores for actionability, impact, and effort
+ */
+export const BEST_PRACTICES_SCORING = {
+  ACTIONABILITY: {
+    GOD_OBJECT: 0.7,
+    SPAGHETTI_CODE: 0.8,
+    LONG_PARAMETER_LIST: 0.9,
+    LARGE_FUNCTION: 0.7,
+    CIRCULAR_DEPENDENCY: 0.6,
+    AUTH_VALIDATION: 0.9,
+    SQL_PREPARED_STATEMENTS: 0.95,
+  },
+  EXPECTED_IMPACT: {
+    GOD_OBJECT: 'high' as const,
+    SPAGHETTI_CODE: 'high' as const,
+    LONG_PARAMETER_LIST: 'medium' as const,
+    LARGE_FUNCTION: 'medium' as const,
+    CIRCULAR_DEPENDENCY: 'high' as const,
+    AUTH_VALIDATION: 'high' as const,
+    SQL_PREPARED_STATEMENTS: 'high' as const,
+  },
+  ESTIMATED_EFFORT: {
+    SPAGHETTI_CODE: 'medium' as const,
+    LONG_PARAMETER_LIST: 'low' as const,
+    LARGE_FUNCTION: 'medium' as const,
+    CIRCULAR_DEPENDENCY: 'high' as const,
+    AUTH_VALIDATION: 'medium' as const,
+    SQL_PREPARED_STATEMENTS: 'low' as const,
+  },
+} as const;
+
+/**
+ * Best Practices Priority Order
+ * Mapping of priority levels to numeric values for sorting
+ */
+export const BEST_PRACTICES_PRIORITY_ORDER = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+} as const;

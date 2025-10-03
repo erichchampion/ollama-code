@@ -15,6 +15,13 @@ import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionT
 import {
   PROVIDER_TEST_TIMEOUTS,
   ANTI_PATTERN_THRESHOLDS,
+  BEST_PRACTICES_THRESHOLDS,
+  BEST_PRACTICES_ACTIONABLE_STEPS,
+  BEST_PRACTICES_TITLES,
+  BEST_PRACTICES_DESCRIPTIONS,
+  BEST_PRACTICES_CODE_EXAMPLES,
+  BEST_PRACTICES_SCORING,
+  BEST_PRACTICES_PRIORITY_ORDER,
 } from '../helpers/test-constants';
 import { NodeType, GraphNode, GraphRelationship, RelationType } from '../helpers/graph-types';
 
@@ -61,6 +68,47 @@ interface Recommendation {
 }
 
 /**
+ * Helper: Calculate recommendation priority
+ */
+function calculateRecommendationPriority(
+  value: number,
+  thresholds: { critical?: number; high: number; medium?: number }
+): RecommendationPriority {
+  if (thresholds.critical !== undefined && value >= thresholds.critical) {
+    return RecommendationPriority.CRITICAL;
+  }
+  if (value >= thresholds.high) {
+    return RecommendationPriority.HIGH;
+  }
+  if (thresholds.medium !== undefined && value >= thresholds.medium) {
+    return RecommendationPriority.MEDIUM;
+  }
+  return RecommendationPriority.LOW;
+}
+
+/**
+ * Helper: Calculate estimated effort
+ */
+function calculateEstimatedEffort(
+  value: number,
+  threshold: number,
+  multipliers: { HIGH_MULTIPLIER: number; MEDIUM_MULTIPLIER: number } = BEST_PRACTICES_THRESHOLDS.EFFORT_CALCULATION
+): 'low' | 'medium' | 'high' {
+  const ratio = value / threshold;
+  if (ratio >= multipliers.HIGH_MULTIPLIER) return 'high';
+  if (ratio >= multipliers.MEDIUM_MULTIPLIER) return 'medium';
+  return 'low';
+}
+
+/**
+ * Helper: Check if node name matches security keywords
+ */
+function matchesKeywords(name: string, keywords: readonly string[]): boolean {
+  const lowerName = name.toLowerCase();
+  return keywords.some(keyword => lowerName.includes(keyword));
+}
+
+/**
  * Best Practices Analyzer
  * Generates recommendations based on code analysis
  */
@@ -92,37 +140,32 @@ class BestPracticesAnalyzer {
       ).length;
 
       if (methodCount >= ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.METHOD_COUNT) {
-        const priority = methodCount >= ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.CRITICAL_METHODS
-          ? RecommendationPriority.CRITICAL
-          : RecommendationPriority.HIGH;
+        const priority = calculateRecommendationPriority(methodCount, {
+          critical: ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.CRITICAL_METHODS,
+          high: ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.HIGH_METHODS,
+          medium: ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.METHOD_COUNT,
+        });
 
-        const effortScore = methodCount / ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.METHOD_COUNT;
-        const estimatedEffort = effortScore >= 2 ? 'high' : effortScore >= 1.5 ? 'medium' : 'low';
+        const estimatedEffort = calculateEstimatedEffort(
+          methodCount,
+          ANTI_PATTERN_THRESHOLDS.GOD_OBJECT.METHOD_COUNT
+        );
 
         recommendations.push({
           type: RecommendationType.REFACTORING,
           priority,
-          title: `Split God Object: ${node.name}`,
-          description: `Class '${node.name}' has ${methodCount} methods and ${dependencies} dependencies, violating Single Responsibility Principle. Consider splitting into multiple focused classes.`,
+          title: BEST_PRACTICES_TITLES.GOD_OBJECT(node.name),
+          description: BEST_PRACTICES_DESCRIPTIONS.GOD_OBJECT(node.name, methodCount, dependencies),
           affectedNodes: [node],
-          actionableSteps: [
-            'Identify cohesive method groups within the class',
-            'Extract each group into a separate class with a single responsibility',
-            'Use dependency injection to manage relationships',
-            'Update all references to use the new classes',
-            'Add unit tests for each new class',
-          ],
+          actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.GOD_OBJECT],
           estimatedEffort,
-          expectedImpact: 'high',
-          actionabilityScore: 0.7, // Moderate feasibility
+          expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.GOD_OBJECT,
+          actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.GOD_OBJECT,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
           },
-          codeExample: {
-            before: `class ${node.name} {\n  // ${methodCount} methods\n  // Too many responsibilities\n}`,
-            after: `class UserAuthentication { ... }\nclass UserProfile { ... }\nclass UserPermissions { ... }`,
-          },
+          codeExample: BEST_PRACTICES_CODE_EXAMPLES.GOD_OBJECT(node.name, methodCount),
         });
       }
     }
@@ -133,26 +176,22 @@ class BestPracticesAnalyzer {
 
       const complexity = node.metadata?.cyclomaticComplexity || 0;
       if (complexity >= ANTI_PATTERN_THRESHOLDS.SPAGHETTI_CODE.COMPLEXITY) {
-        const priority = complexity >= ANTI_PATTERN_THRESHOLDS.SPAGHETTI_CODE.CRITICAL_COMPLEXITY
-          ? RecommendationPriority.CRITICAL
-          : RecommendationPriority.HIGH;
+        const priority = calculateRecommendationPriority(complexity, {
+          critical: ANTI_PATTERN_THRESHOLDS.SPAGHETTI_CODE.CRITICAL_COMPLEXITY,
+          high: ANTI_PATTERN_THRESHOLDS.SPAGHETTI_CODE.HIGH_COMPLEXITY,
+          medium: ANTI_PATTERN_THRESHOLDS.SPAGHETTI_CODE.COMPLEXITY,
+        });
 
         recommendations.push({
           type: RecommendationType.REFACTORING,
           priority,
-          title: `Reduce Complexity: ${node.name}`,
-          description: `Function '${node.name}' has cyclomatic complexity of ${complexity}, making it hard to maintain and test. Consider breaking it down into smaller functions.`,
+          title: BEST_PRACTICES_TITLES.SPAGHETTI_CODE(node.name),
+          description: BEST_PRACTICES_DESCRIPTIONS.SPAGHETTI_CODE(node.name, complexity),
           affectedNodes: [node],
-          actionableSteps: [
-            'Extract conditional logic into separate functions',
-            'Use early returns to reduce nesting',
-            'Apply the Strategy pattern for complex conditionals',
-            'Create helper functions for repeated logic',
-            'Add unit tests for each extracted function',
-          ],
-          estimatedEffort: 'medium',
-          expectedImpact: 'high',
-          actionabilityScore: 0.8,
+          actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.SPAGHETTI_CODE],
+          estimatedEffort: BEST_PRACTICES_SCORING.ESTIMATED_EFFORT.SPAGHETTI_CODE,
+          expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.SPAGHETTI_CODE,
+          actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.SPAGHETTI_CODE,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
@@ -167,34 +206,26 @@ class BestPracticesAnalyzer {
 
       const paramCount = node.metadata?.parameters?.length || 0;
       if (paramCount >= ANTI_PATTERN_THRESHOLDS.LONG_PARAMETER_LIST.PARAM_THRESHOLD) {
-        const priority = paramCount >= ANTI_PATTERN_THRESHOLDS.LONG_PARAMETER_LIST.HIGH_PARAM_COUNT
-          ? RecommendationPriority.HIGH
-          : RecommendationPriority.MEDIUM;
+        const priority = calculateRecommendationPriority(paramCount, {
+          high: ANTI_PATTERN_THRESHOLDS.LONG_PARAMETER_LIST.HIGH_PARAM_COUNT,
+          medium: ANTI_PATTERN_THRESHOLDS.LONG_PARAMETER_LIST.PARAM_THRESHOLD,
+        });
 
         recommendations.push({
           type: RecommendationType.REFACTORING,
           priority,
-          title: `Introduce Parameter Object: ${node.name}`,
-          description: `Function '${node.name}' has ${paramCount} parameters. Consider grouping related parameters into a configuration object.`,
+          title: BEST_PRACTICES_TITLES.LONG_PARAMETER_LIST(node.name),
+          description: BEST_PRACTICES_DESCRIPTIONS.LONG_PARAMETER_LIST(node.name, paramCount),
           affectedNodes: [node],
-          actionableSteps: [
-            'Group related parameters into a configuration object',
-            'Create an interface for the parameter object',
-            'Update function signature to accept the object',
-            'Update all call sites to use the new signature',
-            'Add JSDoc documentation for the parameter object',
-          ],
-          estimatedEffort: 'low',
-          expectedImpact: 'medium',
-          actionabilityScore: 0.9,
+          actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.LONG_PARAMETER_LIST],
+          estimatedEffort: BEST_PRACTICES_SCORING.ESTIMATED_EFFORT.LONG_PARAMETER_LIST,
+          expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.LONG_PARAMETER_LIST,
+          actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.LONG_PARAMETER_LIST,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
           },
-          codeExample: {
-            before: `function ${node.name}(${(node.metadata?.parameters || []).join(', ')}) { ... }`,
-            after: `interface ${node.name}Config {\n  ${(node.metadata?.parameters || []).map(p => `${p}: any`).join(';\n  ')}\n}\nfunction ${node.name}(config: ${node.name}Config) { ... }`,
-          },
+          codeExample: BEST_PRACTICES_CODE_EXAMPLES.LONG_PARAMETER_LIST(node.name, node.metadata?.parameters || []),
         });
       }
     }
@@ -213,23 +244,22 @@ class BestPracticesAnalyzer {
       if (node.type !== NodeType.FUNCTION) continue;
 
       const lineCount = node.metadata?.lineCount || 0;
-      if (lineCount > 100) {
+      if (lineCount > BEST_PRACTICES_THRESHOLDS.LARGE_FUNCTION.LINE_COUNT_THRESHOLD) {
+        const priority = calculateRecommendationPriority(lineCount, {
+          high: BEST_PRACTICES_THRESHOLDS.LARGE_FUNCTION.HIGH_PRIORITY_LINES,
+          medium: BEST_PRACTICES_THRESHOLDS.LARGE_FUNCTION.LINE_COUNT_THRESHOLD,
+        });
+
         recommendations.push({
           type: RecommendationType.OPTIMIZATION,
-          priority: lineCount > 200 ? RecommendationPriority.HIGH : RecommendationPriority.MEDIUM,
-          title: `Optimize Large Function: ${node.name}`,
-          description: `Function '${node.name}' is ${lineCount} lines long. Large functions are harder to optimize and maintain.`,
+          priority,
+          title: BEST_PRACTICES_TITLES.LARGE_FUNCTION(node.name),
+          description: BEST_PRACTICES_DESCRIPTIONS.LARGE_FUNCTION(node.name, lineCount),
           affectedNodes: [node],
-          actionableSteps: [
-            'Profile the function to identify performance bottlenecks',
-            'Extract hot paths into separate optimized functions',
-            'Consider memoization for expensive calculations',
-            'Use lazy evaluation where applicable',
-            'Add performance tests to track improvements',
-          ],
-          estimatedEffort: 'medium',
-          expectedImpact: 'medium',
-          actionabilityScore: 0.7,
+          actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.LARGE_FUNCTION],
+          estimatedEffort: BEST_PRACTICES_SCORING.ESTIMATED_EFFORT.LARGE_FUNCTION,
+          expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.LARGE_FUNCTION,
+          actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.LARGE_FUNCTION,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
@@ -241,32 +271,36 @@ class BestPracticesAnalyzer {
     // Detect circular dependencies (performance impact)
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
+    const foundCycles = new Set<string>(); // ✅ BUGFIX: Track unique cycles
 
     const detectCycle = (nodeId: string, path: string[]): boolean => {
       if (recursionStack.has(nodeId)) {
-        const cycleNodes = path.slice(path.indexOf(nodeId)).map(id => this.nodes.get(id)!);
+        const cycleStartIndex = path.indexOf(nodeId);
+        const cyclePath = path.slice(cycleStartIndex);
+        const cycleNodes = cyclePath.map(id => this.nodes.get(id)!);
 
-        recommendations.push({
-          type: RecommendationType.OPTIMIZATION,
-          priority: RecommendationPriority.HIGH,
-          title: `Break Circular Dependency`,
-          description: `Circular dependency detected: ${path.slice(path.indexOf(nodeId)).join(' → ')}. This can cause module loading issues and performance degradation.`,
-          affectedNodes: cycleNodes,
-          actionableSteps: [
-            'Identify the shared functionality causing the cycle',
-            'Extract shared code into a separate module',
-            'Use dependency inversion to break the cycle',
-            'Consider using interfaces to decouple dependencies',
-            'Update module imports to use the new structure',
-          ],
-          estimatedEffort: 'high',
-          expectedImpact: 'high',
-          actionabilityScore: 0.6,
-          location: {
-            filePath: cycleNodes[0].filePath,
-            lineNumber: cycleNodes[0].lineNumber,
-          },
-        });
+        // ✅ BUGFIX: Create canonical representation (sorted IDs) to detect duplicates
+        const cycleIds = cyclePath.sort().join('→');
+
+        if (!foundCycles.has(cycleIds)) {
+          foundCycles.add(cycleIds);
+
+          recommendations.push({
+            type: RecommendationType.OPTIMIZATION,
+            priority: RecommendationPriority.HIGH,
+            title: BEST_PRACTICES_TITLES.CIRCULAR_DEPENDENCY(),
+            description: BEST_PRACTICES_DESCRIPTIONS.CIRCULAR_DEPENDENCY(cyclePath),
+            affectedNodes: cycleNodes,
+            actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.CIRCULAR_DEPENDENCY],
+            estimatedEffort: BEST_PRACTICES_SCORING.ESTIMATED_EFFORT.CIRCULAR_DEPENDENCY,
+            expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.CIRCULAR_DEPENDENCY,
+            actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.CIRCULAR_DEPENDENCY,
+            location: {
+              filePath: cycleNodes[0].filePath,
+              lineNumber: cycleNodes[0].lineNumber,
+            },
+          });
+        }
 
         return true;
       }
@@ -283,9 +317,7 @@ class BestPracticesAnalyzer {
       );
 
       for (const rel of outgoingRels) {
-        if (detectCycle(rel.targetId, [...path, nodeId])) {
-          break; // Only report first cycle
-        }
+        detectCycle(rel.targetId, [...path, nodeId]);
       }
 
       recursionStack.delete(nodeId);
@@ -309,28 +341,23 @@ class BestPracticesAnalyzer {
 
     // Detect authentication-related nodes without proper validation
     for (const node of this.nodes.values()) {
-      if (node.name.toLowerCase().includes('auth') || node.name.toLowerCase().includes('login')) {
+      if (matchesKeywords(node.name, BEST_PRACTICES_THRESHOLDS.SECURITY_PATTERNS.AUTH_KEYWORDS)) {
         const hasValidation = Array.from(this.relationships.values()).some(
-          rel => rel.sourceId === node.id && this.nodes.get(rel.targetId)?.name.includes('validate')
+          rel => rel.sourceId === node.id &&
+            matchesKeywords(this.nodes.get(rel.targetId)?.name || '', BEST_PRACTICES_THRESHOLDS.SECURITY_PATTERNS.VALIDATION_KEYWORDS)
         );
 
         if (!hasValidation) {
           recommendations.push({
             type: RecommendationType.SECURITY,
             priority: RecommendationPriority.CRITICAL,
-            title: `Add Input Validation: ${node.name}`,
-            description: `Authentication function '${node.name}' may be missing input validation. Always validate and sanitize user inputs.`,
+            title: BEST_PRACTICES_TITLES.AUTH_VALIDATION(node.name),
+            description: BEST_PRACTICES_DESCRIPTIONS.AUTH_VALIDATION(node.name),
             affectedNodes: [node],
-            actionableSteps: [
-              'Add input validation for all user-provided data',
-              'Implement rate limiting to prevent brute force attacks',
-              'Use parameterized queries to prevent SQL injection',
-              'Sanitize inputs to prevent XSS attacks',
-              'Add security-focused unit tests',
-            ],
-            estimatedEffort: 'medium',
-            expectedImpact: 'high',
-            actionabilityScore: 0.9,
+            actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.AUTH_VALIDATION],
+            estimatedEffort: BEST_PRACTICES_SCORING.ESTIMATED_EFFORT.AUTH_VALIDATION,
+            expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.AUTH_VALIDATION,
+            actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.AUTH_VALIDATION,
             location: {
               filePath: node.filePath,
               lineNumber: node.lineNumber,
@@ -342,31 +369,22 @@ class BestPracticesAnalyzer {
 
     // Detect database queries without prepared statements
     for (const node of this.nodes.values()) {
-      if (node.name.toLowerCase().includes('query') || node.name.toLowerCase().includes('sql')) {
+      if (matchesKeywords(node.name, BEST_PRACTICES_THRESHOLDS.SECURITY_PATTERNS.QUERY_KEYWORDS)) {
         recommendations.push({
           type: RecommendationType.SECURITY,
           priority: RecommendationPriority.HIGH,
-          title: `Use Prepared Statements: ${node.name}`,
-          description: `Database function '${node.name}' should use prepared statements to prevent SQL injection vulnerabilities.`,
+          title: BEST_PRACTICES_TITLES.SQL_PREPARED_STATEMENTS(node.name),
+          description: BEST_PRACTICES_DESCRIPTIONS.SQL_PREPARED_STATEMENTS(node.name),
           affectedNodes: [node],
-          actionableSteps: [
-            'Replace string concatenation with parameterized queries',
-            'Use an ORM or query builder with built-in SQL injection protection',
-            'Validate and sanitize all user inputs',
-            'Implement input whitelisting where applicable',
-            'Add penetration tests for SQL injection',
-          ],
-          estimatedEffort: 'low',
-          expectedImpact: 'high',
-          actionabilityScore: 0.95,
+          actionableSteps: [...BEST_PRACTICES_ACTIONABLE_STEPS.SQL_PREPARED_STATEMENTS],
+          estimatedEffort: BEST_PRACTICES_SCORING.ESTIMATED_EFFORT.SQL_PREPARED_STATEMENTS,
+          expectedImpact: BEST_PRACTICES_SCORING.EXPECTED_IMPACT.SQL_PREPARED_STATEMENTS,
+          actionabilityScore: BEST_PRACTICES_SCORING.ACTIONABILITY.SQL_PREPARED_STATEMENTS,
           location: {
             filePath: node.filePath,
             lineNumber: node.lineNumber,
           },
-          codeExample: {
-            before: `db.query(\`SELECT * FROM users WHERE id = \${userId}\`)`,
-            after: `db.query('SELECT * FROM users WHERE id = ?', [userId])`,
-          },
+          codeExample: BEST_PRACTICES_CODE_EXAMPLES.SQL_PREPARED_STATEMENTS(),
         });
       }
     }
@@ -392,16 +410,9 @@ class BestPracticesAnalyzer {
    * Prioritize recommendations by priority level and actionability score
    */
   private prioritizeRecommendations(recommendations: Recommendation[]): Recommendation[] {
-    const priorityOrder = {
-      [RecommendationPriority.CRITICAL]: 4,
-      [RecommendationPriority.HIGH]: 3,
-      [RecommendationPriority.MEDIUM]: 2,
-      [RecommendationPriority.LOW]: 1,
-    };
-
     return recommendations.sort((a, b) => {
       // First sort by priority
-      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
+      const priorityDiff = BEST_PRACTICES_PRIORITY_ORDER[b.priority] - BEST_PRACTICES_PRIORITY_ORDER[a.priority];
       if (priorityDiff !== 0) return priorityDiff;
 
       // Then by actionability score (higher is better)
@@ -679,7 +690,7 @@ suite('Pattern Identification - Best Practices Integration Tests', () => {
       // Verify sorting by actionability within same priority
       let lastPriorityOrder = 4;
       for (const rec of recommendations) {
-        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 }[rec.priority];
+        const priorityOrder = BEST_PRACTICES_PRIORITY_ORDER[rec.priority];
         assert.ok(priorityOrder <= lastPriorityOrder, 'Recommendations should be sorted by priority');
         lastPriorityOrder = priorityOrder;
       }
