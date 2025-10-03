@@ -3,7 +3,12 @@
  * Tests autonomous debugging capabilities for Phase 3.2.2
  */
 
-import { DEBUGGING_CONSTANTS, ERROR_PATTERNS, SOLUTION_STRATEGIES } from './test-constants';
+import {
+  DEBUGGING_CONSTANTS,
+  ERROR_PATTERNS,
+  SOLUTION_STRATEGIES,
+  ERROR_CATEGORIZATION_KEYWORDS,
+} from './test-constants';
 
 /**
  * Error context information
@@ -186,6 +191,32 @@ export class DebuggingIssueResolutionWorkflow {
   }
 
   // ============================================================================
+  // Helper Methods
+  // ============================================================================
+
+  /**
+   * Check if text contains any keyword from array
+   */
+  private containsAnyKeyword(text: string, keywords: readonly string[]): boolean {
+    const lowerText = text.toLowerCase();
+    return keywords.some((keyword) => lowerText.includes(keyword));
+  }
+
+  /**
+   * Get error patterns for a category
+   */
+  private getErrorPatterns(category: RootCauseDiagnosis['category']): readonly { keyword: string; cause: string }[] {
+    return ERROR_PATTERNS[category.toUpperCase() as keyof typeof ERROR_PATTERNS] || [];
+  }
+
+  /**
+   * Get solution strategy for a category
+   */
+  private getSolutionStrategy(category: RootCauseDiagnosis['category']) {
+    return SOLUTION_STRATEGIES[category] || SOLUTION_STRATEGIES.logic_error;
+  }
+
+  // ============================================================================
   // Root Cause Analysis Methods
   // ============================================================================
 
@@ -196,21 +227,41 @@ export class DebuggingIssueResolutionWorkflow {
     const message = errorContext.message.toLowerCase();
     const errorType = errorContext.errorType.toLowerCase();
 
-    if (message.includes('null') || message.includes('undefined') || errorType.includes('typeerror')) {
-      return 'null_pointer';
+    // Check null_pointer category
+    if (
+      this.containsAnyKeyword(message, ERROR_CATEGORIZATION_KEYWORDS.NULL_POINTER.MESSAGE) ||
+      this.containsAnyKeyword(errorType, ERROR_CATEGORIZATION_KEYWORDS.NULL_POINTER.ERROR_TYPE)
+    ) {
+      // Prioritize null_pointer over type_error if null/undefined keywords are present
+      if (message.includes('null') || message.includes('undefined')) {
+        return 'null_pointer';
+      }
     }
-    if (errorType.includes('typeerror') || message.includes('not a function') || message.includes('not defined')) {
+
+    // Check type_error category
+    if (
+      this.containsAnyKeyword(message, ERROR_CATEGORIZATION_KEYWORDS.TYPE_ERROR.MESSAGE) ||
+      this.containsAnyKeyword(errorType, ERROR_CATEGORIZATION_KEYWORDS.TYPE_ERROR.ERROR_TYPE)
+    ) {
       return 'type_error';
     }
-    if (message.includes('promise') || message.includes('async') || message.includes('await')) {
+
+    // Check async_error category
+    if (this.containsAnyKeyword(message, ERROR_CATEGORIZATION_KEYWORDS.ASYNC_ERROR.MESSAGE)) {
       return 'async_error';
     }
-    if (message.includes('memory') || message.includes('heap')) {
+
+    // Check memory_leak category
+    if (this.containsAnyKeyword(message, ERROR_CATEGORIZATION_KEYWORDS.MEMORY_LEAK.MESSAGE)) {
       return 'memory_leak';
     }
-    if (message.includes('config') || message.includes('environment')) {
+
+    // Check configuration_error category
+    if (this.containsAnyKeyword(message, ERROR_CATEGORIZATION_KEYWORDS.CONFIGURATION_ERROR.MESSAGE)) {
       return 'configuration_error';
     }
+
+    // Default to logic_error
     return 'logic_error';
   }
 
@@ -219,7 +270,7 @@ export class DebuggingIssueResolutionWorkflow {
    */
   private identifyPrimaryCause(errorContext: ErrorContext, category: RootCauseDiagnosis['category']): string {
     // Mock implementation - use pattern matching
-    const patterns = ERROR_PATTERNS[category.toUpperCase() as keyof typeof ERROR_PATTERNS] || [];
+    const patterns = this.getErrorPatterns(category);
 
     for (const pattern of patterns) {
       if (errorContext.message.toLowerCase().includes(pattern.keyword)) {
@@ -324,7 +375,7 @@ export class DebuggingIssueResolutionWorkflow {
     }
 
     // Known patterns increase confidence
-    const patterns = ERROR_PATTERNS[category.toUpperCase() as keyof typeof ERROR_PATTERNS] || [];
+    const patterns = this.getErrorPatterns(category);
     const hasKnownPattern = patterns.some((p) =>
       errorContext.message.toLowerCase().includes(p.keyword)
     );
@@ -346,7 +397,7 @@ export class DebuggingIssueResolutionWorkflow {
     errorContext: ErrorContext,
     diagnosis: RootCauseDiagnosis
   ): Solution {
-    const strategy = SOLUTION_STRATEGIES[diagnosis.category] || SOLUTION_STRATEGIES.logic_error;
+    const strategy = this.getSolutionStrategy(diagnosis.category);
 
     return {
       id: 'SOL-001',
@@ -369,7 +420,7 @@ export class DebuggingIssueResolutionWorkflow {
     diagnosis: RootCauseDiagnosis,
     approach: 'conservative' | 'aggressive'
   ): Solution {
-    const baseStrategy = SOLUTION_STRATEGIES[diagnosis.category] || SOLUTION_STRATEGIES.logic_error;
+    const baseStrategy = this.getSolutionStrategy(diagnosis.category);
     const isConservative = approach === 'conservative';
 
     return {

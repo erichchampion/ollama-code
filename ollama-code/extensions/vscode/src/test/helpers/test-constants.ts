@@ -805,6 +805,37 @@ export const DEBUGGING_CONSTANTS = {
 } as const;
 
 /**
+ * Error Categorization Keywords
+ * Keywords used to categorize errors into specific types
+ */
+export const ERROR_CATEGORIZATION_KEYWORDS = {
+  NULL_POINTER: {
+    MESSAGE: ['null', 'undefined'],
+    ERROR_TYPE: ['typeerror'],
+  },
+  TYPE_ERROR: {
+    MESSAGE: ['not a function', 'not defined'],
+    ERROR_TYPE: ['typeerror'],
+  },
+  ASYNC_ERROR: {
+    MESSAGE: ['promise', 'async', 'await'],
+    ERROR_TYPE: [],
+  },
+  MEMORY_LEAK: {
+    MESSAGE: ['memory', 'heap'],
+    ERROR_TYPE: [],
+  },
+  CONFIGURATION_ERROR: {
+    MESSAGE: ['config', 'environment'],
+    ERROR_TYPE: [],
+  },
+  LOGIC_ERROR: {
+    MESSAGE: [],
+    ERROR_TYPE: [],
+  },
+} as const;
+
+/**
  * Error Pattern Database
  * Known error patterns and their root causes
  */
