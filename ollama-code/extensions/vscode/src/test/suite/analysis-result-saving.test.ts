@@ -7,8 +7,26 @@
 import * as assert from 'assert';
 import * as path from 'path';
 import * as fs from 'fs';
-import { createTestWorkspace, cleanupTestWorkspace } from '../helpers/extensionTestHelper';
-import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
+import {
+	createTestWorkspace,
+	cleanupTestWorkspace,
+	AnalysisResult,
+	Finding,
+	CodeReviewReport,
+	SecurityScanReport,
+	PerformanceAnalysisReport,
+	ReportFormat,
+	createTestAnalysisResult,
+	createTestCodeReview,
+	createTestSecurityScan,
+	createTestPerformanceReport,
+	saveAndVerifyReport,
+} from '../helpers/extensionTestHelper';
+import {
+	PROVIDER_TEST_TIMEOUTS,
+	REPORT_GENERATION_CONSTANTS,
+	REPORT_TEST_DATA,
+} from '../helpers/test-constants';
 
 suite('Analysis Result Saving Tests', () => {
 	let testWorkspacePath: string;
@@ -24,67 +42,8 @@ suite('Analysis Result Saving Tests', () => {
 	});
 
 	// ====================================================================
-	// Analysis Result System
+	// Report Generator Class
 	// ====================================================================
-
-	interface AnalysisResult {
-		type: 'general' | 'code_review' | 'security_scan' | 'performance_analysis';
-		timestamp: number;
-		summary: string;
-		findings: Finding[];
-		metadata: {
-			analyzedFiles: string[];
-			duration: number;
-			toolVersion: string;
-		};
-	}
-
-	interface Finding {
-		severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-		title: string;
-		description: string;
-		file?: string;
-		line?: number;
-		recommendation?: string;
-		codeSnippet?: string;
-	}
-
-	interface CodeReviewReport extends AnalysisResult {
-		type: 'code_review';
-		qualityScore: number; // 0-100
-		categories: {
-			maintainability: number;
-			reliability: number;
-			security: number;
-			performance: number;
-		};
-	}
-
-	interface SecurityScanReport extends AnalysisResult {
-		type: 'security_scan';
-		vulnerabilities: {
-			critical: number;
-			high: number;
-			medium: number;
-			low: number;
-		};
-		complianceStatus: {
-			owasp: boolean;
-			cwe: boolean;
-		};
-	}
-
-	interface PerformanceAnalysisReport extends AnalysisResult {
-		type: 'performance_analysis';
-		metrics: {
-			avgResponseTime: number;
-			memoryUsage: number;
-			cpuUsage: number;
-		};
-		bottlenecks: Finding[];
-	}
-
-	type ReportFormat = 'json' | 'markdown' | 'html';
 
 	class ReportGenerator {
 		/**
@@ -125,7 +84,7 @@ suite('Analysis Result Saving Tests', () => {
 		 * Generate JSON format
 		 */
 		private generateJSON(result: AnalysisResult): string {
-			return JSON.stringify(result, null, 2);
+			return JSON.stringify(result, null, REPORT_GENERATION_CONSTANTS.JSON.INDENT_SPACES);
 		}
 
 		/**
@@ -163,6 +122,8 @@ suite('Analysis Result Saving Tests', () => {
 				lines.push('');
 			} else if (result.type === 'security_scan') {
 				const security = result as SecurityScanReport;
+				const check = REPORT_GENERATION_CONSTANTS.MARKDOWN.CHECKMARK;
+				const cross = REPORT_GENERATION_CONSTANTS.MARKDOWN.CROSS;
 				lines.push('## Vulnerabilities');
 				lines.push('');
 				lines.push(`- **Critical:** ${security.vulnerabilities.critical}`);
@@ -171,8 +132,8 @@ suite('Analysis Result Saving Tests', () => {
 				lines.push(`- **Low:** ${security.vulnerabilities.low}`);
 				lines.push('');
 				lines.push('## Compliance Status');
-				lines.push(`- **OWASP:** ${security.complianceStatus.owasp ? '✅' : '❌'}`);
-				lines.push(`- **CWE:** ${security.complianceStatus.cwe ? '✅' : '❌'}`);
+				lines.push(`- **OWASP:** ${security.complianceStatus.owasp ? check : cross}`);
+				lines.push(`- **CWE:** ${security.complianceStatus.cwe ? check : cross}`);
 				lines.push('');
 			} else if (result.type === 'performance_analysis') {
 				const perf = result as PerformanceAnalysisReport;
@@ -191,7 +152,7 @@ suite('Analysis Result Saving Tests', () => {
 
 				// Group by severity
 				const bySeverity = this.groupBySeverity(result.findings);
-				const severities: Array<'critical' | 'high' | 'medium' | 'low' | 'info'> = ['critical', 'high', 'medium', 'low', 'info'];
+				const severities = REPORT_GENERATION_CONSTANTS.SEVERITY_ORDER;
 
 				for (const severity of severities) {
 					const findings = bySeverity.get(severity) || [];
@@ -215,9 +176,9 @@ suite('Analysis Result Saving Tests', () => {
 						}
 
 						if (finding.codeSnippet) {
-							lines.push('```');
+							lines.push(REPORT_GENERATION_CONSTANTS.MARKDOWN.CODE_FENCE);
 							lines.push(finding.codeSnippet);
-							lines.push('```');
+							lines.push(REPORT_GENERATION_CONSTANTS.MARKDOWN.CODE_FENCE);
 							lines.push('');
 						}
 
@@ -227,7 +188,7 @@ suite('Analysis Result Saving Tests', () => {
 							lines.push('');
 						}
 
-						lines.push('---');
+						lines.push(REPORT_GENERATION_CONSTANTS.MARKDOWN.HORIZONTAL_RULE);
 						lines.push('');
 					}
 				}
@@ -249,6 +210,9 @@ suite('Analysis Result Saving Tests', () => {
 		 */
 		private generateHTML(result: AnalysisResult): string {
 			const lines: string[] = [];
+			const styles = REPORT_GENERATION_CONSTANTS.HTML_STYLES;
+			const colors = styles.COLORS;
+			const dims = styles.DIMENSIONS;
 
 			// HTML header
 			lines.push('<!DOCTYPE html>');
@@ -258,18 +222,18 @@ suite('Analysis Result Saving Tests', () => {
 			lines.push('  <meta name="viewport" content="width=device-width, initial-scale=1.0">');
 			lines.push(`  <title>${this.getReportTitle(result.type)}</title>`);
 			lines.push('  <style>');
-			lines.push('    body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }');
-			lines.push('    h1 { color: #333; border-bottom: 2px solid #007acc; padding-bottom: 10px; }');
-			lines.push('    h2 { color: #555; margin-top: 30px; }');
-			lines.push('    .metadata { background: #f5f5f5; padding: 15px; border-radius: 5px; }');
-			lines.push('    .finding { border-left: 4px solid #ccc; padding: 10px; margin: 15px 0; }');
-			lines.push('    .finding.critical { border-color: #d32f2f; }');
-			lines.push('    .finding.high { border-color: #f57c00; }');
-			lines.push('    .finding.medium { border-color: #fbc02d; }');
-			lines.push('    .finding.low { border-color: #388e3c; }');
-			lines.push('    .finding.info { border-color: #1976d2; }');
-			lines.push('    .code-snippet { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }');
-			lines.push('    .recommendation { background: #e3f2fd; padding: 10px; border-radius: 3px; }');
+			lines.push(`    body { font-family: ${styles.FONT_FAMILY}; max-width: ${dims.MAX_WIDTH}; margin: 0 auto; padding: ${dims.PADDING_LARGE}; }`);
+			lines.push(`    h1 { color: ${colors.TEXT_DARK}; border-bottom: ${dims.BORDER_WIDTH} solid ${colors.PRIMARY}; padding-bottom: ${dims.PADDING_BOTTOM}; }`);
+			lines.push(`    h2 { color: ${colors.TEXT_MEDIUM}; margin-top: ${dims.MARGIN_TOP}; }`);
+			lines.push(`    .metadata { background: ${colors.BACKGROUND_LIGHT}; padding: ${dims.PADDING_MEDIUM}; border-radius: ${dims.BORDER_RADIUS}; }`);
+			lines.push(`    .finding { border-left: ${dims.BORDER_LEFT_WIDTH} solid ${colors.BORDER_DEFAULT}; padding: ${dims.PADDING_SMALL}; margin: ${dims.MARGIN_VERTICAL}; }`);
+			lines.push(`    .finding.critical { border-color: ${colors.SEVERITY_CRITICAL}; }`);
+			lines.push(`    .finding.high { border-color: ${colors.SEVERITY_HIGH}; }`);
+			lines.push(`    .finding.medium { border-color: ${colors.SEVERITY_MEDIUM}; }`);
+			lines.push(`    .finding.low { border-color: ${colors.SEVERITY_LOW}; }`);
+			lines.push(`    .finding.info { border-color: ${colors.SEVERITY_INFO}; }`);
+			lines.push(`    .code-snippet { background: ${colors.BACKGROUND_LIGHT}; padding: ${dims.PADDING_SMALL}; border-radius: ${dims.BORDER_RADIUS_SMALL}; overflow-x: auto; }`);
+			lines.push(`    .recommendation { background: ${colors.BACKGROUND_INFO}; padding: ${dims.PADDING_SMALL}; border-radius: ${dims.BORDER_RADIUS_SMALL}; }`);
 			lines.push('  </style>');
 			lines.push('</head>');
 			lines.push('<body>');
@@ -366,12 +330,12 @@ suite('Analysis Result Saving Tests', () => {
 		 */
 		private getReportTitle(type: string): string {
 			const titles: Record<string, string> = {
-				general: 'General Analysis Report',
-				code_review: 'Code Review Report',
-				security_scan: 'Security Scan Report',
-				performance_analysis: 'Performance Analysis Report',
+				general: REPORT_GENERATION_CONSTANTS.REPORT_TITLES.GENERAL,
+				code_review: REPORT_GENERATION_CONSTANTS.REPORT_TITLES.CODE_REVIEW,
+				security_scan: REPORT_GENERATION_CONSTANTS.REPORT_TITLES.SECURITY_SCAN,
+				performance_analysis: REPORT_GENERATION_CONSTANTS.REPORT_TITLES.PERFORMANCE_ANALYSIS,
 			};
-			return titles[type] || 'Analysis Report';
+			return titles[type] || REPORT_GENERATION_CONSTANTS.REPORT_TITLES.DEFAULT;
 		}
 
 		/**
@@ -402,12 +366,13 @@ suite('Analysis Result Saving Tests', () => {
 		 * Escape HTML special characters
 		 */
 		private escapeHtml(text: string): string {
+			const entities = REPORT_GENERATION_CONSTANTS.HTML_ENTITIES;
 			const map: Record<string, string> = {
-				'&': '&amp;',
-				'<': '&lt;',
-				'>': '&gt;',
-				'"': '&quot;',
-				"'": '&#039;',
+				'&': entities.AMPERSAND,
+				'<': entities.LESS_THAN,
+				'>': entities.GREATER_THAN,
+				'"': entities.DOUBLE_QUOTE,
+				"'": entities.SINGLE_QUOTE,
 			};
 			return text.replace(/[&<>"']/g, m => map[m]);
 		}
@@ -440,100 +405,64 @@ suite('Analysis Result Saving Tests', () => {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const result: AnalysisResult = {
-				type: 'general',
-				timestamp: Date.now(),
-				summary: 'Analysis completed successfully',
-				findings: [
-					{
-						severity: 'high',
-						title: 'Performance issue detected',
-						description: 'Function has O(n²) complexity',
-						file: 'src/utils.ts',
-						line: 42,
-					},
-				],
+			const result = createTestAnalysisResult('general', {
+				summary: REPORT_TEST_DATA.SUMMARIES.SUCCESS,
+				findings: [REPORT_TEST_DATA.SAMPLE_FINDINGS.PERFORMANCE_ISSUE],
 				metadata: {
-					analyzedFiles: ['src/utils.ts', 'src/helpers.ts'],
-					duration: 1500,
-					toolVersion: '1.0.0',
+					analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.PAIR],
+					duration: REPORT_TEST_DATA.DURATIONS.LONG,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
-			const outputPath = path.join(testWorkspacePath, 'reports', 'analysis.json');
-			await generator.saveAnalysisResults(result, outputPath, 'json');
-
-			assert.ok(fs.existsSync(outputPath), 'JSON file should be created');
-
-			// Verify content
-			const content = fs.readFileSync(outputPath, 'utf-8');
-			const parsed = JSON.parse(content);
-			assert.strictEqual(parsed.type, 'general');
-			assert.strictEqual(parsed.findings.length, 1);
+			await saveAndVerifyReport(generator, result, testWorkspacePath, 'analysis.json', 'json', (content) => {
+				const parsed = JSON.parse(content);
+				assert.strictEqual(parsed.type, 'general');
+				assert.strictEqual(parsed.findings.length, 1);
+			});
 		});
 
 		test('Should save analysis results to Markdown file', async function () {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const result: AnalysisResult = {
-				type: 'general',
-				timestamp: Date.now(),
-				summary: 'Analysis completed with warnings',
-				findings: [
-					{
-						severity: 'medium',
-						title: 'Code smell detected',
-						description: 'Large function should be split',
-						recommendation: 'Extract helper functions',
-					},
-				],
+			const result = createTestAnalysisResult('general', {
+				summary: REPORT_TEST_DATA.SUMMARIES.WITH_WARNINGS,
+				findings: [REPORT_TEST_DATA.SAMPLE_FINDINGS.CODE_SMELL],
 				metadata: {
-					analyzedFiles: ['src/main.ts'],
-					duration: 800,
-					toolVersion: '1.0.0',
+					analyzedFiles: REPORT_TEST_DATA.METADATA.SAMPLE_FILES.TRIPLE.slice(0, 1),
+					duration: REPORT_TEST_DATA.DURATIONS.MEDIUM,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
-			const outputPath = path.join(testWorkspacePath, 'reports', 'analysis.md');
-			await generator.saveAnalysisResults(result, outputPath, 'markdown');
-
-			assert.ok(fs.existsSync(outputPath), 'Markdown file should be created');
-
-			// Verify content
-			const content = fs.readFileSync(outputPath, 'utf-8');
-			assert.ok(content.includes('# General Analysis Report'));
-			assert.ok(content.includes('## Summary'));
-			assert.ok(content.includes('## Findings'));
-			assert.ok(content.includes('Code smell detected'));
+			await saveAndVerifyReport(generator, result, testWorkspacePath, 'analysis.md', 'markdown', (content) => {
+				assert.ok(content.includes(`# ${REPORT_GENERATION_CONSTANTS.REPORT_TITLES.GENERAL}`));
+				assert.ok(content.includes('## Summary'));
+				assert.ok(content.includes('## Findings'));
+				assert.ok(content.includes('Code smell detected'));
+			});
 		});
 
 		test('Should save analysis results to HTML file', async function () {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const result: AnalysisResult = {
-				type: 'general',
-				timestamp: Date.now(),
-				summary: 'Analysis completed',
+			const result = createTestAnalysisResult('general', {
+				summary: REPORT_TEST_DATA.SUMMARIES.COMPLETED,
 				findings: [],
 				metadata: {
-					analyzedFiles: ['src/app.ts'],
-					duration: 500,
-					toolVersion: '1.0.0',
+					analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.SINGLE],
+					duration: REPORT_TEST_DATA.DURATIONS.SHORT,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
-			const outputPath = path.join(testWorkspacePath, 'reports', 'analysis.html');
-			await generator.saveAnalysisResults(result, outputPath, 'html');
-
-			assert.ok(fs.existsSync(outputPath), 'HTML file should be created');
-
-			// Verify content
-			const content = fs.readFileSync(outputPath, 'utf-8');
-			assert.ok(content.includes('<!DOCTYPE html>'));
-			assert.ok(content.includes('<title>General Analysis Report</title>'));
-			assert.ok(content.includes('Analysis completed'));
+			await saveAndVerifyReport(generator, result, testWorkspacePath, 'analysis.html', 'html', (content) => {
+				assert.ok(content.includes('<!DOCTYPE html>'));
+				assert.ok(content.includes(`<title>${REPORT_GENERATION_CONSTANTS.REPORT_TITLES.GENERAL}</title>`));
+				assert.ok(content.includes(REPORT_TEST_DATA.SUMMARIES.COMPLETED));
+			});
 		});
 	});
 
@@ -546,33 +475,14 @@ suite('Analysis Result Saving Tests', () => {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const report: CodeReviewReport = {
-				type: 'code_review',
-				timestamp: Date.now(),
-				summary: 'Code review found 3 issues',
-				qualityScore: 78,
-				categories: {
-					maintainability: 85,
-					reliability: 70,
-					security: 90,
-					performance: 65,
-				},
-				findings: [
-					{
-						severity: 'medium',
-						title: 'Complex function',
-						description: 'Cyclomatic complexity is 15 (threshold: 10)',
-						file: 'src/complex.ts',
-						line: 10,
-						recommendation: 'Refactor into smaller functions',
-					},
-				],
+			const report = createTestCodeReview(REPORT_TEST_DATA.QUALITY_SCORES.AVERAGE, {
+				findings: [REPORT_TEST_DATA.SAMPLE_FINDINGS.COMPLEX_FUNCTION],
 				metadata: {
-					analyzedFiles: ['src/complex.ts'],
-					duration: 2000,
-					toolVersion: '1.0.0',
+					analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.COMPLEX],
+					duration: REPORT_TEST_DATA.DURATIONS.LONG,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
 			const outputPath = path.join(testWorkspacePath, 'reports', 'code-review.json');
 			await generator.saveAnalysisResults(report, outputPath, 'json');
@@ -581,40 +491,30 @@ suite('Analysis Result Saving Tests', () => {
 
 			const loaded = await generator.loadAnalysisResults(outputPath);
 			const review = loaded as CodeReviewReport;
-			assert.strictEqual(review.qualityScore, 78);
-			assert.strictEqual(review.categories.maintainability, 85);
+			assert.strictEqual(review.qualityScore, REPORT_TEST_DATA.QUALITY_SCORES.AVERAGE);
+			assert.strictEqual(review.categories.maintainability, REPORT_TEST_DATA.CATEGORY_SCORES.GOOD.maintainability);
 		});
 
 		test('Should generate Markdown code review with categories', async function () {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const report: CodeReviewReport = {
-				type: 'code_review',
-				timestamp: Date.now(),
-				summary: 'Overall code quality is good',
-				qualityScore: 88,
-				categories: {
-					maintainability: 90,
-					reliability: 85,
-					security: 92,
-					performance: 85,
-				},
+			const report = createTestCodeReview(REPORT_TEST_DATA.QUALITY_SCORES.VERY_GOOD, {
+				summary: REPORT_TEST_DATA.SUMMARIES.GOOD_QUALITY,
+				categories: REPORT_TEST_DATA.CATEGORY_SCORES.EXCELLENT,
 				findings: [],
 				metadata: {
-					analyzedFiles: ['src/app.ts'],
-					duration: 1000,
-					toolVersion: '1.0.0',
+					analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.SINGLE],
+					duration: REPORT_TEST_DATA.DURATIONS.MEDIUM,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
-			const outputPath = path.join(testWorkspacePath, 'reports', 'review.md');
-			await generator.saveAnalysisResults(report, outputPath, 'markdown');
-
-			const content = fs.readFileSync(outputPath, 'utf-8');
-			assert.ok(content.includes('## Quality Score'));
-			assert.ok(content.includes('**Overall Score:** 88/100'));
-			assert.ok(content.includes('**Maintainability:** 90/100'));
+			await saveAndVerifyReport(generator, report, testWorkspacePath, 'review.md', 'markdown', (content) => {
+				assert.ok(content.includes('## Quality Score'));
+				assert.ok(content.includes(`**Overall Score:** ${REPORT_TEST_DATA.QUALITY_SCORES.VERY_GOOD}/100`));
+				assert.ok(content.includes(`**Maintainability:** ${REPORT_TEST_DATA.CATEGORY_SCORES.EXCELLENT.maintainability}/100`));
+			});
 		});
 	});
 
@@ -627,79 +527,38 @@ suite('Analysis Result Saving Tests', () => {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const report: SecurityScanReport = {
-				type: 'security_scan',
-				timestamp: Date.now(),
-				summary: 'Found 5 security vulnerabilities',
-				vulnerabilities: {
-					critical: 1,
-					high: 2,
-					medium: 2,
-					low: 0,
-				},
-				complianceStatus: {
-					owasp: false,
-					cwe: true,
-				},
-				findings: [
-					{
-						severity: 'critical',
-						title: 'SQL Injection',
-						description: 'Unsanitized user input in SQL query',
-						file: 'src/db.ts',
-						line: 55,
-						recommendation: 'Use parameterized queries',
-						codeSnippet: 'db.query(`SELECT * FROM users WHERE id = ${userId}`)',
-					},
-				],
-				metadata: {
-					analyzedFiles: ['src/db.ts', 'src/auth.ts'],
-					duration: 3000,
-					toolVersion: '1.0.0',
-				},
-			};
+			const report = createTestSecurityScan(REPORT_TEST_DATA.VULNERABILITY_COUNTS.CRITICAL, {
+				findings: [REPORT_TEST_DATA.SAMPLE_FINDINGS.SQL_INJECTION],
+			});
 
 			const outputPath = path.join(testWorkspacePath, 'reports', 'security.json');
 			await generator.saveAnalysisResults(report, outputPath, 'json');
 
 			const loaded = await generator.loadAnalysisResults(outputPath);
 			const security = loaded as SecurityScanReport;
-			assert.strictEqual(security.vulnerabilities.critical, 1);
-			assert.strictEqual(security.vulnerabilities.high, 2);
+			assert.strictEqual(security.vulnerabilities.critical, REPORT_TEST_DATA.VULNERABILITY_COUNTS.CRITICAL.critical);
+			assert.strictEqual(security.vulnerabilities.high, REPORT_TEST_DATA.VULNERABILITY_COUNTS.CRITICAL.high);
 		});
 
 		test('Should generate HTML security report with compliance status', async function () {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const report: SecurityScanReport = {
-				type: 'security_scan',
-				timestamp: Date.now(),
-				summary: 'Security scan completed',
-				vulnerabilities: {
-					critical: 0,
-					high: 0,
-					medium: 1,
-					low: 2,
-				},
-				complianceStatus: {
-					owasp: true,
-					cwe: true,
-				},
+			const report = createTestSecurityScan(REPORT_TEST_DATA.VULNERABILITY_COUNTS.CLEAN, {
+				summary: REPORT_TEST_DATA.SUMMARIES.SECURITY_COMPLETED,
+				complianceStatus: REPORT_TEST_DATA.COMPLIANCE_STATUS.COMPLIANT,
 				findings: [],
 				metadata: {
-					analyzedFiles: ['src/app.ts'],
-					duration: 2500,
-					toolVersion: '1.0.0',
+					analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.SINGLE],
+					duration: REPORT_TEST_DATA.DURATIONS.VERY_LONG - 500,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
-			const outputPath = path.join(testWorkspacePath, 'reports', 'security.html');
-			await generator.saveAnalysisResults(report, outputPath, 'html');
-
-			const content = fs.readFileSync(outputPath, 'utf-8');
-			assert.ok(content.includes('<h2>Vulnerabilities</h2>'));
-			assert.ok(content.includes('<strong>Critical:</strong> 0'));
+			await saveAndVerifyReport(generator, report, testWorkspacePath, 'security.html', 'html', (content) => {
+				assert.ok(content.includes('<h2>Vulnerabilities</h2>'));
+				assert.ok(content.includes('<strong>Critical:</strong> 0'));
+			});
 		});
 	});
 
@@ -712,71 +571,37 @@ suite('Analysis Result Saving Tests', () => {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const report: PerformanceAnalysisReport = {
-				type: 'performance_analysis',
-				timestamp: Date.now(),
-				summary: 'Performance analysis identified 2 bottlenecks',
-				metrics: {
-					avgResponseTime: 250,
-					memoryUsage: 128,
-					cpuUsage: 45,
-				},
-				bottlenecks: [
-					{
-						severity: 'high',
-						title: 'Slow database query',
-						description: 'Query takes 500ms on average',
-						file: 'src/queries.ts',
-						line: 20,
-						recommendation: 'Add index on user_id column',
-					},
-				],
-				findings: [],
-				metadata: {
-					analyzedFiles: ['src/queries.ts'],
-					duration: 5000,
-					toolVersion: '1.0.0',
-				},
-			};
+			const report = createTestPerformanceReport(REPORT_TEST_DATA.PERFORMANCE_METRICS.MODERATE);
 
 			const outputPath = path.join(testWorkspacePath, 'reports', 'performance.json');
 			await generator.saveAnalysisResults(report, outputPath, 'json');
 
 			const loaded = await generator.loadAnalysisResults(outputPath);
 			const perf = loaded as PerformanceAnalysisReport;
-			assert.strictEqual(perf.metrics.avgResponseTime, 250);
-			assert.strictEqual(perf.metrics.memoryUsage, 128);
+			assert.strictEqual(perf.metrics.avgResponseTime, REPORT_TEST_DATA.PERFORMANCE_METRICS.MODERATE.avgResponseTime);
+			assert.strictEqual(perf.metrics.memoryUsage, REPORT_TEST_DATA.PERFORMANCE_METRICS.MODERATE.memoryUsage);
 		});
 
 		test('Should generate Markdown performance report', async function () {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const report: PerformanceAnalysisReport = {
-				type: 'performance_analysis',
-				timestamp: Date.now(),
-				summary: 'System performance is acceptable',
-				metrics: {
-					avgResponseTime: 150,
-					memoryUsage: 64,
-					cpuUsage: 30,
-				},
+			const report = createTestPerformanceReport(REPORT_TEST_DATA.PERFORMANCE_METRICS.FAST, {
+				summary: REPORT_TEST_DATA.SUMMARIES.ACCEPTABLE,
 				bottlenecks: [],
 				findings: [],
 				metadata: {
 					analyzedFiles: ['src/api.ts'],
-					duration: 4000,
-					toolVersion: '1.0.0',
+					duration: REPORT_TEST_DATA.DURATIONS.EXTENDED,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
-			const outputPath = path.join(testWorkspacePath, 'reports', 'perf.md');
-			await generator.saveAnalysisResults(report, outputPath, 'markdown');
-
-			const content = fs.readFileSync(outputPath, 'utf-8');
-			assert.ok(content.includes('## Performance Metrics'));
-			assert.ok(content.includes('**Average Response Time:** 150ms'));
-			assert.ok(content.includes('**Memory Usage:** 64MB'));
+			await saveAndVerifyReport(generator, report, testWorkspacePath, 'perf.md', 'markdown', (content) => {
+				assert.ok(content.includes('## Performance Metrics'));
+				assert.ok(content.includes(`**Average Response Time:** ${REPORT_TEST_DATA.PERFORMANCE_METRICS.FAST.avgResponseTime}ms`));
+				assert.ok(content.includes(`**Memory Usage:** ${REPORT_TEST_DATA.PERFORMANCE_METRICS.FAST.memoryUsage}MB`));
+			});
 		});
 	});
 
@@ -789,17 +614,16 @@ suite('Analysis Result Saving Tests', () => {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const original: AnalysisResult = {
-				type: 'general',
-				timestamp: 1234567890,
-				summary: 'Test report',
+			const original = createTestAnalysisResult('general', {
+				timestamp: REPORT_TEST_DATA.TIMESTAMPS.FIXED_TEST,
+				summary: REPORT_TEST_DATA.SUMMARIES.TEST,
 				findings: [],
 				metadata: {
 					analyzedFiles: ['test.ts'],
-					duration: 100,
-					toolVersion: '1.0.0',
+					duration: REPORT_TEST_DATA.DURATIONS.VERY_SHORT,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
 			const outputPath = path.join(testWorkspacePath, 'reports', 'load-test.json');
 			await generator.saveAnalysisResults(original, outputPath);
@@ -846,17 +670,15 @@ suite('Analysis Result Saving Tests', () => {
 			this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
 			const generator = new ReportGenerator();
-			const result: AnalysisResult = {
-				type: 'general',
-				timestamp: Date.now(),
-				summary: 'Multi-format test',
+			const result = createTestAnalysisResult('general', {
+				summary: REPORT_TEST_DATA.SUMMARIES.MULTI_FORMAT,
 				findings: [],
 				metadata: {
 					analyzedFiles: ['test.ts'],
-					duration: 100,
-					toolVersion: '1.0.0',
+					duration: REPORT_TEST_DATA.DURATIONS.VERY_SHORT,
+					toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
 				},
-			};
+			});
 
 			const basePath = path.join(testWorkspacePath, 'reports', 'multi');
 

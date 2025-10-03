@@ -1974,3 +1974,218 @@ export const CONTRADICTION_KEYWORDS = [
   'wrong',
   'avoid',
 ] as const;
+
+/**
+ * Report Generation Constants
+ * Constants for HTML, Markdown, and JSON report generation
+ */
+export const REPORT_GENERATION_CONSTANTS = {
+  HTML_STYLES: {
+    COLORS: {
+      PRIMARY: '#007acc',
+      TEXT_DARK: '#333',
+      TEXT_MEDIUM: '#555',
+      BACKGROUND_LIGHT: '#f5f5f5',
+      BACKGROUND_INFO: '#e3f2fd',
+      BORDER_DEFAULT: '#ccc',
+      SEVERITY_CRITICAL: '#d32f2f',
+      SEVERITY_HIGH: '#f57c00',
+      SEVERITY_MEDIUM: '#fbc02d',
+      SEVERITY_LOW: '#388e3c',
+      SEVERITY_INFO: '#1976d2',
+    },
+    DIMENSIONS: {
+      MAX_WIDTH: '1200px',
+      PADDING_LARGE: '20px',
+      PADDING_MEDIUM: '15px',
+      PADDING_SMALL: '10px',
+      MARGIN_TOP: '30px',
+      MARGIN_VERTICAL: '15px 0',
+      BORDER_WIDTH: '2px',
+      BORDER_LEFT_WIDTH: '4px',
+      BORDER_RADIUS: '5px',
+      BORDER_RADIUS_SMALL: '3px',
+      PADDING_BOTTOM: '10px',
+    },
+    FONT_FAMILY: 'Arial, sans-serif',
+  },
+
+  REPORT_TITLES: {
+    GENERAL: 'General Analysis Report',
+    CODE_REVIEW: 'Code Review Report',
+    SECURITY_SCAN: 'Security Scan Report',
+    PERFORMANCE_ANALYSIS: 'Performance Analysis Report',
+    DEFAULT: 'Analysis Report',
+  } as const,
+
+  SEVERITY_ORDER: ['critical', 'high', 'medium', 'low', 'info'] as const,
+
+  HTML_ENTITIES: {
+    AMPERSAND: '&amp;',
+    LESS_THAN: '&lt;',
+    GREATER_THAN: '&gt;',
+    DOUBLE_QUOTE: '&quot;',
+    SINGLE_QUOTE: '&#039;',
+  } as const,
+
+  MARKDOWN: {
+    CODE_FENCE: '```',
+    HORIZONTAL_RULE: '---',
+    CHECKMARK: '✅',
+    CROSS: '❌',
+  } as const,
+
+  JSON: {
+    INDENT_SPACES: 2,
+  } as const,
+} as const;
+
+/**
+ * Report Test Data
+ * Standard test data for report generation tests
+ */
+export const REPORT_TEST_DATA = {
+  METADATA: {
+    TOOL_VERSION: '1.0.0',
+    SAMPLE_FILES: {
+      SINGLE: ['src/app.ts'],
+      PAIR: ['src/utils.ts', 'src/helpers.ts'],
+      TRIPLE: ['src/main.ts', 'src/app.ts', 'src/utils.ts'],
+      SECURITY: ['src/db.ts', 'src/auth.ts'],
+      PERFORMANCE: ['src/queries.ts'],
+      COMPLEX: ['src/complex.ts'],
+    },
+  },
+
+  DURATIONS: {
+    VERY_SHORT: 100,
+    SHORT: 500,
+    MEDIUM: 1000,
+    LONG: 2000,
+    VERY_LONG: 3000,
+    EXTENDED: 4000,
+    MAXIMUM: 5000,
+  },
+
+  TIMESTAMPS: {
+    FIXED_TEST: 1234567890,
+  },
+
+  QUALITY_SCORES: {
+    EXCELLENT: 90,
+    VERY_GOOD: 88,
+    GOOD: 85,
+    AVERAGE: 78,
+    BELOW_AVERAGE: 70,
+    POOR: 65,
+  },
+
+  CATEGORY_SCORES: {
+    EXCELLENT: {
+      maintainability: 90,
+      reliability: 85,
+      security: 92,
+      performance: 85,
+    },
+    GOOD: {
+      maintainability: 85,
+      reliability: 70,
+      security: 90,
+      performance: 65,
+    },
+  },
+
+  PERFORMANCE_METRICS: {
+    FAST: {
+      avgResponseTime: 150,
+      memoryUsage: 64,
+      cpuUsage: 30,
+    },
+    MODERATE: {
+      avgResponseTime: 250,
+      memoryUsage: 128,
+      cpuUsage: 45,
+    },
+  },
+
+  VULNERABILITY_COUNTS: {
+    CRITICAL: {
+      critical: 1,
+      high: 2,
+      medium: 2,
+      low: 0,
+    },
+    CLEAN: {
+      critical: 0,
+      high: 0,
+      medium: 1,
+      low: 2,
+    },
+  },
+
+  COMPLIANCE_STATUS: {
+    COMPLIANT: {
+      owasp: true,
+      cwe: true,
+    },
+    NON_COMPLIANT: {
+      owasp: false,
+      cwe: true,
+    },
+  },
+
+  SAMPLE_FINDINGS: {
+    PERFORMANCE_ISSUE: {
+      severity: 'high' as const,
+      title: 'Performance issue detected',
+      description: 'Function has O(n²) complexity',
+      file: 'src/utils.ts',
+      line: 42,
+    },
+    CODE_SMELL: {
+      severity: 'medium' as const,
+      title: 'Code smell detected',
+      description: 'Large function should be split',
+      recommendation: 'Extract helper functions',
+    },
+    COMPLEX_FUNCTION: {
+      severity: 'medium' as const,
+      title: 'Complex function',
+      description: 'Cyclomatic complexity is 15 (threshold: 10)',
+      file: 'src/complex.ts',
+      line: 10,
+      recommendation: 'Refactor into smaller functions',
+    },
+    SQL_INJECTION: {
+      severity: 'critical' as const,
+      title: 'SQL Injection',
+      description: 'Unsanitized user input in SQL query',
+      file: 'src/db.ts',
+      line: 55,
+      recommendation: 'Use parameterized queries',
+      codeSnippet: 'db.query(`SELECT * FROM users WHERE id = ${userId}`)',
+    },
+    SLOW_QUERY: {
+      severity: 'high' as const,
+      title: 'Slow database query',
+      description: 'Query takes 500ms on average',
+      file: 'src/queries.ts',
+      line: 20,
+      recommendation: 'Add index on user_id column',
+    },
+  },
+
+  SUMMARIES: {
+    SUCCESS: 'Analysis completed successfully',
+    WITH_WARNINGS: 'Analysis completed with warnings',
+    COMPLETED: 'Analysis completed',
+    CODE_REVIEW: 'Code review found 3 issues',
+    GOOD_QUALITY: 'Overall code quality is good',
+    SECURITY: 'Found 5 security vulnerabilities',
+    SECURITY_COMPLETED: 'Security scan completed',
+    PERFORMANCE: 'Performance analysis identified 2 bottlenecks',
+    ACCEPTABLE: 'System performance is acceptable',
+    TEST: 'Test report',
+    MULTI_FORMAT: 'Multi-format test',
+  },
+} as const;

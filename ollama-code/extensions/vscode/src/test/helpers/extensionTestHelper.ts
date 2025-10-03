@@ -5,6 +5,8 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as assert from 'assert';
 import { EXTENSION_TEST_CONSTANTS } from './test-constants.js';
 import { sleep, waitFor as waitForCondition, ensureDir, remove, writeFile as writeFileAsync } from './test-utils.js';
 
@@ -241,4 +243,193 @@ export async function createMockWorkspace(options: MockWorkspaceOptions): Promis
   }
 
   return workspacePath;
+}
+
+// ====================================================================
+// Report Generation Test Helpers
+// ====================================================================
+
+import { REPORT_TEST_DATA } from './test-constants';
+
+/**
+ * Analysis Result Types
+ */
+export interface AnalysisResult {
+  type: 'general' | 'code_review' | 'security_scan' | 'performance_analysis';
+  timestamp: number;
+  summary: string;
+  findings: Finding[];
+  metadata: {
+    analyzedFiles: string[];
+    duration: number;
+    toolVersion: string;
+  };
+}
+
+export interface Finding {
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  title: string;
+  description: string;
+  file?: string;
+  line?: number;
+  recommendation?: string;
+  codeSnippet?: string;
+}
+
+export interface CodeReviewReport extends AnalysisResult {
+  type: 'code_review';
+  qualityScore: number; // 0-100
+  categories: {
+    maintainability: number;
+    reliability: number;
+    security: number;
+    performance: number;
+  };
+}
+
+export interface SecurityScanReport extends AnalysisResult {
+  type: 'security_scan';
+  vulnerabilities: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  complianceStatus: {
+    owasp: boolean;
+    cwe: boolean;
+  };
+}
+
+export interface PerformanceAnalysisReport extends AnalysisResult {
+  type: 'performance_analysis';
+  metrics: {
+    avgResponseTime: number;
+    memoryUsage: number;
+    cpuUsage: number;
+  };
+  bottlenecks: Finding[];
+}
+
+export type ReportFormat = 'json' | 'markdown' | 'html';
+
+/**
+ * Create test analysis result with defaults
+ */
+export function createTestAnalysisResult(
+  type: 'general' | 'code_review' | 'security_scan' | 'performance_analysis',
+  overrides?: Partial<AnalysisResult>
+): AnalysisResult {
+  const defaults: AnalysisResult = {
+    type,
+    timestamp: Date.now(),
+    summary: REPORT_TEST_DATA.SUMMARIES.COMPLETED,
+    findings: [],
+    metadata: {
+      analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.PAIR],
+      duration: REPORT_TEST_DATA.DURATIONS.MEDIUM,
+      toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
+    },
+  };
+
+  return { ...defaults, ...overrides };
+}
+
+/**
+ * Create test code review report
+ */
+export function createTestCodeReview(
+  qualityScore?: number,
+  overrides?: Partial<CodeReviewReport>
+): CodeReviewReport {
+  const base = createTestAnalysisResult('code_review', {
+    summary: REPORT_TEST_DATA.SUMMARIES.CODE_REVIEW,
+    ...overrides,
+  });
+
+  return {
+    ...base,
+    type: 'code_review',
+    qualityScore: qualityScore ?? REPORT_TEST_DATA.QUALITY_SCORES.AVERAGE,
+    categories: REPORT_TEST_DATA.CATEGORY_SCORES.GOOD,
+    ...overrides,
+  } as CodeReviewReport;
+}
+
+/**
+ * Create test security scan report
+ */
+export function createTestSecurityScan(
+  vulnerabilities?: SecurityScanReport['vulnerabilities'],
+  overrides?: Partial<SecurityScanReport>
+): SecurityScanReport {
+  const base = createTestAnalysisResult('security_scan', {
+    summary: REPORT_TEST_DATA.SUMMARIES.SECURITY,
+    metadata: {
+      analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.SECURITY],
+      duration: REPORT_TEST_DATA.DURATIONS.VERY_LONG,
+      toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
+    },
+    ...overrides,
+  });
+
+  return {
+    ...base,
+    type: 'security_scan',
+    vulnerabilities: vulnerabilities ?? REPORT_TEST_DATA.VULNERABILITY_COUNTS.CRITICAL,
+    complianceStatus: REPORT_TEST_DATA.COMPLIANCE_STATUS.NON_COMPLIANT,
+    ...overrides,
+  } as SecurityScanReport;
+}
+
+/**
+ * Create test performance analysis report
+ */
+export function createTestPerformanceReport(
+  metrics?: PerformanceAnalysisReport['metrics'],
+  overrides?: Partial<PerformanceAnalysisReport>
+): PerformanceAnalysisReport {
+  const base = createTestAnalysisResult('performance_analysis', {
+    summary: REPORT_TEST_DATA.SUMMARIES.PERFORMANCE,
+    metadata: {
+      analyzedFiles: [...REPORT_TEST_DATA.METADATA.SAMPLE_FILES.PERFORMANCE],
+      duration: REPORT_TEST_DATA.DURATIONS.MAXIMUM,
+      toolVersion: REPORT_TEST_DATA.METADATA.TOOL_VERSION,
+    },
+    ...overrides,
+  });
+
+  return {
+    ...base,
+    type: 'performance_analysis',
+    metrics: metrics ?? REPORT_TEST_DATA.PERFORMANCE_METRICS.MODERATE,
+    bottlenecks: [REPORT_TEST_DATA.SAMPLE_FINDINGS.SLOW_QUERY],
+    ...overrides,
+  } as PerformanceAnalysisReport;
+}
+
+/**
+ * Save and verify report generation
+ * Eliminates duplicate save/verify patterns across tests
+ */
+export async function saveAndVerifyReport(
+  generator: any, // ReportGenerator type from test file
+  result: AnalysisResult,
+  testWorkspacePath: string,
+  filename: string,
+  format: ReportFormat,
+  assertions?: (content: string) => void
+): Promise<string> {
+  const outputPath = path.join(testWorkspacePath, 'reports', filename);
+  await generator.saveAnalysisResults(result, outputPath, format);
+
+  assert.ok(fs.existsSync(outputPath), `${format.toUpperCase()} file should be created`);
+
+  const content = fs.readFileSync(outputPath, 'utf-8');
+
+  if (assertions) {
+    assertions(content);
+  }
+
+  return content;
 }
