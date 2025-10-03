@@ -1028,3 +1028,98 @@ export const WORKFLOW_TEMPLATES = {
     ],
   },
 } as const;
+
+/**
+ * Time Conversion Constants
+ * Conversion factors for time calculations
+ */
+export const TIME_CONVERSION = {
+  /** Milliseconds to seconds divisor */
+  MS_TO_SECONDS: 1000,
+  /** Seconds to milliseconds multiplier */
+  SECONDS_TO_MS: 1000,
+} as const;
+
+/**
+ * Mock Failure Keywords
+ * Keywords that trigger failures in mock implementations
+ */
+export const MOCK_FAILURE_KEYWORDS = {
+  /** Keyword in command to trigger failure */
+  COMMAND_FAILURE: 'fail',
+  /** Keyword in description to trigger validation failure */
+  VALIDATION_FAILURE: 'invalid',
+  /** Keyword in step name to trigger approval rejection */
+  APPROVAL_REJECTION: 'reject',
+} as const;
+
+/**
+ * Workflow Status Messages
+ * Template functions for workflow status and summary messages
+ */
+export const WORKFLOW_MESSAGES = {
+  /** Workflow cancelled at specific step */
+  CANCELLED_AT_STEP: (step: number, total: number) => `Workflow cancelled at step ${step}/${total}`,
+  /** Workflow timed out */
+  TIMED_OUT: (elapsed: number, max: number) =>
+    `Workflow timed out after ${elapsed.toFixed(1)}s (max: ${max}s)`,
+  /** Dependencies not met message */
+  DEPENDENCIES_NOT_MET: 'Dependencies not met',
+  /** User did not approve step */
+  USER_DID_NOT_APPROVE: 'User did not approve step',
+  /** User cancelled at specific step */
+  USER_CANCELLED_AT: (stepName: string) => `User cancelled workflow at step: ${stepName}`,
+  /** Step failed with rollback */
+  FAILED_WITH_ROLLBACK: (stepName: string, rollbackCount: number) =>
+    `Step "${stepName}" failed. Rolled back ${rollbackCount} steps.`,
+  /** Step failed with error */
+  FAILED_WITH_ERROR: (stepName: string, error: string) =>
+    `Step "${stepName}" failed. Error: ${error}`,
+  /** Workflow completed with some failures */
+  COMPLETED_WITH_FAILURES: (failedCount: number) =>
+    `Workflow completed with ${failedCount} failed steps`,
+  /** Workflow completed successfully */
+  COMPLETED_SUCCESSFULLY: (duration: number) =>
+    `Workflow completed successfully in ${duration.toFixed(1)}s`,
+  /** Workflow partially completed */
+  PARTIALLY_COMPLETED: (completed: number, total: number) =>
+    `Workflow partially completed: ${completed}/${total} steps`,
+} as const;
+
+/**
+ * Workflow Error Messages
+ * Error messages for workflow execution failures
+ */
+export const WORKFLOW_ERROR_MESSAGES = {
+  /** Unknown step type error */
+  UNKNOWN_STEP_TYPE: (type: string) => `Unknown step type: ${type}`,
+  /** Command not specified error */
+  COMMAND_NOT_SPECIFIED: 'Command not specified',
+  /** Command execution failed */
+  COMMAND_FAILED: (command: string) => `Command failed: ${command}`,
+  /** File path not specified error */
+  FILE_PATH_NOT_SPECIFIED: 'File path not specified',
+  /** Validation failed error */
+  VALIDATION_FAILED: 'Validation failed',
+} as const;
+
+/**
+ * Step Output Templates
+ * Template functions for step execution output messages
+ */
+export const STEP_OUTPUT_TEMPLATES = {
+  /** Failed step output */
+  FAILED: (error: string) => `Failed: ${error}`,
+  /** Command executed successfully */
+  COMMAND_EXECUTED: (command: string, outcome: string) =>
+    `Executed command: ${command}\n${outcome}`,
+  /** File operation completed */
+  FILE_OPERATION: (filePath: string, outcome: string) =>
+    `File operation on ${filePath}: ${outcome}`,
+  /** Git operation completed */
+  GIT_OPERATION: (outcome: string) => `Git operation completed: ${outcome}`,
+  /** Validation passed */
+  VALIDATION_PASSED: (outcome: string) => `Validation passed: ${outcome}`,
+  /** User confirmed action */
+  USER_CONFIRMED: (outcome: string) => `User confirmed: ${outcome}`,
+} as const;

@@ -3,6 +3,15 @@
  * Tests autonomous multi-step execution capabilities for Phase 3.2.3
  */
 
+import {
+  MULTI_STEP_CONSTANTS,
+  TIME_CONVERSION,
+  MOCK_FAILURE_KEYWORDS,
+  WORKFLOW_MESSAGES,
+  WORKFLOW_ERROR_MESSAGES,
+  STEP_OUTPUT_TEMPLATES,
+} from './test-constants';
+
 /**
  * Execution step definition
  */
@@ -125,8 +134,8 @@ export class MultiStepExecutionWorkflow {
       requireApproval: config.requireApproval ?? false,
       continueOnError: config.continueOnError ?? false,
       enableRollback: config.enableRollback ?? true,
-      maxExecutionTime: config.maxExecutionTime ?? 3600, // 1 hour default
-      stepDelay: config.stepDelay ?? 0,
+      maxExecutionTime: config.maxExecutionTime ?? MULTI_STEP_CONSTANTS.DEFAULT_MAX_EXECUTION_TIME,
+      stepDelay: config.stepDelay ?? MULTI_STEP_CONSTANTS.DEFAULT_STEP_DELAY,
     };
   }
 
@@ -165,29 +174,23 @@ export class MultiStepExecutionWorkflow {
       // Check if cancelled
       if (this.cancelled) {
         result.status = 'cancelled';
-        result.summary = `Workflow cancelled at step ${i + 1}/${steps.length}`;
+        result.summary = WORKFLOW_MESSAGES.CANCELLED_AT_STEP(i + 1, steps.length);
         break;
       }
 
       // Check timeout
-      const elapsed = (Date.now() - startTime) / 1000;
+      const elapsed = (Date.now() - startTime) / TIME_CONVERSION.MS_TO_SECONDS;
       if (elapsed > this.config.maxExecutionTime) {
         result.status = 'failed';
-        result.summary = `Workflow timed out after ${elapsed.toFixed(1)}s (max: ${this.config.maxExecutionTime}s)`;
+        result.summary = WORKFLOW_MESSAGES.TIMED_OUT(elapsed, this.config.maxExecutionTime);
         break;
       }
 
       // Check dependencies
       if (!this.checkDependencies(step, result.stepResults)) {
-        const stepResult: StepExecutionResult = {
-          stepId: step.id,
-          status: 'skipped',
-          output: 'Dependencies not met',
-          startTime: new Date(),
-          endTime: new Date(),
-          duration: 0,
-        };
-        result.stepResults.push(stepResult);
+        result.stepResults.push(
+          this.createSkippedStepResult(step.id, WORKFLOW_MESSAGES.DEPENDENCIES_NOT_MET)
+        );
         continue;
       }
 
@@ -195,17 +198,11 @@ export class MultiStepExecutionWorkflow {
       if (this.config.requireApproval || step.requiresApproval) {
         const approved = await this.requestApproval(step);
         if (!approved) {
-          const stepResult: StepExecutionResult = {
-            stepId: step.id,
-            status: 'skipped',
-            output: 'User did not approve step',
-            startTime: new Date(),
-            endTime: new Date(),
-            duration: 0,
-          };
-          result.stepResults.push(stepResult);
+          result.stepResults.push(
+            this.createSkippedStepResult(step.id, WORKFLOW_MESSAGES.USER_DID_NOT_APPROVE)
+          );
           result.status = 'cancelled';
-          result.summary = `User cancelled workflow at step: ${step.name}`;
+          result.summary = WORKFLOW_MESSAGES.USER_CANCELLED_AT(step.name);
           break;
         }
       }
@@ -222,7 +219,7 @@ export class MultiStepExecutionWorkflow {
         result.progress.failedSteps++;
       }
       result.progress.percentage = Math.round((result.progress.currentStepIndex / steps.length) * 100);
-      result.progress.elapsedTime = (Date.now() - startTime) / 1000;
+      result.progress.elapsedTime = (Date.now() - startTime) / TIME_CONVERSION.MS_TO_SECONDS;
       result.progress.estimatedRemainingTime = this.estimateRemainingDuration(steps, i + 1);
 
       // Handle failure
@@ -232,10 +229,10 @@ export class MultiStepExecutionWorkflow {
           const rollbackSteps = await this.rollbackSteps(result.stepResults);
           result.rollbackSteps = rollbackSteps;
           result.status = 'failed';
-          result.summary = `Step "${step.name}" failed. Rolled back ${rollbackSteps.length} steps.`;
+          result.summary = WORKFLOW_MESSAGES.FAILED_WITH_ROLLBACK(step.name, rollbackSteps.length);
         } else {
           result.status = 'failed';
-          result.summary = `Step "${step.name}" failed. Error: ${stepResult.error}`;
+          result.summary = WORKFLOW_MESSAGES.FAILED_WITH_ERROR(step.name, stepResult.error || 'Unknown error');
         }
 
         if (!this.config.continueOnError) {
@@ -250,19 +247,19 @@ export class MultiStepExecutionWorkflow {
     }
 
     // Calculate final statistics
-    result.totalDuration = (Date.now() - startTime) / 1000;
+    result.totalDuration = (Date.now() - startTime) / TIME_CONVERSION.MS_TO_SECONDS;
     result.progress.elapsedTime = result.totalDuration;
 
     // Determine final status if not already set
     if (result.status === 'success') {
       if (result.progress.failedSteps > 0) {
         result.status = 'partial';
-        result.summary = `Workflow completed with ${result.progress.failedSteps} failed steps`;
+        result.summary = WORKFLOW_MESSAGES.COMPLETED_WITH_FAILURES(result.progress.failedSteps);
       } else if (result.progress.completedSteps === steps.length) {
-        result.summary = `Workflow completed successfully in ${result.totalDuration.toFixed(1)}s`;
+        result.summary = WORKFLOW_MESSAGES.COMPLETED_SUCCESSFULLY(result.totalDuration);
       } else {
         result.status = 'partial';
-        result.summary = `Workflow partially completed: ${result.progress.completedSteps}/${steps.length} steps`;
+        result.summary = WORKFLOW_MESSAGES.PARTIALLY_COMPLETED(result.progress.completedSteps, steps.length);
       }
     }
 
@@ -288,7 +285,8 @@ export class MultiStepExecutionWorkflow {
    * Get execution progress
    */
   getProgress(): ExecutionProgress | null {
-    return this.currentExecution ? { ...this.currentExecution.progress } : null;
+    const current = this.currentExecution;
+    return current ? { ...current.progress } : null;
   }
 
   /**
@@ -304,6 +302,21 @@ export class MultiStepExecutionWorkflow {
   // ============================================================================
   // Private Methods
   // ============================================================================
+
+  /**
+   * Create a skipped step result
+   */
+  private createSkippedStepResult(stepId: string, reason: string): StepExecutionResult {
+    const now = new Date();
+    return {
+      stepId,
+      status: 'skipped',
+      output: reason,
+      startTime: now,
+      endTime: now,
+      duration: 0,
+    };
+  }
 
   /**
    * Execute a single step
@@ -336,18 +349,18 @@ export class MultiStepExecutionWorkflow {
           result.output = await this.executeUserConfirmation(step);
           break;
         default:
-          throw new Error(`Unknown step type: ${step.type}`);
+          throw new Error(WORKFLOW_ERROR_MESSAGES.UNKNOWN_STEP_TYPE(step.type));
       }
 
       result.status = 'success';
     } catch (error) {
       result.status = 'failed';
       result.error = error instanceof Error ? error.message : String(error);
-      result.output = `Failed: ${result.error}`;
+      result.output = STEP_OUTPUT_TEMPLATES.FAILED(result.error);
     }
 
     result.endTime = new Date();
-    result.duration = (result.endTime.getTime() - startTime.getTime()) / 1000;
+    result.duration = (result.endTime.getTime() - startTime.getTime()) / TIME_CONVERSION.MS_TO_SECONDS;
 
     return result;
   }
@@ -357,18 +370,18 @@ export class MultiStepExecutionWorkflow {
    */
   private async executeCommand(step: ExecutionStep): Promise<string> {
     // Mock implementation
-    await this.delay(step.estimatedDuration * 100); // Simulate execution time
+    await this.delay(step.estimatedDuration * MULTI_STEP_CONSTANTS.MOCK_EXECUTION_MULTIPLIER);
 
     if (!step.command) {
-      throw new Error('Command not specified');
+      throw new Error(WORKFLOW_ERROR_MESSAGES.COMMAND_NOT_SPECIFIED);
     }
 
     // Simulate command success/failure
-    if (step.command.includes('fail')) {
-      throw new Error(`Command failed: ${step.command}`);
+    if (step.command.includes(MOCK_FAILURE_KEYWORDS.COMMAND_FAILURE)) {
+      throw new Error(WORKFLOW_ERROR_MESSAGES.COMMAND_FAILED(step.command));
     }
 
-    return `Executed command: ${step.command}\n${step.expectedOutcome}`;
+    return STEP_OUTPUT_TEMPLATES.COMMAND_EXECUTED(step.command, step.expectedOutcome);
   }
 
   /**
@@ -376,13 +389,13 @@ export class MultiStepExecutionWorkflow {
    */
   private async executeFileOperation(step: ExecutionStep): Promise<string> {
     // Mock implementation
-    await this.delay(step.estimatedDuration * 100);
+    await this.delay(step.estimatedDuration * MULTI_STEP_CONSTANTS.MOCK_EXECUTION_MULTIPLIER);
 
     if (!step.filePath) {
-      throw new Error('File path not specified');
+      throw new Error(WORKFLOW_ERROR_MESSAGES.FILE_PATH_NOT_SPECIFIED);
     }
 
-    return `File operation on ${step.filePath}: ${step.expectedOutcome}`;
+    return STEP_OUTPUT_TEMPLATES.FILE_OPERATION(step.filePath, step.expectedOutcome);
   }
 
   /**
@@ -390,8 +403,8 @@ export class MultiStepExecutionWorkflow {
    */
   private async executeGitOperation(step: ExecutionStep): Promise<string> {
     // Mock implementation
-    await this.delay(step.estimatedDuration * 100);
-    return `Git operation completed: ${step.expectedOutcome}`;
+    await this.delay(step.estimatedDuration * MULTI_STEP_CONSTANTS.MOCK_EXECUTION_MULTIPLIER);
+    return STEP_OUTPUT_TEMPLATES.GIT_OPERATION(step.expectedOutcome);
   }
 
   /**
@@ -399,14 +412,14 @@ export class MultiStepExecutionWorkflow {
    */
   private async executeValidation(step: ExecutionStep): Promise<string> {
     // Mock implementation
-    await this.delay(step.estimatedDuration * 100);
+    await this.delay(step.estimatedDuration * MULTI_STEP_CONSTANTS.MOCK_EXECUTION_MULTIPLIER);
 
     // Simulate validation failure if description contains "invalid"
-    if (step.description.toLowerCase().includes('invalid')) {
-      throw new Error('Validation failed');
+    if (step.description.toLowerCase().includes(MOCK_FAILURE_KEYWORDS.VALIDATION_FAILURE)) {
+      throw new Error(WORKFLOW_ERROR_MESSAGES.VALIDATION_FAILED);
     }
 
-    return `Validation passed: ${step.expectedOutcome}`;
+    return STEP_OUTPUT_TEMPLATES.VALIDATION_PASSED(step.expectedOutcome);
   }
 
   /**
@@ -414,8 +427,8 @@ export class MultiStepExecutionWorkflow {
    */
   private async executeUserConfirmation(step: ExecutionStep): Promise<string> {
     // Mock implementation - always confirms
-    await this.delay(step.estimatedDuration * 100);
-    return `User confirmed: ${step.expectedOutcome}`;
+    await this.delay(step.estimatedDuration * MULTI_STEP_CONSTANTS.MOCK_EXECUTION_MULTIPLIER);
+    return STEP_OUTPUT_TEMPLATES.USER_CONFIRMED(step.expectedOutcome);
   }
 
   /**
@@ -438,8 +451,8 @@ export class MultiStepExecutionWorkflow {
    */
   private async requestApproval(step: ExecutionStep): Promise<boolean> {
     // Mock implementation - always approves unless step name includes "reject"
-    await this.delay(10);
-    return !step.name.toLowerCase().includes('reject');
+    await this.delay(MULTI_STEP_CONSTANTS.MOCK_APPROVAL_DELAY);
+    return !step.name.toLowerCase().includes(MOCK_FAILURE_KEYWORDS.APPROVAL_REJECTION);
   }
 
   /**
@@ -453,7 +466,7 @@ export class MultiStepExecutionWorkflow {
       const result = stepResults[i];
       if (result.status === 'success') {
         // Mock rollback
-        await this.delay(10);
+        await this.delay(MULTI_STEP_CONSTANTS.MOCK_ROLLBACK_DELAY);
         rolledBack.push(result.stepId);
       }
     }
@@ -472,11 +485,7 @@ export class MultiStepExecutionWorkflow {
    * Estimate remaining workflow duration
    */
   private estimateRemainingDuration(steps: ExecutionStep[], currentIndex: number): number {
-    let remaining = 0;
-    for (let i = currentIndex; i < steps.length; i++) {
-      remaining += steps[i].estimatedDuration;
-    }
-    return remaining;
+    return steps.slice(currentIndex).reduce((total, step) => total + step.estimatedDuration, 0);
   }
 
   /**

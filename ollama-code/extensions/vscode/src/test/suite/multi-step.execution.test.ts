@@ -8,6 +8,55 @@ import { MultiStepExecutionWorkflow, ExecutionStep } from '../helpers/multiStepE
 import { WORKFLOW_TEMPLATES } from '../helpers/test-constants';
 import { PROVIDER_TEST_TIMEOUTS } from '../helpers/test-constants';
 
+/**
+ * Options for generating ExecutionStep arrays from templates
+ */
+interface StepGenerationOptions {
+  descriptionSuffix: string;
+  commandPrefix?: string;
+  filePathPrefix?: string;
+  fileExtension?: string;
+  outcomeMessage?: string;
+}
+
+/**
+ * Create ExecutionStep array from workflow template
+ */
+function createStepsFromTemplate(
+  templateSteps: ReadonlyArray<{
+    readonly id: string;
+    readonly name: string;
+    readonly type: 'command' | 'file_operation' | 'git_operation' | 'validation' | 'user_confirmation';
+    readonly duration: number;
+    readonly requiresApproval?: boolean;
+  }>,
+  options: StepGenerationOptions
+): ExecutionStep[] {
+  return templateSteps.map((step, index) => ({
+    id: step.id,
+    name: step.name,
+    description: `${step.name} ${options.descriptionSuffix}`,
+    type: step.type,
+    command:
+      step.type === 'command' && options.commandPrefix
+        ? `${options.commandPrefix} ${step.name.toLowerCase()}`
+        : undefined,
+    filePath:
+      step.type === 'file_operation' && options.filePathPrefix
+        ? `${options.filePathPrefix}/${step.name.replace(/\s+/g, '-').toLowerCase()}${options.fileExtension || '.js'}`
+        : undefined,
+    content: step.type === 'file_operation' ? `// ${step.name}` : undefined,
+    expectedOutcome: options.outcomeMessage || `${step.name} completed`,
+    rollbackCommand:
+      step.type === 'command' && options.commandPrefix
+        ? `npm run rollback-${step.name.toLowerCase()}`
+        : undefined,
+    requiresApproval: step.requiresApproval,
+    dependencies: index === 0 ? [] : [templateSteps[index - 1].id],
+    estimatedDuration: step.duration,
+  }));
+}
+
 suite('Multi-Step Execution Tests', () => {
   let workflow: MultiStepExecutionWorkflow;
 
@@ -19,19 +68,13 @@ suite('Multi-Step Execution Tests', () => {
     test('Should execute "Create React app" multi-step workflow', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const steps: ExecutionStep[] = WORKFLOW_TEMPLATES.CREATE_REACT_APP.STEPS.map((step, index) => ({
-        id: step.id,
-        name: step.name,
-        description: `${step.name} for React application`,
-        type: step.type,
-        command: step.type === 'command' ? `npm run ${step.name.toLowerCase()}` : undefined,
-        filePath: step.type === 'file_operation' ? `src/${step.name.replace(/\s+/g, '-').toLowerCase()}.js` : undefined,
-        content: step.type === 'file_operation' ? `// ${step.name}` : undefined,
-        expectedOutcome: `${step.name} completed successfully`,
-        rollbackCommand: step.type === 'command' ? `npm run rollback-${step.name.toLowerCase()}` : undefined,
-        dependencies: index === 0 ? [] : [WORKFLOW_TEMPLATES.CREATE_REACT_APP.STEPS[index - 1].id],
-        estimatedDuration: step.duration,
-      }));
+      const steps = createStepsFromTemplate(WORKFLOW_TEMPLATES.CREATE_REACT_APP.STEPS, {
+        descriptionSuffix: 'for React application',
+        commandPrefix: 'npm run',
+        filePathPrefix: 'src',
+        fileExtension: '.js',
+        outcomeMessage: 'completed successfully',
+      });
 
       const result = await workflow.executeWorkflow('react-app-1', WORKFLOW_TEMPLATES.CREATE_REACT_APP.NAME, steps);
 
@@ -46,17 +89,12 @@ suite('Multi-Step Execution Tests', () => {
     test('Should execute "Set up authentication" multi-step workflow', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const steps: ExecutionStep[] = WORKFLOW_TEMPLATES.SETUP_AUTHENTICATION.STEPS.map((step, index) => ({
-        id: step.id,
-        name: step.name,
-        description: `${step.name} for authentication system`,
-        type: step.type,
-        command: step.type === 'command' ? `npm install ${step.name.toLowerCase()}` : undefined,
-        filePath: step.type === 'file_operation' ? `src/auth/${step.name.replace(/\s+/g, '-').toLowerCase()}.ts` : undefined,
-        expectedOutcome: `${step.name} completed`,
-        dependencies: index === 0 ? [] : [WORKFLOW_TEMPLATES.SETUP_AUTHENTICATION.STEPS[index - 1].id],
-        estimatedDuration: step.duration,
-      }));
+      const steps = createStepsFromTemplate(WORKFLOW_TEMPLATES.SETUP_AUTHENTICATION.STEPS, {
+        descriptionSuffix: 'for authentication system',
+        commandPrefix: 'npm install',
+        filePathPrefix: 'src/auth',
+        fileExtension: '.ts',
+      });
 
       const result = await workflow.executeWorkflow('auth-setup-1', WORKFLOW_TEMPLATES.SETUP_AUTHENTICATION.NAME, steps);
 
@@ -69,17 +107,12 @@ suite('Multi-Step Execution Tests', () => {
     test('Should execute "Add testing framework" multi-step workflow', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const steps: ExecutionStep[] = WORKFLOW_TEMPLATES.ADD_TESTING_FRAMEWORK.STEPS.map((step, index) => ({
-        id: step.id,
-        name: step.name,
-        description: `${step.name} for testing infrastructure`,
-        type: step.type,
-        command: step.type === 'command' ? `npm install -D ${step.name}` : undefined,
-        filePath: step.type === 'file_operation' ? `tests/${step.name}.config.js` : undefined,
-        expectedOutcome: `${step.name} completed`,
-        dependencies: index === 0 ? [] : [WORKFLOW_TEMPLATES.ADD_TESTING_FRAMEWORK.STEPS[index - 1].id],
-        estimatedDuration: step.duration,
-      }));
+      const steps = createStepsFromTemplate(WORKFLOW_TEMPLATES.ADD_TESTING_FRAMEWORK.STEPS, {
+        descriptionSuffix: 'for testing infrastructure',
+        commandPrefix: 'npm install -D',
+        filePathPrefix: 'tests',
+        fileExtension: '.config.js',
+      });
 
       const result = await workflow.executeWorkflow('testing-framework-1', WORKFLOW_TEMPLATES.ADD_TESTING_FRAMEWORK.NAME, steps);
 
@@ -91,17 +124,10 @@ suite('Multi-Step Execution Tests', () => {
     test('Should execute "Deploy to production" multi-step workflow', async function () {
       this.timeout(PROVIDER_TEST_TIMEOUTS.STANDARD_TEST);
 
-      const steps: ExecutionStep[] = WORKFLOW_TEMPLATES.DEPLOY_TO_PRODUCTION.STEPS.map((step, index) => ({
-        id: step.id,
-        name: step.name,
-        description: `${step.name} for production deployment`,
-        type: step.type,
-        command: step.type === 'command' ? `npm run ${step.name.toLowerCase()}` : undefined,
-        expectedOutcome: `${step.name} completed`,
-        requiresApproval: 'requiresApproval' in step ? step.requiresApproval : undefined,
-        dependencies: index === 0 ? [] : [WORKFLOW_TEMPLATES.DEPLOY_TO_PRODUCTION.STEPS[index - 1].id],
-        estimatedDuration: step.duration,
-      }));
+      const steps = createStepsFromTemplate(WORKFLOW_TEMPLATES.DEPLOY_TO_PRODUCTION.STEPS, {
+        descriptionSuffix: 'for production deployment',
+        commandPrefix: 'npm run',
+      });
 
       const result = await workflow.executeWorkflow('deploy-prod-1', WORKFLOW_TEMPLATES.DEPLOY_TO_PRODUCTION.NAME, steps);
 
