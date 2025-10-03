@@ -49,6 +49,11 @@ export interface NodeMetadata {
   handler?: string;
   condition?: string;
   methods?: readonly string[];
+  // Anti-pattern detection metadata
+  cyclomaticComplexity?: number;
+  lineCount?: number;
+  className?: string;
+  feature?: string;
 }
 
 /**
