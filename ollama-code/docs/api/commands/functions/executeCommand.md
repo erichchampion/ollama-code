@@ -8,7 +8,7 @@
 
 > **executeCommand**(`commandName`, `args`): `Promise`\<`any`\>
 
-Defined in: [commands/index.ts:464](https://github.com/erichchampion/ollama-code/blob/d2cd048413007cebba90b2ada3aac13c65c13827/ollama-code/src/commands/index.ts#L464)
+Defined in: [commands/index.ts:464](https://github.com/erichchampion/ollama-code/blob/da0d5de255d803db9921aedd29b30f1aea1c1c02/ollama-code/src/commands/index.ts#L464)
 
 Execute a command
 
