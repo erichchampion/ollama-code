@@ -162,6 +162,8 @@ export const PROVIDER_TEST_TIMEOUTS = {
   SIMULATED_SLOW_AI: 10000,
   /** Simulated slow hover response (triggers timeout) */
   SIMULATED_SLOW_HOVER: 5000,
+  /** Extended test timeout for performance tests */
+  EXTENDED_TEST: 180000, // 3 minutes
 } as const;
 
 /**
