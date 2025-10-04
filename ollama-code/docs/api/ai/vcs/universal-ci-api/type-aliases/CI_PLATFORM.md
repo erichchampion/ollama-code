@@ -8,4 +8,4 @@
 
 > **CI\_PLATFORM** = `"github"` \| `"gitlab"` \| `"azure"` \| `"bitbucket"` \| `"circleci"` \| `"jenkins"` \| `"travis"` \| `"appveyor"` \| `"custom"`
 
-Defined in: [ai/vcs/universal-ci-api.ts:40](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/ai/vcs/universal-ci-api.ts#L40)
+Defined in: [ai/vcs/universal-ci-api.ts:40](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/ai/vcs/universal-ci-api.ts#L40)

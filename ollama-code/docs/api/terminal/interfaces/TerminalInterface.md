@@ -6,7 +6,7 @@
 
 # Interface: TerminalInterface
 
-Defined in: [terminal/types.ts:191](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L191)
+Defined in: [terminal/types.ts:191](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L191)
 
 Terminal interface for user interaction
 
@@ -16,7 +16,7 @@ Terminal interface for user interaction
 
 > **clear**(): `void`
 
-Defined in: [terminal/types.ts:195](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L195)
+Defined in: [terminal/types.ts:195](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L195)
 
 Clear the terminal screen
 
@@ -30,7 +30,7 @@ Clear the terminal screen
 
 > **display**(`content`): `void`
 
-Defined in: [terminal/types.ts:200](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L200)
+Defined in: [terminal/types.ts:200](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L200)
 
 Display formatted content
 
@@ -50,7 +50,7 @@ Display formatted content
 
 > **displayWelcome**(): `void`
 
-Defined in: [terminal/types.ts:205](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L205)
+Defined in: [terminal/types.ts:205](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L205)
 
 Display a welcome message
 
@@ -64,7 +64,7 @@ Display a welcome message
 
 > **emphasize**(`message`): `void`
 
-Defined in: [terminal/types.ts:210](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L210)
+Defined in: [terminal/types.ts:210](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L210)
 
 Display a message with emphasis
 
@@ -84,7 +84,7 @@ Display a message with emphasis
 
 > **info**(`message`): `void`
 
-Defined in: [terminal/types.ts:215](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L215)
+Defined in: [terminal/types.ts:215](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L215)
 
 Display an informational message
 
@@ -104,7 +104,7 @@ Display an informational message
 
 > **success**(`message`): `void`
 
-Defined in: [terminal/types.ts:220](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L220)
+Defined in: [terminal/types.ts:220](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L220)
 
 Display a success message
 
@@ -124,7 +124,7 @@ Display a success message
 
 > **warn**(`message`): `void`
 
-Defined in: [terminal/types.ts:225](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L225)
+Defined in: [terminal/types.ts:225](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L225)
 
 Display a warning message
 
@@ -144,7 +144,7 @@ Display a warning message
 
 > **error**(`message`): `void`
 
-Defined in: [terminal/types.ts:230](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L230)
+Defined in: [terminal/types.ts:230](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L230)
 
 Display an error message
 
@@ -164,7 +164,7 @@ Display an error message
 
 > **text**(`message`): `void`
 
-Defined in: [terminal/types.ts:235](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L235)
+Defined in: [terminal/types.ts:235](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L235)
 
 Display plain text without special formatting
 
@@ -184,7 +184,7 @@ Display plain text without special formatting
 
 > **link**(`text`, `url`): `string`
 
-Defined in: [terminal/types.ts:240](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L240)
+Defined in: [terminal/types.ts:240](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L240)
 
 Create a clickable link in the terminal if supported
 
@@ -208,7 +208,7 @@ Create a clickable link in the terminal if supported
 
 > **table**(`data`, `options?`): `void`
 
-Defined in: [terminal/types.ts:245](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L245)
+Defined in: [terminal/types.ts:245](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L245)
 
 Display a table of data
 
@@ -238,7 +238,7 @@ Display a table of data
 
 > **prompt**\<`T`\>(`options`): `Promise`\<`T`\>
 
-Defined in: [terminal/types.ts:250](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L250)
+Defined in: [terminal/types.ts:250](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L250)
 
 Prompt user for input
 
@@ -264,7 +264,7 @@ Prompt user for input
 
 > **spinner**(`text`, `id?`): [`SpinnerInstance`](SpinnerInstance.md)
 
-Defined in: [terminal/types.ts:255](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/terminal/types.ts#L255)
+Defined in: [terminal/types.ts:255](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/terminal/types.ts#L255)
 
 Create a spinner for showing progress
 

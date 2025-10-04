@@ -6,7 +6,7 @@
 
 # Enumeration: ArgType
 
-Defined in: [commands/types.ts:4](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/commands/types.ts#L4)
+Defined in: [commands/types.ts:4](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/commands/types.ts#L4)
 
 Command argument types
 
@@ -16,7 +16,7 @@ Command argument types
 
 > **STRING**: `"string"`
 
-Defined in: [commands/types.ts:5](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/commands/types.ts#L5)
+Defined in: [commands/types.ts:5](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/commands/types.ts#L5)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [commands/types.ts:5](https://github.com/erichchampion/ollama-code/b
 
 > **NUMBER**: `"number"`
 
-Defined in: [commands/types.ts:6](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/commands/types.ts#L6)
+Defined in: [commands/types.ts:6](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/commands/types.ts#L6)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [commands/types.ts:6](https://github.com/erichchampion/ollama-code/b
 
 > **BOOLEAN**: `"boolean"`
 
-Defined in: [commands/types.ts:7](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/commands/types.ts#L7)
+Defined in: [commands/types.ts:7](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/commands/types.ts#L7)
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: [commands/types.ts:7](https://github.com/erichchampion/ollama-code/b
 
 > **ARRAY**: `"array"`
 
-Defined in: [commands/types.ts:8](https://github.com/erichchampion/ollama-code/blob/f584ec71c73423eb2d52696d6383301325c0df44/ollama-code/src/commands/types.ts#L8)
+Defined in: [commands/types.ts:8](https://github.com/erichchampion/ollama-code/blob/bec805828adb9d493a17af70faf605c3b2bc0269/ollama-code/src/commands/types.ts#L8)
