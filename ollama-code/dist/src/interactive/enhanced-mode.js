@@ -240,8 +240,10 @@ export class EnhancedInteractiveMode {
             // Route the request with timeout protection
             processSpinner.setText('Analyzing request...');
             // Add timeout to prevent hanging on routing
+            // Use centralized timeout constant for consistency
+            const { INTERACTIVE_REQUEST_TIMEOUT } = await import('../constants.js');
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Request processing timeout after 30 seconds')), 30000);
+                setTimeout(() => reject(new Error(`Request processing timeout after ${INTERACTIVE_REQUEST_TIMEOUT / 1000} seconds`)), INTERACTIVE_REQUEST_TIMEOUT);
             });
             const routingResult = await Promise.race([
                 this.nlRouter.route(userInput, routingContext),

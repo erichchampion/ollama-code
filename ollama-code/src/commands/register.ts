@@ -379,27 +379,12 @@ function registerExplainCommand(): void {
             // Use mock response for A08 testing to avoid AI client hangs
             responseText = `Mock analysis for testing purposes.\n\nFile content analysis: ${fileContent}\n\nThis is a static response to ensure A08 security tests pass without relying on AI services.`;
           } else {
-            // A08 Security: Add timeout to prevent hanging on suspicious content
-            const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Analysis timeout - content may be problematic')), 15000);
-            });
-
-            // Use enhanced AI client if available for better context awareness
-            const analysisPromise = (async () => {
-              if (isEnhancedAIInitialized()) {
-                const enhancedClient = getEnhancedClient();
-                const processingResult = await enhancedClient.processMessage(prompt);
-                return processingResult.response;
-              } else {
-                // Fall back to basic client
-                const aiClient = getAIClient();
-                const result = await aiClient.complete(prompt);
-                return result.message?.content || 'No explanation received';
-              }
-            })();
-
-            // A08 Security: Race analysis against timeout
-            responseText = await Promise.race([analysisPromise, timeoutPromise]);
+            // Use basic AI client for explain to avoid enhanced client timeout issues
+            // The enhanced client's processMessage does complex intent analysis which can timeout
+            // Rely on the AI client's built-in timeout (default 120 seconds) which is configurable
+            const aiClient = getAIClient();
+            const result = await aiClient.complete(prompt);
+            responseText = result.message?.content || 'No explanation received';
           }
 
           spinner.succeed('Analysis complete');
@@ -685,19 +670,10 @@ function registerGenerateCommand(): void {
         spinner.start();
 
         try {
-          // Use basic AI client for code generation to avoid hanging
+          // Use basic AI client for code generation
+          // Rely on AI client's built-in timeout (default 120 seconds)
           const aiClient = getAIClient();
-
-          // Add timeout to prevent hanging
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Code generation timeout after 30 seconds')), 30000);
-          });
-
-          const result = await Promise.race([
-            aiClient.complete(fullPrompt),
-            timeoutPromise
-          ]) as any;
-
+          const result = await aiClient.complete(fullPrompt);
           const responseText = result.message?.content || 'No code generated';
 
           spinner.succeed('Code generated');

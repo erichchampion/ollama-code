@@ -31,8 +31,14 @@ export const DEFAULT_REPEAT_PENALTY = 1.1;
 // =============================================================================
 // TIMEOUT CONSTANTS
 // =============================================================================
-/** Default timeout for AI completion requests (2 minutes) */
-export const AI_COMPLETION_TIMEOUT = 120000;
+/**
+ * Timeout Constants
+ *
+ * Centralized timeout configuration following DRY principles.
+ * All timeout values are in milliseconds.
+ */
+/** Default timeout for AI completion requests (5 minutes) */
+export const AI_COMPLETION_TIMEOUT = 300000;
 /** Default timeout for API requests (1 minute) */
 export const API_REQUEST_TIMEOUT = 60000;
 /** Default timeout for code analysis operations (30 seconds) */
@@ -43,6 +49,16 @@ export const FILE_OPERATION_TIMEOUT = 10000;
 export const SERVER_HEALTH_TIMEOUT = 5000;
 /** Default server startup timeout (30 seconds) */
 export const SERVER_STARTUP_TIMEOUT = 30000;
+/**
+ * AI Operation Timeouts
+ * These are used for AI-powered analysis operations that may take longer
+ */
+/** Timeout for AI intent analysis and classification (30 seconds) */
+export const AI_INTENT_ANALYSIS_TIMEOUT = 30000;
+/** Timeout for AI entity extraction (30 seconds) */
+export const AI_ENTITY_EXTRACTION_TIMEOUT = 30000;
+/** Timeout for interactive mode request processing (uses AI_COMPLETION_TIMEOUT) */
+export const INTERACTIVE_REQUEST_TIMEOUT = AI_COMPLETION_TIMEOUT;
 /** Default health check interval (2 seconds) */
 export const HEALTH_CHECK_INTERVAL = 2000;
 // =============================================================================

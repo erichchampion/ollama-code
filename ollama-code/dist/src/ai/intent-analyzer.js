@@ -5,6 +5,7 @@
  * for autonomous task planning and execution.
  */
 import { logger } from '../utils/logger.js';
+import { AI_ENTITY_EXTRACTION_TIMEOUT, AI_INTENT_ANALYSIS_TIMEOUT } from '../constants.js';
 export class IntentAnalyzer {
     aiClient;
     entityPatterns = new Map();
@@ -167,9 +168,9 @@ Extract and return ONLY a JSON object with these fields:
 
 Be precise and only include entities that are clearly referenced.`;
         try {
-            // Add timeout to prevent hanging
+            // Add timeout to prevent hanging - uses centralized constant
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('AI entity extraction timeout')), 8000);
+                setTimeout(() => reject(new Error('AI entity extraction timeout')), AI_ENTITY_EXTRACTION_TIMEOUT);
             });
             const response = await Promise.race([
                 this.aiClient.complete(prompt, {
@@ -270,9 +271,9 @@ Context: ${context.conversationHistory.length > 0 ? `Previous: ${context.convers
 
 Return ONLY the category name.`;
         try {
-            // Add timeout to prevent hanging
+            // Add timeout to prevent hanging - uses centralized constant
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('AI classification timeout')), 10000);
+                setTimeout(() => reject(new Error('AI classification timeout')), AI_INTENT_ANALYSIS_TIMEOUT);
             });
             const response = await Promise.race([
                 this.aiClient.complete(prompt, {
