@@ -176,11 +176,12 @@ function registerAskCommand() {
                         }
                         // Get direct AI response with context
                         const aiClient = getAIClient();
-                        const responseText = await aiClient.complete(contextualQuestion, {
+                        const response = await aiClient.complete(contextualQuestion, {
                             temperature: 0.7,
                             model: args.model
                         });
                         spinner.succeed('Response ready');
+                        const responseText = response.message?.content || 'No response received';
                         console.log(responseText);
                         if (responseText) {
                             console.log('\n');
