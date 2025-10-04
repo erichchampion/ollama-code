@@ -77,9 +77,27 @@ export async function registerServices(): Promise<void> {
     const { createMCPClient } = await import('../mcp/client.js');
     const { loadConfig } = await import('../config/loader.js');
     const config = await loadConfig();
-    const client = createMCPClient(config.mcp.client);
+    // Provide default MCP client config if not present
+    const mcpClientConfig = config.mcp?.client || {
+      enabled: false,
+      connections: [],
+      globalTimeout: 60000,
+      maxConcurrentConnections: 3,
+      logging: { enabled: false, level: 'info', logFile: 'mcp-client.log' }
+    };
+    const client = createMCPClient(mcpClientConfig);
     await client.initialize();
     return client;
+  });
+
+  // Register IDE Integration Server
+  globalContainer.singleton('ideIntegrationServer', async () => {
+    const { IDEIntegrationServer } = await import('../ide/integration-server.js');
+    const { IDE_SERVER_DEFAULTS } = await import('../constants/websocket.js');
+    const { loadConfig } = await import('../config/loader.js');
+    const config = await loadConfig();
+    const port = config.ide?.port || IDE_SERVER_DEFAULTS.PORT;
+    return new IDEIntegrationServer(port);
   });
 
   // Register AI client
@@ -90,9 +108,9 @@ export async function registerServices(): Promise<void> {
 
   // Register enhanced AI client
   globalContainer.singleton('enhancedClient', async (container) => {
-    const { EnhancedAIClient } = await import('../ai/enhanced-client.js');
+    const { EnhancedClient } = await import('../ai/enhanced-client.js');
     const aiClient = await container.resolve('aiClient') as any;
-    return new EnhancedAIClient(aiClient);
+    return new EnhancedClient(aiClient);
   }, ['aiClient']);
 
   // Register project context
@@ -167,6 +185,10 @@ export async function getProjectContext() {
 
 export async function getTerminal() {
   return globalContainer.resolve('terminal');
+}
+
+export async function getIDEIntegrationServer() {
+  return globalContainer.resolve('ideIntegrationServer');
 }
 
 /**

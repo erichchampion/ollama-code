@@ -13,11 +13,17 @@ export * from './orchestrator.js';
 export * from './filesystem.js';
 export * from './search.js';
 export * from './execution.js';
+export * from './advanced-git-tool.js';
+export * from './advanced-code-analysis-tool.js';
+export * from './advanced-testing-tool.js';
 
 import { toolRegistry } from './registry.js';
 import { FileSystemTool } from './filesystem.js';
 import { SearchTool } from './search.js';
 import { ExecutionTool } from './execution.js';
+import { AdvancedGitTool } from './advanced-git-tool.js';
+import { AdvancedCodeAnalysisTool } from './advanced-code-analysis-tool.js';
+import { AdvancedTestingTool } from './advanced-testing-tool.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -29,6 +35,11 @@ export function initializeToolSystem(): void {
     toolRegistry.register(new FileSystemTool());
     toolRegistry.register(new SearchTool());
     toolRegistry.register(new ExecutionTool());
+
+    // Register advanced tools for Phase 7
+    toolRegistry.register(new AdvancedGitTool());
+    toolRegistry.register(new AdvancedCodeAnalysisTool());
+    toolRegistry.register(new AdvancedTestingTool());
 
     logger.info('Tool system initialized successfully');
     logger.debug(`Registered ${toolRegistry.list().length} tools`);

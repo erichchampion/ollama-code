@@ -20,10 +20,12 @@ export declare function getErrorRecoveryManager(): Promise<any>;
 export declare function getConfigValidator(): Promise<any>;
 export declare function getLazyLoader(): Promise<any>;
 export declare function getMCPServer(): Promise<any>;
+export declare function getMCPClient(): Promise<any>;
 export declare function getAIClient(): Promise<any>;
 export declare function getEnhancedClient(): Promise<any>;
 export declare function getProjectContext(): Promise<any>;
 export declare function getTerminal(): Promise<any>;
+export declare function getIDEIntegrationServer(): Promise<any>;
 /**
  * Initialize all services needed for a specific operation
  */

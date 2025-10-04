@@ -5,7 +5,6 @@
  * Respects user privacy and can be disabled.
  */
 import os from 'os';
-import { v4 as uuidv4 } from 'uuid';
 import { ErrorCategory } from '../errors/types.js';
 import { logger } from '../utils/logger.js';
 /**
@@ -89,7 +88,8 @@ class TelemetryManager {
      * Generate an anonymous client ID
      */
     generateClientId() {
-        return uuidv4();
+        const { generateTelemetryClientId } = require('../utils/id-generator.js');
+        return generateTelemetryClientId();
     }
     /**
      * Setup process exit handlers to ensure telemetry is sent

@@ -1,0 +1,62 @@
+name: Ollama Code Analysis
+'on':
+  push:
+    branches: &ref_0
+      - main
+      - develop
+  pull_request:
+    branches: *ref_0
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: yarn
+      - name: Install Dependencies
+        run: |-
+          echo "📦 Installing dependencies..."
+          yarn install --frozen-lockfile
+      - name: Build Project
+        run: |-
+          echo "🔨 Building project..."
+          yarn build
+      - name: Run Analysis
+        run: >-
+          echo "🔍 Running Ollama Code Analysis..."
+
+          node dist/src/ai/vcs/ci-pipeline-integrator.js --platform github
+          --repository-path . --enable-security true --enable-performance true
+          --enable-architecture true --enable-regression true
+          --min-quality-score 80 --max-critical-issues 0 --max-security-issues 5
+          --max-performance-issues 3 --min-test-coverage 80
+          --regression-threshold medium --report-format json --output-path
+          ./reports
+      - name: Validate Quality Gates
+        run: |-
+          if [ -f "reports/ollama-code-report.json" ]; then
+            QUALITY_GATES=$(jq -r '.qualityGatePassed' reports/ollama-code-report.json)
+            QUALITY_SCORE=$(jq -r '.overallScore' reports/ollama-code-report.json)
+            echo "Quality Score: ${QUALITY_SCORE}/100"
+            if [ "$QUALITY_GATES" = "true" ]; then
+              echo "✅ All quality gates passed"
+            else
+              echo "❌ Quality gates failed - review required"
+              exit 1
+            fi
+          else
+            echo "Analysis report not found"
+            exit 1
+          fi
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analysis-reports
+          path: reports/
+          retention-days: 30
+

@@ -5,7 +5,8 @@
  * dependencies, and metrics about a codebase.
  */
 import { analyzeCodebase, FileInfo, DependencyInfo, ProjectStructure, analyzeProjectDependencies, findFilesByContent } from './analyzer.js';
-export { analyzeCodebase, FileInfo, DependencyInfo, ProjectStructure, analyzeProjectDependencies, findFilesByContent };
+export { analyzeCodebase, analyzeProjectDependencies, findFilesByContent };
+export type { FileInfo, DependencyInfo, ProjectStructure };
 /**
  * Analyze a codebase and return a summary of its structure
  *

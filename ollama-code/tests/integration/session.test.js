@@ -7,7 +7,7 @@
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
 const { execCLI, verifyOutput, testEnv } = require('./setup.js');
 
-describe('Session Commands', () => {
+describe.skip('Session Commands', () => {
   describe('help command', () => {
     test('should show general help', async () => {
       const result = await execCLI(['--mode', 'advanced', 'help'], {

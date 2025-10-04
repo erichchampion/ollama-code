@@ -1,0 +1,200 @@
+/**
+ * Standardized Error Handling for Interactive Components
+ *
+ * Provides consistent error normalization, logging, and context management
+ * across all interactive mode components.
+ */
+import { logger } from '../utils/logger.js';
+/**
+ * Standard error types for interactive components
+ */
+export class ComponentError extends Error {
+    context;
+    originalError;
+    timestamp;
+    constructor(message, context, originalError) {
+        super(message);
+        this.name = 'ComponentError';
+        this.context = context;
+        this.timestamp = new Date();
+        if (originalError instanceof Error) {
+            this.originalError = originalError;
+            this.stack = originalError.stack;
+        }
+        else if (originalError) {
+            this.originalError = new Error(String(originalError));
+        }
+    }
+    /**
+     * Get a formatted error message with context
+     */
+    getFormattedMessage() {
+        const contextStr = `[${this.context.component}:${this.context.operation}]`;
+        return `${contextStr} ${this.message}`;
+    }
+    /**
+     * Get diagnostic information
+     */
+    getDiagnostics() {
+        let diagnostics = `Component Error Diagnostics:
+  Component: ${this.context.component}
+  Operation: ${this.context.operation}
+  Message: ${this.message}
+  Timestamp: ${this.timestamp.toISOString()}`;
+        if (this.context.metadata) {
+            diagnostics += `\n  Metadata: ${JSON.stringify(this.context.metadata, null, 2)}`;
+        }
+        if (this.originalError) {
+            diagnostics += `\n  Original Error: ${this.originalError.message}`;
+            if (this.originalError.stack) {
+                diagnostics += `\n  Stack: ${this.originalError.stack}`;
+            }
+        }
+        return diagnostics;
+    }
+}
+/**
+ * Normalize any error to a proper Error instance
+ */
+export function normalizeError(error) {
+    if (error instanceof Error) {
+        return error;
+    }
+    if (typeof error === 'string') {
+        return new Error(error);
+    }
+    if (error && typeof error === 'object') {
+        const errorObj = error;
+        if (errorObj.message) {
+            return new Error(errorObj.message);
+        }
+    }
+    return new Error(String(error));
+}
+/**
+ * Extract error message safely
+ */
+export function getErrorMessage(error) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    if (typeof error === 'string') {
+        return error;
+    }
+    if (error && typeof error === 'object') {
+        const errorObj = error;
+        if (errorObj.message) {
+            return String(errorObj.message);
+        }
+    }
+    return String(error);
+}
+/**
+ * Enhanced error handler for interactive components
+ */
+export class InteractiveErrorHandler {
+    /**
+     * Handle error with standardized logging and context
+     */
+    static handleError(error, context, options = {}) {
+        const { logLevel = 'error', includeStack = false, rethrow = true } = options;
+        const normalizedError = normalizeError(error);
+        const componentError = new ComponentError(normalizedError.message, context, error);
+        // Log with appropriate level
+        const logMessage = componentError.getFormattedMessage();
+        switch (logLevel) {
+            case 'error':
+                logger.error(logMessage, includeStack ? { stack: normalizedError.stack } : undefined);
+                break;
+            case 'warn':
+                logger.warn(logMessage);
+                break;
+            case 'debug':
+                logger.debug(logMessage);
+                break;
+        }
+        // Log diagnostics at debug level
+        logger.debug(componentError.getDiagnostics());
+        if (rethrow) {
+            throw componentError;
+        }
+        return componentError;
+    }
+    /**
+     * Wrap an async operation with standardized error handling
+     */
+    static async wrapOperation(operation, context, options = {}) {
+        const { logLevel = 'error', fallback, retries = 0, retryDelay = 1000 } = options;
+        let lastError;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                return await operation();
+            }
+            catch (error) {
+                lastError = error;
+                if (attempt < retries) {
+                    logger.debug(`Operation ${context.operation} failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${retryDelay}ms`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    continue;
+                }
+                // Final attempt failed
+                if (fallback) {
+                    logger.warn(`Operation ${context.operation} failed, using fallback`);
+                    try {
+                        return await fallback();
+                    }
+                    catch (fallbackError) {
+                        // Log both original and fallback errors
+                        this.handleError(error, context, { logLevel, rethrow: false });
+                        this.handleError(fallbackError, { ...context, operation: `${context.operation}:fallback` }, { logLevel, rethrow: false });
+                        throw normalizeError(fallbackError);
+                    }
+                }
+                // No fallback, handle and rethrow
+                this.handleError(error, context, { logLevel, rethrow: true });
+            }
+        }
+        // This should never be reached due to the throw above, but TypeScript needs it
+        throw normalizeError(lastError);
+    }
+    /**
+     * Create a timeout error with context
+     */
+    static createTimeoutError(operation, timeoutMs, context) {
+        return new ComponentError(`Operation timed out after ${timeoutMs}ms`, { ...context, operation: `${operation}:timeout` }, new Error(`Timeout after ${timeoutMs}ms`));
+    }
+    /**
+     * Create a dependency error with context
+     */
+    static createDependencyError(dependency, context) {
+        return new ComponentError(`Required dependency '${dependency}' is not available`, { ...context, operation: 'dependency-check' }, new Error(`Missing dependency: ${dependency}`));
+    }
+    /**
+     * Create a validation error with context
+     */
+    static createValidationError(field, value, context) {
+        return new ComponentError(`Validation failed for field '${field}': ${String(value)}`, { ...context, operation: 'validation' }, new Error(`Invalid ${field}: ${String(value)}`));
+    }
+}
+/**
+ * Convenience function for handling errors in interactive components
+ */
+export function handleComponentError(error, component, operation, metadata) {
+    InteractiveErrorHandler.handleError(error, { component, operation, metadata });
+    // This should never be reached due to rethrow, but TypeScript needs it
+    throw normalizeError(error);
+}
+/**
+ * Convenience function for wrapping operations
+ */
+export function wrapComponentOperation(operation, component, operationName, options) {
+    return InteractiveErrorHandler.wrapOperation(operation, {
+        component,
+        operation: operationName,
+        metadata: options?.metadata
+    }, {
+        fallback: options?.fallback,
+        retries: options?.retries
+    });
+}
+//# sourceMappingURL=error-handler.js.map

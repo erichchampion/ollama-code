@@ -273,7 +273,7 @@ Provide specific, actionable suggestions.`;
             const response = await aiClient.complete(prompt, {
                 temperature: 0.4
             });
-            const suggestions = response.content.split('\n').filter(line => line.trim().length > 0);
+            const suggestions = response.content.split('\n').filter((line) => line.trim().length > 0);
             spinner.succeed('Test analysis complete');
             return suggestions;
         }

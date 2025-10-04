@@ -19,7 +19,10 @@ export declare class MemoryManager {
     private maxCacheSize;
     private maxMemoryUsage;
     private gcInterval;
-    constructor();
+    private lastWarningTime;
+    private warningCooldown;
+    private monitoringEnabled;
+    constructor(enableMonitoring?: boolean);
     /**
      * Store data in memory-optimized cache
      */
@@ -50,11 +53,17 @@ export declare class MemoryManager {
     configure(options: {
         maxCacheSize?: number;
         maxMemoryUsage?: number;
+        warningCooldown?: number;
+        enableMonitoring?: boolean;
     }): void;
     /**
      * Start memory monitoring
      */
     private startMemoryMonitoring;
+    /**
+     * Handle memory pressure with debounced warnings
+     */
+    private handleMemoryPressure;
     /**
      * Stop memory monitoring
      */

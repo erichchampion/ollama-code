@@ -38,7 +38,7 @@ const mockOllamaServer = {
  */
 async function execCLI(args = [], options = {}) {
   const {
-    timeout = 10000,
+    timeout = 10000, // Increased back to 10000 for stability
     input = null,
     env = {},
     expectError = false
@@ -51,6 +51,9 @@ async function execCLI(args = [], options = {}) {
         NODE_ENV: 'test',
         OLLAMA_API_URL: 'http://localhost:11434',
         OLLAMA_TELEMETRY: '0', // Disable telemetry in tests
+        OLLAMA_TEST_MODE: 'true', // Enable test mode
+        OLLAMA_OFFLINE_MODE: 'true', // Disable external connections
+        OLLAMA_TEST_PORT: String(3000 + Math.floor(Math.random() * 1000)), // Random port
         ...env
       },
       stdio: ['pipe', 'pipe', 'pipe']
@@ -173,7 +176,13 @@ const testEnv = {
   OLLAMA_TELEMETRY: '0',
   NODE_ENV: 'test',
   CI: 'true',
-  OLLAMA_SKIP_ENHANCED_INIT: 'true'
+  OLLAMA_SKIP_ENHANCED_INIT: 'true',
+  OLLAMA_DISABLE_PROJECT_CONTEXT: 'true', // Disable project context for faster tests
+  OLLAMA_DISABLE_PERFORMANCE_MONITORING: 'true', // Disable performance monitoring
+  OLLAMA_TEST_ISOLATION: 'true', // Enable test isolation mode
+  OLLAMA_OFFLINE_MODE: 'true', // Force offline mode
+  OLLAMA_DISABLE_AI: 'true', // Disable AI features for error tests
+  OLLAMA_FAST_EXIT: 'true' // Enable fast exit for error conditions
 };
 
 // Export all functions and constants

@@ -580,3 +580,8 @@ ollama-code pull-model phi4:latest
 
 - Powered by [Ollama](https://ollama.ai) for local AI inference
 - Inspired by the need for privacy-focused, local AI coding assistants
+- Proudly ANTIFA!
+
+## Warranty
+
+There is no warranty, either expressed or implied. Be careful and use version control. Don't be stupid. 

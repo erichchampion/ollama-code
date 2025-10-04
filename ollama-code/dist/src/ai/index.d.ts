@@ -5,7 +5,7 @@
  * This module handles initialization, configuration, and access to AI services.
  */
 import { OllamaClient } from './ollama-client.js';
-import { EnhancedAIClient } from './enhanced-client.js';
+import { EnhancedClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
 import { TaskPlanner } from './task-planner.js';
 /**
@@ -13,7 +13,7 @@ import { TaskPlanner } from './task-planner.js';
  */
 export declare function initAI(config?: any): Promise<{
     ollamaClient: OllamaClient;
-    enhancedClient: EnhancedAIClient;
+    enhancedClient: EnhancedClient;
     projectContext: ProjectContext;
     taskPlanner: TaskPlanner;
 }>;
@@ -24,7 +24,7 @@ export declare function getAIClient(): OllamaClient;
 /**
  * Get the enhanced AI client instance
  */
-export declare function getEnhancedClient(): EnhancedAIClient;
+export declare function getEnhancedClient(): EnhancedClient;
 /**
  * Get the project context instance
  */
@@ -48,8 +48,7 @@ export declare function cleanupAI(): void;
 export * from './ollama-client.js';
 export * from './prompts.js';
 export { ProjectContext } from './context.js';
-export { EnhancedAIClient } from './enhanced-client.js';
+export { EnhancedClient } from './enhanced-client.js';
 export { TaskPlanner } from './task-planner.js';
 export type { FileInfo, ProjectDependencies, ConversationTurn, ContextWindow, PromptContext, AIResponse, QualityMetrics, Task, TaskDependency, ExecutionPlan, PlanningContext } from './context.js';
-export type { ToolUsePlan, ResponseValidation } from './enhanced-client.js';
 export type { TaskType, TaskPriority, TaskStatus, PlanningResult } from './task-planner.js';

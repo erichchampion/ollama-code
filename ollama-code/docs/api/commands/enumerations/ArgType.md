@@ -1,0 +1,43 @@
+[**Ollama Code API Documentation v0.1.0**](../../README.md)
+
+***
+
+[Ollama Code API Documentation](../../modules.md) / [commands](../README.md) / ArgType
+
+# Enumeration: ArgType
+
+Defined in: [commands/types.ts:4](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L4)
+
+Command argument types
+
+## Enumeration Members
+
+### STRING
+
+> **STRING**: `"string"`
+
+Defined in: [commands/types.ts:5](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L5)
+
+***
+
+### NUMBER
+
+> **NUMBER**: `"number"`
+
+Defined in: [commands/types.ts:6](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L6)
+
+***
+
+### BOOLEAN
+
+> **BOOLEAN**: `"boolean"`
+
+Defined in: [commands/types.ts:7](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L7)
+
+***
+
+### ARRAY
+
+> **ARRAY**: `"array"`
+
+Defined in: [commands/types.ts:8](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L8)

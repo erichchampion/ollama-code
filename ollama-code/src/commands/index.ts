@@ -11,71 +11,11 @@ import { logger } from '../utils/logger.js';
 import { isNonEmptyString } from '../utils/validation.js';
 import { parseCommandInput } from '../utils/command-parser.js';
 import { registerCommands } from './register.js';
+import { ArgType, CommandArgDef } from './types.js';
 
-/**
- * Command argument types
- */
-export enum ArgType {
-  STRING = 'string',
-  NUMBER = 'number',
-  BOOLEAN = 'boolean',
-  ARRAY = 'array'
-}
-
-/**
- * Command argument definition
- */
-export interface CommandArgDef {
-  /**
-   * Argument name
-   */
-  name: string;
-  
-  /**
-   * Argument description
-   */
-  description: string;
-  
-  /**
-   * Argument type
-   */
-  type: ArgType;
-  
-  /**
-   * Whether the argument is required
-   */
-  required?: boolean;
-  
-  /**
-   * Default value if not provided
-   */
-  default?: any;
-  
-  /**
-   * Valid values (for enum-like arguments)
-   */
-  choices?: string[];
-  
-  /**
-   * For positional args, the position (0-based)
-   */
-  position?: number;
-  
-  /**
-   * Short flag (e.g., -v for --verbose)
-   */
-  shortFlag?: string;
-
-  /**
-   * Long flag (e.g., --verbose)
-   */
-  flag?: string;
-
-  /**
-   * Whether to hide from help
-   */
-  hidden?: boolean;
-}
+// Re-export types from types.ts to maintain compatibility
+export { ArgType } from './types.js';
+export type { CommandArgDef } from './types.js';
 
 /**
  * Command definition

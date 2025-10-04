@@ -19,6 +19,10 @@ export function registerAnalyticsCommands() {
     registerAnalyticsClearCommand();
     registerAnalyticsWorkflowCommand();
     registerAnalyticsProgressCommand();
+    // Phase 6: Performance Dashboard commands
+    registerPerformanceDashboardCommand();
+    registerPerformanceAlertsCommand();
+    registerPerformanceReportCommand();
 }
 /**
  * Show analytics and usage statistics
@@ -91,6 +95,13 @@ function registerAnalyticsShowCommand() {
                 description: 'Show detailed breakdown including daily usage',
                 type: ArgType.BOOLEAN,
                 flag: '--detailed',
+                required: false
+            },
+            {
+                name: 'metric',
+                description: 'Specific metric to show (usage, performance, errors)',
+                type: ArgType.STRING,
+                flag: '--metric',
                 required: false
             }
         ],
@@ -342,6 +353,348 @@ function registerAnalyticsClearCommand() {
         ]
     };
     commandRegistry.register(command);
+}
+/**
+ * Phase 6: Performance Dashboard - Show real-time performance metrics
+ */
+function registerPerformanceDashboardCommand() {
+    const command = {
+        name: 'performance-dashboard',
+        description: 'Display real-time performance dashboard with system metrics',
+        category: 'Analytics',
+        async handler(args) {
+            try {
+                const { format = 'summary', watch = false, interval = 5000 } = args;
+                const { globalPerformanceDashboard } = await import('../ai/performance-dashboard.js');
+                if (watch) {
+                    console.log('🎯 Performance Dashboard (Live Mode) - Press Ctrl+C to exit\n');
+                    const displayDashboard = () => {
+                        const summary = globalPerformanceDashboard.getDashboardSummary();
+                        console.clear();
+                        console.log('🎯 Performance Dashboard (Live Mode) - Press Ctrl+C to exit\n');
+                        displayDashboardSummary(summary, format);
+                    };
+                    // Initial display
+                    displayDashboard();
+                    // Set up interval
+                    const intervalId = setInterval(displayDashboard, interval);
+                    // Handle Ctrl+C
+                    process.on('SIGINT', () => {
+                        clearInterval(intervalId);
+                        console.log('\n\nDashboard monitoring stopped.');
+                        process.exit(0);
+                    });
+                }
+                else {
+                    console.log('🎯 Performance Dashboard\n');
+                    const summary = globalPerformanceDashboard.getDashboardSummary();
+                    displayDashboardSummary(summary, format);
+                }
+            }
+            catch (error) {
+                logger.error('Failed to display performance dashboard:', error);
+                throw createUserError('Performance dashboard failed', {
+                    category: ErrorCategory.APPLICATION,
+                    resolution: 'Check if performance monitoring is enabled'
+                });
+            }
+        },
+        args: [
+            {
+                name: 'format',
+                description: 'Output format (summary, detailed, json)',
+                type: ArgType.STRING,
+                flag: '--format',
+                required: false
+            },
+            {
+                name: 'watch',
+                description: 'Enable live monitoring mode',
+                type: ArgType.BOOLEAN,
+                flag: '--watch',
+                required: false
+            },
+            {
+                name: 'interval',
+                description: 'Refresh interval in milliseconds (watch mode)',
+                type: ArgType.NUMBER,
+                flag: '--interval',
+                required: false
+            }
+        ],
+        examples: [
+            'performance-dashboard',
+            'performance-dashboard --format detailed',
+            'performance-dashboard --watch',
+            'performance-dashboard --watch --interval 3000'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Phase 6: Performance Alerts - Show active performance alerts
+ */
+function registerPerformanceAlertsCommand() {
+    const command = {
+        name: 'performance-alerts',
+        description: 'Display active performance alerts and recommendations',
+        category: 'Analytics',
+        async handler(args) {
+            try {
+                const { severity = 'all', acknowledge = false } = args;
+                const { globalPerformanceDashboard } = await import('../ai/performance-dashboard.js');
+                if (acknowledge && args.alertId) {
+                    // Acknowledge specific alert
+                    console.log(`⚠️  Acknowledging alert: ${args.alertId}`);
+                    // globalPerformanceDashboard.acknowledgeAlert(args.alertId);
+                    console.log('✅ Alert acknowledged successfully');
+                    return;
+                }
+                const alerts = globalPerformanceDashboard.getActiveAlerts();
+                const filteredAlerts = severity !== 'all'
+                    ? alerts.filter(alert => alert.type === severity)
+                    : alerts;
+                console.log('⚠️  Performance Alerts\n');
+                if (filteredAlerts.length === 0) {
+                    console.log('✅ No active performance alerts');
+                    return;
+                }
+                filteredAlerts.forEach((alert) => {
+                    const icon = alert.type === 'critical' ? '🔴' : '🟡';
+                    const time = alert.timestamp.toLocaleTimeString();
+                    console.log(`${icon} [${alert.type.toUpperCase()}] ${alert.category.toUpperCase()}`);
+                    console.log(`   ${alert.message}`);
+                    console.log(`   Value: ${alert.value} | Threshold: ${alert.threshold}`);
+                    console.log(`   Time: ${time}`);
+                    console.log('');
+                });
+                // Show recommendations
+                const recommendations = globalPerformanceDashboard.getRecommendations('high');
+                if (recommendations.length > 0) {
+                    console.log('💡 High Priority Recommendations:\n');
+                    recommendations.slice(0, 3).forEach(rec => {
+                        console.log(`• ${rec.title}`);
+                        console.log(`  ${rec.description}`);
+                        console.log(`  Impact: ${rec.impact}`);
+                        console.log('');
+                    });
+                }
+            }
+            catch (error) {
+                logger.error('Failed to display performance alerts:', error);
+                throw createUserError('Performance alerts failed', {
+                    category: ErrorCategory.APPLICATION,
+                    resolution: 'Check if performance monitoring is enabled'
+                });
+            }
+        },
+        args: [
+            {
+                name: 'severity',
+                description: 'Filter by severity (all, warning, critical)',
+                type: ArgType.STRING,
+                flag: '--severity',
+                required: false
+            },
+            {
+                name: 'acknowledge',
+                description: 'Acknowledge an alert by ID',
+                type: ArgType.BOOLEAN,
+                flag: '--acknowledge',
+                required: false
+            },
+            {
+                name: 'alertId',
+                description: 'Alert ID to acknowledge',
+                type: ArgType.STRING,
+                flag: '--alert-id',
+                required: false
+            },
+            {
+                name: 'configure',
+                description: 'Configure alert thresholds',
+                type: ArgType.BOOLEAN,
+                flag: '--configure',
+                required: false
+            },
+            {
+                name: 'threshold',
+                description: 'Alert threshold (e.g., cpu:80, memory:85)',
+                type: ArgType.STRING,
+                flag: '--threshold',
+                required: false
+            },
+            {
+                name: 'list',
+                description: 'List all active alerts',
+                type: ArgType.BOOLEAN,
+                flag: '--list',
+                required: false
+            },
+            {
+                name: 'format',
+                description: 'Output format (summary, detailed, json)',
+                type: ArgType.STRING,
+                flag: '--format',
+                required: false
+            }
+        ],
+        examples: [
+            'performance-alerts',
+            'performance-alerts --severity critical',
+            'performance-alerts --acknowledge --alert-id cpu_cpu_usage'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Phase 6: Performance Report - Generate comprehensive performance report
+ */
+function registerPerformanceReportCommand() {
+    const command = {
+        name: 'performance-report',
+        description: 'Generate comprehensive performance optimization report',
+        category: 'Analytics',
+        async handler(args) {
+            try {
+                const { export: exportFile = false, format = 'text' } = args;
+                const { globalPerformanceDashboard } = await import('../ai/performance-dashboard.js');
+                console.log('📊 Generating Performance Optimization Report...\n');
+                const report = await globalPerformanceDashboard.generateOptimizationReport();
+                if (format === 'json') {
+                    if (exportFile) {
+                        const fs = await import('fs/promises');
+                        const filename = `performance-report-${Date.now()}.json`;
+                        await fs.writeFile(filename, JSON.stringify(report, null, 2));
+                        console.log(`📁 Report exported to: ${filename}`);
+                    }
+                    else {
+                        console.log(JSON.stringify(report, null, 2));
+                    }
+                    return;
+                }
+                // Text format
+                console.log('📈 Performance Optimization Report\n');
+                console.log('='.repeat(50));
+                console.log(report.summary);
+                console.log('='.repeat(50));
+                if (report.recommendations.length > 0) {
+                    console.log('\n💡 Optimization Recommendations:\n');
+                    report.recommendations.forEach((rec, index) => {
+                        const priority = rec.priority === 'critical' ? '🔴' : rec.priority === 'high' ? '🟠' : '🟡';
+                        console.log(`${index + 1}. ${priority} ${rec.title} (${rec.priority.toUpperCase()})`);
+                        console.log(`   ${rec.description}`);
+                        console.log(`   Impact: ${rec.impact}`);
+                        console.log(`   Implementation: ${rec.implementation}`);
+                        console.log(`   Estimated Improvement: ${rec.estimatedImprovement}%`);
+                        console.log(`   Confidence: ${rec.confidence}%`);
+                        console.log('');
+                    });
+                }
+                if (report.trends.length > 0) {
+                    console.log('📊 Performance Trends:\n');
+                    report.trends.forEach(trend => {
+                        const arrow = trend.direction === 'improving' ? '📈' : trend.direction === 'degrading' ? '📉' : '➡️';
+                        console.log(`${arrow} ${trend.metric} (${trend.timeRange}): ${trend.direction} (${trend.changePercent.toFixed(1)}%)`);
+                    });
+                    console.log('');
+                }
+                if (exportFile && format === 'text') {
+                    const fs = await import('fs/promises');
+                    const filename = `performance-report-${Date.now()}.txt`;
+                    const reportText = `Performance Optimization Report\n\n${report.summary}\n\nRecommendations:\n${report.recommendations.map(r => `- ${r.title}: ${r.description}`).join('\n')}`;
+                    await fs.writeFile(filename, reportText);
+                    console.log(`📁 Report exported to: ${filename}`);
+                }
+            }
+            catch (error) {
+                logger.error('Failed to generate performance report:', error);
+                throw createUserError('Performance report generation failed', {
+                    category: ErrorCategory.APPLICATION,
+                    resolution: 'Check if performance monitoring is enabled'
+                });
+            }
+        },
+        args: [
+            {
+                name: 'period',
+                description: 'Time period for report (1h, 24h, 7d, 30d)',
+                type: ArgType.STRING,
+                flag: '--period',
+                required: false
+            },
+            {
+                name: 'export',
+                description: 'Export report to file',
+                type: ArgType.BOOLEAN,
+                flag: '--export',
+                required: false
+            },
+            {
+                name: 'format',
+                description: 'Output format (text, json, csv, html)',
+                type: ArgType.STRING,
+                flag: '--format',
+                required: false
+            }
+        ],
+        examples: [
+            'performance-report',
+            'performance-report --export',
+            'performance-report --format json',
+            'performance-report --export --format json'
+        ]
+    };
+    commandRegistry.register(command);
+}
+/**
+ * Helper function to display dashboard summary
+ */
+function displayDashboardSummary(summary, format) {
+    if (format === 'json') {
+        console.log(JSON.stringify(summary, null, 2));
+        return;
+    }
+    const { metrics, health, alerts, recommendations } = summary;
+    // Health overview
+    const healthIcon = health.overall === 'good' ? '🟢' : health.overall === 'warning' ? '🟡' : '🔴';
+    console.log(`${healthIcon} Overall Health: ${health.overall.toUpperCase()}\n`);
+    // Current metrics
+    console.log('📊 Current Metrics:');
+    console.log(`   CPU Usage: ${metrics.cpu.usage.toFixed(1)}%`);
+    console.log(`   Memory: ${metrics.memory.heapUsed}MB / ${metrics.memory.heapTotal}MB`);
+    console.log(`   Cache Hit Rate: ${metrics.cache.hitRate.toFixed(1)}%`);
+    console.log(`   Startup Time: ${metrics.startup.lastStartupTime}ms`);
+    console.log(`   Active Streams: ${metrics.streaming.activeStreams}`);
+    console.log('');
+    // Active alerts
+    if (alerts.length > 0) {
+        console.log(`⚠️  Active Alerts (${alerts.length}):`);
+        alerts.slice(0, 3).forEach((alert) => {
+            const icon = alert.type === 'critical' ? '🔴' : '🟡';
+            console.log(`   ${icon} ${alert.message}`);
+        });
+        if (alerts.length > 3) {
+            console.log(`   ... and ${alerts.length - 3} more`);
+        }
+        console.log('');
+    }
+    // Top recommendations
+    if (recommendations.length > 0) {
+        console.log('💡 Top Recommendations:');
+        recommendations.slice(0, 2).forEach((rec) => {
+            console.log(`   • ${rec.title}`);
+            console.log(`     ${rec.description.substring(0, 80)}...`);
+        });
+        console.log('');
+    }
+    if (format === 'detailed') {
+        console.log('📈 Component Health Scores:');
+        Object.entries(health.scores).forEach(([component, score]) => {
+            const scoreIcon = score > 80 ? '🟢' : score > 60 ? '🟡' : '🔴';
+            console.log(`   ${scoreIcon} ${component}: ${score.toFixed(0)}/100`);
+        });
+    }
 }
 /**
  * Helper methods (these would be attached to the command object in practice)

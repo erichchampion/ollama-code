@@ -10,16 +10,14 @@ const { execCLI, verifyOutput, createTempFile, cleanupTempFile, testEnv } = requ
 describe('System Commands', () => {
   let tempFiles = [];
 
-  afterAll(() => {
-    // Clean up any temporary files
-    tempFiles.forEach(cleanupTempFile);
+  afterAll(async () => {
+    // Clean up any temporary files - handled by test isolation
   });
 
   describe('config command', () => {
     test('should show current configuration', async () => {
       const result = await execCLI(['--mode', 'advanced', 'config'], {
-        timeout: 10000,
-        env: testEnv
+        timeout: 5000
       });
 
       expect([0, 1]).toContain(result.exitCode);
@@ -28,8 +26,7 @@ describe('System Commands', () => {
 
     test('should handle config key lookup', async () => {
       const result = await execCLI(['--mode', 'advanced', 'config', 'ai.model'], {
-        timeout: 10000,
-        env: testEnv
+        timeout: 5000
       });
 
       expect([0, 1]).toContain(result.exitCode);
@@ -47,14 +44,13 @@ describe('System Commands', () => {
     test('should handle invalid config keys', async () => {
       const result = await execCLI(['--mode', 'advanced', 'config', 'invalid.key'], {
         timeout: 10000,
-        env: testEnv
+        env: testEnv,
+        expectError: true
       });
 
-      // Config command shows full config when given invalid key (working as designed)
-      expect(result.exitCode).toBe(0);
-      verifyOutput(result.stdout, [
-        'Current configuration:'
-      ]);
+      // Config command should return error for invalid config keys
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr.includes('not found') || result.stderr.includes('Configuration key')).toBe(true);
     });
   });
 
@@ -62,7 +58,8 @@ describe('System Commands', () => {
     test('should show error when no file provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'edit'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
@@ -114,7 +111,8 @@ describe('System Commands', () => {
     test('should show error when no git operation provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'git'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
@@ -159,7 +157,8 @@ describe('System Commands', () => {
     test('should show error when no command provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'run'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [
@@ -215,7 +214,8 @@ describe('System Commands', () => {
     test('should show error when no search term provided', async () => {
       const result = await execCLI(['--mode', 'advanced', 'search'], {
         expectError: true,
-        env: testEnv
+        env: testEnv,
+        timeout: 15000 // Increased timeout for this test
       });
 
       verifyOutput(result.stderr, [

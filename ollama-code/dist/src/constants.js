@@ -31,14 +31,36 @@ export const DEFAULT_REPEAT_PENALTY = 1.1;
 // =============================================================================
 // TIMEOUT CONSTANTS
 // =============================================================================
-/** Default timeout for AI completion requests (2 minutes) */
-export const AI_COMPLETION_TIMEOUT = 120000;
+/**
+ * Timeout Constants
+ *
+ * Centralized timeout configuration following DRY principles.
+ * All timeout values are in milliseconds.
+ */
+/** Default timeout for AI completion requests (5 minutes) */
+export const AI_COMPLETION_TIMEOUT = 300000;
 /** Default timeout for API requests (1 minute) */
 export const API_REQUEST_TIMEOUT = 60000;
 /** Default timeout for code analysis operations (30 seconds) */
 export const CODE_ANALYSIS_TIMEOUT = 30000;
 /** Default timeout for file operations (10 seconds) */
 export const FILE_OPERATION_TIMEOUT = 10000;
+/** Default timeout for server health checks (5 seconds) */
+export const SERVER_HEALTH_TIMEOUT = 5000;
+/** Default server startup timeout (30 seconds) */
+export const SERVER_STARTUP_TIMEOUT = 30000;
+/**
+ * AI Operation Timeouts
+ * These are used for AI-powered analysis operations that may take longer
+ */
+/** Timeout for AI intent analysis and classification (30 seconds) */
+export const AI_INTENT_ANALYSIS_TIMEOUT = 30000;
+/** Timeout for AI entity extraction (30 seconds) */
+export const AI_ENTITY_EXTRACTION_TIMEOUT = 30000;
+/** Timeout for interactive mode request processing (uses AI_COMPLETION_TIMEOUT) */
+export const INTERACTIVE_REQUEST_TIMEOUT = AI_COMPLETION_TIMEOUT;
+/** Default health check interval (2 seconds) */
+export const HEALTH_CHECK_INTERVAL = 2000;
 // =============================================================================
 // RETRY CONFIGURATION
 // =============================================================================
@@ -159,4 +181,20 @@ export const APP_NAME = 'ollama-code';
 export const CLI_COMMAND = 'ollama-code';
 /** Default shell for command execution */
 export const DEFAULT_SHELL = process.env.SHELL || 'bash';
+// =============================================================================
+// SAFETY & SECURITY CONSTANTS
+// =============================================================================
+/**
+ * Environment variable to control safety mode in interactive sessions
+ * Set to 'false' to disable safety features
+ * @default true (safety enabled)
+ */
+export const SAFETY_MODE_ENV_VAR = 'OLLAMA_SAFETY_MODE';
+/** Default safety mode settings for interactive mode */
+export const SAFETY_MODE_DEFAULTS = {
+    /** Always confirm high-risk operations in safety mode */
+    confirmHighRisk: true,
+    /** Never auto-approve operations in safety mode */
+    autoApprove: false
+};
 //# sourceMappingURL=constants.js.map

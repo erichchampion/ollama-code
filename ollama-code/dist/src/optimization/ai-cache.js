@@ -188,7 +188,14 @@ export class AICacheManager {
     async persistCache() {
         try {
             const entries = Array.from(this.cache.values());
-            await fs.writeFile(this.cacheFile, JSON.stringify(entries, null, 2));
+            // Add timeout to prevent hanging on file operations
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Cache persist timeout')), 5000);
+            });
+            await Promise.race([
+                fs.writeFile(this.cacheFile, JSON.stringify(entries, null, 2)),
+                timeoutPromise
+            ]);
             logger.debug(`Persisted ${entries.length} cache entries to disk`);
         }
         catch (error) {

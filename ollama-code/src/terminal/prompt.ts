@@ -24,10 +24,25 @@ export async function createPrompt<T>(options: PromptOptions, config: TerminalCo
     };
   }
   
-  // Handle non-interactive terminals
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    logger.warn('Terminal is not interactive, cannot prompt for input');
-    throw new Error('Cannot prompt for input in non-interactive terminal');
+  // Handle non-interactive terminals with more robust checking
+  const isInteractive = process.stdin.isTTY && process.stdout.isTTY;
+  if (!isInteractive) {
+    // Additional check: sometimes TTY state can be temporarily affected
+    // Try a small delay and check again
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const isInteractiveRetry = process.stdin.isTTY && process.stdout.isTTY;
+
+    if (!isInteractiveRetry) {
+      logger.warn('Terminal is not interactive, cannot prompt for input');
+      logger.debug('TTY state:', {
+        stdin: process.stdin.isTTY,
+        stdout: process.stdout.isTTY,
+        stderr: process.stderr.isTTY
+      });
+      throw new Error('Cannot prompt for input in non-interactive terminal');
+    } else {
+      logger.debug('TTY state recovered after retry');
+    }
   }
   
   try {

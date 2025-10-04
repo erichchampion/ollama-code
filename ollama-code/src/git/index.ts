@@ -119,7 +119,7 @@ export class GitManager {
 
       // Get file status
       const { stdout: statusOut } = await execAsync('git status --porcelain', { cwd: this.workingDir });
-      const lines = statusOut.trim().split('\n').filter(line => line.length > 0);
+      const lines = statusOut.split('\n').filter(line => line.trim().length > 0);
 
       const staged: string[] = [];
       const unstaged: string[] = [];
@@ -127,16 +127,51 @@ export class GitManager {
       const conflicted: string[] = [];
 
       for (const line of lines) {
-        const statusCode = line.substring(0, 2);
-        const filePath = line.substring(3);
+        // Git porcelain format: XY filename, where X and Y are status codes
+        // But sometimes it's just X filename (single char status)
+        // We need to find where the filename starts by looking for the space after status codes
 
-        if (statusCode.includes('U') || statusCode.includes('A') && statusCode.includes('A')) {
+        let statusCode: string;
+        let filePath: string;
+
+        // Git porcelain format is always: XY filename
+        // where X is staged status, Y is working tree status
+        // We need to handle this properly
+        if (line.length < 3) {
+          console.error(`Invalid git status line format: "${line}"`);
+          continue;
+        }
+
+        statusCode = line.substring(0, 2);
+        filePath = line.substring(3);
+
+        // Handle quoted filenames (git quotes filenames with special characters)
+        if (filePath.startsWith('"') && filePath.endsWith('"')) {
+          // Remove quotes and unescape
+          filePath = filePath.slice(1, -1);
+          // Unescape common escape sequences
+          filePath = filePath.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        }
+
+        // Ensure we don't have any accidental path truncation
+        if (filePath.length === 0) {
+          logger.warn(`Empty file path detected from line: "${line}"`);
+          continue;
+        }
+
+        // Git status codes: XY where X=index, Y=worktree
+        // U = unmerged (conflict), A = added, M = modified, D = deleted, R = renamed, C = copied
+        if (statusCode.includes('U') || (statusCode[0] === 'A' && statusCode[1] === 'A')) {
+          // Conflicts: UU, AA, etc.
           conflicted.push(filePath);
         } else if (statusCode[0] !== ' ' && statusCode[0] !== '?') {
+          // Staged changes: A, M, D, R, C in first position
           staged.push(filePath);
         } else if (statusCode[1] !== ' ' && statusCode[1] !== '?') {
+          // Working tree changes: M, D in second position
           unstaged.push(filePath);
         } else if (statusCode === '??') {
+          // Untracked files
           untracked.push(filePath);
         }
       }

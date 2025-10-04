@@ -22,14 +22,36 @@ export declare const DEFAULT_TOP_P = 0.9;
 export declare const DEFAULT_TOP_K = 40;
 /** Default repeat penalty for AI responses */
 export declare const DEFAULT_REPEAT_PENALTY = 1.1;
-/** Default timeout for AI completion requests (2 minutes) */
-export declare const AI_COMPLETION_TIMEOUT = 120000;
+/**
+ * Timeout Constants
+ *
+ * Centralized timeout configuration following DRY principles.
+ * All timeout values are in milliseconds.
+ */
+/** Default timeout for AI completion requests (5 minutes) */
+export declare const AI_COMPLETION_TIMEOUT = 300000;
 /** Default timeout for API requests (1 minute) */
 export declare const API_REQUEST_TIMEOUT = 60000;
 /** Default timeout for code analysis operations (30 seconds) */
 export declare const CODE_ANALYSIS_TIMEOUT = 30000;
 /** Default timeout for file operations (10 seconds) */
 export declare const FILE_OPERATION_TIMEOUT = 10000;
+/** Default timeout for server health checks (5 seconds) */
+export declare const SERVER_HEALTH_TIMEOUT = 5000;
+/** Default server startup timeout (30 seconds) */
+export declare const SERVER_STARTUP_TIMEOUT = 30000;
+/**
+ * AI Operation Timeouts
+ * These are used for AI-powered analysis operations that may take longer
+ */
+/** Timeout for AI intent analysis and classification (30 seconds) */
+export declare const AI_INTENT_ANALYSIS_TIMEOUT = 30000;
+/** Timeout for AI entity extraction (30 seconds) */
+export declare const AI_ENTITY_EXTRACTION_TIMEOUT = 30000;
+/** Timeout for interactive mode request processing (uses AI_COMPLETION_TIMEOUT) */
+export declare const INTERACTIVE_REQUEST_TIMEOUT = 300000;
+/** Default health check interval (2 seconds) */
+export declare const HEALTH_CHECK_INTERVAL = 2000;
 /** Default maximum number of retries for failed requests */
 export declare const DEFAULT_MAX_RETRIES = 3;
 /** Default initial delay between retries (1 second) */
@@ -97,3 +119,16 @@ export declare const APP_NAME = "ollama-code";
 export declare const CLI_COMMAND = "ollama-code";
 /** Default shell for command execution */
 export declare const DEFAULT_SHELL: string;
+/**
+ * Environment variable to control safety mode in interactive sessions
+ * Set to 'false' to disable safety features
+ * @default true (safety enabled)
+ */
+export declare const SAFETY_MODE_ENV_VAR = "OLLAMA_SAFETY_MODE";
+/** Default safety mode settings for interactive mode */
+export declare const SAFETY_MODE_DEFAULTS: {
+    /** Always confirm high-risk operations in safety mode */
+    readonly confirmHighRisk: true;
+    /** Never auto-approve operations in safety mode */
+    readonly autoApprove: false;
+};

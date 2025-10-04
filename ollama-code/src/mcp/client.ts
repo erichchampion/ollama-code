@@ -58,9 +58,9 @@ export interface MCPResourceResult {
 
 export class MCPClient {
   private connections = new Map<string, MCPClientConnection>();
-  private config: ConfigType['mcp']['client'];
+  private config: any;
 
-  constructor(config: ConfigType['mcp']['client']) {
+  constructor(config: any) {
     this.config = config;
   }
 
@@ -76,15 +76,15 @@ export class MCPClient {
     logger.info('Initializing MCP client connections...');
 
     const connectionPromises = this.config.connections
-      .filter(conn => conn.enabled)
-      .map(conn => this.connectToServer(conn));
+      .filter((conn: any) => conn.enabled)
+      .map((conn: any) => this.connectToServer(conn));
 
     const results = await Promise.allSettled(connectionPromises);
 
     let successCount = 0;
     let failureCount = 0;
 
-    results.forEach((result, index) => {
+    results.forEach((result: any, index: number) => {
       const connectionConfig = this.config.connections[index];
       if (result.status === 'fulfilled') {
         successCount++;
@@ -101,7 +101,7 @@ export class MCPClient {
   /**
    * Connect to a single MCP server
    */
-  private async connectToServer(config: ConfigType['mcp']['client']['connections'][0]): Promise<void> {
+  private async connectToServer(config: any): Promise<void> {
     try {
       const connection = new MCPClientConnection(config, this.config);
       await connection.connect();
@@ -225,8 +225,8 @@ class MCPClientConnection {
   }>();
 
   constructor(
-    private config: ConfigType['mcp']['client']['connections'][0],
-    private globalConfig: ConfigType['mcp']['client']
+    private config: any,
+    private globalConfig: any
   ) {}
 
   /**
@@ -506,6 +506,6 @@ class MCPClientConnection {
 /**
  * Create MCP client from configuration
  */
-export function createMCPClient(config: ConfigType['mcp']['client']): MCPClient {
+export function createMCPClient(config: any): MCPClient {
   return new MCPClient(config);
 }

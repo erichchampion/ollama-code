@@ -16,11 +16,14 @@ import {
 
 export {
   analyzeCodebase,
-  FileInfo,
-  DependencyInfo,
-  ProjectStructure,
   analyzeProjectDependencies,
   findFilesByContent
+};
+
+export type {
+  FileInfo,
+  DependencyInfo,
+  ProjectStructure
 };
 
 /**

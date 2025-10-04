@@ -410,5 +410,5 @@ function setupProcessCleanup(executionEnv: ExecutionEnvironment): void {
   });
 }
 
-export { ExecutionResult, ExecutionOptions, BackgroundProcess, BackgroundProcessOptions };
+export type { ExecutionResult, ExecutionOptions, BackgroundProcess, BackgroundProcessOptions };
 export default ExecutionEnvironment; 

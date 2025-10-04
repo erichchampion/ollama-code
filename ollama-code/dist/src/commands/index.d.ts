@@ -4,60 +4,9 @@
  * Provides a framework for registering, managing, and executing
  * CLI commands. Handles argument parsing, validation, and help text.
  */
-/**
- * Command argument types
- */
-export declare enum ArgType {
-    STRING = "string",
-    NUMBER = "number",
-    BOOLEAN = "boolean",
-    ARRAY = "array"
-}
-/**
- * Command argument definition
- */
-export interface CommandArgDef {
-    /**
-     * Argument name
-     */
-    name: string;
-    /**
-     * Argument description
-     */
-    description: string;
-    /**
-     * Argument type
-     */
-    type: ArgType;
-    /**
-     * Whether the argument is required
-     */
-    required?: boolean;
-    /**
-     * Default value if not provided
-     */
-    default?: any;
-    /**
-     * Valid values (for enum-like arguments)
-     */
-    choices?: string[];
-    /**
-     * For positional args, the position (0-based)
-     */
-    position?: number;
-    /**
-     * Short flag (e.g., -v for --verbose)
-     */
-    shortFlag?: string;
-    /**
-     * Long flag (e.g., --verbose)
-     */
-    flag?: string;
-    /**
-     * Whether to hide from help
-     */
-    hidden?: boolean;
-}
+import { CommandArgDef } from './types.js';
+export { ArgType } from './types.js';
+export type { CommandArgDef } from './types.js';
 /**
  * Command definition
  */

@@ -90,9 +90,9 @@ export const CommandRequirements = {
     // Commands that don't need AI initialization
     BASIC: ['help', 'version', 'commands', 'config-show', 'config-set', 'config-get', 'list-models'],
     // Commands that need AI but not project context
-    AI_ONLY: ['ask', 'generate'],
+    AI_ONLY: [],
     // Commands that need project context
-    PROJECT_AWARE: ['explain', 'fix', 'git-status', 'git-commit', 'search', 'refactor-analyze'],
+    PROJECT_AWARE: ['ask', 'explain', 'generate', 'fix', 'git-status', 'git-commit', 'search', 'refactor-analyze'],
     // Commands that need full initialization
     FULL_INIT: ['tutorial-start', 'onboarding', 'test-generate', 'refactor-extract']
 };

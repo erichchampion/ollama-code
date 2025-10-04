@@ -4,7 +4,6 @@
  * Decomposes complex user requests into smaller, manageable tasks with
  * dependency analysis, progress tracking, and adaptive planning capabilities.
  */
-import { EnhancedAIClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
 export interface Task {
     id: string;
@@ -46,6 +45,7 @@ export interface TaskPlan {
         confidence: number;
         adaptations: number;
     };
+    riskLevel: 'low' | 'medium' | 'high';
 }
 export interface PlanningContext {
     projectRoot: string;
@@ -62,9 +62,9 @@ export type TaskStatus = Task['status'];
 export type PlanningResult = TaskPlan;
 export declare class TaskPlanner {
     private aiClient;
-    private projectContext;
+    private projectContext?;
     private activePlans;
-    constructor(aiClient: EnhancedAIClient, projectContext: ProjectContext);
+    constructor(aiClient: any, projectContext?: ProjectContext);
     /**
      * Create a task plan from user request
      */
@@ -86,13 +86,109 @@ export declare class TaskPlanner {
      */
     private buildPlanningPrompt;
     /**
-     * Parse plan from AI response
+     * Parse plan from AI response with multiple strategies
      */
     private parsePlanFromResponse;
     /**
-     * Create fallback plan when AI planning fails
+     * Strategy 1: Parse JSON from markdown code blocks
+     */
+    private parseJsonCodeBlock;
+    /**
+     * Strategy 2: Parse from generic code blocks
+     */
+    private parseGenericCodeBlock;
+    /**
+     * Strategy 3: Parse raw JSON from response
+     */
+    private parseRawJson;
+    /**
+     * Strategy 4: Clean and fix common JSON issues before parsing
+     */
+    private parseWithJsonCleaning;
+    /**
+     * Strategy 5: Extract partial information from natural language
+     */
+    private parsePartialInformation;
+    /**
+     * Clean and fix common JSON formatting issues
+     */
+    private cleanAndFixJson;
+    /**
+     * Validate plan structure has required fields
+     */
+    private validatePlanStructure;
+    /**
+     * Extract title from natural language response
+     */
+    private extractTitle;
+    /**
+     * Extract description from natural language response
+     */
+    private extractDescription;
+    /**
+     * Extract tasks from natural language text
+     */
+    private extractTasksFromText;
+    /**
+     * Convert text description to task object
+     */
+    private convertTextToTask;
+    /**
+     * Infer required tools from task text
+     */
+    private inferToolsFromText;
+    /**
+     * Debug parsing failure with detailed analysis
+     */
+    private debugParsingFailure;
+    /**
+     * Create intelligent fallback plan when AI planning fails
      */
     private createFallbackPlan;
+    /**
+     * Create template-based plan based on request type
+     */
+    private createTemplateBasedPlan;
+    /**
+     * Classify the request type based on keywords
+     */
+    private classifyRequest;
+    /**
+     * Create analysis template
+     */
+    private createAnalysisTemplate;
+    /**
+     * Create implementation template
+     */
+    private createImplementationTemplate;
+    /**
+     * Create bug fix template
+     */
+    private createBugFixTemplate;
+    /**
+     * Create refactoring template
+     */
+    private createRefactoringTemplate;
+    /**
+     * Create testing template
+     */
+    private createTestingTemplate;
+    /**
+     * Create generic template for unclassified requests
+     */
+    private createGenericTemplate;
+    /**
+     * Create pattern-based plan by extracting actions from request
+     */
+    private createPatternBasedPlan;
+    /**
+     * Create simple fallback plan (last resort)
+     */
+    private createSimpleFallbackPlan;
+    /**
+     * Helper to create task from template data
+     */
+    private createTaskFromTemplate;
     /**
      * Build dependency map
      */
@@ -153,4 +249,8 @@ export declare class TaskPlanner {
      * Cancel plan execution
      */
     cancelPlan(planId: string): void;
+    /**
+     * Assess risk level based on tasks and complexity
+     */
+    private assessRiskLevel;
 }

@@ -12,9 +12,17 @@ export declare function isOllamaServerRunning(baseUrl?: string): Promise<boolean
  */
 export declare function isOllamaInstalled(): Promise<boolean>;
 /**
+ * Configuration options for Ollama server startup
+ */
+export interface OllamaServerStartupConfig {
+    healthCheckInterval?: number;
+    startupTimeout?: number;
+    maxHealthCheckRetries?: number;
+}
+/**
  * Start Ollama server in the background
  */
-export declare function startOllamaServer(): Promise<void>;
+export declare function startOllamaServer(config?: OllamaServerStartupConfig): Promise<void>;
 /**
  * Ensure Ollama server is running, start it if necessary
  */

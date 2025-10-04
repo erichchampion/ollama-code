@@ -21,15 +21,20 @@ import { initializeToolSystem } from './tools/index.js';
 import {
   initializeLazyLoading,
   executeCommandOptimized,
-  preloadCommonComponents
+  preloadCommonComponents,
+  initializeEnhancedStartupOptimizer,
+  executeEnhancedStartup
 } from './optimization/startup-optimizer.js';
 import { registerServices, disposeServices } from './core/services.js';
 import {
   HELP_OUTPUT_WIDTH,
   INTERACTIVE_MODE_HELP,
   HELP_COMMAND_SUGGESTION,
-  EXIT_COMMANDS
+  EXIT_COMMANDS,
+  SAFETY_MODE_ENV_VAR
 } from './constants.js';
+import { OptimizedEnhancedMode } from './interactive/optimized-enhanced-mode.js';
+import { SafetyEnhancedMode } from './interactive/safety-enhanced-mode.js';
 import pkg from '../package.json' with { type: 'json' };
 
 // Get version from package.json
@@ -125,7 +130,7 @@ Usage:
 Modes:
   --mode simple      Simple mode - Basic commands only
   --mode advanced    Advanced mode (default) - Full command registry
-  --mode interactive Interactive mode - Command loop interface
+  --mode interactive Interactive mode - Command loop interface with safety features
 
 Available Commands:`);
   
@@ -354,25 +359,32 @@ async function runSimpleMode(commandName: string, args: string[]): Promise<void>
 }
 
 /**
- * Run advanced mode (full command registry) with optimized startup
+ * Run advanced mode (full command registry) with Phase 4 enhanced startup optimization
  */
 async function runAdvancedMode(commandName: string, args: string[]): Promise<void> {
   // Register all services with dependency injection container
   await registerServices();
 
-  // Initialize lazy loading system
-  await initializeLazyLoading();
-
-  // Start background preloading of common components
-  preloadCommonComponents();
-
   try {
-    // Use optimized execution that only loads what's needed
+    // Use Phase 4 enhanced startup optimization
     if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
-      // Fallback to original method for tests
+      // Fallback to legacy execution for tests
       logger.info('Using legacy execution mode for testing');
       await runAdvancedModeLegacy(commandName, args);
     } else {
+      // Phase 4: Enhanced startup optimization with comprehensive monitoring
+      logger.info('Starting Phase 4 enhanced startup optimization');
+
+      // Initialize enhanced startup optimizer
+      await initializeEnhancedStartupOptimizer();
+
+      // Initialize lazy loading system (maintains backward compatibility)
+      await initializeLazyLoading();
+
+      // Start background preloading of common components
+      preloadCommonComponents();
+
+      // Execute command with optimized loading
       await executeCommandOptimized(commandName, args);
     }
   } finally {
@@ -415,89 +427,8 @@ async function runAdvancedModeLegacy(commandName: string, args: string[]): Promi
   await executeCommand(commandName, args);
 }
 
-/**
- * Run interactive mode (command loop)
- */
-async function runInteractiveMode(): Promise<void> {
-  // Initialize tool system
-  initializeToolSystem();
-
-  // Register commands
-  registerCommands();
-
-  // Initialize terminal
-  const terminal = await initTerminal({});
-
-  console.log(`Ollama Code CLI v${version} - Interactive Mode`);
-  console.log(`${INTERACTIVE_MODE_HELP}\n`);
-  
-  let running = true;
-  
-  // Command loop
-  while (running) {
-    try {
-      // Get command input from user
-      const input = await terminal.prompt<{ command: string }>({
-        type: 'input',
-        name: 'command',
-        message: 'ollama-code>',
-      });
-      
-      if (!input.command || input.command.trim() === '') {
-        continue;
-      }
-      
-      // Handle special exit commands
-      if (EXIT_COMMANDS.includes(input.command.toLowerCase() as any)) {
-        running = false;
-        continue;
-      }
-      
-      // Parse input into command and args, respecting quoted strings
-      const parts = parseCommandInput(input.command.trim());
-      const commandName = parts[0];
-      const commandArgs = parts.slice(1);
-      
-      // Check if command exists
-      if (!commandRegistry.exists(commandName)) {
-        terminal.error(`Unknown command: ${commandName}`);
-        terminal.info(INTERACTIVE_MODE_HELP);
-        continue;
-      }
-      
-      // Get the command
-      const command = commandRegistry.get(commandName);
-      
-      if (!command) {
-        terminal.error(`Command not found: ${commandName}`);
-        continue;
-      }
-      
-      // Ensure Ollama server is running before initializing AI
-      terminal.info('Ensuring Ollama server is running...');
-      await ensureOllamaServerRunning();
-
-      // Initialize enhanced AI capabilities
-      terminal.info('Initializing enhanced AI capabilities...');
-      await initAI();
-      
-      // Execute the command
-      await executeCommand(commandName, commandArgs);
-      
-    } catch (error) {
-      const formattedError = formatErrorForDisplay(error);
-      terminal.error(formattedError);
-    }
-  }
-
-  console.log('Goodbye!');
-
-  // Cleanup resources when interactive mode exits
-  cleanup();
-
-  // Exit the process
-  process.exit(0);
-}
+// Note: The old runInteractiveMode function has been replaced with EnhancedInteractiveMode
+// which provides better task plan handling and natural language processing
 
 /**
  * Initialize the CLI
@@ -519,7 +450,27 @@ async function initCLI(): Promise<void> {
         await runAdvancedMode(commandName, args);
         break;
       case 'interactive':
-        await runInteractiveMode();
+        if (process.env.OLLAMA_SKIP_ENHANCED_INIT) {
+          // Fallback to legacy interactive mode for testing
+          logger.info('Using legacy interactive mode for testing');
+          // Since there's no legacy interactive mode, just exit gracefully for tests
+          console.log('Legacy interactive mode (test mode)');
+          process.exit(0);
+        } else {
+          // Use safety-enhanced mode by default for interactive sessions
+          // This can be controlled via environment variable for compatibility
+          const useSafetyMode = process.env[SAFETY_MODE_ENV_VAR] !== 'false';
+
+          if (useSafetyMode) {
+            logger.info('Starting interactive mode with safety features');
+            const safetyEnhancedMode = new SafetyEnhancedMode();
+            await safetyEnhancedMode.start();
+          } else {
+            logger.info('Starting interactive mode without safety features');
+            const optimizedMode = new OptimizedEnhancedMode();
+            await optimizedMode.start();
+          }
+        }
         break;
       default:
         console.error(`Unknown mode: ${mode}`);

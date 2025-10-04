@@ -148,6 +148,271 @@ export declare const configSchema: z.ZodObject<{
         insertSpaces: z.ZodDefault<z.ZodBoolean>;
         formatOnSave: z.ZodDefault<z.ZodBoolean>;
     }, z.core.$strip>>;
+}, z.core.$strip>;
+declare const MCPServerConfigSchema: z.ZodObject<{
+    enabled: z.ZodDefault<z.ZodBoolean>;
+    port: z.ZodDefault<z.ZodNumber>;
+    autoStart: z.ZodDefault<z.ZodBoolean>;
+    tools: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        allowedTools: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        maxConcurrent: z.ZodDefault<z.ZodNumber>;
+    }, z.core.$strip>>;
+    resources: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        allowedResources: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        cacheTTL: z.ZodDefault<z.ZodNumber>;
+    }, z.core.$strip>>;
+    security: z.ZodDefault<z.ZodObject<{
+        requireAuth: z.ZodDefault<z.ZodBoolean>;
+        allowedHosts: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        maxRequestSize: z.ZodDefault<z.ZodNumber>;
+    }, z.core.$strip>>;
+    logging: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        level: z.ZodDefault<z.ZodEnum<{
+            verbose: "verbose";
+            error: "error";
+            warn: "warn";
+            info: "info";
+            debug: "debug";
+            trace: "trace";
+        }>>;
+        logFile: z.ZodDefault<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+declare const MCPClientConnectionSchema: z.ZodObject<{
+    name: z.ZodString;
+    enabled: z.ZodDefault<z.ZodBoolean>;
+    command: z.ZodString;
+    args: z.ZodDefault<z.ZodArray<z.ZodString>>;
+    env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
+    cwd: z.ZodOptional<z.ZodString>;
+    timeout: z.ZodDefault<z.ZodNumber>;
+    retryCount: z.ZodDefault<z.ZodNumber>;
+    retryDelay: z.ZodDefault<z.ZodNumber>;
+}, z.core.$strip>;
+declare const MCPClientConfigSchema: z.ZodObject<{
+    enabled: z.ZodDefault<z.ZodBoolean>;
+    connections: z.ZodDefault<z.ZodArray<z.ZodObject<{
+        name: z.ZodString;
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        command: z.ZodString;
+        args: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
+        cwd: z.ZodOptional<z.ZodString>;
+        timeout: z.ZodDefault<z.ZodNumber>;
+        retryCount: z.ZodDefault<z.ZodNumber>;
+        retryDelay: z.ZodDefault<z.ZodNumber>;
+    }, z.core.$strip>>>;
+    globalTimeout: z.ZodDefault<z.ZodNumber>;
+    maxConcurrentConnections: z.ZodDefault<z.ZodNumber>;
+    logging: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        level: z.ZodDefault<z.ZodEnum<{
+            verbose: "verbose";
+            error: "error";
+            warn: "warn";
+            info: "info";
+            debug: "debug";
+            trace: "trace";
+        }>>;
+        logFile: z.ZodDefault<z.ZodString>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+declare const MCPConfigSchema: z.ZodObject<{
+    server: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        port: z.ZodDefault<z.ZodNumber>;
+        autoStart: z.ZodDefault<z.ZodBoolean>;
+        tools: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            allowedTools: z.ZodDefault<z.ZodArray<z.ZodString>>;
+            maxConcurrent: z.ZodDefault<z.ZodNumber>;
+        }, z.core.$strip>>;
+        resources: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            allowedResources: z.ZodDefault<z.ZodArray<z.ZodString>>;
+            cacheTTL: z.ZodDefault<z.ZodNumber>;
+        }, z.core.$strip>>;
+        security: z.ZodDefault<z.ZodObject<{
+            requireAuth: z.ZodDefault<z.ZodBoolean>;
+            allowedHosts: z.ZodDefault<z.ZodArray<z.ZodString>>;
+            maxRequestSize: z.ZodDefault<z.ZodNumber>;
+        }, z.core.$strip>>;
+        logging: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            level: z.ZodDefault<z.ZodEnum<{
+                verbose: "verbose";
+                error: "error";
+                warn: "warn";
+                info: "info";
+                debug: "debug";
+                trace: "trace";
+            }>>;
+            logFile: z.ZodDefault<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+    client: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        connections: z.ZodDefault<z.ZodArray<z.ZodObject<{
+            name: z.ZodString;
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            command: z.ZodString;
+            args: z.ZodDefault<z.ZodArray<z.ZodString>>;
+            env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
+            cwd: z.ZodOptional<z.ZodString>;
+            timeout: z.ZodDefault<z.ZodNumber>;
+            retryCount: z.ZodDefault<z.ZodNumber>;
+            retryDelay: z.ZodDefault<z.ZodNumber>;
+        }, z.core.$strip>>>;
+        globalTimeout: z.ZodDefault<z.ZodNumber>;
+        maxConcurrentConnections: z.ZodDefault<z.ZodNumber>;
+        logging: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            level: z.ZodDefault<z.ZodEnum<{
+                verbose: "verbose";
+                error: "error";
+                warn: "warn";
+                info: "info";
+                debug: "debug";
+                trace: "trace";
+            }>>;
+            logFile: z.ZodDefault<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export declare const extendedConfigSchema: z.ZodObject<{
+    workspace: z.ZodOptional<z.ZodString>;
+    logLevel: z.ZodDefault<z.ZodEnum<{
+        verbose: "verbose";
+        error: "error";
+        warn: "warn";
+        info: "info";
+        debug: "debug";
+        trace: "trace";
+    }>>;
+    api: z.ZodDefault<z.ZodObject<{
+        key: z.ZodOptional<z.ZodString>;
+        baseUrl: z.ZodOptional<z.ZodString>;
+        version: z.ZodOptional<z.ZodString>;
+        timeout: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>>;
+    ollama: z.ZodDefault<z.ZodObject<{
+        baseUrl: z.ZodDefault<z.ZodString>;
+        timeout: z.ZodDefault<z.ZodNumber>;
+        retryOptions: z.ZodDefault<z.ZodObject<{
+            maxRetries: z.ZodDefault<z.ZodNumber>;
+            initialDelayMs: z.ZodDefault<z.ZodNumber>;
+            maxDelayMs: z.ZodDefault<z.ZodNumber>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+    ai: z.ZodDefault<z.ZodObject<{
+        defaultModel: z.ZodDefault<z.ZodString>;
+        defaultTemperature: z.ZodDefault<z.ZodNumber>;
+        defaultTopP: z.ZodDefault<z.ZodNumber>;
+        defaultTopK: z.ZodDefault<z.ZodNumber>;
+        defaultRepeatPenalty: z.ZodDefault<z.ZodNumber>;
+    }, z.core.$strip>>;
+    telemetry: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        anonymizeData: z.ZodDefault<z.ZodBoolean>;
+        errorReporting: z.ZodDefault<z.ZodBoolean>;
+    }, z.core.$strip>>;
+    terminal: z.ZodDefault<z.ZodObject<{
+        theme: z.ZodDefault<z.ZodEnum<{
+            system: "system";
+            dark: "dark";
+            light: "light";
+        }>>;
+        showProgressIndicators: z.ZodDefault<z.ZodBoolean>;
+        useColors: z.ZodDefault<z.ZodBoolean>;
+        codeHighlighting: z.ZodDefault<z.ZodBoolean>;
+        maxHeight: z.ZodOptional<z.ZodNumber>;
+        maxWidth: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$strip>>;
+    codeAnalysis: z.ZodDefault<z.ZodObject<{
+        indexDepth: z.ZodDefault<z.ZodNumber>;
+        excludePatterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        includePatterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
+        maxFileSize: z.ZodDefault<z.ZodNumber>;
+        scanTimeout: z.ZodDefault<z.ZodNumber>;
+    }, z.core.$strip>>;
+    git: z.ZodDefault<z.ZodObject<{
+        preferredRemote: z.ZodDefault<z.ZodString>;
+        preferredBranch: z.ZodOptional<z.ZodString>;
+        useSsh: z.ZodDefault<z.ZodBoolean>;
+        useGpg: z.ZodDefault<z.ZodBoolean>;
+        signCommits: z.ZodDefault<z.ZodBoolean>;
+    }, z.core.$strip>>;
+    editor: z.ZodDefault<z.ZodObject<{
+        preferredLauncher: z.ZodOptional<z.ZodString>;
+        tabWidth: z.ZodDefault<z.ZodNumber>;
+        insertSpaces: z.ZodDefault<z.ZodBoolean>;
+        formatOnSave: z.ZodDefault<z.ZodBoolean>;
+    }, z.core.$strip>>;
+    mcp: z.ZodDefault<z.ZodObject<{
+        server: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            port: z.ZodDefault<z.ZodNumber>;
+            autoStart: z.ZodDefault<z.ZodBoolean>;
+            tools: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                allowedTools: z.ZodDefault<z.ZodArray<z.ZodString>>;
+                maxConcurrent: z.ZodDefault<z.ZodNumber>;
+            }, z.core.$strip>>;
+            resources: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                allowedResources: z.ZodDefault<z.ZodArray<z.ZodString>>;
+                cacheTTL: z.ZodDefault<z.ZodNumber>;
+            }, z.core.$strip>>;
+            security: z.ZodDefault<z.ZodObject<{
+                requireAuth: z.ZodDefault<z.ZodBoolean>;
+                allowedHosts: z.ZodDefault<z.ZodArray<z.ZodString>>;
+                maxRequestSize: z.ZodDefault<z.ZodNumber>;
+            }, z.core.$strip>>;
+            logging: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                level: z.ZodDefault<z.ZodEnum<{
+                    verbose: "verbose";
+                    error: "error";
+                    warn: "warn";
+                    info: "info";
+                    debug: "debug";
+                    trace: "trace";
+                }>>;
+                logFile: z.ZodDefault<z.ZodString>;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+        client: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            connections: z.ZodDefault<z.ZodArray<z.ZodObject<{
+                name: z.ZodString;
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                command: z.ZodString;
+                args: z.ZodDefault<z.ZodArray<z.ZodString>>;
+                env: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
+                cwd: z.ZodOptional<z.ZodString>;
+                timeout: z.ZodDefault<z.ZodNumber>;
+                retryCount: z.ZodDefault<z.ZodNumber>;
+                retryDelay: z.ZodDefault<z.ZodNumber>;
+            }, z.core.$strip>>>;
+            globalTimeout: z.ZodDefault<z.ZodNumber>;
+            maxConcurrentConnections: z.ZodDefault<z.ZodNumber>;
+            logging: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                level: z.ZodDefault<z.ZodEnum<{
+                    verbose: "verbose";
+                    error: "error";
+                    warn: "warn";
+                    info: "info";
+                    debug: "debug";
+                    trace: "trace";
+                }>>;
+                logFile: z.ZodDefault<z.ZodString>;
+            }, z.core.$strip>>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
     paths: z.ZodOptional<z.ZodObject<{
         home: z.ZodOptional<z.ZodString>;
         app: z.ZodOptional<z.ZodString>;
@@ -159,4 +424,4 @@ export declare const configSchema: z.ZodObject<{
     recentWorkspaces: z.ZodDefault<z.ZodArray<z.ZodString>>;
 }, z.core.$strip>;
 export type ConfigType = z.infer<typeof configSchema>;
-export { LogLevel, ApiConfigSchema, OllamaConfigSchema, AiConfigSchema, TelemetryConfigSchema, TerminalConfigSchema, CodeAnalysisConfigSchema, GitConfigSchema, EditorConfigSchema, PathsConfigSchema };
+export { LogLevel, ApiConfigSchema, OllamaConfigSchema, AiConfigSchema, TelemetryConfigSchema, TerminalConfigSchema, CodeAnalysisConfigSchema, GitConfigSchema, EditorConfigSchema, PathsConfigSchema, MCPConfigSchema, MCPServerConfigSchema, MCPClientConfigSchema, MCPClientConnectionSchema };

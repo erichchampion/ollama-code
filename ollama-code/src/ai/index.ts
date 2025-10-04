@@ -6,7 +6,7 @@
  */
 
 import { OllamaClient } from './ollama-client.js';
-import { EnhancedAIClient } from './enhanced-client.js';
+import { EnhancedClient } from './enhanced-client.js';
 import { ProjectContext } from './context.js';
 import { TaskPlanner } from './task-planner.js';
 import { logger } from '../utils/logger.js';
@@ -15,7 +15,7 @@ import { ErrorCategory } from '../errors/types.js';
 
 // Singleton instances
 let aiClient: OllamaClient | null = null;
-let enhancedClient: EnhancedAIClient | null = null;
+let enhancedClient: EnhancedClient | null = null;
 let projectContext: ProjectContext | null = null;
 let taskPlanner: TaskPlanner | null = null;
 
@@ -24,7 +24,7 @@ let taskPlanner: TaskPlanner | null = null;
  */
 export async function initAI(config: any = {}): Promise<{
   ollamaClient: OllamaClient;
-  enhancedClient: EnhancedAIClient;
+  enhancedClient: EnhancedClient;
   projectContext: ProjectContext;
   taskPlanner: TaskPlanner;
 }> {
@@ -51,7 +51,22 @@ export async function initAI(config: any = {}): Promise<{
     await projectContext.initialize();
 
     // Initialize enhanced AI client
-    enhancedClient = new EnhancedAIClient(aiClient, projectContext);
+    const enhancedConfig = {
+      model: 'llama3.2:latest',
+      baseUrl: 'http://127.0.0.1:11434',
+      contextWindow: 4096,
+      enableTaskPlanning: true,
+      enableAutonomousModification: true,
+      executionPreferences: {
+        parallelism: 2,
+        riskTolerance: 'balanced' as const,
+        autoExecute: false
+      }
+    };
+    enhancedClient = new EnhancedClient(aiClient, projectContext, enhancedConfig);
+
+    // Initialize the enhanced client
+    await enhancedClient.initialize();
 
     // Initialize task planner
     taskPlanner = new TaskPlanner(enhancedClient, projectContext);
@@ -91,7 +106,7 @@ export function getAIClient(): OllamaClient {
 /**
  * Get the enhanced AI client instance
  */
-export function getEnhancedClient(): EnhancedAIClient {
+export function getEnhancedClient(): EnhancedClient {
   if (!enhancedClient) {
     throw createUserError('Enhanced AI client not initialized', {
       category: ErrorCategory.INITIALIZATION,
@@ -174,7 +189,7 @@ export * from './prompts.js';
 
 // Re-export enhanced AI components
 export { ProjectContext } from './context.js';
-export { EnhancedAIClient } from './enhanced-client.js';
+export { EnhancedClient } from './enhanced-client.js';
 export { TaskPlanner } from './task-planner.js';
 
 // Re-export enhanced AI types
@@ -192,10 +207,11 @@ export type {
   PlanningContext
 } from './context.js';
 
-export type {
-  ToolUsePlan,
-  ResponseValidation
-} from './enhanced-client.js';
+// Re-export enhanced AI types (commented out until implemented)
+// export type {
+//   ToolUsePlan,
+//   ResponseValidation
+// } from './enhanced-client.js';
 
 export type {
   TaskType,
