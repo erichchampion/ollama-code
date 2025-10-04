@@ -1,2242 +1,750 @@
-# Test Automation Improvement Plan
-**Project:** ollama-code v0.7.1
-**Created:** 2025-01-01
-**Status:** 🎉 **Phase 4 COMPLETE!** - All 4 phases completed (100%)
-**Estimated Timeline:** 24 weeks (6 months)
-**Estimated Effort:** 680 hours (305.5 hours completed, 44.9% done)
-**Latest Update:** 2025-10-03 - Completed Phase 4.2.3 Refactoring - **Code quality improved to A-!**
+# Implementation TODO - Test-Driven Development Roadmap
 
-## 📊 Quick Progress Summary
-
-| Phase | Status | Tasks Completed | Progress |
-|-------|--------|-----------------|----------|
-| **Phase 1.1** | ✅ Complete | 5/5 | 100% |
-| **Phase 1.2** | ✅ Complete | 4/4 | 100% |
-| **Phase 1.3** | ✅ Complete | 3/3 | 100% |
-| **Phase 2.1** | ✅ Complete | 125/125 tests | 100% |
-| **Phase 2.2.1** | ✅ Complete | 15/15 tests | 100% |
-| **Phase 2.2.2** | ✅ Complete | 15/15 tests | 100% |
-| **Phase 2.2.3** | ✅ Complete | 10/10 tests | 100% |
-| **Phase 2.2.4** | ✅ Complete | 15/15 tests | 100% |
-| **Phase 2.3.1** | ✅ Complete | 40/40 | 100% |
-| **Phase 2.3.2** | ✅ Complete | 25/25 | 100% |
-| **Phase 2.3.3** | ✅ Complete | 16/16 | 100% |
-| **Phase 2.3** | ✅ Complete | 81/80 | 101% |
-| **Phase 3.1.1** | ✅ Complete | 30/30 | 100% |
-| **Phase 3.1.2** | ✅ Complete | 15/15 | 100% |
-| **Phase 3.1.3** | ✅ Complete | 25/25 | 100% |
-| **Phase 3.2.1** | ✅ Complete | 20/20 | 100% |
-| **Phase 3.2.2** | ✅ Complete | 20/20 | 100% |
-| **Phase 3.2.3** | ✅ Complete | 15/15 | 100% |
-| **Phase 3.3.1** | ✅ Complete | 8/8 tests | 100% |
-| **Phase 4.1.1** | ✅ Complete | 20/20 tests | 100% |
-| **Phase 4.1.2** | ✅ Complete | 15/15 tests | 100% |
-| **Phase 4.1.3** | ✅ Complete | 10/10 tests | 100% |
-| **Phase 4.2.1** | ✅ Complete | 15/15 tests | 100% |
-| **Phase 4.2.2** | ✅ Complete | 10/10 tests | 100% |
-| **Phase 4.2.3** | ✅ Complete | 10/10 tests | 100% |
-| **🎉 ALL PHASES** | ✅ **COMPLETE** | **500+ tests** | **100%** |
-
-### Recent Accomplishments (2025-10-03)
-
-**Phase 4.2.3 - Analysis Result Saving Refactoring (Completed 2025-10-03)**
-- ✅ Code Review: Comprehensive review documented in CODE_REVIEW_ANALYSIS_RESULT_SAVING.md
-- ✅ Extracted 215 lines of constants to test-constants.ts (100% hardcoded value elimination)
-- ✅ Created 191 lines of test helpers in extensionTestHelper.ts
-- ✅ Reduced test file from 875 → 696 lines (20.5% reduction, 179 lines saved)
-- ✅ Eliminated 350 lines of code duplication (40% → 8%, 80% reduction)
-- ✅ Code quality improved from C (65/100) to A- (88/100) - +23 points
-- ✅ Created 4 factory functions: createTestAnalysisResult, createTestCodeReview, createTestSecurityScan, createTestPerformanceReport
-- ✅ Created saveAndVerifyReport helper - eliminates 80 lines of file operation duplication
-- ✅ 10+ constant groups: REPORT_GENERATION_CONSTANTS, REPORT_TEST_DATA with all test data centralized
-- ✅ Time: 7 hours for refactoring (vs. 7-8 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully with no TypeScript errors
-- ✅ **Phase 4.2.3 refactoring complete - production ready!**
-
-**Phase 4.2.3 - Analysis Result Saving (Completed 2025-10-03)**
-- ✅ Result Persistence (10 tests): Comprehensive report generation and persistence
-- ✅ Multi-format support: JSON, Markdown, HTML report generation
-- ✅ 4 report types: General analysis, code review, security scan, performance analysis
-- ✅ Code review reports: Quality scores (0-100) with 4 categories (maintainability, reliability, security, performance)
-- ✅ Security scan reports: Vulnerability counts by severity (critical/high/medium/low) with OWASP/CWE compliance
-- ✅ Performance analysis reports: Metrics (response time, memory, CPU) with bottleneck detection
-- ✅ File operations: Directory creation, JSON/Markdown/HTML rendering, UTF-8 encoding
-- ✅ Report loading: JSON deserialization with error handling for missing files
-- ✅ ReportGenerator class: Full lifecycle management for analysis result persistence
-- ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 4.2.3 now 100% complete! (10/10 tests)**
-
-**Phase 4.2.2 - Context Management Full Workflow (Completed 2025-10-03)**
-- ✅ Session Management (10 tests): Comprehensive session and context management
-- ✅ Session continuity: Tracks sessions across multiple queries with timestamps
-- ✅ Context retention: Maintains context files and conversation history
-- ✅ Context window: Provides last 10 messages for follow-up queries
-- ✅ Topic detection: Automatic detection of topic changes from keywords
-- ✅ Context reset: Soft reset (keep history) and hard reset (clear all)
-- ✅ Context prioritization: Relevance scoring for file selection (30% mentions, 40% active, 30% recency)
-- ✅ Session persistence: Mock save/load with JSON serialization
-- ✅ Session expiration: 30-minute timeout with automatic cleanup
-- ✅ SessionManager class: Full lifecycle management
-- ✅ Time: 10 hours (vs. 10 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 4.2.2 now 100% complete! (10/10 tests)**
-
-**Phase 4.2.1 - Multi-Provider AI Integration Refactoring (Completed 2025-10-03)**
-- ✅ Code Review: Comprehensive review documented in CODE_REVIEW_MULTI_PROVIDER.md
-- ✅ Fixed Critical Bug: Cost calculation underestimating by 1000x - created calculateCost() helper
-- ✅ Eliminated 89 hardcoded values to centralized constants (100% reduction)
-- ✅ Created 8 new constant groups: PROVIDER_CAPABILITIES, ROUTING_WEIGHTS, ROUTING_TEST_DATA, RESPONSE_FUSION_THRESHOLDS, RESPONSE_FUSION_WEIGHTS, RESPONSE_FUSION_PARAMS, RESPONSE_FUSION_TEST_DATA, CONTRADICTION_KEYWORDS
-- ✅ Created 3 helper functions: getCapableProviders, calculateCost, buildRoutingDecision
-- ✅ Reduced code duplication from 93 lines (7.2%) to 5 lines (0.4%) - 94% reduction
-- ✅ Eliminated 93 lines of duplicated code through helper extraction
-- ✅ Code quality improved from C+ (70/100) to A- (92/100)
-- ✅ Net impact: +167 constants, -93 duplicated lines = -93 net reduction
-- ✅ Time: 7 hours for refactoring
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 4.2.1 refactoring complete - production ready!**
-
-**Phase 4.2.1 - Multi-Provider AI Integration E2E (Completed 2025-10-03)**
-- ✅ Provider Routing (8 tests): Comprehensive multi-provider routing system
-- ✅ Response Fusion (7 tests): Intelligent response combination and conflict resolution
-- ✅ Query type-based routing: Matches provider strengths to query characteristics
-- ✅ Failover routing: Automatic retry with backup providers on failure
-- ✅ Cost-aware routing: Minimizes API costs by selecting cheapest capable provider
-- ✅ Performance-aware routing: Minimizes latency by selecting fastest provider
-- ✅ Balanced routing: Optimizes cost/performance/reliability tradeoff
-- ✅ 4 fusion strategies: Highest confidence, consensus, weighted average, majority vote
-- ✅ Conflict detection: Automatic detection of contradictions between providers
-- ✅ Conflict resolution: 4 strategies (prefer_a/b, merge, manual_review)
-- ✅ Quality validation: Multi-factor quality scoring (0-1)
-- ✅ Confidence fusion: Strategy-specific confidence calculation
-- ✅ Provider capability modeling: Realistic profiles for Ollama, OpenAI, Anthropic, Gemini
-- ✅ Time: 15 hours (vs. 15 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 4.2.1 now 100% complete! (15/15 tests)**
-
-**Phase 4.1.3 - Best Practices Integration Refactoring (Completed 2025-10-03)**
-- ✅ Code Review: Comprehensive review documented in CODE_REVIEW_BEST_PRACTICES.md
-- ✅ Fixed Critical Bug: Circular dependency duplicate detection with canonical representation
-- ✅ Eliminated 47 hardcoded values to centralized constants
-- ✅ Created 7 new constant objects: BEST_PRACTICES_THRESHOLDS, ACTIONABLE_STEPS, TITLES, DESCRIPTIONS, CODE_EXAMPLES, SCORING, PRIORITY_ORDER
-- ✅ Created 3 helper functions: calculateRecommendationPriority, calculateEstimatedEffort, matchesKeywords
-- ✅ Reduced code duplication from ~65% to <5%
-- ✅ Eliminated 175+ lines of hardcoded actionable steps
-- ✅ Code quality improved from B- (72/100) to A (90+/100)
-- ✅ Net impact: +900 insertions, -133 deletions
-- ✅ Time: 4.5 hours for refactoring
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 4.1 (Knowledge Graph & Analysis) now 100% complete! (45/45 tests)**
-
-**Phase 4.1.3 - Best Practices Integration (Completed 2025-10-03)**
-- ✅ Best Practices Integration (10 tests): Comprehensive recommendation generation with prioritization
-- ✅ Refactoring recommendations (3 tests): God Object splitting, complexity reduction, parameter objects
-- ✅ Optimization recommendations (2 tests): Large function optimization, circular dependency breaking
-- ✅ Security recommendations (2 tests): Input validation for auth, SQL prepared statements
-- ✅ Recommendation prioritization (2 tests): Priority-based sorting, actionability scoring
-- ✅ Actionability scoring (3 tests): Actionable steps, code examples, effort/impact estimation
-- ✅ BestPracticesAnalyzer class: 3 recommendation types, 4 priority levels
-- ✅ Actionability scores (0-1): Based on estimated effort and feasibility
-- ✅ Code examples: Before/after snippets for applicable recommendations
-- ✅ Smart prioritization: Critical first, then high actionability
-- ✅ Integration: Works with anti-pattern detection from Phase 4.1.2
-- ✅ Time: 10 hours (vs. 10 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 4.1.3 now 100% complete!**
-
-**Phase 4.1.2 - Anti-Pattern Detection Refactoring (Completed 2025-10-03)**
-- ✅ Code Review: Comprehensive review documented in CODE_REVIEW_ANTI_PATTERNS.md
-- ✅ Fixed 2 Critical Bugs: Data Clumps detection logic (!== → ===), circular dependency duplicates
-- ✅ Eliminated DRY Violations: Extracted 67 hardcoded values to centralized constants
-- ✅ Created ANTI_PATTERN_THRESHOLDS: All detection threshold values
-- ✅ Created ANTI_PATTERN_RECOMMENDATIONS: All recommendation strings
-- ✅ Created ANTI_PATTERN_TEST_DATA: All test data values
-- ✅ Created 5 helper functions: calculateSeverity, calculateConfidence, calculateAverageConfidence, createTestNode, addMultipleRelationships
-- ✅ Reduced code duplication by ~75% in severity/confidence calculations
-- ✅ Reduced test code by ~150 lines through helper functions
-- ✅ All 7 detection methods refactored to use constants and helpers
-- ✅ All 7 tests refactored to use centralized test data
-- ✅ Net impact: +457 insertions, -181 deletions
-- ✅ Time: 3.5 hours for refactoring
-- ✅ Build verified: All tests compile successfully
-
-### Older Accomplishments (2025-10-02)
-
-**Phase 3.3.1 - Distributed Processing (Completed 2025-10-02)**
-- ✅ Distributed Processing (7 tests): Parallel processing and worker management
-- ✅ Parallel file processing across 4 worker threads
-- ✅ Workload distribution with 70%+ balance guarantee
-- ✅ Worker failure recovery with automatic retry
-- ✅ Result aggregation from all workers
-- ✅ Task priority-based scheduling
-- ✅ Timeout handling for long-running tasks
-- ✅ Performance: 2-4x speedup over sequential processing
-- ✅ Worker Manager implementation with queue management
-- ✅ Mock distributed system with realistic failure scenarios
-
-**Phase 3.3.1 - Code Review Refactoring (Completed 2025-10-02)**
-- ✅ Fixed MemoryMonitor resource leak with destroy() method and try-finally
-- ✅ Extracted 15 hardcoded values to 4 new constant objects
-- ✅ Created runPerformanceTest() helper - reduced test duplication by 44%
-- ✅ Created createTestCodebase() helper - eliminated directory creation duplication
-- ✅ Created measurePerformance() utility - eliminated timing pattern duplication
-- ✅ Created bytesToMB() utility with BYTE_CONVERSION constants
-- ✅ Code reduction: 535 → 600 lines (added helpers but improved structure)
-- ✅ Code quality improvement: 8.0 → 9.5/10
-- ✅ DRY compliance improvement: 6/10 → 10/10
-- ✅ All Priority 1 and Priority 2 recommendations implemented
-
-**Phase 3.3.1 - Performance Benchmarks (Completed 2025-10-02)**
-- ✅ Performance Benchmarks (8 tests): Comprehensive large codebase performance testing
-- ✅ Small codebase test: 100 files analyzed in <5 seconds
-- ✅ Medium codebase test: 1000 files analyzed in <30 seconds
-- ✅ Large codebase test: 5000 files analyzed in <2 minutes
-- ✅ Progress reporting: Real-time progress tracking during analysis
-- ✅ Memory monitoring: <2GB memory usage on large codebases
-- ✅ Incremental analysis: >10x performance improvement over full analysis
-- ✅ Mixed file types: Efficient handling of functions, classes, React components
-- ✅ Performance consistency: <20% coefficient of variation across runs
-- ✅ Synthetic codebase generation: Templates for simple, medium, complex code
-- ✅ Memory monitoring utilities: Real-time heap usage tracking
-
-**Phase 3.2.3 - Multi-Step Execution (Completed 2025-10-02)**
-- ✅ End-to-End Workflows (15 tests): Complete multi-step workflow execution with dependencies, rollback, progress tracking
-- ✅ Workflow execution: Sequential step execution with dependency validation
-- ✅ Step types: command, file_operation, git_operation, validation, user_confirmation (5 types)
-- ✅ User approval checkpoints: Optional per-step or workflow-wide approval requirements
-- ✅ Automatic rollback: Reverses completed steps when later steps fail
-- ✅ Progress reporting: Real-time tracking with percentage, elapsed time, estimated remaining time
-- ✅ Execution cancellation: Cancel in-flight workflows gracefully
-- ✅ Dependency validation: Ensures dependent steps only run after prerequisites succeed
-- ✅ Step skipping: Automatically skips steps with unmet dependencies
-- ✅ Time tracking: Per-step and total workflow duration measurement
-- ✅ Validation steps: Dedicated validation step type for quality gates
-- ✅ Git operations: Native support for git workflows (stage, commit, push)
-- ✅ Execution history: Store and retrieve past workflow executions
-- ✅ Timeout handling: Configurable maximum execution time with automatic termination
-- ✅ Continue on error: Optional behavior to continue executing despite failures
-- ✅ Configurable delays: Inter-step delays for rate limiting or sequencing
-- ✅ Created multiStepExecutionWrapper.ts (509 lines) - Mock multi-step execution workflow
-- ✅ Created multi-step.execution.test.ts (485 lines) - 15 comprehensive tests
-- ✅ Added MULTI_STEP_CONSTANTS: 5 configuration values for execution timing
-- ✅ Added WORKFLOW_TEMPLATES: 4 predefined workflow templates (React app, auth setup, testing, deployment)
-- ✅ 6 TypeScript interfaces: ExecutionStep, StepExecutionResult, ExecutionProgress, WorkflowConfig, WorkflowExecutionResult
-- ✅ Time: 3 hours (vs. 18 estimated) - **83% faster**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.2.3 now 100% complete!**
-
-**Phase 3.2.2 - Debugging & Issue Resolution (Completed 2025-10-02)**
-- ✅ Root Cause Analysis (10 tests): Stack trace parsing, error categorization, cause identification
-- ✅ Solution Generation (10 tests): Multiple alternatives, ranking, validation criteria
-- ✅ Error stack trace parsing: Extract file locations, line numbers, call chain from stack
-- ✅ Error categorization: null_pointer, type_error, async_error, memory_leak, logic_error, configuration_error
-- ✅ Root cause identification: Pattern matching against known error database
-- ✅ Contributing factors: Deep stack analysis, missing await detection, null checking gaps
-- ✅ Related locations: Find related code sites from stack trace (up to 5 locations)
-- ✅ Evidence gathering: Error type, message, stack depth, code context analysis
-- ✅ Confidence scoring: 50-95% based on context quality, stack trace, known patterns
-- ✅ Multiple solution generation: Primary + alternative solutions (conservative/aggressive)
-- ✅ Solution ranking: Combined safety (0-100) + effectiveness (0-100) scoring
-- ✅ Code changes: File, line range, old/new code, reasoning for each change
-- ✅ Rollback plans: Step-by-step revert instructions for each solution
-- ✅ Validation criteria: Testing requirements specific to error category
-- ✅ Test suggestions: Recommended tests (null inputs, edge cases, error cases)
-- ✅ Time estimation: 2-8 hours based on complexity, confidence, effectiveness
-- ✅ Risk assessment: low/medium/high/critical based on error category and confidence
-- ✅ Configuration options: maxSolutions, includeMemoryAnalysis, includeAsyncAnalysis, generateRollbackPlans
-- ✅ Created debuggingIssueResolutionWrapper.ts (497 lines) - Mock debugging workflow
-- ✅ Created debugging.issue-resolution.test.ts (435 lines) - 20 comprehensive tests
-- ✅ Added DEBUGGING_CONSTANTS: 18 configuration values for debugging workflow
-- ✅ Added ERROR_PATTERNS: Database of known patterns (6 categories, 15 patterns)
-- ✅ Added SOLUTION_STRATEGIES: Recommended approaches for each error category (6 strategies)
-- ✅ 7 TypeScript interfaces: ErrorContext, RootCauseDiagnosis, Solution, ResolutionResult, DebuggingConfig
-- ✅ Time: 3 hours (vs. 20 estimated) - **85% faster**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.2.2 now 100% complete!**
-
-**Phase 3.2.1 - Feature Implementation Workflow Refactoring (Completed 2025-10-02)**
-- ✅ Code Review: Comprehensive review of Phase 3.2.1 tests documented in CODE_REVIEW_PHASE_3.2.1.md
-- ✅ DRY Violations Fixed: Eliminated 5 major violations (text matching, task creation, risk assessment, phase structure, array joins)
-- ✅ Hardcoded Values Eliminated: Extracted 137 hardcoded values to centralized constants
-- ✅ Added FEATURE_SPEC_KEYWORDS: All keyword arrays for text matching (backend, frontend, database, infrastructure, challenges)
-- ✅ Added FEATURE_IMPLEMENTATION_NUMBERS: All magic numbers (padding, thresholds, multipliers)
-- ✅ Added RISK_ASSESSMENT_CONSTANTS: Risk configuration templates
-- ✅ Added PHASE_TEMPLATES: Phase name/description templates (Design, Implementation, Testing, Review)
-- ✅ Added TASK_TEMPLATES: Task creation templates for design, testing, review phases
-- ✅ Added SPEC_TEMPLATES: String templates for acceptance criteria, constraints, challenges
-- ✅ Added RISK_MITIGATION_STRATEGIES: Risk mitigation template arrays
-- ✅ Created 5 helper methods: containsAnyKeyword(), determinePriority(), determineCategory(), aggregateRequirementText(), createTasksFromTemplates()
-- ✅ Refactored 17 methods to use constants and templates
-- ✅ Task creation refactored: createDesignTasks (38→7 lines), createTestingTasks (26→7 lines), createReviewTasks (24→7 lines)
-- ✅ Code reduction: ~200 lines of duplicate code eliminated
-- ✅ Repository cleanup: Stopped tracking extensions/vscode/dist/ (2.0 MB compiled code)
-- ✅ Updated .gitignore: Ignored .vscode-test/ (425 MB test environment)
-- ✅ Time: 3 hours for code review + implementation
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.2.1 refactoring now 100% complete!**
-
-**Phase 3.2.1 - Feature Implementation Workflow (Completed 2025-10-02)**
-- ✅ Specification Parsing (8 tests): Parse text/technical specs, extract requirements, acceptance criteria
-- ✅ Implementation Decomposition (12 tests): Multi-phase plans, task dependencies, critical path analysis
-- ✅ AI-powered requirement extraction with priority and category classification
-- ✅ Complexity analysis: 4-level scoring (simple, moderate, complex, very_complex) with justification
-- ✅ Time estimation: Confidence scoring, phase breakdown (design, implementation, testing, review)
-- ✅ Resource identification: Backend, frontend, database, infrastructure, QA role allocation
-- ✅ Multi-phase planning: Automatic decomposition into Design, Implementation, Testing, Review phases
-- ✅ Task dependency validation: Ensures dependencies reference valid tasks, no circular dependencies
-- ✅ Critical path analysis: Identifies longest task chain through implementation phases
-- ✅ Risk assessment: Probability, impact scoring with mitigation strategies
-- ✅ Timeline generation: Milestones with dates and deliverables
-- ✅ Execution order optimization: Tasks ordered to respect dependencies
-- ✅ Role assignment: Automatic assignment based on requirement analysis
-- ✅ Configurable options: maxPhases, includeRiskAssessment, includeTimeEstimation
-- ✅ Created featureImplementationWrapper.ts (670 lines) - Mock feature implementation workflow
-- ✅ Created feature-implementation.workflow.test.ts (535 lines) - 20 comprehensive tests
-- ✅ 9 TypeScript interfaces + 4 type aliases for autonomous development
-- ✅ Time: 4 hours (vs. 20 estimated) - **80% faster**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.2.1 now 100% complete!**
-
-**Phase 3.1.3 - Pull Request Review Automation Refactoring (Completed 2025-10-02)**
-- ✅ Code Review: Comprehensive review of Phase 3.1.3 tests documented in CODE_REVIEW_PHASE_3.1.3.md
-- ✅ DRY Violations Fixed: Eliminated 2 major violations (config duplication, calculation duplication)
-- ✅ Hardcoded Values Eliminated: Extracted 67 hardcoded values to centralized constants
-- ✅ Added PR_REVIEW_TEST_CONSTANTS: Repository URLs, API tokens, mock data (26 constants)
-- ✅ Added PR_SECURITY_SCORING: Vulnerability weights (critical=40, high=20, medium=10, low=5)
-- ✅ Added PR_QUALITY_SCORING: Metric weights (maintainability=30%, test=30%, docs=20%, complexity=20%)
-- ✅ Added PR_METRIC_DIVISORS: Calculation constants for complexity, risk, code smells
-- ✅ Added PR_APPROVAL_THRESHOLDS: Auto-approval minimum scores
-- ✅ Added PR_REVIEW_RECOMMENDATIONS: Template functions for review messages
-- ✅ Created createPRReviewConfig() helper: Eliminated 23 instances of config duplication (184 lines → 46 lines, 75% reduction)
-- ✅ Added calculation helpers: getTotalChanges(), getTotalDeletions(), getTotalAdditions()
-- ✅ Refactored pr-review.automation.test.ts: Reduced from 716 to 168 lines (77% reduction)
-- ✅ Code Quality Improved: Maintainability significantly improved with centralized constants
-- ✅ Time: 3.5 hours for code review + implementation
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.1.3 refactoring now 100% complete!**
-
-**Phase 3.1.3 - Pull Request Review Automation (Completed 2025-10-02)**
-- ✅ Multi-Platform Support (10 tests): GitHub, GitLab, Bitbucket PR/MR integration
-- ✅ Security Analysis Integration (8 tests): Vulnerability detection in diffs, critical issue blocking, security recommendations
-- ✅ Quality Assessment (7 tests): Quality metrics, test coverage analysis, complexity analysis, regression risk scoring
-- ✅ PR metadata extraction: Title, description, author, branches, file changes with diffs
-- ✅ PR comment posting: General comments and inline file/line-specific comments
-- ✅ PR status updates: Approve, request changes, comment actions
-- ✅ Security vulnerability detection: XSS, SQL injection, eval() patterns in diffs
-- ✅ Configurable blocking: Optional critical issue blocking
-- ✅ Security scoring: Weighted severity scoring (0-100)
-- ✅ Quality metrics: Complexity, maintainability, test coverage, documentation, code smells
-- ✅ Test coverage analysis: Test file to source file ratio tracking
-- ✅ Complexity change tracking: Change size impact on complexity
-- ✅ Regression risk calculation: Based on deletion ratio and change size
-- ✅ Auto-approval: Configurable quality and security thresholds
-- ✅ Platform API error handling: Retry logic for all platforms
-- ✅ Created prReviewAutomationWrapper.ts (343 lines) - Mock PR review automation
-- ✅ Created pr-review.automation.test.ts (168 lines after refactoring) - 25 comprehensive tests
-- ✅ 9 TypeScript interfaces for PR review automation
-- ✅ Time: 3.5 hours (vs. 27 estimated) - **87% faster**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.1.3 now 100% complete!**
-
-**Phase 3.1.2 - Code Refactoring (Completed 2025-10-02)**
-- ✅ Code Review: Comprehensive review of Phase 3.1.2 tests documented in CODE_REVIEW_PHASE_3.1.md
-- ✅ DRY Violations Fixed: Eliminated 3 major violations (config duplication, mock duplication, assertion duplication)
-- ✅ Hardcoded Values Eliminated: Extracted 47 hardcoded values to centralized constants
-- ✅ Created commitMessageGeneratorWrapper.ts: Extracted 120-line mock implementation to separate file
-- ✅ Added COMMIT_MESSAGE_TEST_CONSTANTS: Centralized test configuration values
-- ✅ Added COMMIT_EMOJI_MAP: Commit type to emoji mapping
-- ✅ Added COMMIT_SUBJECT_TEMPLATES: Reusable commit message templates
-- ✅ Created createCommitMessageConfig() helper: Eliminated 319 lines of config duplication across 15 tests
-- ✅ Created assertion helpers: assertValidCommitMessage(), assertConventionalFormat(), assertEmojiFormat()
-- ✅ Refactored commit-message.generation.test.ts: Reduced from 591 to 366 lines (38% reduction)
-- ✅ Code Quality Improved: Maintainability score increased from 6/10 to 9/10
-- ✅ Time: 2 hours for code review + 1.5 hours for refactoring = 3.5 hours total
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 3.1.2 code quality now optimized!**
-
-**Phase 2.3.3 - Quality Assessment Integration Tests (Completed 2025-10-02)**
-- ✅ Quality Assessment Integration (16 tests): Complexity metrics, best practices, maintainability, documentation, type safety, overall scoring
-- ✅ Added calculateQualityMetrics() method to SecurityAnalyzer with comprehensive quality analysis
-- ✅ Complexity metrics: Cyclomatic complexity, cognitive complexity, average function length, max nesting depth
-- ✅ Best practice validation: Naming conventions, error handling, input validation
-- ✅ Maintainability metrics: Maintainability index (0-100), code smells detection, technical debt estimation
-- ✅ Documentation coverage: Function, class, and module documentation percentage
-- ✅ Type safety evaluation: TypeScript type annotation coverage, any type usage detection
-- ✅ Overall quality score: Weighted scoring (0-100) with A-F grading system
-- ✅ Created 6 TypeScript interfaces (QualityMetrics, ComplexityMetrics, MaintainabilityMetrics, BestPracticeMetrics, TestCoverageMetrics, DocumentationMetrics, TypeSafetyMetrics)
-- ✅ Added testQualityMetrics() test helper function
-- ✅ Comprehensive test suite (16 tests across 6 suites): 2 complexity + 6 best practices + 2 maintainability + 2 documentation + 2 type safety + 2 overall
-- ✅ Created 14 code templates for quality assessment (high/low complexity, poor/good maintainability, naming, error handling, validation, type safety, documentation)
-- ✅ Time: 4 hours (vs. 12 estimated) - **67% faster**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 2.3 now 100% complete!** (81/80 tests, 101% completion)
-
-**Phase 2.3.2 - Review Report Generation Tests (Completed 2025-10-02)**
-- ✅ Review Report Generation (7 tests): Summary generation, severity classification, recommendations, positive feedback, actionable files, confidence scoring
-- ✅ Added generateReviewReport() method to SecurityAnalyzer with comprehensive report generation
-- ✅ Summary generation: Executive summary with critical/high/medium issue counts
-- ✅ Severity classification: Four-level classification (critical, major, minor, info) with issue lists
-- ✅ Recommendation generation: Grouped recommendations with examples (file, line, code), sorted by severity
-- ✅ Positive findings: Identifies security best practices being followed
-- ✅ Actionable files: Prioritizes files by issue count and severity
-- ✅ Confidence scoring: Weighted score (0-100) based on severity and detection confidence
-- ✅ Created 4 TypeScript interfaces (ReviewReport, SeverityClassification, Recommendation, ActionableFile)
-- ✅ Added testReviewReportGeneration() test helper function
-- ✅ Comprehensive test suite (14 tests across 6 suites): 2 summary + 2 severity + 2 recommendations + 2 positive + 2 actionable + 3 confidence
-- ✅ Created 6 code templates for review reports (critical issues, mixed severity, minor only, perfect code, good practices, category testing)
-- ✅ Time: 7 hours (vs. 7 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 2.3.2 now 100% complete!** (25/25 tests)
-
-**Phase 2.3.2 - Architecture Issues Tests (Completed 2025-10-02)**
-- ✅ Architecture Issues (8 tests): Large classes, tight coupling, missing abstraction, circular dependencies
-- ✅ Added 4 architecture analysis rules to SecurityAnalyzerWrapper
-- ✅ Large class detection (CWE-1048, medium): Classes with >10 methods (God Object anti-pattern)
-- ✅ Tight coupling detection (CWE-1047, medium): High fan-out dependencies (>5 direct imports)
-- ✅ Missing abstraction detection (CWE-1061, medium): Direct database access without repository pattern
-- ✅ Circular dependency detection (CWE-1047, high): Cyclic module dependencies
-- ✅ Added 4 test helper functions (testLargeClassDetection, testTightCouplingDetection, etc.)
-- ✅ Comprehensive test suite (8 tests across 5 suites): 1 large class + 1 tight coupling + 1 missing abstraction + 2 circular dependency + 4 negative tests
-- ✅ Negative tests for good architecture (small focused classes, loose coupling, repository pattern, acyclic dependencies)
-- ✅ Created 10 code templates for architecture issues (5 problematic + 5 safe)
-- ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-
-**Phase 2.3.2 - Code Quality Analysis Tests (Completed 2025-10-01)**
-- ✅ Code Quality Analysis (10 tests): Magic numbers, large functions, deep nesting, error handling, input validation
-- ✅ Added 6 code quality analysis rules to SecurityAnalyzerWrapper
-- ✅ Magic number detection (CWE-1098, medium): Hardcoded numerics in setTimeout, calculations
-- ✅ Large function detection (CWE-1121, medium): Functions exceeding 50 lines
-- ✅ Deep nesting detection (CWE-1124, medium): Nesting exceeding 4 levels
-- ✅ Missing error handling detection (CWE-252, high): async/await without try-catch, promises without .catch()
-- ✅ Missing input validation detection (CWE-20, high): Unvalidated req.body, division-by-zero
-- ✅ Duplicate code detection (CWE-1121, low): Code duplication patterns
-- ✅ Added 6 test helper functions (testMagicNumberDetection, testLargeFunctionDetection, etc.)
-- ✅ Comprehensive test suite (10 tests across 6 suites): 2 magic numbers + 1 large function + 1 deep nesting + 2 error handling + 2 input validation + 5 negative tests
-- ✅ Negative tests for good code quality (named constants, small functions, flat logic, error handling, validation)
-- ✅ Created 13 code templates for code quality issues (8 problematic + 5 safe)
-- ✅ Time: 10 hours (vs. 10 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-
-**Phase 2.3.1 - Security Misconfiguration Tests (Completed 2025-10-01)**
-- ✅ Security Misconfiguration (8 tests): Debug mode, CORS, default credentials, insecure HTTP
-- ✅ Added 4 security misconfiguration rules to SecurityAnalyzerWrapper
-- ✅ Debug mode in production detection (CWE-489, high): debug:true + env:production patterns
-- ✅ CORS misconfiguration detection (CWE-942, high): wildcard origin with credentials
-- ✅ Default credentials detection (CWE-798, critical): admin/admin, root/password patterns
-- ✅ Insecure HTTP detection (CWE-319, high): HTTP URLs with sensitive data transmission
-- ✅ Added 4 test helper functions (testDebugModeDetection, testCorsMisconfigurationDetection, etc.)
-- ✅ Comprehensive test suite (8 tests across 6 suites): 2 debug mode + 2 CORS + 2 default creds + 2 HTTP + 5 negative tests + 1 metadata validation
-- ✅ Negative tests for safe configurations (debug disabled, CORS whitelist, env credentials, HTTPS, secure cookies)
-- ✅ OWASP category mapping (A05:2021 Security Misconfiguration)
-- ✅ Created 13 code templates for misconfiguration vulnerabilities (8 vulnerable + 5 safe)
-- ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-- ✅ **Phase 2.3.1 now 100% complete!** (40/40 tests)
-
-**Phase 2.3.1 - Authentication & Session Issues Tests (Completed 2025-10-01)**
-- ✅ Authentication & Session Issues (10 tests): Hardcoded credentials, weak passwords, missing auth, session fixation
-- ✅ Added 4 authentication security rules to SecurityAnalyzerWrapper
-- ✅ Hardcoded credentials detection (CWE-798, critical): password/apiKey/secret patterns
-- ✅ Weak password policy detection (CWE-521, high): password length < 8 validation
-- ✅ Missing authentication check (CWE-287, critical): unprotected admin/api routes
-- ✅ Session fixation detection (CWE-384, high): login without session.regenerate()
-- ✅ Added 4 test helper functions (testHardcodedCredentialsDetection, testWeakPasswordPolicyDetection, etc.)
-- ✅ Comprehensive test suite (10 tests across 5 suites): 3 hardcoded credentials + 3 weak passwords + 3 missing auth + 2 session fixation + 2 metadata validation
-- ✅ Negative tests for safe practices (env vars, strong passwords, protected routes, session regeneration)
-- ✅ OWASP category mapping (A07:2021 Authentication Failures, A01:2021 Broken Access Control)
-- ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-- ✅ Build verified: All tests compile successfully
-
-**Phase 2.3.1 - Sensitive Data Exposure Tests (Completed 2025-10-01)**
-- ✅ Sensitive Data Exposure (19 tests): Hardcoded secrets, exposed keys, data in logs, unencrypted storage, edge cases
-- ✅ Added 4 sensitive data security rules to SecurityAnalyzerWrapper
-- ✅ Hardcoded secrets detection (CWE-798, critical): AWS keys, Stripe API keys, GitHub tokens
-- ✅ Exposed encryption keys detection (CWE-321, critical): AES keys, JWT secrets
-- ✅ Sensitive data in logs detection (CWE-532, high): passwords, tokens, credit cards in console.log
-- ✅ Unencrypted storage detection (CWE-311, high): localStorage/sessionStorage with sensitive data
-- ✅ Added 4 test helper functions (testHardcodedSecretsDetection, testExposedEncryptionKeysDetection, etc.)
-- ✅ Comprehensive test suite (19 tests across 6 suites): 4 API keys + 2 encryption keys + 4 logs + 3 storage + 2 metadata + 3 edge cases
-- ✅ Negative tests for safe practices (env vars, encrypted storage, sanitized logs)
-- ✅ Edge case tests (20-char boundary, template literals, Base64 encoding)
-- ✅ OWASP category mapping (A02:2021 Cryptographic Failures, A09:2021 Logging Failures)
-- ✅ Created 17 code templates for sensitive data vulnerabilities (14 main + 3 edge cases)
-- ✅ Fixed pattern overlap bug (hardcoded_credentials vs hardcoded_secrets)
-- ✅ Updated crypto templates to use modern createCipheriv API
-- ✅ Time: 10 hours (vs. 6 estimated) - **67% over estimate** (due to comprehensive coverage + fixes)
-- ✅ Build verified: All tests compile successfully
-
-**Phase 2.3.1 - XSS Vulnerabilities Tests (Completed Today)**
-- ✅ XSS Vulnerabilities (18 tests): Reflected, DOM-based, React, metadata validation
-- ✅ Added XSS detection rule to SecurityAnalyzerWrapper (innerHTML, dangerouslySetInnerHTML)
-- ✅ Reflected XSS detection (3 tests): innerHTML, document.write, outerHTML patterns
-- ✅ DOM-based XSS detection (2 tests): location.href, URL parameter injection
-- ✅ React XSS detection (2 tests): dangerouslySetInnerHTML patterns
-- ✅ Negative tests for safe practices (3 tests): textContent, DOMPurify, React escaped syntax
-- ✅ Security metadata validation (4 tests): OWASP A03:2021, CWE-79, references
-- ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-- ✅ Build verified: All tests pass with comprehensive XSS coverage
-
-**Phase 2.3.1 - Security Test Infrastructure Refactoring (Completed Today)**
-- ✅ Code Review & Refactoring: Grade improved from C- (65/100) to A (93/100)
-- ✅ Eliminated 385 lines of code duplication (261 scanner + 124 boilerplate)
-- ✅ Created reusable security test infrastructure (805 lines):
-  - `securityTestHelper.ts` (365 lines) - 13 test helper functions
-  - `securityTestConstants.ts` (157 lines) - CWE IDs, OWASP categories, constants
-  - `securityAnalyzerWrapper.ts` (283 lines) - Production-aligned security scanner
-- ✅ Fixed 2 critical bugs (unused dependencies, duplicate types)
-- ✅ Eliminated 15 hardcoded values
-- ✅ Enhanced test coverage: 11 → 21 tests (+91%)
-- ✅ Added 6 negative tests (safe code validation)
-- ✅ Added security metadata validation (OWASP, CWE, references)
-- ✅ Time: 13 hours total (10 initial + 3 refactoring)
-- ✅ Infrastructure ready for all future security tests
-
-**Phase 2.3.1 - Injection Vulnerabilities Tests (Completed 2025-01-01)**
-- ✅ Injection Vulnerabilities (21 tests): SQL, NoSQL, Command, LDAP, XPath, Template
-- ✅ SecurityAnalyzerWrapper with production-aligned pattern detection
-- ✅ OWASP Top 10 category validation (A03:2021 – Injection)
-- ✅ CWE ID validation (89, 78, 90, 643, 94)
-- ✅ Reference link validation (owasp.org, cwe.mitre.org)
-- ✅ Negative tests for false positive prevention
-- ✅ Complete security vulnerability scanning with metadata validation
-
-**Phase 2.2.4 - create-tests Command Tests (Completed Earlier Today)**
-- ✅ Test Generation Tests (15 tests): Jest, Mocha, React Testing Library
-- ✅ Framework Support: Jest, Mocha, Jest-React with auto-detection
-- ✅ Coverage Options: Basic and comprehensive test generation
-- ✅ Mock Generation: Automatic mock setup for dependencies
-- ✅ Naming Conventions: .test.js (Jest) and .spec.js (Mocha)
-- ✅ Time: 12 hours (vs. 12 estimated) - **On time**
-- ✅ Complete test generation with multi-framework support
-
-**Phase 2.2.3 - generate-code Command Tests (Completed Earlier Today)**
-- ✅ Code Generation Tests (10 tests): REST API, React, Python, Vue, framework-specific
-- ✅ Output Options: File save and stdout display
-- ✅ Validation: Syntax checking for generated code
-- ✅ Best Practices: Error handling, JSDoc comments
-- ✅ Time: 10 hours (vs. 10 estimated) - **On time**
-- ✅ Comprehensive code generation with multi-framework support
-
-**Phase 2.2.2 - edit-file Command Tests (Completed Earlier Today)**
-- ✅ Content Modification Tests (6 tests): Natural language edits, add functions, JSDoc, refactoring
-- ✅ Preview Mode Tests (4 tests): Diff generation, large files, no-apply verification
-- ✅ Edge Cases Tests (3 tests): Non-existent files, read-only, client disconnection
-- ✅ Time: 5 hours (vs. 15 estimated) - **67% faster**
-- ✅ Comprehensive file editing with AI-powered transformations
-
-**Phase 2.2.1 - create-file Command Tests (Completed Earlier Today)**
-- ✅ Basic Creation Tests (5 tests): JS, TS, React, test files with AI generation
-- ✅ Directory Handling Tests (5 tests): Auto-create dirs, nested paths, security
-- ✅ Error Handling Tests (5 tests): Exists, overwrite, invalid names, AI fallback
-- ✅ Time: 5 hours (vs. 14 estimated) - **64% faster**
-- ✅ Comprehensive file creation testing with multi-language support
-
-**Phase 2.1 - IDE Integration Tests (Completed Earlier Today)**
-- ✅ WebSocket Server Tests (45 tests): Connection, message processing, MCP integration
-- ✅ VS Code Provider Tests (60 tests): CodeLens, DocumentSymbol, InlineCompletion, Hover, Diagnostic
-- ✅ Chat Panel Integration Tests (20 tests): Chat interface and command system
-- ✅ Time: 25 hours (vs. 96 estimated) - **74% faster**
-- ✅ Code Review & Refactoring: Eliminated DRY violations, improved from B to A+ quality
-
-**Phase 1.1 - E2E Framework (Completed)**
-- ✅ Playwright E2E framework installed and configured
-- ✅ Test fixture infrastructure created (small project + vulnerable code samples)
-- ✅ CLI E2E test helpers implemented (13 utility functions)
-- ✅ Basic CLI E2E tests created (7 tests, 6 passing)
-- ✅ GitHub Actions CI/CD workflow configured for E2E tests
-- ✅ Time: 12 hours (vs. 32 estimated) - **62.5% faster**
-
-**Phase 1.2 - VS Code Extension Testing (Completed)**
-- ✅ VS Code test framework verified and configured
-- ✅ Extension test helpers created (23 utility functions)
-- ✅ Extension activation tests implemented (22 tests)
-- ✅ WebSocket testing infrastructure created (12 integration tests)
-- ✅ Time: 8 hours (vs. 22 estimated) - **64% faster**
-
-**Phase 1.3 - AI Model Testing Infrastructure (Completed)**
-- ✅ Lightweight Ollama Docker container configured (TinyLlama model)
-- ✅ AI testing helper utilities created (10+ functions)
-- ✅ AI response fixture library established (3 sample fixtures + infrastructure)
-- ✅ Comprehensive AI testing strategy documented (50+ page guide)
-- ✅ Test scripts added to package.json (test:ai-integration)
-- ✅ Time: 6 hours (vs. 18 estimated) - **67% faster**
-
-**Overall Phase 1 Progress: 12/12 tasks (100%) ✅ COMPLETE**
-- **Total Time:** 26 hours (vs. 80 estimated) - **68% efficiency gain**
-- **Status:** All Phase 1 deliverables completed ahead of schedule
+> **Implementation Strategy**: Test-Driven Development (TDD)
+> - Write tests first, then implement features
+> - Ensure all tests pass before moving to next task
+> - Maintain minimum 80% code coverage throughout
 
 ---
 
-## Executive Summary
+## Phase 1: Foundation (Weeks 1-2)
 
-This document outlines a comprehensive plan to improve test automation coverage for the ollama-code project. Currently, the project has **~30% automated coverage** of manual test scenarios, with **critical gaps** in end-to-end integration testing, particularly for user-facing features like IDE integration, autonomous development, and VCS intelligence.
+### 1.1 Create Request Orchestrator Skeleton
 
-### Key Objectives
-1. **Increase automated test coverage from 30% to 75%** over 24 weeks
-2. **Establish E2E testing infrastructure** for IDE integration and CLI workflows
-3. **Automate critical security and quality testing** (OWASP Top 10, code review)
-4. **Reduce manual testing burden by 85%** (from 40 hours to 6 hours per cycle)
-5. **Enable faster release cycles** through comprehensive CI/CD test automation
+#### Tests to Write First
+- [ ] `tests/unit/orchestrator/request-orchestrator.test.ts`
+  - [ ] Should parse multi-step requests into discrete tasks
+  - [ ] Should identify task dependencies correctly
+  - [ ] Should handle circular dependency detection
+  - [ ] Should prioritize tasks based on dependencies
+  - [ ] Should validate orchestration plan before execution
+  - [ ] Should emit events for task lifecycle (start, progress, complete, error)
 
-### Coverage Gaps Summary
-| Category | Current Coverage | Target Coverage | Priority |
-|----------|-----------------|-----------------|----------|
-| IDE Integration & VS Code Extension | 10% | 80% | 🔴 Critical |
-| File Operation Commands (Phase 2) | 25% | 90% | 🔴 Critical |
-| Security Vulnerability Detection | 0% | 85% | 🔴 Critical |
-| Autonomous Development (Code Review, Debug) | 5% | 75% | 🔴 Critical |
-| VCS Intelligence (Hooks, PR Review) | 15% | 80% | 🟡 High |
-| Multi-Step Query Execution | 30% | 85% | 🟡 High |
-| Code Knowledge Graph Integration | 40% | 80% | 🟡 High |
-| Performance & Large Codebases | 35% | 75% | 🟢 Medium |
+- [ ] `tests/unit/orchestrator/task-decomposition.test.ts`
+  - [ ] Should decompose "create feature" into subtasks
+  - [ ] Should identify file operations vs code analysis tasks
+  - [ ] Should recognize refactoring vs creation tasks
+  - [ ] Should handle ambiguous requests gracefully
 
----
+- [ ] `tests/integration/orchestrator/orchestrator-integration.test.ts`
+  - [ ] Should execute multi-file refactoring end-to-end
+  - [ ] Should handle failures with rollback
+  - [ ] Should integrate with existing ToolOrchestrator
 
-## Phase 1: Foundation & Infrastructure (Weeks 1-4)
-**Goal:** Establish E2E testing infrastructure and test data fixtures
-**Effort:** 80 hours (Actual: 26 hours)
-**Team:** 1 QA Engineer + 1 Backend Developer
-**Status:** ✅ COMPLETE (12/12 tasks completed - All sections: 100% complete)
-**Started:** 2025-01-01
-**Completed:** 2025-01-01
-**Latest Update:** 2025-01-01 - Completed AI Model Testing Infrastructure (Section 1.3)
+#### Implementation Files
+- [ ] `src/orchestrator/request-orchestrator.ts`
+- [ ] `src/orchestrator/task-decomposer.ts`
+- [ ] `src/orchestrator/dependency-resolver.ts`
+- [ ] `src/orchestrator/types.ts`
 
-### 1.1 E2E Testing Framework Setup (Week 1-2)
-**Objective:** Install and configure end-to-end testing framework for CLI and IDE features
-**Status:** ✅ 5/5 tasks completed
-
-#### Tasks
-- [x] **1.1.1** Evaluate and select E2E testing framework (✅ COMPLETED 2025-01-01)
-  - ✅ Research Playwright vs. Cypress for VS Code extension testing
-  - ✅ Assess compatibility with current Jest infrastructure
-  - ✅ Document framework selection rationale: **Playwright selected** for superior TypeScript support, headless testing, and Node.js CLI testing capabilities
-  - **Actual Time:** 2 hours
-  - **Dependencies:** None
-  - **Success Criteria:** ✅ Framework decision documented with pros/cons
-
-- [x] **1.1.2** Install Playwright and configure for TypeScript (✅ COMPLETED 2025-01-01)
-  - ✅ Install `@playwright/test` v1.55.1 and TypeScript types
-  - ✅ Configure `playwright.config.ts` for test organization (2 projects: cli-e2e, ide-integration)
-  - ✅ Set up test runners for parallel execution
-  - ✅ Add npm scripts: `test:e2e`, `test:e2e:ui`, `test:e2e:debug`
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.1.1
-  - **Success Criteria:** ✅ `yarn test:e2e` command executes successfully
-
-- [x] **1.1.3** Create test fixture infrastructure (✅ COMPLETED 2025-01-01)
-  - ✅ Build small test project (5 files: index.js, math.js, validation.js, package.json, README.md)
-  - ⏳ Build medium test project (100-200 files, React app structure) - **DEFERRED to Phase 2**
-  - ⏳ Build large test project (500+ files, monorepo structure) - **DEFERRED to Phase 3**
-  - ✅ Add security-vulnerable code samples (4 files: sql-injection, xss, hardcoded-secrets, command-injection)
-  - **Actual Time:** 4 hours (small + vulnerable fixtures only)
-  - **Dependencies:** None
-  - **Success Criteria:** ✅ Small project and vulnerable fixtures in `tests/fixtures/`
-
-- [x] **1.1.4** Set up CLI command E2E test structure (✅ COMPLETED 2025-01-01)
-  - ✅ Create `tests/e2e/cli/`, `tests/e2e/ide/`, `tests/e2e/helpers/`, `tests/e2e/workflows/` directory structure
-  - ✅ Implement test helpers for CLI execution and output parsing (`cli-helper.ts` with 13 utility functions)
-  - ✅ Create basic CLI E2E test file (`basic-cli.e2e.test.ts` with 7 tests)
-  - ⏳ Create snapshot infrastructure for AI-generated content testing - **DEFERRED to Phase 2**
-  - **Actual Time:** 3 hours
-  - **Dependencies:** 1.1.2, 1.1.3
-  - **Success Criteria:** ✅ 7 basic CLI E2E tests created, 1 passing (version test verified)
-
-- [x] **1.1.5** Configure CI/CD for E2E tests (✅ COMPLETED 2025-01-01)
-  - ✅ Add E2E test job to GitHub Actions workflow (`.github/workflows/test-e2e.yml`)
-  - ✅ Set up test artifact collection (playwright-report, test-results)
-  - ✅ Configure test failure notifications (PR comments with test summary)
-  - ✅ Install Playwright browsers in CI environment
-  - **Actual Time:** 1 hour
-  - **Dependencies:** 1.1.4
-  - **Success Criteria:** ✅ E2E tests run automatically on PR creation with artifact uploads
-
-### 1.2 VS Code Extension Testing Setup (Week 3-4)
-**Objective:** Configure automated testing infrastructure for VS Code extension
-**Status:** ✅ 4/4 tasks completed
-
-#### Tasks
-- [x] **1.2.1** Install VS Code testing framework (✅ COMPLETED 2025-01-01)
-  - ✅ Verified `@vscode/test-electron` v2.3.0 already installed
-  - ✅ Extension test runner already configured in `extensions/vscode/package.json`
-  - ✅ Test suite infrastructure in place (`src/test/runTest.ts`, `src/test/suite/index.ts`)
-  - ✅ Existing tests: workspaceAnalyzer, notificationService, progressIndicatorService
-  - **Actual Time:** 1 hour (verification only - already configured)
-  - **Dependencies:** None
-  - **Success Criteria:** ✅ Basic extension test harness runs locally
-
-- [x] **1.2.2** Create extension test helpers (✅ COMPLETED 2025-01-01)
-  - ✅ Implemented `extensionTestHelper.ts` with 23 utility functions
-  - ✅ Extension activation helpers (waitForExtensionActivation, getExtension, isExtensionActive)
-  - ✅ Command testing utilities (getRegisteredCommands, isCommandRegistered, executeCommand)
-  - ✅ Workspace mock generators (createTestWorkspace, createMockWorkspace)
-  - ✅ Configuration helpers (getConfig, updateConfig, resetConfig)
-  - ✅ Document and editor utilities (openDocument, openAndShowDocument, closeAllEditors)
-  - **Actual Time:** 3 hours
-  - **Dependencies:** 1.2.1
-  - **Success Criteria:** ✅ Reusable test helpers in `extensions/vscode/src/test/helpers/extensionTestHelper.ts`
-
-- [x] **1.2.3** Write extension activation tests (✅ COMPLETED 2025-01-01)
-  - ✅ Created `extension.activation.test.ts` with 22 comprehensive tests
-  - ✅ Extension presence and activation verification
-  - ✅ Command registration tests (24 expected commands verified)
-  - ✅ Configuration schema validation (9 config keys tested)
-  - ✅ Package.json metadata verification (name, version, categories, activation events)
-  - ✅ Views, menus, and keybindings configuration tests
-  - ✅ Error-free activation validation
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.2.2
-  - **Success Criteria:** ✅ 22 activation tests created
-
-- [x] **1.2.4** Configure WebSocket server testing (✅ COMPLETED 2025-01-01)
-  - ✅ Created `websocketTestHelper.ts` with WebSocket test utilities
-  - ✅ Implemented `createTestWebSocketClient()` with message tracking
-  - ✅ Implemented `createMockMCPServer()` for integration testing
-  - ✅ Connection/disconnection helpers (waitForConnection, assertConnected)
-  - ✅ Message exchange utilities (sendAndWaitForResponse, testHeartbeat)
-  - ✅ Created `websocket.integration.test.ts` with 12 integration tests
-  - ✅ Tests: connection, disconnection, message exchange, broadcast, multiple clients
-  - ✅ Tests: error handling, large payloads, rapid cycles, connection stability
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.2.2
-  - **Success Criteria:** ✅ WebSocket server tested with mock MCP server (12 tests)
-
-### 1.3 AI Model Testing Infrastructure (Week 3-4)
-**Objective:** Enable testing with actual AI models instead of mocks
-**Status:** ✅ 3/3 tasks completed
-
-#### Tasks
-- [x] **1.3.1** Set up lightweight test Ollama instance (✅ COMPLETED 2025-01-01)
-  - ✅ Created Docker container with Ollama + TinyLlama model
-  - ✅ Configured docker-compose.test.yml for test orchestration
-  - ✅ Documented model selection and performance characteristics
-  - ✅ Created comprehensive Docker setup README with usage examples
-  - ✅ Configured health checks and port mapping (11435 for tests)
-  - **Actual Time:** 2 hours
-  - **Dependencies:** None
-  - **Success Criteria:** ✅ Tests can execute against real AI model via Docker
-
-- [x] **1.3.2** Create AI response fixture library (✅ COMPLETED 2025-01-01)
-  - ✅ Created AI fixture helper utilities (loadAIFixture, captureAIResponse, validateFixture)
-  - ✅ Implemented fixture management functions (listFixtures, findFixturesByTags, findOutdatedFixtures)
-  - ✅ Built comprehensive fixture README with structure and usage guidelines
-  - ✅ Created 3 sample fixtures (code-generation, security-analysis, code-explanation)
-  - ✅ Implemented fixture validation with pattern matching and content checks
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.3.1
-  - **Success Criteria:** ✅ AI response fixture library operational with sample fixtures
-
-- [x] **1.3.3** Implement AI testing strategies (✅ COMPLETED 2025-01-01)
-  - ✅ Created comprehensive AI_TESTING_STRATEGY.md (50+ page guide)
-  - ✅ Documented fixture-based, mock-based, and real AI testing approaches
-  - ✅ Created testing decision matrix and performance benchmarks
-  - ✅ Implemented AI test helper utilities (setupAITests, testWithAI, describeWithAI)
-  - ✅ Added environment configuration (USE_REAL_AI, OLLAMA_TEST_HOST, etc.)
-  - ✅ Created test:ai-integration script in package.json
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.3.2
-  - **Success Criteria:** ✅ AI testing strategy documented with helper utilities
-
-**Phase 1 Deliverables:**
-- ✅ Playwright E2E framework operational
-- ✅ VS Code extension test harness configured
-- ✅ 3 test fixture projects created (small + vulnerable)
-- ✅ Lightweight Ollama test instance available (Docker + TinyLlama)
-- ✅ AI response fixture library established (3 samples + infrastructure)
-- ✅ AI testing strategy documented (50+ page guide)
-- ✅ 41 initial E2E/integration tests created (7 CLI + 22 activation + 12 WebSocket)
-- ✅ CI/CD pipeline executing E2E tests (GitHub Actions)
+#### Acceptance Criteria
+- All tests pass
+- Integrates with existing `tools/orchestrator.ts`
+- Can decompose at least 5 common request patterns
+- Handles errors with proper rollback mechanisms
 
 ---
 
-## Phase 2: Critical Feature Coverage (Weeks 5-12)
-**Goal:** Automate critical user-facing features with highest risk
-**Effort:** 240 hours
-**Team:** 2 QA Engineers + 1 Backend Developer
+### 1.2 Enhance Semantic Code Analyzer
 
-### 2.1 IDE Integration Tests (Week 5-7) ✅ COMPLETED 2025-01-01
-**Objective:** Automate WebSocket server and VS Code provider testing
-**Priority:** 🔴 Critical
-**Target Coverage:** 80% (achieved 85%)
-**Status:** ✅ All 125 tests completed (45 WebSocket + 60 Provider + 20 Chat Panel)
+#### Tests to Write First
+- [ ] `tests/unit/ai/semantic-analyzer.test.ts`
+  - [ ] Should extract function signatures with types
+  - [ ] Should identify class hierarchies and relationships
+  - [ ] Should detect dependency chains between modules
+  - [ ] Should recognize common design patterns
+  - [ ] Should identify code smells accurately
+  - [ ] Should calculate cyclomatic complexity
 
-#### 2.1.1 WebSocket Server Tests (45 tests - COMPLETE ✅)
-**Summary:** Comprehensive WebSocket testing infrastructure with authentication, message processing, and MCP protocol support.
-**Total Tests:** 45 (16 connection + 18 message + 11 MCP)
-**Estimated Time:** 32 hours | **Actual Time:** 10 hours (69% efficiency gain)
+- [ ] `tests/unit/ai/symbol-resolver.test.ts`
+  - [ ] Should resolve imports across files
+  - [ ] Should handle TypeScript path aliases
+  - [ ] Should identify all usages of a symbol
+  - [ ] Should track symbol definitions and declarations
 
-- ✅ **Connection Management (16 tests - COMPLETE)**
-  - ✅ Test client connection with valid authentication token
-  - ✅ Test client connection with invalid authentication token
-  - ✅ Test client connection with missing authentication token
-  - ✅ Test multiple concurrent client connections (5 clients)
-  - ✅ Test graceful client disconnection
-  - ✅ Test abrupt client disconnection (terminate)
-  - ✅ Test connection timeout for unreachable server
-  - ✅ Test connection stability over time
-  - ✅ Test heartbeat/ping-pong mechanism with server
-  - ✅ Test heartbeat ping message response
-  - ✅ Test reconnection after network interruption
-  - ✅ Test rapid reconnection attempts (5 cycles)
-  - ✅ Test connection limit enforcement (max 3 clients)
-  - ✅ Test connection rejection when at capacity
-  - ✅ Test SSL/TLS connection with custom headers
-  - ✅ Test connection recovery when slot becomes available
-  - **Actual Time:** 4 hours
-  - **Dependencies:** 1.2.4
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/websocket.connection.test.ts` (16 tests, 544 lines)
-  - **Files Modified:**
-    - `extensions/vscode/src/test/helpers/websocketTestHelper.ts` (added auth support, connection limits, heartbeat)
-  - **Success Criteria:** ✅ 16/15 connection management tests implemented with comprehensive coverage
+- [ ] `tests/integration/ai/semantic-analysis-integration.test.ts`
+  - [ ] Should analyze TypeScript project structure
+  - [ ] Should analyze JavaScript module dependencies
+  - [ ] Should work with existing `intent-analyzer.ts`
 
-- ✅ **Message Processing (18 tests - COMPLETE)**
-  - ✅ Test JSON message parsing with valid messages
-  - ✅ Test nested object preservation
-  - ✅ Test array handling in messages
-  - ✅ Test malformed JSON handling
-  - ✅ Test empty messages
-  - ✅ Test null and undefined values
-  - ✅ Test special characters and Unicode
-  - ✅ Test request-response correlation with IDs
-  - ✅ Test concurrent message processing (10 messages)
-  - ✅ Test message type routing
-  - ✅ Test large message handling (>1MB)
-  - ✅ Test rapid message queue (50 messages)
-  - ✅ Test empty payload messages
-  - ✅ Test unknown message types
-  - ✅ Test missing required fields
-  - ✅ Test extra unexpected fields
-  - ✅ Test base64 binary data
-  - ✅ Test numeric precision handling
-  - **Actual Time:** 3 hours
-  - **Dependencies:** 2.1.1 (Connection Management)
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/websocket.message.test.ts` (18 tests, 493 lines)
-  - **Success Criteria:** ✅ 18/15 message processing tests implemented with comprehensive coverage
+#### Implementation Files
+- [ ] `src/ai/semantic-analyzer.ts`
+- [ ] `src/ai/symbol-resolver.ts`
+- [ ] `src/ai/ast-parser.ts`
+- [ ] Enhance `src/ai/intent-analyzer.ts` (existing)
 
-- ✅ **MCP Server Integration (11 tests - COMPLETE)**
-  - ✅ Test MCP server initialization
-  - ✅ Test initialization with delay
-  - ✅ Test tool registration with MCP
-  - ✅ Test listing registered tools via MCP protocol
-  - ✅ Test tool execution through MCP protocol
-  - ✅ Test tool execution with complex input
-  - ✅ Test tool not found error
-  - ✅ Test error propagation from MCP server
-  - ✅ Test MCP server restart and recovery
-  - ✅ Test recovery after temporary disconnection
-  - ✅ Test tool result formatting for VS Code
-  - **Actual Time:** 3 hours
-  - **Dependencies:** 2.1.1 (Connection Management)
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/websocket.mcp.test.ts` (11 tests, 645 lines)
-  - **Files Modified:**
-    - `extensions/vscode/src/test/helpers/websocketTestHelper.ts` (added MCP protocol support, tool registration, error handling)
-  - **Success Criteria:** ✅ 11/10 MCP integration tests implemented with full protocol support
-
-#### 2.1.2 VS Code Provider Tests (60 tests) ✅ COMPLETED 2025-01-01
-- [x] **CodeLens Provider (12 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test complexity warning CodeLens on complex functions
-  - ✅ Test AI insights CodeLens on documentation
-  - ✅ Test CodeLens positioning and range accuracy
-  - ✅ Test CodeLens command execution (show insights, refactor)
-  - ✅ Test CodeLens refresh on document changes
-  - ✅ Test CodeLens with multiple languages (JS, TS, Python)
-  - ✅ Test file-level CodeLens (complexity, test generation, security)
-  - ✅ Test connection status handling and error scenarios
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.2.3
-  - **Success Criteria:** ✅ 12/12 CodeLens tests implemented with comprehensive coverage
-
-- [x] **DocumentSymbol Provider (10 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test symbol outline generation for functions and classes
-  - ✅ Test multi-language support (TypeScript, JavaScript, Python, Java, Go)
-  - ✅ Test hierarchical symbol structure extraction
-  - ✅ Test symbol metadata detection (async, test, exported)
-  - ✅ Test error handling and edge cases
-  - **Actual Time:** 1.5 hours
-  - **Dependencies:** 1.2.3
-  - **Success Criteria:** ✅ 10/10 DocumentSymbol tests implemented with multi-language support
-
-- [x] **InlineCompletion Provider (15 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test AI code completion trigger conditions (dot, assignment, import)
-  - ✅ Test completion filtering (no short input, no strings/comments)
-  - ✅ Test multi-line completion for functions and control structures
-  - ✅ Test context-aware completions with surrounding code
-  - ✅ Test caching and performance optimization
-  - ✅ Test language support (TypeScript, Python, etc.)
-  - ✅ Test timeout handling and error scenarios
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.2.3, 1.3.1
-  - **Success Criteria:** ✅ 15/15 InlineCompletion tests implemented with AI mocking
-
-- [x] **HoverProvider (10 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test hover on functions with signature display
-  - ✅ Test hover on classes and methods
-  - ✅ Test hover on variables and properties
-  - ✅ Test async function and export detection
-  - ✅ Test complexity warning integration
-  - ✅ Test multi-language support (Python, etc.)
-  - ✅ Test caching and timeout handling
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 1.2.3, 1.3.1
-  - **Success Criteria:** ✅ 10/10 HoverProvider tests implemented with AI explanations
-
-- [x] **DiagnosticProvider (13 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test security issue detection (eval, innerHTML, document.write)
-  - ✅ Test performance issue detection (console.log, loop optimization)
-  - ✅ Test style issue detection (var vs let/const, == vs ===)
-  - ✅ Test logic issue detection (always true/false conditions)
-  - ✅ Test complexity-based diagnostics (high complexity, long functions, many params)
-  - ✅ Test diagnostic severity levels (error, warning, info, hint)
-  - ✅ Test diagnostic management (cache, clear, clear all)
-  - ✅ Test language-specific filtering and error handling
-  - **Actual Time:** 2.5 hours
-  - **Dependencies:** 1.2.3, 2.3 (Security Tests)
-  - **Success Criteria:** ✅ 13/13 DiagnosticProvider tests implemented with comprehensive coverage
-
-**Phase 2.1.2 Summary:**
-- **Total Tests:** 60/60 completed (100%)
-- **Total Time:** 10 hours (vs. 48 estimated) - **79% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/codeLens.provider.test.ts` (12 tests, 550+ lines)
-  - `extensions/vscode/src/test/suite/documentSymbol.provider.test.ts` (10 tests, 470+ lines)
-  - `extensions/vscode/src/test/suite/inlineCompletion.provider.test.ts` (15 tests, 780+ lines)
-  - `extensions/vscode/src/test/suite/hover.provider.test.ts` (10 tests, 570+ lines)
-  - `extensions/vscode/src/test/suite/diagnostic.provider.test.ts` (13 tests, 640+ lines)
-- **Key Achievements:**
-  - Comprehensive provider testing with AI integration
-  - Multi-language support validation
-  - Performance optimization verification (caching, timeouts)
-  - Error handling and edge case coverage
-
-#### 2.1.3 Chat Panel Integration Tests (20 tests) ✅ COMPLETED 2025-01-01
-- [x] **Chat Interface (10 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test chat panel activation and visibility
-  - ✅ Test message sending and receiving
-  - ✅ Test conversation history display
-  - ✅ Test code block rendering in chat
-  - ✅ Test file reference links in chat messages
-  - ✅ Test chat session persistence
-  - ✅ Test error handling when client disconnected
-  - ✅ Test chronological message ordering
-  - ✅ Test rapid message sending
-  - ✅ Test conversation history clearing
-  - **Actual Time:** 3 hours
-  - **Dependencies:** 1.2.3, 2.1.1
-  - **Success Criteria:** ✅ 10/10 Chat Interface tests implemented
-
-- [x] **Chat Commands (10 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test `/help` command in chat
-  - ✅ Test `/clear` command (clear history)
-  - ✅ Test `/session` command (show session info)
-  - ✅ Test `/model` command (show current model)
-  - ✅ Test file operation commands from chat
-  - ✅ Test command auto-completion hints
-  - ✅ Test unknown command handling
-  - ✅ Test commands with arguments
-  - ✅ Test differentiation between commands and messages
-  - ✅ Test command history separation
-  - **Actual Time:** 2 hours
-  - **Dependencies:** 2.1.3 (Chat Interface)
-  - **Success Criteria:** ✅ 10/10 Chat Commands tests implemented
-
-**Phase 2.1.3 Summary:**
-- **Total Tests:** 20/20 completed (100%)
-- **Total Time:** 5 hours (vs. 16 estimated) - **69% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/chatPanel.integration.test.ts` (20 tests, 550+ lines)
-- **Key Achievements:**
-  - Complete chat interface testing with message flow
-  - Comprehensive command system validation
-  - Session persistence and history management
-  - Error handling and edge case coverage
-
-### 2.2 File Operation Commands E2E (Week 8-9)
-**Objective:** Automate Phase 2 file operation commands with AI integration
-**Priority:** 🔴 Critical
-**Target Coverage:** 90% (currently 25%)
-
-#### 2.2.1 create-file Command Tests (15 tests) ✅ COMPLETED 2025-01-01
-- [x] **Basic Creation (5 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test create simple JavaScript file with AI content generation
-  - ✅ Test create TypeScript file with type definitions
-  - ✅ Test create React component with props
-  - ✅ Test create test file with boilerplate
-  - ✅ Test create with explicit file path and description
-  - **Actual Time:** 2 hours (vs. 6 estimated) - **67% faster**
-  - **Dependencies:** 1.1.4, 1.3.1
-  - **Success Criteria:** ✅ 5/5 Basic Creation tests implemented
-
-- [x] **Directory Handling (5 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test automatic parent directory creation
-  - ✅ Test nested directory creation (e.g., src/components/ui/Button.tsx)
-  - ✅ Test creation in non-existent paths with error handling
-  - ✅ Test creation with path traversal attack prevention
-  - ✅ Test path normalization (./ and ../ handling)
-  - **Actual Time:** 1.5 hours (vs. 4 estimated) - **63% faster**
-  - **Dependencies:** 2.2.1 (Basic Creation)
-  - **Success Criteria:** ✅ 5/5 Directory Handling tests implemented
-
-- [x] **Error Handling (5 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test file already exists error
-  - ✅ Test overwrite with explicit flag
-  - ✅ Test invalid file name error
-  - ✅ Test AI generation failure fallback
-  - ✅ Test client disconnection error handling
-  - **Actual Time:** 1.5 hours (vs. 4 estimated) - **63% faster**
-  - **Dependencies:** 2.2.1 (Basic Creation)
-  - **Success Criteria:** ✅ 5/5 Error Handling tests implemented
-
-**Phase 2.2.1 Summary:**
-- **Total Tests:** 15/15 completed (100%)
-- **Total Time:** 5 hours (vs. 14 estimated) - **64% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/createFile.command.test.ts` (15 tests, 470+ lines)
-- **Key Achievements:**
-  - Complete create-file command testing with AI integration
-  - Comprehensive directory handling and path security
-  - Robust error handling with AI fallback
-  - Multi-language file generation support (JS, TS, React, Python)
-
-#### 2.2.2 edit-file Command Tests (15 tests) ✅ COMPLETED 2025-01-01
-- [x] **Content Modification (6 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test simple edit with natural language instruction
-  - ✅ Test add function to existing file
-  - ✅ Test add JSDoc comments to functions
-  - ✅ Test convert JavaScript to TypeScript
-  - ✅ Test refactor function with new logic
-  - ✅ Test preserve existing formatting and style
-  - **Actual Time:** 2 hours (vs. 8 estimated) - **75% faster**
-  - **Dependencies:** 1.1.4, 1.3.1
-  - **Success Criteria:** ✅ 6/6 Content Modification tests implemented
-
-- [x] **Preview Mode (4 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test `--preview` flag shows changes without applying
-  - ✅ Test diff format output (unified diff)
-  - ✅ Test preview with large files (>1000 lines)
-  - ✅ Test preview cancellation
-  - **Actual Time:** 2 hours (vs. 4 estimated) - **50% faster**
-  - **Dependencies:** 2.2.2 (Content Modification)
-  - **Success Criteria:** ✅ 4/4 Preview Mode tests implemented
-
-- [x] **Edge Cases (3 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test edit non-existent file error
-  - ✅ Test edit read-only file error
-  - ⏭️ Test edit with conflicting concurrent changes (deferred - requires file locking)
-  - **Actual Time:** 1 hour (vs. 3 estimated) - **67% faster**
-  - **Dependencies:** 2.2.2 (Content Modification)
-  - **Success Criteria:** ✅ 3/3 Edge Cases tests implemented
-
-**Phase 2.2.2 Summary:**
-- **Total Tests:** 15/15 completed (100%) - Note: 2 tests merged (6+4+3=13 actual tests, 2 removed as duplicates)
-- **Total Time:** 5 hours (vs. 15 estimated) - **67% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/editFile.command.test.ts` (15 tests, 490+ lines)
-- **Key Achievements:**
-  - Complete edit-file command testing with AI-powered edits
-  - Preview mode with unified diff format
-  - Comprehensive error handling (non-existent, read-only files)
-  - Natural language instruction support (add functions, JSDoc, refactoring)
-
-#### 2.2.3 generate-code Command Tests (10 tests) ✅ COMPLETED 2025-01-01
-- [x] **Code Generation (10 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test generate REST API endpoint with Express
-  - ✅ Test generate React component with TypeScript
-  - ✅ Test generate Python class with type hints
-  - ✅ Test generate with specific framework (Vue)
-  - ✅ Test generate with output file save
-  - ✅ Test generate with stdout display
-  - ✅ Test generate with syntax validation
-  - ✅ Test generate with best practices (error handling, docs)
-  - ✅ Test empty description error
-  - ✅ Test client disconnection error
-  - **Actual Time:** 10 hours (vs. 10 estimated) - **On time**
-  - **Dependencies:** 1.1.4, 1.3.1
-  - **Success Criteria:** ✅ 10/10 Code Generation tests implemented
-
-**Phase 2.2.3 Summary:**
-- **Total Tests:** 10/10 completed (100%)
-- **Total Time:** 10 hours (vs. 10 estimated) - **On time**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/generateCode.command.test.ts` (10 tests, 550+ lines)
-- **Key Achievements:**
-  - Complete code generation testing with multi-framework support
-  - Express REST API, React, Python, Vue code generation
-  - Output file save and stdout display options
-  - Syntax validation for generated code
-  - Best practices implementation (error handling, documentation)
-
-#### 2.2.4 create-tests Command Tests (15 tests) ✅ COMPLETED 2025-01-01
-- [x] **Test Generation (15 tests)** ✅ COMPLETED 2025-01-01
-  - ✅ Test generate Jest tests for JavaScript functions
-  - ✅ Test generate Mocha tests for JavaScript
-  - ✅ Test generate Jest tests for TypeScript
-  - ✅ Test generate React component tests with Testing Library
-  - ✅ Test test coverage completeness (all functions covered)
-  - ✅ Test edge case test generation (boundary conditions)
-  - ✅ Test mock generation for dependencies
-  - ✅ Test test file naming conventions (*.test.js, *.spec.js)
-  - ✅ Test setup/teardown code generation
-  - ✅ Test comprehensive coverage option
-  - ✅ Test auto-detect framework from file type
-  - ✅ Test source file not found error
-  - ✅ Test client disconnection error
-  - ✅ Test output file specification
-  - ✅ Test all exported functions covered
-  - **Actual Time:** 12 hours (vs. 12 estimated) - **On time**
-  - **Dependencies:** 1.1.4, 1.3.1
-  - **Success Criteria:** ✅ 15/15 Test Generation tests implemented
-
-**Phase 2.2.4 Summary:**
-- **Total Tests:** 15/15 completed (100%)
-- **Total Time:** 12 hours (vs. 12 estimated) - **On time**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/createTests.command.test.ts` (15 tests, 590+ lines)
-- **Key Achievements:**
-  - Complete test generation with multi-framework support (Jest, Mocha, React Testing Library)
-  - Framework auto-detection from file extensions and patterns
-  - Coverage options (basic vs comprehensive)
-  - Mock generation for dependencies
-  - Proper naming conventions (.test.js vs .spec.js)
-  - Edge case and boundary condition test generation
-
-### 2.3 Security & Code Quality Tests (Week 10-12) ✅ COMPLETED 2025-10-02
-**Objective:** Automate OWASP Top 10 scanning and code review system
-**Priority:** 🔴 Critical
-**Target Coverage:** 85% (achieved 100%)
-**Status:** ✅ All 81 tests completed (40 OWASP + 25 Code Review + 16 Quality Assessment)
-**Total Time:** 62 hours (vs. 69 estimated) - **10% faster**
-
-#### 2.3.1 OWASP Top 10 Vulnerability Scanning (40 tests)
-- [x] **Injection Vulnerabilities (10 tests)** ✅ COMPLETED 2025-10-01
-  - ✅ Test SQL injection detection (string concatenation, template literals)
-  - ✅ Test SQL safe parameterized queries (negative test)
-  - ✅ Test NoSQL injection detection (MongoDB find() with user input, $where operator)
-  - ✅ Test NoSQL safe sanitized queries (negative test)
-  - ✅ Test command injection detection (exec, spawn with shell:true, eval)
-  - ✅ Test command safe execFile usage (negative test)
-  - ✅ Test LDAP injection detection (filter construction)
-  - ✅ Test LDAP safe escaped filters (negative test)
-  - ✅ Test XPath injection detection (expression vulnerabilities)
-  - ✅ Test XPath safe parameterized queries (negative test)
-  - ✅ Test template injection detection (template compilation, unescaped vars)
-  - ✅ Test template safe escaped usage (negative test)
-  - ✅ Test OWASP A03:2021 category mapping validation
-  - ✅ Test CWE ID validation (89, 78, 90, 643, 94)
-  - ✅ Test reference links validation (owasp.org, cwe.mitre.org)
-  - ✅ Test confidence level validation
-  - **Actual Time:** 13 hours (10 initial + 3 refactoring) - **On time**
-  - **Code Quality:** Grade improved from C- (65/100) to A (93/100)
-  - **Dependencies:** 1.1.3 (vulnerable code fixtures)
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/security.injection.test.ts` (21 tests, 433 lines)
-    - `extensions/vscode/src/test/helpers/securityTestHelper.ts` (365 lines, reusable)
-    - `extensions/vscode/src/test/helpers/securityTestConstants.ts` (157 lines, reusable)
-    - `extensions/vscode/src/test/helpers/securityAnalyzerWrapper.ts` (283 lines, reusable)
-    - `PHASE_2.3.1_CODE_REVIEW.md` (1050 lines, comprehensive review + refactoring results)
-  - **Success Criteria:** ✅ 21/21 tests with production-aligned security scanner + reusable infrastructure
-
-- [x] **XSS Vulnerabilities (18 tests)** ✅ COMPLETED 2025-10-01
-  - ✅ Test reflected XSS detection (innerHTML, document.write, outerHTML)
-  - ✅ Test DOM-based XSS detection (location.href, URL parameters)
-  - ✅ Test dangerouslySetInnerHTML detection in React
-  - ✅ Test negative cases (textContent, DOMPurify, React escaped syntax)
-  - ✅ Test security metadata validation (OWASP A03:2021, CWE-79)
-  - **Actual Time:** 8 hours (vs. 8 estimated) - **On time**
-  - **Dependencies:** 1.1.3, securityTestHelper.ts
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/security.xss.test.ts` (18 tests, 530+ lines)
-  - **Files Modified:**
-    - `extensions/vscode/src/test/helpers/securityAnalyzerWrapper.ts` (added XSS detection rule)
-  - **Success Criteria:** ✅ 18/18 XSS tests implemented with comprehensive coverage
-
-- [x] **Authentication & Session Issues (10 tests)** ✅ COMPLETED 2025-10-01
-  - ✅ Test hardcoded credentials detection (passwords, API keys)
-  - ✅ Test weak password validation detection (length < 8)
-  - ✅ Test missing authentication check detection (unprotected admin/api routes)
-  - ✅ Test session fixation vulnerability detection (login without regenerate)
-  - ✅ Negative tests for safe practices (env vars, strong passwords, protected routes, session regeneration)
-  - ✅ Security metadata validation (OWASP A07:2021, A01:2021, CWE-798, 521, 287, 384)
-  - **Actual Time:** 8 hours (vs. 8 estimated) - **On time**
-  - **Dependencies:** 1.1.3, securityTestHelper.ts
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/security.authentication.test.ts` (10 tests, 347 lines)
-  - **Files Modified:**
-    - `extensions/vscode/src/test/helpers/securityAnalyzerWrapper.ts` (added 4 authentication rules)
-    - `extensions/vscode/src/test/helpers/securityTestConstants.ts` (added CWE-798, 384)
-    - `extensions/vscode/src/test/helpers/securityTestHelper.ts` (added 4 auth test helpers)
-  - **Success Criteria:** ✅ 10/10 authentication tests implemented with comprehensive coverage
-
-- [x] **Sensitive Data Exposure (19 tests)** ✅ COMPLETED 2025-10-01
-  - ✅ Test hardcoded API keys detection (AWS, Stripe, GitHub)
-  - ✅ Test exposed encryption keys detection (AES, JWT secrets)
-  - ✅ Test sensitive data in logs detection (passwords, tokens, credit cards)
-  - ✅ Test unencrypted sensitive data storage (localStorage, sessionStorage)
-  - ✅ Negative tests for safe practices (env vars, encrypted storage, sanitized logs)
-  - ✅ Edge case tests (20-char boundary, template literals, Base64 encoding)
-  - ✅ Security metadata validation (OWASP A02:2021, A09:2021, CWE-798, 321, 532, 311)
-  - ✅ Fixed pattern overlap bug (hardcoded_credentials vs hardcoded_secrets)
-  - ✅ Updated crypto templates to use modern createCipheriv API
-  - **Actual Time:** 10 hours (vs. 6 estimated) - **67% over estimate** (due to comprehensive coverage + code review fixes)
-  - **Dependencies:** 1.1.3, securityTestHelper.ts
-  - **Files Created:**
-    - `extensions/vscode/src/test/suite/security.secrets.test.ts` (19 tests, 350+ lines)
-  - **Files Modified:**
-    - `extensions/vscode/src/test/helpers/securityAnalyzerWrapper.ts` (added 4 sensitive data rules + pattern documentation)
-    - `extensions/vscode/src/test/helpers/securityTestConstants.ts` (added CWE-321, 532, 311 + 17 code templates)
-    - `extensions/vscode/src/test/helpers/securityTestHelper.ts` (added 4 sensitive data test helpers)
-  - **Success Criteria:** ✅ 19/19 sensitive data tests implemented with comprehensive coverage + all code review issues fixed
-
-- [x] **Security Misconfiguration (8 tests)** (✅ COMPLETED 2025-10-01)
-  - ✅ Added 4 security misconfiguration rules to SecurityAnalyzerWrapper
-  - ✅ Debug mode in production detection (CWE-489, high): debug:true + env:production patterns
-  - ✅ CORS misconfiguration detection (CWE-942, high): wildcard origin with credentials
-  - ✅ Default credentials detection (CWE-798, critical): admin/admin, root/password patterns
-  - ✅ Insecure HTTP detection (CWE-319, high): HTTP URLs with sensitive data transmission
-  - ✅ Added 4 test helper functions (testDebugModeDetection, testCorsMisconfigurationDetection, etc.)
-  - ✅ Comprehensive test suite (8 tests across 6 suites): 2 debug mode + 2 CORS + 2 default creds + 2 HTTP + 5 negative tests + 1 metadata validation
-  - ✅ Negative tests for safe configurations (debug disabled, CORS whitelist, env credentials, HTTPS, secure cookies)
-  - ✅ OWASP category mapping (A05:2021 Security Misconfiguration)
-  - ✅ Created 13 code templates for misconfiguration vulnerabilities (8 vulnerable + 5 safe)
-  - ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-  - ✅ Build verified: All tests compile successfully
-
-#### 2.3.2 Automated Code Review System (25 tests)
-- [x] **Code Quality Analysis (10 tests)** (✅ COMPLETED 2025-10-01)
-  - ✅ Added 6 code quality analysis rules to SecurityAnalyzerWrapper
-  - ✅ Magic number detection (CWE-1098, medium): Hardcoded numerics in setTimeout, calculations
-  - ✅ Large function detection (CWE-1121, medium): Functions exceeding 50 lines
-  - ✅ Deep nesting detection (CWE-1124, medium): Nesting exceeding 4 levels
-  - ✅ Missing error handling detection (CWE-252, high): async/await without try-catch, promises without .catch()
-  - ✅ Missing input validation detection (CWE-20, high): Unvalidated req.body, division-by-zero
-  - ✅ Duplicate code detection (CWE-1121, low): Code duplication patterns
-  - ✅ Added 6 test helper functions (testMagicNumberDetection, testLargeFunctionDetection, etc.)
-  - ✅ Comprehensive test suite (10 tests across 6 suites): 2 magic numbers + 1 large function + 1 deep nesting + 2 error handling + 2 input validation + 5 negative tests
-  - ✅ Negative tests for good code quality (named constants, small functions, flat logic, error handling, validation)
-  - ✅ Created 13 code templates for code quality issues (8 problematic + 5 safe)
-  - ✅ Time: 10 hours (vs. 10 estimated) - **On time**
-  - ✅ Build verified: All tests compile successfully
-
-- [x] **Architecture Issues (8 tests)** (✅ COMPLETED 2025-10-02)
-  - ✅ Added 4 architecture analysis rules to SecurityAnalyzerWrapper
-  - ✅ Large class detection (CWE-1048, medium): Classes with >10 methods (God Object anti-pattern)
-  - ✅ Tight coupling detection (CWE-1047, medium): High fan-out dependencies (>5 direct imports)
-  - ✅ Missing abstraction detection (CWE-1061, medium): Direct database access without repository pattern
-  - ✅ Circular dependency detection (CWE-1047, high): Cyclic module dependencies
-  - ✅ Added 4 test helper functions (testLargeClassDetection, testTightCouplingDetection, testMissingAbstractionDetection, testCircularDependencyDetection)
-  - ✅ Comprehensive test suite (8 tests across 5 suites): 1 large class + 1 tight coupling + 1 missing abstraction + 2 circular dependency + 4 negative tests
-  - ✅ Negative tests for good architecture (small focused classes, loose coupling, repository pattern, acyclic dependencies)
-  - ✅ Created 10 code templates for architecture issues (5 problematic + 5 safe)
-  - ✅ Time: 8 hours (vs. 8 estimated) - **On time**
-  - ✅ Build verified: All tests compile successfully
-
-- ✅ **Review Report Generation (7 tests)** - **Completed 2025-10-02**
-  - ✅ Test review summary generation (2 tests): Multiple critical issues summary, clean code positive summary
-  - ✅ Test severity classification (critical, major, minor, info) (2 tests): Structure validation, count verification
-  - ✅ Test recommendation generation with examples (2 tests): Examples with file/line/code, severity sorting
-  - ✅ Test positive feedback for good practices (2 tests): Good practices identification, quality-based findings
-  - ✅ Test actionable file suggestions (2 tests): File prioritization, severity-based sorting
-  - ✅ Test confidence scoring for issues (3 tests): Score calculation, perfect code confidence, severity weighting
-  - ✅ Added generateReviewReport() method to SecurityAnalyzer with 7 private helper methods
-  - ✅ Created 4 TypeScript interfaces (ReviewReport, SeverityClassification, Recommendation, ActionableFile)
-  - ✅ Added testReviewReportGeneration() test helper function
-  - ✅ Comprehensive test suite (14 tests across 6 suites): 2 summary + 2 severity + 2 recommendations + 2 positive + 2 actionable + 3 confidence
-  - ✅ Created 6 code templates for review reports (critical issues, mixed severity, minor only, perfect code, good practices, category testing)
-  - ✅ Time: 7 hours (vs. 7 estimated) - **On time**
-  - ✅ Build verified: All tests compile successfully
-
-#### 2.3.3 Quality Assessment Integration (16 tests) ✅ COMPLETED 2025-10-02
-- ✅ **Integration Tests (16 tests)** - **Completed 2025-10-02**
-  - ✅ Test complexity metrics calculation (cyclomatic, cognitive) (2 tests): High complexity detection, low complexity validation
-  - ✅ Test best practice validation (naming conventions) (6 tests): Naming violations, good naming, error handling, input validation
-  - ✅ Test maintainability index calculation (2 tests): Poor maintainability detection, good maintainability validation
-  - ✅ Test documentation coverage check (2 tests): Missing documentation detection, comprehensive documentation validation
-  - ✅ Test type safety evaluation (TypeScript strict mode) (2 tests): Poor type safety (any types), strong type safety
-  - ✅ Test overall quality score calculation (2 tests): Score weighting, grade consistency
-  - ✅ Added calculateQualityMetrics() method to SecurityAnalyzer with 9 private helper methods
-  - ✅ Created 6 TypeScript interfaces (QualityMetrics, ComplexityMetrics, MaintainabilityMetrics, BestPracticeMetrics, TestCoverageMetrics, DocumentationMetrics, TypeSafetyMetrics)
-  - ✅ Added testQualityMetrics() test helper function
-  - ✅ Comprehensive test suite (16 tests across 6 suites): 2 complexity + 6 best practices + 2 maintainability + 2 documentation + 2 type safety + 2 overall
-  - ✅ Created 14 code templates for quality assessment (high/low complexity, poor/good maintainability, naming, error handling, validation, type safety, documentation)
-  - ✅ Time: 4 hours (vs. 12 estimated) - **67% faster**
-  - ✅ Build verified: All tests compile successfully
-  - **Dependencies:** 2.3.2
-
-**Phase 2.3 Summary:**
-- **Total Tests:** 81/80 completed (101%) - 1 extra test for better coverage
-- **Total Time:** 62 hours (vs. 69 estimated) - **10% faster**
-- **Test Files Created:**
-  - `extensions/vscode/src/test/suite/security.injection.test.ts` (21 tests)
-  - `extensions/vscode/src/test/suite/security.xss.test.ts` (18 tests)
-  - `extensions/vscode/src/test/suite/security.authentication.test.ts` (10 tests)
-  - `extensions/vscode/src/test/suite/security.secrets.test.ts` (19 tests)
-  - `extensions/vscode/src/test/suite/security.misconfiguration.test.ts` (8 tests)
-  - `extensions/vscode/src/test/suite/code-quality.analysis.test.ts` (10 tests)
-  - `extensions/vscode/src/test/suite/architecture.issues.test.ts` (8 tests)
-  - `extensions/vscode/src/test/suite/review-report.generation.test.ts` (14 tests)
-  - `extensions/vscode/src/test/suite/quality-assessment.integration.test.ts` (16 tests)
-- **Key Achievements:**
-  - Complete OWASP Top 10 vulnerability detection (40 tests)
-  - Automated code review system with quality metrics (25 tests)
-  - Quality assessment integration with grading (16 tests)
-  - Production-ready SecurityAnalyzer with 500+ lines of detection logic
-  - Comprehensive test helpers and reusable templates
-
-**Phase 2 Deliverables:**
-- ✅ 120 IDE integration tests (WebSocket, providers, chat)
-- ✅ 55 file operation command E2E tests
-- ✅ 81 security and code quality tests
-- ✅ Total: 256 new tests added
-- ✅ Critical feature coverage increased to ~70%
+#### Acceptance Criteria
+- Accurately parses TypeScript/JavaScript AST
+- Identifies 95%+ of symbols in test codebases
+- Performance: < 100ms per file for files under 1000 lines
+- Integrates with existing intent analyzer
 
 ---
 
-## Phase 3: Advanced Features (Weeks 13-20)
-**Goal:** Automate VCS intelligence and autonomous development features
-**Effort:** 240 hours
-**Team:** 2 QA Engineers + 1 Backend Developer
+### 1.3 Improve Context Management in Prompts
 
-### 3.1 VCS Intelligence Tests (Week 13-15)
-**Objective:** Automate Git hooks, commit message generation, and PR review
-**Priority:** 🟡 High
-**Target Coverage:** 80% (currently 15%)
+#### Tests to Write First
+- [ ] `tests/unit/ai/context-builder.test.ts`
+  - [ ] Should prioritize relevant context by recency
+  - [ ] Should include only modified files in context
+  - [ ] Should limit context to token budget
+  - [ ] Should preserve critical context (imports, types)
+  - [ ] Should handle context overflow gracefully
 
-#### 3.1.1 Git Hooks Management (30 tests) ✅ COMPLETED 2025-10-02
-- ✅ **Hook Installation (10 tests)** - **Completed 2025-10-02**
-  - ✅ Test pre-commit hook installation
-  - ✅ Test pre-push hook installation
-  - ✅ Test commit-msg hook installation
-  - ✅ Test hook installation in non-Git directory error
-  - ✅ Test hook installation with existing hooks (backup/merge behavior)
-  - ✅ Test hook uninstallation
-  - ✅ Test hook update to new version
-  - ✅ Test multiple hooks installation simultaneously
-  - ✅ Test hook file permissions (executable)
-  - ✅ Test merge with existing custom hooks
-  - **Actual Time:** 3 hours (vs. 10 estimated) - **70% faster**
-  - **Dependencies:** 1.1.3 (test Git repos)
-  - **Success Criteria:** ✅ 10/10 Hook Installation tests implemented
+- [ ] `tests/unit/ai/context-ranker.test.ts`
+  - [ ] Should rank files by relevance to current task
+  - [ ] Should boost recently modified files
+  - [ ] Should consider import relationships
+  - [ ] Should use code similarity scoring
 
-- ✅ **Pre-commit Quality Gates (12 tests)** - **Completed 2025-10-02**
-  - ✅ Test pre-commit runs linting on staged files
-  - ✅ Test pre-commit runs tests on affected modules
-  - ✅ Test pre-commit runs security scan
-  - ✅ Test pre-commit runs type checking
-  - ✅ Test pre-commit allows commit on pass
-  - ✅ Test pre-commit blocks commit on failure
-  - ✅ Test pre-commit bypass with --no-verify flag
-  - ✅ Test pre-commit performance (<5 seconds for small changes)
-  - ✅ Test scan scope optimization for large repositories
-  - ✅ Test detailed quality gate results reporting
-  - ✅ Test skip quality gates for merge commits
-  - ✅ Test incremental analysis for performance
-  - **Actual Time:** 3 hours (vs. 12 estimated) - **75% faster**
-  - **Dependencies:** 3.1.1 (Hook Installation), 2.3 (Security Tests)
-  - **Success Criteria:** ✅ 12/12 Pre-commit Quality Gates tests implemented
+- [ ] `tests/integration/ai/context-integration.test.ts`
+  - [ ] Should build optimal context for refactoring task
+  - [ ] Should adapt context based on AI provider limits
+  - [ ] Should integrate with existing ProjectContext
 
-- ✅ **Commit Message Enhancement (8 tests)** - **Completed 2025-10-02**
-  - ✅ Test conventional commit format enforcement
-  - ✅ Test commit message template generation
-  - ✅ Test issue reference validation (e.g., #123)
-  - ✅ Test commit message length validation
-  - ✅ Test emoji prefix support (✨, 🐛, 📝)
-  - ✅ Test invalid commit format rejection
-  - ✅ Test custom commit message templates
-  - ✅ Test commit message enhancement with scope and type
-  - **Actual Time:** 2 hours (vs. 8 estimated) - **75% faster**
-  - **Dependencies:** 3.1.1 (Hook Installation)
-  - **Success Criteria:** ✅ 8/8 Commit Message Enhancement tests implemented
+#### Implementation Files
+- [ ] `src/ai/context-builder.ts`
+- [ ] `src/ai/context-ranker.ts`
+- [ ] `src/ai/token-counter.ts`
+- [ ] Enhance `src/ai/context.ts` (existing)
 
-**Phase 3.1.1 Summary:**
-- **Total Tests:** 30/30 completed (100%)
-- **Total Time:** 8 hours (vs. 30 estimated) - **73% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/helpers/gitHooksTestHelper.ts` (20+ helper functions, 370 lines)
-  - `extensions/vscode/src/test/helpers/gitHooksManagerWrapper.ts` (Mock GitHooksManager, 290 lines)
-  - `extensions/vscode/src/test/suite/git-hooks.management.test.ts` (30 tests, 750+ lines)
-- **Key Achievements:**
-  - Complete Git hooks installation and management testing
-  - Pre-commit quality gates with linting, testing, security scanning, type checking
-  - Commit message validation and enhancement
-  - Hook backup/restore functionality
-  - Performance optimization tests (<5s for small changes)
-
-#### 3.1.2 Commit Message Generation (15 tests) ✅ COMPLETED 2025-10-02
-- ✅ **AI-Powered Generation (8 tests)** - **Completed 2025-10-02**
-  - ✅ Test generate descriptive commit message from diff
-  - ✅ Test generate conventional commit (feat:, fix:, docs:)
-  - ✅ Test generate emoji-style commit (✨ Add feature)
-  - ✅ Test generate with issue reference
-  - ✅ Test multi-file change summary generation
-  - ✅ Test provide alternative message suggestions
-  - ✅ Test analyze commit type from code changes
-  - ✅ Test respect maximum message length constraint
-  - **Actual Time:** 2 hours (vs. 8 estimated) - **75% faster**
-  - **Dependencies:** 1.3.1 (AI testing), 3.1.1 (Git Hooks)
-  - **Success Criteria:** ✅ 8/8 AI-Powered Generation tests implemented
-
-- ✅ **Context-Aware Generation (7 tests)** - **Completed 2025-10-02**
-  - ✅ Test generation considers file types changed
-  - ✅ Test generation considers project history
-  - ✅ Test generation considers branch name
-  - ✅ Test generation with custom templates
-  - ✅ Test extract scope from file paths
-  - ✅ Test handle mixed change types appropriately
-  - ✅ Test provide confidence score for generated messages
-  - **Actual Time:** 2 hours (vs. 7 estimated) - **71% faster**
-  - **Dependencies:** 3.1.2 (AI-Powered Generation)
-  - **Success Criteria:** ✅ 7/7 Context-Aware Generation tests implemented
-
-**Phase 3.1.2 Summary:**
-- **Total Tests:** 15/15 completed (100%)
-- **Total Time:** 4 hours (vs. 15 estimated) - **73% faster**
-- **Refactoring Time:** 3.5 hours (code review + fixes)
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/commit-message.generation.test.ts` (15 tests, 366 lines after refactoring)
-  - `extensions/vscode/src/test/helpers/commitMessageGeneratorWrapper.ts` (Mock implementation, 137 lines)
-- **Files Enhanced:**
-  - `extensions/vscode/src/test/helpers/test-constants.ts` (Added COMMIT_MESSAGE_TEST_CONSTANTS, COMMIT_EMOJI_MAP, COMMIT_SUBJECT_TEMPLATES)
-  - `extensions/vscode/src/test/helpers/gitHooksTestHelper.ts` (Added createCommitMessageConfig() and 3 assertion helpers)
-- **Key Achievements:**
-  - AI-powered commit message generation from diffs
-  - Conventional commit format support (feat:, fix:, docs:, etc.)
-  - Emoji-style commit support (✨, 🐛, 📝)
-  - Multi-file change summarization
-  - Context-aware generation (file types, history, branch names)
-  - Custom template support
-  - Confidence scoring and alternative suggestions
-- **Code Quality Improvements:**
-  - Eliminated 3 major DRY violations
-  - Removed 47 hardcoded values
-  - Reduced test file from 591 to 366 lines (38% reduction)
-  - Maintainability score: 6/10 → 9/10
-
-#### 3.1.3 Pull Request Review Automation (25 tests) ✅ COMPLETED 2025-10-02
-- ✅ **Multi-Platform Support (10 tests)** - **Completed 2025-10-02**
-  - ✅ Test GitHub PR review integration
-  - ✅ Test GitLab MR review integration
-  - ✅ Test Bitbucket PR review integration
-  - ✅ Test PR metadata extraction (title, description, files)
-  - ✅ Test PR comment posting (general and inline)
-  - ✅ Test PR status update (approve, request changes, comment)
-  - ✅ Test platform API errors with retry logic
-  - ✅ Test cross-platform compatibility
-  - ✅ Test file change metadata (additions, deletions, status, patch)
-  - ✅ Test inline comments on specific file and line
-  - **Actual Time:** 1.5 hours (vs. 12 estimated) - **88% faster**
-  - **Dependencies:** 1.1.3, 2.3 (Code Review)
-  - **Success Criteria:** ✅ 10/10 Multi-Platform Support tests implemented
-
-- ✅ **Security Analysis Integration (8 tests)** - **Completed 2025-10-02**
-  - ✅ Test security vulnerability detection in PR diff
-  - ✅ Test critical security issue blocking
-  - ✅ Test security recommendations in PR comments
-  - ✅ Test security score calculation (0-100)
-  - ✅ Test diff parsing edge cases
-  - ✅ Test configurable blocking behavior
-  - ✅ Test vulnerability categorization by severity
-  - ✅ Test CWE ID tracking in comments
-  - **Actual Time:** 1 hour (vs. 8 estimated) - **88% faster**
-  - **Dependencies:** 2.3.1 (Security Scanning)
-  - **Success Criteria:** ✅ 8/8 Security Analysis Integration tests implemented
-
-- ✅ **Quality Assessment (7 tests)** - **Completed 2025-10-02**
-  - ✅ Test code quality metrics in PR review
-  - ✅ Test test coverage change analysis
-  - ✅ Test complexity change analysis
-  - ✅ Test regression risk scoring
-  - ✅ Test complete PR review with all metrics
-  - ✅ Test auto-approval when quality thresholds met
-  - ✅ Test change requests when quality below threshold
-  - **Actual Time:** 1 hour (vs. 7 estimated) - **86% faster**
-  - **Dependencies:** 2.3.2 (Code Review)
-  - **Success Criteria:** ✅ 7/7 Quality Assessment tests implemented
-
-**Phase 3.1.3 Summary:**
-- **Total Tests:** 25/25 completed (100%)
-- **Total Time:** 3.5 hours (vs. 27 estimated) - **87% faster**
-- **Refactoring Time:** 3.5 hours (code review + fixes)
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/pr-review.automation.test.ts` (25 tests, 168 lines after refactoring)
-  - `extensions/vscode/src/test/helpers/prReviewAutomationWrapper.ts` (Mock implementation, 343 lines)
-  - `CODE_REVIEW_PHASE_3.1.3.md` (Comprehensive code review report, 570 lines)
-- **Files Enhanced:**
-  - `extensions/vscode/src/test/helpers/test-constants.ts` (Added PR_REVIEW_TEST_CONSTANTS, PR_SECURITY_SCORING, PR_QUALITY_SCORING, PR_METRIC_DIVISORS, PR_APPROVAL_THRESHOLDS, PR_MOCK_FILE_METADATA, PR_SECURITY_TEMPLATES, PR_REVIEW_RECOMMENDATIONS)
-  - `extensions/vscode/src/test/helpers/gitHooksTestHelper.ts` (Added createPRReviewConfig() helper)
-  - `extensions/vscode/src/test/helpers/prReviewAutomationWrapper.ts` (Added getTotalChanges(), getTotalDeletions(), getTotalAdditions() helpers)
-- **Key Achievements:**
-  - Multi-platform PR review automation (GitHub, GitLab, Bitbucket)
-  - Security vulnerability detection in diffs (XSS, SQL injection, eval patterns)
-  - Configurable critical issue blocking
-  - Security scoring (weighted by severity)
-  - Quality metrics (complexity, maintainability, test coverage, documentation, code smells)
-  - Test coverage change tracking
-  - Complexity change analysis
-  - Regression risk calculation
-  - Auto-approval based on configurable thresholds
-  - Platform API error handling with retry logic
-- **TypeScript Interfaces:**
-  - PRMetadata, PRFileChange, PRComment
-  - PRSecurityAnalysis, SecurityVulnerability
-  - PRQualityMetrics, PRReviewConfig, PRReviewResult
-- **Code Quality Improvements:**
-  - Eliminated 2 major DRY violations (config duplication, calculation duplication)
-  - Removed 67 hardcoded values
-  - Reduced test file from 716 to 168 lines (77% reduction)
-  - Created createPRReviewConfig() helper eliminating 184 lines of config duplication
-  - Maintainability significantly improved with centralized constants
-
-### 3.2 Autonomous Development Tests (Week 16-18)
-**Objective:** Automate feature implementation, debugging, and multi-step execution
-**Priority:** 🔴 Critical
-**Target Coverage:** 75% (currently 5%)
-
-#### 3.2.1 Feature Implementation Workflow (20 tests) ✅ COMPLETED 2025-10-02
-- ✅ **Specification Parsing (8 tests)** - **Completed 2025-10-02**
-  - ✅ Test parse text specification to structured requirements
-  - ✅ Test parse technical specification with acceptance criteria
-  - ✅ Test complexity analysis (simple, moderate, complex)
-  - ✅ Test estimate implementation time
-  - ✅ Test identify resource requirements
-  - ✅ Test extract acceptance criteria from specification
-  - ✅ Test identify technical challenges from specification
-  - ✅ Test provide complexity justification
-  - **Actual Time:** 2 hours (vs. 8 estimated) - **75% faster**
-  - **Dependencies:** 1.3.1
-  - **Success Criteria:** ✅ 8/8 Specification Parsing tests implemented
-
-- ✅ **Implementation Decomposition (12 tests)** - **Completed 2025-10-02**
-  - ✅ Test multi-phase plan generation
-  - ✅ Test task dependency identification
-  - ✅ Test critical path analysis
-  - ✅ Test risk assessment with mitigation strategies
-  - ✅ Test timeline generation with milestones
-  - ✅ Test execution order optimization
-  - ✅ Test break down tasks into appropriate phases
-  - ✅ Test assign appropriate roles to tasks
-  - ✅ Test estimate task durations that sum to phase durations
-  - ✅ Test prioritize tasks appropriately
-  - ✅ Test calculate resource allocation correctly
-  - ✅ Test handle configuration options (maxPhases, includeRiskAssessment)
-  - **Actual Time:** 2 hours (vs. 12 estimated) - **83% faster**
-  - **Dependencies:** 3.2.1 (Specification Parsing)
-  - **Success Criteria:** ✅ 12/12 Implementation Decomposition tests implemented
-
-**Phase 3.2.1 Summary:**
-- **Total Tests:** 20/20 completed (100%)
-- **Total Time:** 4 hours (vs. 20 estimated) - **80% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/feature-implementation.workflow.test.ts` (20 tests, 535 lines)
-  - `extensions/vscode/src/test/helpers/featureImplementationWrapper.ts` (Mock implementation, 670 lines)
-- **Files Enhanced:**
-  - `extensions/vscode/src/test/helpers/test-constants.ts` (Added FEATURE_IMPLEMENTATION_CONSTANTS, FEATURE_COMPLEXITY_WEIGHTS, FEATURE_TIME_ESTIMATES)
-- **Key Achievements:**
-  - AI-powered specification parsing (text and technical specs)
-  - Requirement extraction with acceptance criteria
-  - Complexity analysis (simple, moderate, complex, very_complex) with scoring
-  - Time estimation with confidence scoring and phase breakdown
-  - Resource requirements identification (backend, frontend, database, QA, infrastructure)
-  - Multi-phase implementation plan generation (Design, Implementation, Testing, Review)
-  - Task dependency identification and validation
-  - Critical path analysis through implementation phases
-  - Risk assessment with mitigation strategies
-  - Timeline generation with milestones and deliverables
-  - Execution order optimization based on dependencies
-  - Role assignment (backend, frontend, database, infrastructure, QA)
-  - Configurable options (maxPhases, includeRiskAssessment, includeTimeEstimation)
-- **TypeScript Interfaces:**
-  - FeatureSpecification, ParsedRequirement
-  - ComplexityAnalysis, TimeEstimation, ResourceRequirements
-  - ImplementationTask, ImplementationPhase, ImplementationPlan
-  - RiskAssessment, FeatureImplementationConfig
-  - ComplexityLevel, PriorityLevel, RiskLevel, ResourceType (type aliases)
-
-#### 3.2.2 Debugging & Issue Resolution (20 tests) ✅ COMPLETED 2025-10-02
-- ✅ **Root Cause Analysis (10 tests)** - **Completed 2025-10-02**
-  - ✅ Test error stack trace parsing
-  - ✅ Test null pointer error diagnosis
-  - ✅ Test type error diagnosis
-  - ✅ Test async/await error diagnosis
-  - ✅ Test memory leak pattern detection
-  - ✅ Test contributing factor identification
-  - ✅ Test confidence score calculation
-  - ✅ Test evidence gathering
-  - ✅ Test related location identification
-  - ✅ Test minimal context handling
-  - **Actual Time:** 1.5 hours (vs. 10 estimated) - **85% faster**
-  - **Dependencies:** 1.1.3, 1.3.1
-  - **Success Criteria:** ✅ 10/10 Root Cause Analysis tests implemented
-
-- ✅ **Solution Generation (10 tests)** - **Completed 2025-10-02**
-  - ✅ Test multiple fix alternative generation
-  - ✅ Test fix ranking by safety and effectiveness
-  - ✅ Test rollback plan generation
-  - ✅ Test validation criteria generation
-  - ✅ Test test suggestion generation
-  - ✅ Test code changes inclusion
-  - ✅ Test time to fix estimation
-  - ✅ Test risk level assessment
-  - ✅ Test configuration options
-  - ✅ Test comprehensive resolution for complex errors
-  - **Actual Time:** 1.5 hours (vs. 10 estimated) - **85% faster**
-  - **Dependencies:** 3.2.2 (Root Cause Analysis)
-  - **Success Criteria:** ✅ 10/10 Solution Generation tests implemented
-
-**Phase 3.2.2 Summary:**
-- **Total Tests:** 20/20 completed (100%)
-- **Total Time:** 3 hours (vs. 20 estimated) - **85% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/debugging.issue-resolution.test.ts` (20 tests, 435 lines)
-  - `extensions/vscode/src/test/helpers/debuggingIssueResolutionWrapper.ts` (Mock implementation, 497 lines)
-- **Files Enhanced:**
-  - `extensions/vscode/src/test/helpers/test-constants.ts` (Added DEBUGGING_CONSTANTS, ERROR_PATTERNS, SOLUTION_STRATEGIES)
-- **Key Achievements:**
-  - Error stack trace parsing with file/line extraction
-  - Error categorization (6 categories: null_pointer, type_error, async_error, memory_leak, logic_error, configuration_error)
-  - Root cause identification via pattern matching
-  - Contributing factor analysis (deep stacks, missing await, null checks)
-  - Related location identification from stack trace
-  - Evidence gathering and confidence scoring (50-95%)
-  - Multiple solution generation (primary + alternatives)
-  - Solution ranking by safety and effectiveness
-  - Code change generation with old/new code
-  - Rollback plan generation
-  - Validation criteria and test suggestions
-  - Time estimation (2-8 hours) based on complexity
-  - Risk assessment (low/medium/high/critical)
-  - Configurable debugging workflow options
-- **TypeScript Interfaces:**
-  - ErrorContext, RootCauseDiagnosis, Solution
-  - ResolutionResult, DebuggingConfig
-  - Error pattern database and solution strategies
-
-#### 3.2.3 Multi-Step Execution Tests (15 tests) ✅ COMPLETED 2025-10-02
-- ✅ **End-to-End Workflows (15 tests)** - **Completed 2025-10-02**
-  - ✅ Test "Create React app" multi-step execution
-  - ✅ Test "Set up authentication" multi-step execution
-  - ✅ Test "Add testing framework" multi-step execution
-  - ✅ Test "Deploy to production" multi-step execution
-  - ✅ Test execution with user approval checkpoints
-  - ✅ Test execution rollback on failure
-  - ✅ Test execution progress reporting
-  - ✅ Test execution cancellation
-  - ✅ Test step dependencies validation
-  - ✅ Test steps with unmet dependencies are skipped
-  - ✅ Test execution time tracking accuracy
-  - ✅ Test workflow with validation steps
-  - ✅ Test workflow with git operations
-  - ✅ Test execution history retrieval
-  - ✅ Test workflow timeout handling
-  - **Actual Time:** 3 hours (vs. 18 estimated) - **83% faster**
-  - **Dependencies:** 3.2.1, 3.2.2
-  - **Success Criteria:** ✅ 15/15 End-to-End Workflows tests implemented
-
-**Phase 3.2.3 Summary:**
-- **Total Tests:** 15/15 completed (100%)
-- **Total Time:** 3 hours (vs. 18 estimated) - **83% faster**
-- **Files Created:**
-  - `extensions/vscode/src/test/suite/multi-step.execution.test.ts` (15 tests, 485 lines)
-  - `extensions/vscode/src/test/helpers/multiStepExecutionWrapper.ts` (Mock implementation, 509 lines)
-- **Files Enhanced:**
-  - `extensions/vscode/src/test/helpers/test-constants.ts` (Added MULTI_STEP_CONSTANTS, WORKFLOW_TEMPLATES)
-- **Key Achievements:**
-  - Complete multi-step workflow execution with dependency management
-  - 5 step types: command, file_operation, git_operation, validation, user_confirmation
-  - User approval checkpoints (per-step or workflow-wide)
-  - Automatic rollback on failure with configurable behavior
-  - Real-time progress tracking (percentage, elapsed, remaining time)
-  - Execution cancellation support
-  - Dependency validation and automatic skipping
-  - Per-step and total time tracking
-  - Execution history storage and retrieval
-  - Timeout handling with configurable limits
-  - Continue-on-error mode
-  - 4 workflow templates: Create React App, Setup Authentication, Add Testing Framework, Deploy to Production
-
-### 3.3 Performance & Scalability Tests (Week 19-20)
-**Objective:** Test large codebase handling and real-time file watching
-**Priority:** 🟢 Medium
-**Target Coverage:** 75% (currently 35%)
-
-#### 3.3.1 Large Codebase Tests (15 tests)
-- [x] **Performance Benchmarks (8 tests)** ✅
-  - Test analysis on small codebase (100 files) in <5 seconds
-  - Test analysis on medium codebase (1000 files) in <30 seconds
-  - Test analysis on large codebase (5000 files) in <2 minutes
-  - Test indexing on large codebase with progress reporting
-  - Test memory usage on large codebase (<2GB)
-  - Test incremental analysis performance (>10x faster)
-  - Test mixed file types efficiency
-  - Test performance consistency across multiple runs
-  - **Estimated Time:** 10 hours
-  - **Actual Time:** 10 hours
-  - **Dependencies:** 1.1.3 (large fixture)
-  - **Status:** ✅ Complete - 8 comprehensive performance tests implemented
-
-- [x] **Distributed Processing (7 tests)** ✅
-  - Test parallel file processing across workers
-  - Test workload distribution evenness
-  - Test worker failure recovery
-  - Test result aggregation from all workers
-  - Test task priority respect in distribution
-  - Test timeout handling for long-running tasks
-  - Test performance improvement over sequential
-  - **Estimated Time:** 8 hours
-  - **Actual Time:** 12 hours (8 hours implementation + 4 hours refactoring)
-  - **Dependencies:** 3.3.1 (Performance Benchmarks)
-  - **Status:** ✅ Complete - 7 comprehensive distributed processing tests
-  - **Refactoring Accomplished:**
-    - Fixed Major Bug: Map/Array type confusion (changed to proper `Map<string, TaskResult>`)
-    - Fixed Minor Bug: Removed unused variable and dead code in processTasks()
-    - Extracted 23 hardcoded values to 8 new constant objects (104 lines in test-constants.ts)
-    - Created 5 helper functions to eliminate 52% code duplication
-    - Added infinite loop protection (iteration counter + time limit)
-    - Improved shutdown cleanup with active promise tracking
-    - Code quality improved from 7.5/10 to 9.5/10
-    - DRY compliance improved from 4/10 to 10/10
-
-#### 3.3.2 Real-Time File Watching (10 tests)
-- [x] **File Change Detection (10 tests)** ✅
-  - Test file creation detection
-  - Test file modification detection
-  - Test file deletion detection
-  - Test directory rename detection
-  - Test incremental update trigger
-  - Test batch change handling (avoid thrashing)
-  - Test .gitignore respect
-  - Test conflict resolution for concurrent changes
-  - **Estimated Time:** 10 hours
-  - **Actual Time:** 10 hours
-  - **Dependencies:** 1.1.3
-  - **Status:** ✅ Complete - 10 comprehensive file watching tests implemented
-  - **Key Features:**
-    - TestFileWatcher class with debouncing support
-    - FileChangeEvent tracking (created/modified/deleted)
-    - File system event propagation handling
-    - Batch change detection with configurable debounce
-    - .gitignore pattern respect testing
-    - Concurrent change conflict resolution
-    - Incremental update triggering
-    - Directory rename detection (delete + create pattern)
-
-**Phase 3 Deliverables:**
-- ✅ 70 VCS intelligence tests (hooks, commits, PRs)
-- ✅ 55 autonomous development tests (implementation, debugging)
-- ✅ 25 performance and scalability tests
-- ✅ Total: 150 new tests added
-- ✅ Coverage increased to ~70%
+#### Acceptance Criteria
+- Context stays within token limits (4K, 8K, 32K, 128K)
+- Includes 100% of critical context
+- Relevance scoring achieves >80% accuracy in tests
+- Works with existing `advanced-context-manager.ts`
 
 ---
 
-## Phase 4: Comprehensive Coverage (Weeks 21-24)
-**Goal:** Fill remaining gaps and achieve 75% automated coverage
-**Effort:** 120 hours
-**Team:** 1 QA Engineer + 1 Backend Developer
+### 1.4 Add Comprehensive Logging & Debugging
 
-### 4.1 Knowledge Graph & Analysis (Week 21-22)
-**Objective:** Automate knowledge graph querying and pattern identification
-**Priority:** 🟡 High
-**Target Coverage:** 80% (currently 40%)
+#### Tests to Write First
+- [ ] `tests/unit/utils/structured-logger.test.ts`
+  - [ ] Should log with different severity levels
+  - [ ] Should include structured metadata
+  - [ ] Should support multiple transports
+  - [ ] Should handle circular references in objects
+  - [ ] Should redact sensitive information (API keys, tokens)
 
-#### 4.1.1 Graph Querying Integration (20 tests)
-- [x] **Semantic Queries (10 tests)** ✅
-  - Test "find all authentication code" query
-  - Test "find database interactions" query
-  - Test "find error handling patterns" query
-  - Test "find API endpoints" query
-  - Test query with multiple constraints
-  - Test semantic relevance ranking
-  - Test empty query handling
-  - Test case-insensitive queries
-  - Test partial term matching
-  - Test non-matching query handling
-  - **Estimated Time:** 10 hours
-  - **Actual Time:** 10 hours
-  - **Dependencies:** 1.1.3
-  - **Status:** ✅ Complete - 10 comprehensive semantic query tests implemented
-  - **Key Features:**
-    - MockKnowledgeGraph class with semantic querying
-    - Node types: FUNCTION, CLASS, API_ENDPOINT, DATABASE_QUERY, ERROR_HANDLER, AUTH_CHECK
-    - Relationship types: CALLS, IMPORTS, EXTENDS, IMPLEMENTS, USES, HANDLES, AUTHENTICATES
-    - Semantic similarity scoring (0-1) with intent matching
-    - Query constraints: node types, file patterns, minimum score
-    - Result ranking by relevance
-    - Index-based query optimization
-    - Multi-constraint query support
+- [ ] `tests/unit/utils/debug-tracer.test.ts`
+  - [ ] Should trace execution flow with correlation IDs
+  - [ ] Should measure execution time per step
+  - [ ] Should capture stack traces on errors
+  - [ ] Should support conditional tracing
 
-- [x] **Relationship Traversal (10 tests)** ✅
-  - Test function call chain traversal
-  - Test dependency graph traversal
-  - Test data flow analysis
-  - Test control flow analysis
-  - Test path finding between nodes
-  - Test depth limit enforcement
-  - Test cyclic dependency handling
-  - Test disconnected node handling
-  - Test multiple relationship types
-  - Test relationship metadata preservation
-  - **Estimated Time:** 10 hours
-  - **Actual Time:** 10 hours
-  - **Dependencies:** 4.1.1 (Semantic Queries)
-  - **Status:** ✅ Complete - 10 comprehensive graph traversal tests implemented
-  - **Key Features:**
-    - KnowledgeGraph class with adjacency lists
-    - Call chain traversal (DFS-based)
-    - Dependency graph traversal
-    - Data flow analysis (READ/WRITE operations)
-    - Control flow analysis (true/false branches)
-    - Path finding with cycle detection
-    - Depth limiting (max 10)
-    - Metadata preservation during traversal
+- [ ] `tests/integration/utils/logging-integration.test.ts`
+  - [ ] Should log full request lifecycle
+  - [ ] Should enable debug mode via environment variable
+  - [ ] Should output to file and console simultaneously
 
-#### 4.1.2 Pattern Identification (15 tests)
-- [x] **Architecture Patterns (8 tests)** ✅
-  - Test MVC pattern detection
-  - Test repository pattern detection
-  - Test singleton pattern detection
-  - Test factory pattern detection
-  - Test observer pattern detection
-  - Test strategy pattern detection
-  - Test decorator pattern detection
-  - Test adapter pattern detection
-  - **Estimated Time:** 8 hours
-  - **Actual Time:** 8 hours
-  - **Dependencies:** 4.1.1
-  - **Status:** ✅ Complete - 8 comprehensive architecture pattern detection tests
-  - **Key Features:**
-    - PatternDetector class with signature-based detection
-    - 8 pattern types: MVC, Repository, Singleton, Factory, Observer, Strategy, Decorator, Adapter
-    - Confidence scoring (0-1) based on node and method matching
-    - Pattern signatures with name patterns and required methods
-    - Pattern matching with RegEx for flexible detection
-    - Location tracking for detected patterns
+#### Implementation Files
+- [ ] `src/utils/structured-logger.ts`
+- [ ] `src/utils/debug-tracer.ts`
+- [ ] `src/utils/log-redactor.ts`
+- [ ] Enhance `src/utils/logger.ts` (existing)
 
-- [x] **Anti-Pattern Detection (7 tests)** ✅
-  - Test God object detection
-  - Test spaghetti code detection
-  - Test circular dependency detection
-  - Test feature envy detection
-  - Test shotgun surgery detection
-  - Test long parameter list detection
-  - Test data clumps detection
-  - **Estimated Time:** 7 hours
-  - **Actual Time:** 7 hours
-  - **Dependencies:** 4.1.2 (Architecture Patterns)
-  - **Status:** ✅ Complete - 7 comprehensive anti-pattern detection tests implemented
-  - **Key Features:**
-    - AntiPatternDetector class with 7 detection methods
-    - Anti-pattern types: God Object, Spaghetti Code, Circular Dependency, Feature Envy, Shotgun Surgery, Long Parameter List, Data Clumps
-    - Severity levels: low, medium, high, critical
-    - Confidence scoring (0-1) for each detection
-    - Detailed metrics: method count, complexity, dependency count, parameter count, affected files
-    - Actionable recommendations for each anti-pattern
-    - Thresholds: 20 methods (God Object), 15 complexity (Spaghetti), 5 params (Long List)
-    - Cycle detection algorithm with path tracking
-    - Feature envy detection with external call counting
-    - Shotgun surgery detection across file boundaries
-    - Data clump detection with parameter group analysis
-
-#### 4.1.3 Best Practices Integration (10 tests)
-- [x] **Recommendations (10 tests)** ✅
-  - Test generate refactoring recommendations (3 tests: God Object, Spaghetti Code, Long Parameter List)
-  - Test generate optimization recommendations (2 tests: large function, circular dependency)
-  - Test generate security recommendations (2 tests: authentication validation, SQL prepared statements)
-  - Test recommendation prioritization (2 tests: priority sorting, actionability scoring)
-  - Test recommendation actionability scoring (3 tests: actionable steps, code examples, effort/impact estimation)
-  - **Estimated Time:** 10 hours
-  - **Actual Time:** 10 hours
-  - **Dependencies:** 4.1.2
-  - **Status:** ✅ Complete - 10 comprehensive best practices recommendation tests
-  - **Key Features:**
-    - BestPracticesAnalyzer class with recommendation generation
-    - 3 recommendation types: Refactoring, Optimization, Security
-    - 4 priority levels: Critical, High, Medium, Low
-    - Actionability scoring (0-1) based on effort and feasibility
-    - Effort estimation: low, medium, high
-    - Impact estimation: low, medium, high
-    - Code examples (before/after) for applicable recommendations
-    - Actionable steps (3-5 concrete steps per recommendation)
-    - Smart prioritization: Priority first, then actionability score
-    - Refactoring recommendations: God Object splitting, complexity reduction, parameter objects
-    - Optimization recommendations: Large function optimization, circular dependency breaking
-    - Security recommendations: Input validation, prepared statements for SQL
-    - Integration with anti-pattern detection from Phase 4.1.2
-
-### 4.2 Remaining Gaps (Week 23-24)
-**Objective:** Complete coverage of miscellaneous features
-
-#### 4.2.1 Multi-Provider AI Integration E2E (15 tests)
-- [x] **Provider Routing (8 tests)** ✅
-  - Test automatic provider selection based on query type
-  - Test failover to secondary provider on error
-  - Test cost-aware routing
-  - Test performance-aware routing
-  - **Estimated Time:** 8 hours
-  - **Actual Time:** 8 hours ✅
-  - **Dependencies:** 1.3.1
-  - **Bug Fix:** If routing logic incorrect, add more query classification tests
-
-- [x] **Response Fusion (7 tests)** ✅
-  - Test combine responses from multiple providers
-  - Test conflict resolution between providers
-  - Test quality validation across providers
-  - Test fusion confidence scoring
-  - **Estimated Time:** 7 hours
-  - **Actual Time:** 7 hours ✅
-  - **Dependencies:** 4.2.1 (Provider Routing)
-  - **Bug Fix:** If fusion produces nonsense, enhance conflict resolution
-
-#### 4.2.2 Context Management Full Workflow (10 tests)
-- [x] **Session Management (10 tests)** ✅
-  - Test session continuity across multiple queries
-  - Test follow-up query context retention
-  - Test new topic context reset
-  - Test conversation history persistence
-  - Test context prioritization for file selection
-  - **Estimated Time:** 10 hours
-  - **Actual Time:** 10 hours ✅
-  - **Dependencies:** 1.1.4
-  - **Bug Fix:** If context lost, increase context window size
-
-#### 4.2.3 Analysis Result Saving (10 tests)
-- [x] **Result Persistence (10 tests)** ✅
-  - Test save analysis results to file
-  - Test save code review report
-  - Test save security scan report
-  - Test save performance analysis report
-  - Test report format options (JSON, Markdown, HTML)
-  - **Estimated Time:** 8 hours
-  - **Actual Time:** 8 hours ✅
-  - **Dependencies:** 2.3
-  - **Bug Fix:** If reports malformed, fix template rendering
-
-**Phase 4 Deliverables:**
-- ✅ 45 knowledge graph and analysis tests
-- ✅ 35 multi-provider AI and context management tests
-- ✅ Total: 80 new tests added
-- ✅ **Target coverage achieved: ~75%**
+#### Acceptance Criteria
+- Supports JSON and pretty-print formats
+- Redacts 100% of secrets in test cases
+- Performance overhead < 5%
+- Integrates with existing logger
 
 ---
 
-## Bug Fix Protocol
+## Phase 2: Core Features (Weeks 3-5)
 
-Throughout test development, bugs will be discovered. Follow this protocol:
+### 2.1 Implement Multi-File Refactoring Engine
 
-### 1. Bug Discovery and Documentation
-When a test fails due to a bug (not a test issue):
-- [ ] Create GitHub issue with label `bug-from-testing`
-- [ ] Document expected vs. actual behavior
-- [ ] Attach test case that reproduces the bug
-- [ ] Assign severity (critical, high, medium, low)
-- [ ] Link to relevant test file and line number
+#### Tests to Write First
+- [ ] `tests/unit/refactoring/multi-file-refactor.test.ts`
+  - [ ] Should identify all files needing changes
+  - [ ] Should preserve imports/exports across files
+  - [ ] Should handle circular dependencies
+  - [ ] Should update tests when refactoring implementation
+  - [ ] Should validate syntax after each file change
 
-### 2. Bug Triage
-- **Critical bugs** (crashes, data loss, security): Fix immediately, delay test development
-- **High bugs** (feature not working): Fix within 1 week, continue other tests
-- **Medium bugs** (degraded UX, edge cases): Fix within 2 weeks, continue all tests
-- **Low bugs** (cosmetic issues): Add to backlog, continue tests
+- [ ] `tests/unit/refactoring/refactor-strategies.test.ts`
+  - [ ] Should extract function across files
+  - [ ] Should move class to new file with import updates
+  - [ ] Should rename symbol across entire codebase
+  - [ ] Should split large file into modules
 
-### 3. Bug Fix Workflow
-- [ ] Create feature branch: `bugfix/ISSUE-123-description`
-- [ ] Write regression test to reproduce bug
-- [ ] Implement fix
-- [ ] Verify regression test now passes
-- [ ] Run full test suite to ensure no regressions
-- [ ] Submit PR with issue reference in title
+- [ ] `tests/unit/refactoring/impact-analyzer.test.ts`
+  - [ ] Should calculate refactoring impact score
+  - [ ] Should identify breaking changes
+  - [ ] Should detect affected test files
 
-### 4. Common Bug Categories to Watch For
+- [ ] `tests/integration/refactoring/multi-file-integration.test.ts`
+  - [ ] Should refactor real project with 10+ files
+  - [ ] Should preserve all functionality (run tests after)
+  - [ ] Should handle Git merge conflicts
+  - [ ] Should integrate with existing refactoring manager
 
-#### Authentication & Security Bugs
-- Missing input validation (path traversal, injection)
-- Weak authentication checks
-- Exposed secrets or API keys
-- CORS misconfigurations
+#### Implementation Files
+- [ ] `src/refactoring/multi-file-engine.ts`
+- [ ] `src/refactoring/impact-analyzer.ts`
+- [ ] `src/refactoring/import-updater.ts`
+- [ ] `src/refactoring/strategies/index.ts`
+- [ ] Enhance `src/refactoring/index.ts` (existing)
 
-#### Performance Bugs
-- Memory leaks (event listeners not removed)
-- Inefficient algorithms (O(n²) or worse)
-- Unbounded caching
-- File handle leaks
-
-#### IDE Integration Bugs
-- Provider registration timing issues
-- WebSocket connection race conditions
-- Message ordering problems
-- Extension activation failures
-
-#### File Operation Bugs
-- File locking issues (concurrent edits)
-- Permission errors not handled
-- Path traversal vulnerabilities
-- Backup/rollback failures
-
-#### AI Integration Bugs
-- Prompt injection vulnerabilities
-- Malformed response handling
-- Timeout issues with slow models
-- Token limit exceeded errors
+#### Acceptance Criteria
+- Handles projects with 50+ files
+- 100% success rate on import/export updates
+- Validates all changes compile/parse correctly
+- Creates atomic commits per logical change
 
 ---
 
-## Testing Best Practices
+### 2.2 Build Validated Code Generator
 
-### Test Organization
-```
-tests/
-├── e2e/                    # End-to-end tests
-│   ├── cli/               # CLI command E2E tests
-│   ├── ide/               # IDE integration tests
-│   └── workflows/         # Multi-step workflow tests
-├── integration/           # Integration tests
-│   ├── ai/               # AI provider integration
-│   ├── vcs/              # Git integration
-│   └── security/         # Security scanning integration
-├── unit/                 # Unit tests (existing)
-└── fixtures/             # Test data fixtures
-    ├── projects/         # Sample codebases
-    │   ├── small/       # 10-20 files
-    │   ├── medium/      # 100-200 files
-    │   └── large/       # 500+ files
-    ├── vulnerable/      # Code with security issues
-    └── ai-responses/    # Captured AI responses
-```
+#### Tests to Write First
+- [ ] `tests/unit/ai/code-validator.test.ts`
+  - [ ] Should validate TypeScript syntax
+  - [ ] Should validate JavaScript syntax
+  - [ ] Should check for ESLint violations
+  - [ ] Should verify type correctness
+  - [ ] Should detect runtime errors (basic static analysis)
 
-### Test Naming Conventions
-- **E2E tests:** `feature-scenario.e2e.test.ts`
-  - Example: `create-file-with-ai.e2e.test.ts`
-- **Integration tests:** `component-integration.test.ts`
-  - Example: `websocket-mcp-integration.test.ts`
-- **Unit tests:** `component.test.ts` (existing pattern)
+- [ ] `tests/unit/ai/code-generator.test.ts`
+  - [ ] Should generate syntactically correct code
+  - [ ] Should match requested functionality
+  - [ ] Should include proper imports
+  - [ ] Should follow project style guidelines
+  - [ ] Should generate tests alongside implementation
 
-### Test Structure
+- [ ] `tests/unit/ai/generation-strategies.test.ts`
+  - [ ] Should use few-shot prompting for better results
+  - [ ] Should iteratively improve code on validation failure
+  - [ ] Should use project examples as templates
+
+- [ ] `tests/integration/ai/code-generation-integration.test.ts`
+  - [ ] Should generate working React component
+  - [ ] Should generate API endpoint with validation
+  - [ ] Should generate complete feature (controller + service + test)
+
+#### Implementation Files
+- [ ] `src/ai/code-validator.ts`
+- [ ] `src/ai/code-generator.ts`
+- [ ] `src/ai/generation-strategies.ts`
+- [ ] `src/ai/syntax-checker.ts`
+- [ ] Enhance `src/ai/test-generator.ts` (existing)
+
+#### Acceptance Criteria
+- 95%+ of generated code compiles/parses correctly
+- All generated code passes basic linting
+- Generates tests with 70%+ coverage of generated code
+- Iterates max 3 times to fix validation errors
+
+---
+
+### 2.3 Enhance Interactive Workflow Manager
+
+#### Tests to Write First
+- [ ] `tests/unit/ui/workflow-state-machine.test.ts`
+  - [ ] Should transition between workflow states correctly
+  - [ ] Should handle user confirmations at checkpoints
+  - [ ] Should allow rollback to previous states
+  - [ ] Should persist state between sessions
+
+- [ ] `tests/unit/ui/checkpoint-manager.test.ts`
+  - [ ] Should create checkpoints before risky operations
+  - [ ] Should restore from checkpoint on failure
+  - [ ] Should clean up old checkpoints
+  - [ ] Should diff changes between checkpoints
+
+- [ ] `tests/unit/ui/user-feedback-collector.test.ts`
+  - [ ] Should prompt for confirmation on high-risk operations
+  - [ ] Should provide preview of changes before applying
+  - [ ] Should allow step-by-step execution
+  - [ ] Should respect user preferences (auto-approve low-risk)
+
+- [ ] `tests/integration/ui/workflow-integration.test.ts`
+  - [ ] Should handle complete refactoring workflow with user inputs
+  - [ ] Should recover from mid-workflow failures
+  - [ ] Should integrate with existing interactive-menu
+
+#### Implementation Files
+- [ ] `src/ui/workflow-state-machine.ts`
+- [ ] `src/ui/checkpoint-manager.ts`
+- [ ] `src/ui/user-feedback-collector.ts`
+- [ ] `src/ui/workflow-engine.ts`
+- [ ] Enhance `src/ui/interactive-menu.ts` (existing)
+
+#### Acceptance Criteria
+- Supports at least 10 predefined workflows
+- Checkpoints use minimal disk space (<10MB per checkpoint)
+- User can undo/redo any step
+- Workflows are resumable after interruption
+
+---
+
+### 2.4 Develop Resilient Execution Framework
+
+#### Tests to Write First
+- [ ] `tests/unit/execution/retry-handler.test.ts`
+  - [ ] Should retry failed operations with exponential backoff
+  - [ ] Should not retry non-retryable errors
+  - [ ] Should track retry attempts and success rates
+  - [ ] Should have configurable retry policies
+
+- [ ] `tests/unit/execution/rollback-manager.test.ts`
+  - [ ] Should rollback file changes on error
+  - [ ] Should rollback Git commits on pipeline failure
+  - [ ] Should restore original state completely
+  - [ ] Should maintain rollback history
+
+- [ ] `tests/unit/execution/state-persistence.test.ts`
+  - [ ] Should save execution state to disk
+  - [ ] Should restore execution state after crash
+  - [ ] Should handle corrupted state files
+
+- [ ] `tests/unit/execution/health-checker.test.ts`
+  - [ ] Should verify system dependencies before execution
+  - [ ] Should check disk space availability
+  - [ ] Should validate AI service connectivity
+  - [ ] Should provide actionable error messages
+
+- [ ] `tests/integration/execution/resilience-integration.test.ts`
+  - [ ] Should recover from AI timeout mid-task
+  - [ ] Should handle file system errors gracefully
+  - [ ] Should rollback on validation failure
+  - [ ] Should integrate with existing error-recovery
+
+#### Implementation Files
+- [ ] `src/execution/retry-handler.ts`
+- [ ] `src/execution/rollback-manager.ts`
+- [ ] `src/execution/state-persistence.ts`
+- [ ] `src/execution/health-checker.ts`
+- [ ] `src/execution/resilient-executor.ts`
+- [ ] Enhance `src/optimization/error-recovery.ts` (existing)
+
+#### Acceptance Criteria
+- 100% rollback success rate in tests
+- Recovers from 90%+ of transient failures
+- State persistence overhead < 50ms per save
+- Zero data loss on crashes
+
+---
+
+## Phase 3: Integration (Weeks 6-7)
+
+### 3.1 Connect All Components into Unified Pipeline
+
+#### Tests to Write First
+- [ ] `tests/integration/pipeline/unified-pipeline.test.ts`
+  - [ ] Should execute complete request from input to output
+  - [ ] Should use RequestOrchestrator → TaskPlanner → Executor
+  - [ ] Should apply context management throughout
+  - [ ] Should validate results at each stage
+
+- [ ] `tests/integration/pipeline/component-integration.test.ts`
+  - [ ] Should integrate with existing tool orchestrator
+  - [ ] Should use enhanced intent analyzer
+  - [ ] Should leverage semantic code analyzer
+  - [ ] Should apply multi-file refactoring engine
+
+- [ ] `tests/e2e/pipeline/real-world-scenarios.e2e.test.ts`
+  - [ ] Should handle "refactor authentication" request
+  - [ ] Should handle "add new feature" request
+  - [ ] Should handle "fix security issue" request
+  - [ ] Should handle "optimize performance" request
+
+#### Implementation Files
+- [ ] `src/pipeline/unified-pipeline.ts`
+- [ ] `src/pipeline/pipeline-builder.ts`
+- [ ] `src/pipeline/stage-executor.ts`
+- [ ] `src/pipeline/pipeline-config.ts`
+
+#### Acceptance Criteria
+- All existing features work through new pipeline
+- Pipeline handles 95%+ of test scenarios successfully
+- Maintains backward compatibility with current CLI
+- Performance regression < 10%
+
+---
+
+### 3.2 Add Workflow Templates for Common Tasks
+
+#### Tests to Write First
+- [ ] `tests/unit/templates/workflow-template.test.ts`
+  - [ ] Should load template from YAML/JSON
+  - [ ] Should validate template schema
+  - [ ] Should parameterize templates with user input
+  - [ ] Should support template inheritance
+
+- [ ] `tests/unit/templates/template-library.test.ts`
+  - [ ] Should include "add-feature" template
+  - [ ] Should include "refactor-module" template
+  - [ ] Should include "fix-bug" template
+  - [ ] Should include "optimize-performance" template
+  - [ ] Should include "add-tests" template
+  - [ ] Should include "setup-ci-cd" template
+
+- [ ] `tests/integration/templates/template-execution.test.ts`
+  - [ ] Should execute template end-to-end
+  - [ ] Should customize template based on project type
+  - [ ] Should generate reports from template execution
+
+#### Implementation Files
+- [ ] `src/templates/workflow-template.ts`
+- [ ] `src/templates/template-loader.ts`
+- [ ] `src/templates/template-executor.ts`
+- [ ] `src/templates/builtin/*.yaml` (template files)
+
+#### Acceptance Criteria
+- Minimum 10 built-in templates
+- Templates are user-customizable
+- Template execution success rate > 90%
+- Templates reduce user input by 70%+
+
+---
+
+### 3.3 Implement Smart Suggestions System
+
+#### Tests to Write First
+- [ ] `tests/unit/suggestions/suggestion-engine.test.ts`
+  - [ ] Should suggest relevant actions based on context
+  - [ ] Should rank suggestions by confidence
+  - [ ] Should learn from user acceptances/rejections
+  - [ ] Should provide rationale for each suggestion
+
+- [ ] `tests/unit/suggestions/pattern-matcher.test.ts`
+  - [ ] Should detect common coding patterns
+  - [ ] Should identify improvement opportunities
+  - [ ] Should suggest appropriate refactorings
+  - [ ] Should detect anti-patterns
+
+- [ ] `tests/unit/suggestions/ml-ranker.test.ts`
+  - [ ] Should train on historical user choices
+  - [ ] Should improve ranking over time
+  - [ ] Should handle cold-start scenario
+
+- [ ] `tests/integration/suggestions/suggestion-integration.test.ts`
+  - [ ] Should provide suggestions in CLI workflow
+  - [ ] Should integrate with workflow templates
+  - [ ] Should track suggestion adoption metrics
+
+#### Implementation Files
+- [ ] `src/suggestions/suggestion-engine.ts`
+- [ ] `src/suggestions/pattern-matcher.ts`
+- [ ] `src/suggestions/ml-ranker.ts`
+- [ ] `src/suggestions/suggestion-tracker.ts`
+
+#### Acceptance Criteria
+- Suggestions are contextually relevant (80%+ user acceptance)
+- Response time < 200ms for suggestion generation
+- Learns from minimum 100 user interactions
+- Provides actionable suggestions with clear rationale
+
+---
+
+### 3.4 Create Comprehensive Test Suite
+
+#### Tests to Write First
+- [ ] `tests/unit/**/*.test.ts` (expand coverage to 90%+)
+  - [ ] Cover all new Phase 1-2 modules
+  - [ ] Cover edge cases and error paths
+  - [ ] Cover performance critical paths
+
+- [ ] `tests/integration/complete-workflows/*.test.ts`
+  - [ ] Test each workflow template end-to-end
+  - [ ] Test error recovery scenarios
+  - [ ] Test rollback mechanisms
+
+- [ ] `tests/e2e/user-scenarios/*.e2e.test.ts`
+  - [ ] "Junior developer onboarding" scenario
+  - [ ] "Senior developer refactoring" scenario
+  - [ ] "Code review automation" scenario
+  - [ ] "Legacy code modernization" scenario
+
+- [ ] `tests/performance/benchmarks/*.perf.test.ts`
+  - [ ] Benchmark context building performance
+  - [ ] Benchmark semantic analysis performance
+  - [ ] Benchmark code generation performance
+  - [ ] Benchmark full pipeline performance
+
+#### Implementation
+- [ ] Expand existing test infrastructure
+- [ ] Add performance test framework
+- [ ] Add E2E test helpers
+- [ ] Set up CI/CD for automated testing
+
+#### Acceptance Criteria
+- Unit test coverage ≥ 90%
+- Integration test coverage ≥ 80%
+- All E2E scenarios pass consistently
+- Performance benchmarks establish baselines
+
+---
+
+## Phase 4: Polish (Week 8)
+
+### 4.1 Performance Optimization
+
+#### Tests to Write First
+- [ ] `tests/performance/profiling.test.ts`
+  - [ ] Should identify performance bottlenecks
+  - [ ] Should measure memory usage
+  - [ ] Should track AI API call efficiency
+
+- [ ] `tests/performance/optimization-validation.test.ts`
+  - [ ] Should verify caching reduces redundant calls
+  - [ ] Should verify parallel execution improves speed
+  - [ ] Should verify streaming responses feel faster
+
+#### Implementation Tasks
+- [ ] Profile and optimize hot paths (using existing `performance/optimizer.ts`)
+- [ ] Implement intelligent caching (enhance `ai/providers/provider-cache.ts`)
+- [ ] Add request batching for AI calls
+- [ ] Optimize AST parsing and semantic analysis
+- [ ] Add lazy loading for large codebases
+
+#### Acceptance Criteria
+- Request latency reduced by 30%+
+- Memory usage reduced by 20%+
+- AI API calls reduced by 40%+ via caching
+- Startup time < 2 seconds
+
+---
+
+### 4.2 User Experience Improvements
+
+#### Tests to Write First
+- [ ] `tests/unit/ui/progress-indicators.test.ts`
+  - [ ] Should show progress for long-running tasks
+  - [ ] Should estimate time remaining accurately
+  - [ ] Should allow cancellation mid-operation
+
+- [ ] `tests/unit/ui/error-messages.test.ts`
+  - [ ] Should provide actionable error messages
+  - [ ] Should suggest fixes for common errors
+  - [ ] Should include relevant context in errors
+
+- [ ] `tests/integration/ui/ux-flow.test.ts`
+  - [ ] Should guide users through complex workflows
+  - [ ] Should provide helpful tooltips and examples
+  - [ ] Should remember user preferences
+
+#### Implementation Tasks
+- [ ] Add rich progress indicators (enhance existing spinner)
+- [ ] Improve error messages with suggestions
+- [ ] Add command autocomplete (enhance `shell/completion.ts`)
+- [ ] Add interactive tutorials (enhance `onboarding/tutorial.ts`)
+- [ ] Implement user preferences system
+
+#### Acceptance Criteria
+- User satisfaction score > 4.5/5
+- Time-to-first-success < 10 minutes for new users
+- Error resolution rate > 80% without external help
+- Command discovery time < 30 seconds
+
+---
+
+### 4.3 Documentation and Examples
+
+#### Tests to Write First
+- [ ] `tests/docs/documentation-completeness.test.ts`
+  - [ ] Should have README for each major module
+  - [ ] Should have API docs for all public functions
+  - [ ] Should have examples for all templates
+  - [ ] Should have troubleshooting guides
+
+- [ ] `tests/docs/example-validation.test.ts`
+  - [ ] Should validate all code examples execute correctly
+  - [ ] Should verify all CLI examples work
+  - [ ] Should check all links are valid
+
+#### Implementation Tasks
+- [ ] Write comprehensive README.md
+- [ ] Generate API documentation (use existing TypeDoc setup)
+- [ ] Create tutorial videos/GIFs
+- [ ] Write migration guide from current version
+- [ ] Create troubleshooting guide
+- [ ] Add inline help for all commands
+
+#### Acceptance Criteria
+- 100% of public APIs documented
+- 100% of examples tested and working
+- User can complete basic task from docs alone
+- Documentation search-optimized (SEO)
+
+---
+
+### 4.4 Beta Testing and Refinement
+
+#### Tests to Write First
+- [ ] `tests/beta/user-scenarios.test.ts`
+  - [ ] Should track beta user success rates
+  - [ ] Should collect user feedback systematically
+  - [ ] Should identify common pain points
+
+- [ ] `tests/beta/analytics.test.ts`
+  - [ ] Should track feature usage (enhance `analytics/tracker.ts`)
+  - [ ] Should measure performance in real-world use
+  - [ ] Should identify crash/error patterns
+
+#### Implementation Tasks
+- [ ] Set up beta testing program
+- [ ] Implement telemetry (opt-in, privacy-preserving)
+- [ ] Create feedback collection mechanism
+- [ ] Run A/B tests on UX improvements
+- [ ] Fix top 10 user-reported issues
+- [ ] Optimize based on real-world usage patterns
+
+#### Acceptance Criteria
+- Beta tested by 10+ external users
+- Critical bugs: 0
+- High-priority bugs: < 5
+- Complex request success rate ≥ 85%
+- User confirmation reduction ≥ 50%
+
+---
+
+## Success Metrics Validation
+
+### Continuous Testing Requirements
+
+At the end of each phase, validate against success metrics:
+
 ```typescript
-describe('Feature: Create File Command', () => {
-  describe('Scenario: Basic file creation', () => {
-    it('should create file with AI-generated content', async () => {
-      // Arrange: Set up test environment
-      const testDir = await createTestDirectory();
+// tests/metrics/success-metrics.test.ts
+describe('Success Metrics Validation', () => {
+  it('should achieve >85% complex request success rate', async () => {
+    const successRate = await runComplexRequestSuite();
+    expect(successRate).toBeGreaterThan(85);
+  });
 
-      // Act: Execute the command
-      const result = await executeCommand(
-        'create-file src/Button.tsx --description "React button"'
-      );
+  it('should reduce user confirmation prompts by >50%', async () => {
+    const reductionRate = await measureConfirmationReduction();
+    expect(reductionRate).toBeGreaterThan(50);
+  });
 
-      // Assert: Verify outcomes
-      expect(result.exitCode).toBe(0);
-      expect(fs.existsSync(path.join(testDir, 'src/Button.tsx'))).toBe(true);
+  it('should generate code that passes validation >95%', async () => {
+    const validationRate = await measureCodeQuality();
+    expect(validationRate).toBeGreaterThan(95);
+  });
 
-      // Cleanup
-      await cleanupTestDirectory(testDir);
-    });
+  it('should successfully rollback on errors 100%', async () => {
+    const rollbackRate = await measureRollbackSuccess();
+    expect(rollbackRate).toBe(100);
+  });
+
+  it('should achieve user satisfaction >4.5/5', async () => {
+    const satisfaction = await getUserSatisfactionScore();
+    expect(satisfaction).toBeGreaterThan(4.5);
   });
 });
 ```
 
-### Assertions Best Practices
-- **Use specific assertions:** Prefer `toBe(0)` over `toBeTruthy()`
-- **Test multiple aspects:** Verify exit code, file content, logs
-- **Use snapshots for complex output:** AI-generated code, formatted reports
-- **Add helpful messages:** `expect(result).toBe(0, 'Command should succeed')`
+---
 
-### Flakiness Prevention
-- **Avoid timing dependencies:** Use `waitFor()` instead of fixed delays
-- **Isolate tests:** Each test should clean up after itself
-- **Mock external services:** Don't rely on real API calls for unit/integration tests
-- **Use deterministic data:** Avoid random data in tests
-- **Retry flaky E2E tests:** Configure 2-3 retries for E2E tests only
+## Testing Infrastructure
+
+### Required Test Utilities
+
+- [ ] `tests/helpers/test-project-generator.ts` - Generate realistic test projects
+- [ ] `tests/helpers/ai-mock-helper.ts` - Mock AI responses for deterministic testing
+- [ ] `tests/helpers/file-system-sandbox.ts` - Isolated file system for tests
+- [ ] `tests/helpers/git-test-helper.ts` - Set up test Git repositories
+- [ ] `tests/helpers/assertion-helpers.ts` - Custom matchers for code quality
 
 ### CI/CD Integration
-```yaml
-# .github/workflows/test.yml
-name: Test Suite
 
-on: [push, pull_request]
+- [ ] Run all tests on every commit
+- [ ] Measure and track code coverage (target: 90%+ unit, 80%+ integration)
+- [ ] Run performance benchmarks weekly
+- [ ] Run E2E tests before release
+- [ ] Generate test reports with trends
 
-jobs:
-  unit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: yarn install
-      - run: yarn test:unit
+---
 
-  integration:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: docker-compose up -d ollama
-      - run: yarn install
-      - run: yarn test:integration
+## Development Workflow
 
-  e2e:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: yarn install
-      - run: xvfb-run yarn test:e2e  # For VS Code tests
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: e2e-screenshots
-          path: tests/e2e/screenshots/
+### For Each Feature:
+
+1. **Write Tests First**
+   ```bash
+   # Create test file
+   touch tests/unit/component/new-feature.test.ts
+
+   # Write failing tests
+   yarn test tests/unit/component/new-feature.test.ts
+   # Tests should fail - no implementation yet
+   ```
+
+2. **Implement Feature**
+   ```bash
+   # Create implementation
+   touch src/component/new-feature.ts
+
+   # Implement until tests pass
+   yarn test tests/unit/component/new-feature.test.ts --watch
+   ```
+
+3. **Refactor**
+   ```bash
+   # Clean up code while keeping tests green
+   yarn test tests/unit/component/new-feature.test.ts
+   ```
+
+4. **Integration Test**
+   ```bash
+   # Add integration tests
+   touch tests/integration/component/new-feature-integration.test.ts
+   yarn test:integration
+   ```
+
+5. **Validate Success Metrics**
+   ```bash
+   # Run full test suite
+   yarn test:all
+
+   # Check coverage
+   yarn test --coverage
+   ```
+
+---
+
+## Notes
+
+- All existing functionality must continue to work (regression testing)
+- Maintain backward compatibility with current CLI interface
+- Follow existing code style and patterns where possible
+- Prioritize user safety (rollback, validation, confirmation)
+- Keep AI provider abstraction (support Ollama, OpenAI, Anthropic, Google)
+- Respect user privacy (no telemetry without opt-in)
+
+---
+
+## Dependencies Between Tasks
+
+```
+Foundation Phase:
+- 1.1 Request Orchestrator → 1.2 Semantic Analyzer (dependency)
+- 1.3 Context Management → 1.2 Semantic Analyzer (dependency)
+- 1.4 Logging → All other tasks (used everywhere)
+
+Core Features Phase:
+- 2.1 Multi-File Refactoring → 1.2 Semantic Analyzer (dependency)
+- 2.2 Code Generator → 1.3 Context Management (dependency)
+- 2.3 Workflow Manager → 1.1 Request Orchestrator (dependency)
+- 2.4 Execution Framework → All Phase 1 (foundation for all)
+
+Integration Phase:
+- 3.1 Unified Pipeline → All Phase 1 & 2 (integrates everything)
+- 3.2 Workflow Templates → 2.3 Workflow Manager (dependency)
+- 3.3 Smart Suggestions → 1.2 Semantic Analyzer, 3.1 Pipeline (dependency)
+- 3.4 Test Suite → All previous tasks (validates everything)
+
+Polish Phase:
+- 4.1 Performance → 3.1 Pipeline (optimize after integration)
+- 4.2 UX Improvements → 2.3 Workflow Manager (enhance existing)
+- 4.3 Documentation → All previous tasks (document everything)
+- 4.4 Beta Testing → All previous tasks (validate everything)
 ```
 
 ---
 
-## Metrics & Success Criteria
-
-### Coverage Metrics
-| Phase | Target Coverage | Expected Tests Added | Cumulative Tests |
-|-------|----------------|---------------------|------------------|
-| **Current** | 30% | 0 | ~1,446 |
-| **Phase 1** | 35% | 15-20 | ~1,465 |
-| **Phase 2** | 65% | 255 | ~1,720 |
-| **Phase 3** | 70% | 150 | ~1,870 |
-| **Phase 4** | **75%** | 80 | **~1,950** |
-
-### Quality Metrics
-- **Test Pass Rate:** >95% (allow for some flakiness in E2E tests)
-- **Test Execution Time:**
-  - Unit tests: <5 minutes
-  - Integration tests: <15 minutes
-  - E2E tests: <30 minutes
-- **Test Maintenance Cost:** <10% of test development time
-- **Bug Detection Rate:** >80% of bugs caught by automated tests before manual testing
-
-### Business Impact Metrics
-- **Manual Testing Time Reduction:** From 40 hours to 6 hours per cycle (85% reduction)
-- **Release Cycle Acceleration:** From monthly to weekly releases
-- **Bug Escape Rate:** <5% (bugs found in production vs. total bugs)
-- **Developer Confidence:** Survey showing >80% confidence in automated tests
-
----
-
-## Resource Requirements
-
-### Team Composition
-- **Phase 1:** 1 QA Engineer + 1 Backend Developer (part-time)
-- **Phase 2-3:** 2 QA Engineers + 1 Backend Developer (full-time)
-- **Phase 4:** 1 QA Engineer + 1 Backend Developer (part-time)
-
-### Infrastructure
-- **CI/CD:** GitHub Actions runners (existing)
-- **Test Environments:**
-  - Docker container for Ollama (lightweight model)
-  - Headless Chrome/Electron for VS Code tests
-- **Storage:** ~10GB for test fixtures and artifacts
-
-### Budget Estimate
-| Category | Cost |
-|----------|------|
-| **Personnel** (680 hours @ $100/hour) | $68,000 |
-| **Infrastructure** (CI/CD runners) | $2,000 |
-| **Tools & Licenses** | $1,000 |
-| **Contingency** (10%) | $7,100 |
-| **Total** | **$78,100** |
-
-### ROI Analysis
-- **Investment:** $78,100
-- **Annual Savings:** $40,000 (manual testing reduction)
-- **Payback Period:** ~2 years
-- **5-Year ROI:** 156% ($200k savings - $78k investment)
-
----
-
-## Risk Management
-
-### High Risks
-1. **AI Model Availability**
-   - Risk: Ollama or other AI providers unavailable during testing
-   - Mitigation: Use cached responses, implement mock fallbacks
-   - Contingency: Delay AI-dependent tests, continue non-AI tests
-
-2. **VS Code API Changes**
-   - Risk: VS Code updates break extension tests
-   - Mitigation: Pin VS Code version for testing, monitor release notes
-   - Contingency: Update tests to match new API within 1 week
-
-3. **Test Flakiness**
-   - Risk: E2E tests become unreliable due to timing issues
-   - Mitigation: Implement robust wait strategies, retry logic
-   - Contingency: Quarantine flaky tests, investigate root cause
-
-### Medium Risks
-4. **Test Data Maintenance**
-   - Risk: Test fixtures become outdated
-   - Mitigation: Automated fixture generation, regular updates
-   - Contingency: Regenerate fixtures as needed
-
-5. **CI/CD Performance**
-   - Risk: Test suite becomes too slow for CI/CD
-   - Mitigation: Parallel execution, test sharding
-   - Contingency: Run E2E tests nightly instead of per-commit
-
-### Low Risks
-6. **Team Skill Gaps**
-   - Risk: Team lacks E2E testing expertise
-   - Mitigation: Training sessions, pair programming
-   - Contingency: Hire contractor for initial setup
-
----
-
-## Appendix: Test Scenario Reference
-
-### Critical Scenarios by Priority
-
-#### 🔴 **Priority 1: Must Have for Release** (150 tests)
-1. IDE WebSocket connection management (15 tests)
-2. VS Code providers (CodeLens, Hover, InlineCompletion) (37 tests)
-3. File operation commands (create-file, edit-file) (30 tests)
-4. Security vulnerability scanning (OWASP Top 10) (40 tests)
-5. Code review system (25 tests)
-
-#### 🟡 **Priority 2: Should Have for Quality** (200 tests)
-6. Git hooks management (30 tests)
-7. Commit message generation (15 tests)
-8. PR review automation (25 tests)
-9. Feature implementation workflow (20 tests)
-10. Debugging and issue resolution (20 tests)
-11. Multi-step execution (15 tests)
-12. Knowledge graph querying (35 tests)
-13. Pattern identification (15 tests)
-14. Best practices integration (10 tests)
-15. Multi-provider AI routing (15 tests)
-
-#### 🟢 **Priority 3: Nice to Have for Excellence** (145 tests)
-17. Chat panel integration (20 tests)
-18. Performance on large codebases (15 tests)
-19. Real-time file watching (10 tests)
-20. Context management (10 tests)
-21. Analysis result saving (10 tests)
-22. Response fusion (7 tests)
-23. Other miscellaneous features (73 tests)
-
----
-
-## Change Log
-
-| Date | Version | Changes | Author |
-|------|---------|---------|--------|
-| 2025-01-01 | 1.0 | Initial test automation improvement plan | Claude (Sonnet 4.5) |
-
----
-
-## Approval & Sign-Off
-
-- [ ] **Technical Lead:** Reviewed and approved plan
-- [ ] **QA Lead:** Reviewed and approved test strategy
-- [ ] **Product Owner:** Reviewed and approved priorities
-- [ ] **Budget Approval:** $78,100 budget approved
-- [ ] **Timeline Approval:** 24-week timeline approved
-
----
-
-**Next Steps:**
-1. Review and approve this plan with stakeholders
-2. Assign team members to Phase 1
-3. Set up project tracking (Jira, GitHub Projects, etc.)
-4. Begin Phase 1 execution: E2E framework setup
-
-**Questions or Concerns:** Contact project team at ollama-code@example.com
+**Start Date**: [To be determined]
+**Target Completion**: 8 weeks from start
+**Review Cadence**: Weekly sprint reviews + daily standups (if team)
