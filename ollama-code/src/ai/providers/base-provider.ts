@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { normalizeError } from '../../utils/error-utils.js';
 
 export interface AIMessage {
   role: 'user' | 'assistant' | 'system';
@@ -299,7 +300,7 @@ export abstract class BaseAIProvider extends EventEmitter {
     } catch (error) {
       this.health.status = 'unhealthy';
       this.health.lastCheck = new Date();
-      this.health.details.lastError = error instanceof Error ? error.message : 'Unknown error';
+      this.health.details.lastError = normalizeError(error).message;
       this.health.details.consecutiveFailures += 1;
 
       this.emit('healthUpdated', this.health);

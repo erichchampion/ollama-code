@@ -5,6 +5,7 @@
  * for reading, writing, searching, and managing files and directories.
  */
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import path from 'path';
 import { BaseTool } from './types.js';
 import { logger } from '../utils/logger.js';
@@ -165,7 +166,7 @@ export class FileSystemTool extends BaseTool {
             logger.error(`FileSystem tool error: ${error}`);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 metadata: {
                     executionTime: Date.now() - startTime
                 }

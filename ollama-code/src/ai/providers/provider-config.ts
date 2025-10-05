@@ -5,6 +5,8 @@
  * configurable location, following the DRY principle.
  */
 
+import { RETRY_CONSTANTS, TIMEOUT_CONSTANTS } from '../../config/constants.js';
+
 export interface ProviderConfig {
   // Cache Configuration
   cache: {
@@ -112,9 +114,9 @@ export const DEFAULT_PROVIDER_CONFIG: ProviderConfig = {
 
   responseProcessing: {
     maxResponseSize: 10485760, // 10MB
-    timeoutMs: 30000, // 30 seconds
-    retryDelayMs: 1000, // 1 second
-    maxRetries: 3,
+    timeoutMs: TIMEOUT_CONSTANTS.MEDIUM,
+    retryDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
+    maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
   },
 
   providers: {

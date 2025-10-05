@@ -7,6 +7,8 @@
 
 import { BaseAIProvider, AICompletionOptions, AICompletionResponse, AIStreamEvent, AIMessage, ProviderCapabilities, ProviderHealth, ProviderConfig, AIModel, AICapability } from './base-provider.js';
 import { logger } from '../../utils/logger.js';
+import { normalizeError } from '../../utils/error-utils.js';
+import { TIMEOUT_CONSTANTS } from '../../config/constants.js';
 
 export interface GoogleConfig extends ProviderConfig {
   apiKey: string;
@@ -192,7 +194,7 @@ export class GoogleProvider extends BaseAIProvider {
         availability: 0.0,
         details: {
           endpoint: this.baseURL,
-          lastError: error instanceof Error ? error.message : 'Unknown error',
+          lastError: normalizeError(error).message,
           consecutiveFailures: 1
         }
       };
@@ -456,7 +458,7 @@ export class GoogleProvider extends BaseAIProvider {
     const url = `${this.baseURL}/models/${targetModel}:${endpoint}?key=${this.config.apiKey}`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_CONSTANTS.GIT_OPERATION); // 60 second timeout
 
     try {
       const response = await fetch(url, {

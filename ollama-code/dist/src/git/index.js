@@ -15,6 +15,7 @@ import path from 'path';
 import { logger } from '../utils/logger.js';
 import { getEnhancedClient } from '../ai/index.js';
 import { createSpinner } from '../utils/spinner.js';
+import { AI_CONSTANTS } from '../config/constants.js';
 const execAsync = promisify(exec);
 export class GitManager {
     workingDir;
@@ -249,7 +250,7 @@ For each suggestion, provide:
 
 Format as JSON array of CommitSuggestion objects.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.3 // Lower temperature for more consistent output
+                temperature: AI_CONSTANTS.GIT_MESSAGE_TEMPERATURE
             });
             let suggestions;
             try {
@@ -394,7 +395,7 @@ Please create a PR description with:
 
 Use professional, clear language suitable for code review.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.4
+                temperature: AI_CONSTANTS.TEST_GEN_TEMPERATURE
             });
             spinner.succeed('PR description generated');
             return response.content;
@@ -440,7 +441,7 @@ ${c.incoming}
 
 Provide specific suggestions for resolving each conflict.`;
                         const response = await aiClient.complete(prompt, {
-                            temperature: 0.3
+                            temperature: AI_CONSTANTS.GIT_MESSAGE_TEMPERATURE
                         });
                         suggestions.push(`${file}:\n${response.content}`);
                     }

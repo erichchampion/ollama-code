@@ -11,6 +11,7 @@ import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
 import { globalContainer } from '../core/container.js';
 import { FileOperationClassifier } from './file-operation-classifier.js';
 import { FILE_OPERATION_CONSTANTS } from '../constants/file-operations.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 export class NaturalLanguageRouter {
     intentAnalyzer;
     taskPlanner;
@@ -117,7 +118,7 @@ export class NaturalLanguageRouter {
                         };
                         // Add timeout to prevent hanging on cache operations
                         const timeoutPromise = new Promise((_, reject) => {
-                            setTimeout(() => reject(new Error('Cache operation timeout')), 3000);
+                            setTimeout(() => reject(new Error('Cache operation timeout')), DELAY_CONSTANTS.CACHE_TIMEOUT_DELAY);
                         });
                         await Promise.race([
                             this.cacheManager.cacheResponse(input, JSON.stringify(fastPathRoutingResult), cacheContext, 'router'),

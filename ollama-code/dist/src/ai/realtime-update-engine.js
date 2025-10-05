@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
 import { IntelligentCache } from './memory-optimizer.js';
+import { RETRY_CONSTANTS } from '../config/constants.js';
 /**
  * Simple debounce implementation
  */
@@ -65,7 +66,7 @@ export class RealtimeUpdateEngine extends EventEmitter {
             backgroundProcessing: true,
             conflictHandling: {
                 autoResolve: true,
-                maxRetries: 3,
+                maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
                 rollbackOnFailure: true,
                 notifyOnConflict: true
             },

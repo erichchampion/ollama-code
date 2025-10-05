@@ -6,6 +6,7 @@
  */
 import { logger } from '../utils/logger.js';
 import { AI_ENTITY_EXTRACTION_TIMEOUT, AI_INTENT_ANALYSIS_TIMEOUT } from '../constants.js';
+import { AI_CONSTANTS, THRESHOLD_CONSTANTS } from '../config/constants.js';
 export class IntentAnalyzer {
     aiClient;
     entityPatterns = new Map();
@@ -174,7 +175,7 @@ Be precise and only include entities that are clearly referenced.`;
             });
             const response = await Promise.race([
                 this.aiClient.complete(prompt, {
-                    temperature: 0.1
+                    temperature: AI_CONSTANTS.ANALYSIS_TEMPERATURE
                 }),
                 timeoutPromise
             ]);
@@ -277,7 +278,7 @@ Return ONLY the category name.`;
             });
             const response = await Promise.race([
                 this.aiClient.complete(prompt, {
-                    temperature: 0.1
+                    temperature: AI_CONSTANTS.ANALYSIS_TEMPERATURE
                 }),
                 timeoutPromise
             ]);
@@ -501,19 +502,19 @@ Return ONLY the category name.`;
      * Calculate overall confidence score
      */
     calculateConfidence(intentType, entityResult, clarificationAnalysis, context) {
-        let confidence = 0.5; // Base confidence
+        let confidence = THRESHOLD_CONSTANTS.CONFIDENCE.BASE; // Base confidence
         // Intent classification confidence
         if (intentType !== 'conversation')
-            confidence += 0.2;
+            confidence += THRESHOLD_CONSTANTS.WEIGHTS.MINOR;
         // Entity extraction confidence
-        confidence += entityResult.confidence * 0.3;
+        confidence += entityResult.confidence * THRESHOLD_CONSTANTS.WEIGHTS.MODERATE;
         // Reduce confidence if clarification is needed
         if (clarificationAnalysis.required) {
-            confidence -= 0.2;
+            confidence -= THRESHOLD_CONSTANTS.WEIGHTS.MINOR;
         }
         // Increase confidence with context
         if (context.projectContext && entityResult.entities.files.length > 0) {
-            confidence += 0.1;
+            confidence += THRESHOLD_CONSTANTS.WEIGHTS.SMALL;
         }
         // Ensure confidence is between 0 and 1
         return Math.max(0, Math.min(1, confidence));

@@ -6,6 +6,7 @@
  */
 
 import { Result, ok, err, errFromString, ErrorDetails } from '../types/result.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { AUTONOMOUS_DEVELOPMENT_DEFAULTS } from '../constants/autonomous-development.js';
 
 export interface ValidationCriteria {
@@ -72,7 +73,7 @@ export async function validateCompilation(
     return {
       criterion: 'Compilation Check',
       passed: false,
-      details: `Compilation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Compilation failed: ${normalizeError(error).message}`,
       context
     };
   }
@@ -116,7 +117,7 @@ export async function validateTestCoverage(
     return {
       criterion: 'Test Coverage',
       passed: false,
-      details: `Coverage validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Coverage validation failed: ${normalizeError(error).message}`,
       context
     };
   }
@@ -168,7 +169,7 @@ export async function validateCodeQuality(
     return {
       criterion: 'Code Quality',
       passed: false,
-      details: `Quality validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Quality validation failed: ${normalizeError(error).message}`,
       context
     };
   }
@@ -232,7 +233,7 @@ export async function validatePerformanceThresholds(
     return {
       criterion: 'Performance Thresholds',
       passed: false,
-      details: `Performance validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Performance validation failed: ${normalizeError(error).message}`,
       context
     };
   }
@@ -277,7 +278,7 @@ export async function validateSecurityChecks(
     return {
       criterion: 'Security Checks',
       passed: false,
-      details: `Security validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Security validation failed: ${normalizeError(error).message}`,
       context
     };
   }

@@ -6,6 +6,7 @@
  */
 
 import os from 'os';
+import { normalizeError } from '../utils/error-utils.js';
 import { v4 as uuidv4 } from 'uuid';
 import { ErrorCategory } from '../errors/types.js';
 import { logger } from '../utils/logger.js';
@@ -280,7 +281,7 @@ class TelemetryManager {
     
     const errorObj: Record<string, any> = {
       name: error instanceof Error ? error.name : 'UnknownError',
-      message: error instanceof Error ? error.message : String(error),
+      message: normalizeError(error).message,
       category: 
         error instanceof Error && 
         'category' in error ? 

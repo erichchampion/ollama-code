@@ -10,6 +10,7 @@ import { logger } from '../../utils/logger.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
+import { AI_CONSTANTS } from '../../config/constants.js';
 
 const execAsync = promisify(exec);
 
@@ -842,7 +843,7 @@ Format your response as JSON:
 `;
 
       const response = await this.aiClient.complete(prompt, {
-        temperature: 0.3,
+        temperature: AI_CONSTANTS.GIT_MESSAGE_TEMPERATURE,
         max_tokens: 500
       });
 

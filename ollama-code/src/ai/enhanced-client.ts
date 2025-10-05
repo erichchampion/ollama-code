@@ -7,6 +7,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { OllamaClient } from './ollama-client.js';
 import { ProjectContext } from './context.js';
 import { EnhancedIntentAnalyzer } from './enhanced-intent-analyzer.js';
@@ -19,7 +20,7 @@ import { NaturalLanguageRouter, NLRouterConfig } from '../routing/nl-router.js';
 import { StreamingProcessor, ProcessingUpdate } from '../streaming/streaming-processor.js';
 import { STREAMING_CONFIG_DEFAULTS } from '../constants/streaming.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../constants/messages.js';
-import { API_REQUEST_TIMEOUT } from '../constants.js';
+import { API_REQUEST_TIMEOUT, DEFAULT_TEMPERATURE } from '../constants.js';
 import { AsyncMutex } from '../utils/async-mutex.js';
 import { UserIntentFactory } from '../utils/user-intent-factory.js';
 
@@ -100,7 +101,7 @@ export class EnhancedClient {
     this.projectContext = projectContext || new ProjectContext(process.cwd());
     this.config = {
       model: 'qwen2.5-coder:latest',
-      temperature: 0.7,
+      temperature: DEFAULT_TEMPERATURE,
       enableTaskPlanning: true,
       enableConversationHistory: true,
       enableContextAwareness: true,
@@ -205,7 +206,7 @@ export class EnhancedClient {
       const processingTime = Date.now() - startTime;
       logger.error('Message processing failed:', error);
 
-      const errorResponse = `I encountered an error while processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      const errorResponse = `I encountered an error while processing your request: ${normalizeError(error).message}`;
 
       return {
         success: false,
@@ -213,7 +214,7 @@ export class EnhancedClient {
         response: errorResponse,
         conversationId: this.sessionState.conversationId,
         processingTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -307,7 +308,7 @@ export class EnhancedClient {
       logger.error('Message processing failed:', error);
 
       const errorResponse = `I encountered an error while processing your request: ${
-        error instanceof Error ? error.message : 'Unknown error'
+        normalizeError(error).message
       }`;
 
       return {
@@ -333,7 +334,7 @@ export class EnhancedClient {
         response: errorResponse,
         conversationId: this.sessionState.conversationId,
         processingTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -468,7 +469,7 @@ export class EnhancedClient {
         return errorMessage;
       }
 
-      return `❌ Failed to execute command: ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`;
+      return `❌ Failed to execute command: ${normalizeError(error).message}`;
     }
   }
 
@@ -513,7 +514,7 @@ export class EnhancedClient {
 
       User's message: ${intent.action}`,
       {
-        temperature: 0.7
+        temperature: DEFAULT_TEMPERATURE
       }
     );
 
@@ -790,7 +791,7 @@ You can also ask for more details about any specific task or phase.`;
           const result = await this.executePendingPlan();
           return result;
         } catch (error) {
-          const errorMessage = `Failed to execute task plan: ${error instanceof Error ? error.message : 'Unknown error'}`;
+          const errorMessage = `Failed to execute task plan: ${normalizeError(error).message}`;
           logger.error('Task plan execution failed', error);
 
           return {

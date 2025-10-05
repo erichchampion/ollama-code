@@ -6,6 +6,7 @@
  */
 
 import { OllamaClient } from './ai/ollama-client.js';
+import { normalizeError } from './utils/error-utils.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
 
 // Simple command line argument parsing
@@ -126,7 +127,7 @@ Examples:
         process.exit(1);
     }
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : String(error));
+    console.error('Error:', normalizeError(error).message);
     
     if (error instanceof Error && error.message.includes('fetch')) {
       console.log('\nMake sure Ollama is running:');

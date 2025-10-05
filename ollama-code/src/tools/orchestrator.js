@@ -10,6 +10,7 @@ exports.ToolOrchestrator = void 0;
 const events_1 = require("events");
 const registry_js_1 = require("./registry.js");
 const logger_js_1 = require("../utils/logger.js");
+const constants_js_1 = require("../config/constants.js");
 class ToolOrchestrator extends events_1.EventEmitter {
     constructor(config = {}) {
         super();
@@ -121,7 +122,7 @@ class ToolOrchestrator extends events_1.EventEmitter {
             }
             // Wait a bit before checking for more ready executions
             if (toStart.length === 0 && inProgress.size > 0) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, constants_js_1.DELAY_CONSTANTS.BRIEF_PAUSE));
             }
             // Prevent infinite loop
             if (toStart.length === 0 && inProgress.size === 0 && queue.length > 0) {

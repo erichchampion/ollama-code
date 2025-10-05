@@ -190,8 +190,10 @@ export function sanitizeShellVariable(value, fallback) {
     if (!value)
         return fallback;
     // Remove any shell metacharacters that could cause command injection
-    // Allow only alphanumeric, dash, underscore, dot, and slash
-    const sanitized = value.replace(/[^a-zA-Z0-9\-_\.\/]/g, '');
+    // Allow only alphanumeric, dash, underscore, dot, and forward slash
+    let sanitized = value.replace(/[^a-zA-Z0-9\-_\.\/]/g, '');
+    // Remove trailing slashes to avoid path injection issues
+    sanitized = sanitized.replace(/\/+$/, '');
     // If sanitization removed everything, use fallback
     return sanitized.length > 0 ? sanitized : fallback;
 }
@@ -199,11 +201,11 @@ export function sanitizeShellVariable(value, fallback) {
  * Validate quality gate result
  */
 export function validateQualityGate(result) {
-    if (!result || typeof result !== 'object') {
+    if (!result || typeof result !== 'object' || !result.overallScore) {
         return {
             passed: false,
             score: 0,
-            message: 'Invalid analysis result format'
+            message: 'Invalid analysis result'
         };
     }
     const score = parseInt(result.overallScore) || 0;
@@ -230,6 +232,11 @@ export function generateQualitySummary(result) {
     const securityIssues = result.results?.security?.totalVulnerabilities || 0;
     const performanceIssues = result.results?.performance?.totalIssues || 0;
     const regressionRisk = result.results?.regression?.overallRisk || 'unknown';
+    // Limit recommendations to top 5
+    const recommendations = (result.recommendations || []).slice(0, 5);
+    const recommendationsText = recommendations.length > 0
+        ? recommendations.map((r) => `- ${r}`).join('\n')
+        : '';
     return `
 ## 🤖 Ollama Code Analysis Results
 
@@ -238,12 +245,12 @@ export function generateQualitySummary(result) {
 ${gatesPassed ? CI_MESSAGES.qualityPassed : CI_MESSAGES.qualityFailed}
 
 #### 📈 Key Metrics:
-- 🛡️ Security Issues: ${securityIssues}
-- ⚡ Performance Issues: ${performanceIssues}
-- ⚠️ Regression Risk: ${regressionRisk}
+• 🛡️ Security Issues: ${securityIssues}
+• ⚡ Performance Issues: ${performanceIssues}
+• ⚠️ Regression Risk: ${regressionRisk}
 
 #### 💡 Top Recommendations:
-${(result.recommendations || []).slice(0, 5).map((r) => `- ${r}`).join('\n')}
+${recommendationsText}
 `;
 }
 /**

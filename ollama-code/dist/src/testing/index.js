@@ -15,6 +15,7 @@ import path from 'path';
 import { getEnhancedClient } from '../ai/index.js';
 import { createSpinner } from '../utils/spinner.js';
 import { fileExists } from '../fs/operations.js';
+import { AI_CONSTANTS } from '../config/constants.js';
 const execAsync = promisify(exec);
 export class TestManager {
     workingDir;
@@ -166,7 +167,7 @@ Follow these guidelines:
 
 Return only the test code, ready to save as a .test.${filePath.endsWith('.ts') ? 'ts' : 'js'} file.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.3 // Lower temperature for more consistent test generation
+                temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
             });
             spinner.succeed('Test cases generated');
             return response.content;
@@ -271,7 +272,7 @@ Please analyze for:
 
 Provide specific, actionable suggestions.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.4
+                temperature: AI_CONSTANTS.TEST_GEN_TEMPERATURE
             });
             const suggestions = response.content.split('\n').filter((line) => line.trim().length > 0);
             spinner.succeed('Test analysis complete');

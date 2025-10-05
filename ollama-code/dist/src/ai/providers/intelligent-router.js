@@ -7,6 +7,7 @@
  */
 import { EventEmitter } from 'events';
 import { logger } from '../../utils/logger.js';
+import { normalizeError } from '../../utils/error-utils.js';
 import { AICapability, ProviderError } from './base-provider.js';
 export const ROUTING_STRATEGIES = {
     PERFORMANCE: { name: 'performance', priority: 1, description: 'Route to fastest provider' },
@@ -107,7 +108,7 @@ export class IntelligentAIRouter extends EventEmitter {
                 if (this.config.fallbackEnabled && decision.fallbackProviders.length > 0) {
                     logger.warn(`Primary provider failed, attempting fallback`, {
                         primary: decision.provider.getName(),
-                        error: error instanceof Error ? error.message : 'Unknown error'
+                        error: normalizeError(error).message
                     });
                     return await this.attemptFallback(decision.fallbackProviders, prompt, options, startTime);
                 }

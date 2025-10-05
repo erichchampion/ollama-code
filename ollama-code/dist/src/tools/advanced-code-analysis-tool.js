@@ -1,4 +1,5 @@
 import { BaseTool } from './types.js';
+import { normalizeError } from '../utils/error-utils.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPerformanceConfig } from '../config/performance.js';
@@ -90,7 +91,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             }
         }
         catch (error) {
-            return this.createErrorResult(`Code analysis error: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Code analysis error: ${normalizeError(error).message}`);
         }
     }
     async analyzeCode(target, context, options) {
@@ -163,7 +164,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         }
         catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -185,7 +186,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         }
         catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -242,7 +243,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         catch (error) {
             return {
                 file: path.basename(filePath),
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -312,7 +313,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         }
         catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -353,7 +354,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         catch (error) {
             return {
                 score: 0,
-                issues: [`Error analyzing file: ${error instanceof Error ? error.message : String(error)}`]
+                issues: [`Error analyzing file: ${normalizeError(error).message}`]
             };
         }
     }
@@ -383,7 +384,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         }
         catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -433,7 +434,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         }
         catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -543,7 +544,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             return this.createSuccessResult('Security analysis completed', security);
         }
         catch (error) {
-            return this.createErrorResult(`Security analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Security analysis failed: ${normalizeError(error).message}`);
         }
     }
     scanFileForVulnerabilities(filePath) {
@@ -729,7 +730,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             return this.createSuccessResult('Performance analysis completed', performance);
         }
         catch (error) {
-            return this.createErrorResult(`Performance analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Performance analysis failed: ${normalizeError(error).message}`);
         }
     }
     analyzeFilePerformance(filePath) {
@@ -839,7 +840,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             return this.createSuccessResult('Enhanced refactoring analysis completed', result);
         }
         catch (error) {
-            return this.createErrorResult(`Refactoring analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Refactoring analysis failed: ${normalizeError(error).message}`);
         }
     }
     analyzeRefactoringOpportunities(filePath) {
@@ -1079,7 +1080,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             return this.createSuccessResult('Enhanced architectural analysis completed', result);
         }
         catch (error) {
-            return this.createErrorResult(`Architectural analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Architectural analysis failed: ${normalizeError(error).message}`);
         }
     }
     analyzeArchitecturalPatterns(content, filePath) {
@@ -1273,7 +1274,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             return this.createSuccessResult('Enhanced test generation completed', result);
         }
         catch (error) {
-            return this.createErrorResult(`Test generation failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Test generation failed: ${normalizeError(error).message}`);
         }
     }
     generateTestSuiteForFile(filePath, framework) {

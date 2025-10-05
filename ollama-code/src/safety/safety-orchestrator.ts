@@ -5,6 +5,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { RiskAssessmentEngine } from './risk-assessment-engine.js';
 import { ChangePreviewEngine } from './change-preview-engine.js';
 import { BackupRollbackSystem } from './backup-rollback-system.js';
@@ -124,7 +125,7 @@ export class SafetyOrchestrator {
 
     } catch (error) {
       logger.error(`Safety assessment failed for operation ${operationId}:`, error);
-      this.emitEvent('operation_failed', operationId, { error: error instanceof Error ? error.message : String(error) });
+      this.emitEvent('operation_failed', operationId, { error: normalizeError(error).message });
       throw error;
     }
   }
@@ -220,7 +221,7 @@ export class SafetyOrchestrator {
 
     } catch (error) {
       logger.error(`Operation ${operationId} failed:`, error);
-      this.emitEvent('operation_failed', operationId, { error: error instanceof Error ? error.message : String(error) });
+      this.emitEvent('operation_failed', operationId, { error: normalizeError(error).message });
 
       // Determine if automatic rollback should be triggered
       if (this.shouldAutoRollback(approval)) {
@@ -259,7 +260,7 @@ export class SafetyOrchestrator {
 
     } catch (error) {
       logger.error(`Rollback execution failed for operation ${operationId}:`, error);
-      this.emitEvent('rollback_completed', operationId, { success: false, error: error instanceof Error ? error.message : String(error) });
+      this.emitEvent('rollback_completed', operationId, { success: false, error: normalizeError(error).message });
       throw error;
     }
   }

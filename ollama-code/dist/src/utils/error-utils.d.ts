@@ -5,8 +5,11 @@
  */
 /**
  * Extract error message safely from unknown error type
+ * @param error - The error to extract message from
+ * @param includeStack - Whether to include stack trace (default: false)
+ * @returns The error message string
  */
-export declare function getErrorMessage(error: unknown): string;
+export declare function getErrorMessage(error: unknown, includeStack?: boolean): string;
 /**
  * Create a standardized error response
  */
@@ -43,3 +46,8 @@ export declare function serializeError(error: unknown): {
  * Retry operation with exponential backoff
  */
 export declare function retryWithBackoff<T>(operation: () => Promise<T>, maxRetries?: number, baseDelay?: number): Promise<T>;
+/**
+ * Normalize any thrown value to an Error object
+ * Consolidates the pattern used throughout the codebase
+ */
+export declare function normalizeError(error: unknown): Error;

@@ -9,6 +9,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 
 interface CacheEntry<T> {
   data: T;
@@ -185,7 +186,7 @@ export class MemoryManager {
     }
 
     // Small delay to allow cleanup
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE));
   }
 
   /**

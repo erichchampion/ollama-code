@@ -13,6 +13,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger.js';
 import { createSpinner } from '../utils/spinner.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 
 export interface CommandEvent {
   command: string;
@@ -475,7 +476,7 @@ export class AnalyticsTracker {
       let trend: 'increasing' | 'stable' | 'decreasing' = 'stable';
       if (recentUsage > previousUsage * 1.2) {
         trend = 'increasing';
-      } else if (recentUsage < previousUsage * 0.8) {
+      } else if (recentUsage < previousUsage * THRESHOLD_CONSTANTS.WEIGHTS.USAGE_COMPARISON) {
         trend = 'decreasing';
       }
 

@@ -7,6 +7,8 @@
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
 import { safeStringify } from '../utils/safe-json.js';
+import { AI_CONSTANTS, DURATION_ESTIMATES } from '../config/constants.js';
+import { normalizeError } from '../utils/error-utils.js';
 export class TaskPlanner {
     aiClient;
     projectContext;
@@ -141,7 +143,7 @@ export class TaskPlanner {
     async generateInitialPlan(request, context, complexity) {
         const planningPrompt = this.buildPlanningPrompt(request, context, complexity);
         const response = await this.aiClient.complete(planningPrompt, {
-            temperature: 0.2, // Lower temperature for planning
+            temperature: AI_CONSTANTS.DECOMPOSITION_TEMPERATURE, // Lower temperature for planning
             responseQuality: 'high',
             enableToolUse: false // Don't use tools for planning
         });
@@ -171,7 +173,7 @@ export class TaskPlanner {
                 priority: taskData.priority || 'medium',
                 status: 'pending',
                 dependencies: taskData.dependencies || [],
-                estimatedDuration: taskData.estimatedDuration || 30,
+                estimatedDuration: taskData.estimatedDuration || DURATION_ESTIMATES.MEDIUM_COMPLEXITY,
                 toolsRequired: taskData.toolsRequired || [],
                 filesInvolved: taskData.filesInvolved || [],
                 acceptance_criteria: taskData.acceptance_criteria || [],
@@ -188,7 +190,7 @@ export class TaskPlanner {
             // Enhanced error logging for investigation
             this.debugParsingFailure(responseContent, error, request, complexity);
             logger.warn('Failed to parse AI plan, creating fallback plan', {
-                error: error instanceof Error ? error.message : String(error),
+                error: normalizeError(error).message,
                 requestPreview: request.substring(0, 100),
                 complexity
             });
@@ -281,7 +283,7 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
                 lastError = error;
                 logger.debug('Parsing strategy failed', {
                     strategyName: strategy.name,
-                    error: error instanceof Error ? error.message : String(error)
+                    error: normalizeError(error).message
                 });
                 continue;
             }
@@ -474,12 +476,12 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
             type = 'refactoring';
         }
         // Estimate duration based on complexity keywords
-        let estimatedDuration = 30;
+        let estimatedDuration = DURATION_ESTIMATES.MEDIUM_COMPLEXITY;
         if (lowerText.includes('complex') || lowerText.includes('comprehensive') || lowerText.includes('full')) {
-            estimatedDuration = 60;
+            estimatedDuration = DURATION_ESTIMATES.HIGH_COMPLEXITY;
         }
         else if (lowerText.includes('simple') || lowerText.includes('quick') || lowerText.includes('basic')) {
-            estimatedDuration = 15;
+            estimatedDuration = DURATION_ESTIMATES.LOW_COMPLEXITY;
         }
         return {
             title: cleanText.length > 50 ? cleanText.substring(0, 47) + '...' : cleanText,
@@ -557,7 +559,7 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
             }
         }
         catch (error) {
-            logger.debug('Template-based fallback failed', { error: error instanceof Error ? error.message : String(error) });
+            logger.debug('Template-based fallback failed', { error: normalizeError(error).message });
         }
         try {
             // Strategy 2: Pattern-based plan
@@ -568,7 +570,7 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
             }
         }
         catch (error) {
-            logger.debug('Pattern-based fallback failed', { error: error instanceof Error ? error.message : String(error) });
+            logger.debug('Pattern-based fallback failed', { error: normalizeError(error).message });
         }
         // Strategy 3: Simple generic fallback (last resort)
         logger.debug('Using simple generic fallback plan');
@@ -1031,8 +1033,9 @@ Create a comprehensive plan that addresses all aspects of the request. Respond O
             logger.info(`Task completed: ${task.title} (${task.actualDuration.toFixed(1)}min)`);
         }
         catch (error) {
+            const normalizedError = normalizeError(error);
             task.status = 'failed';
-            task.error = error instanceof Error ? error.message : 'Unknown error';
+            task.error = normalizedError.message;
             task.completed = new Date();
             logger.error(`Task failed: ${task.title} - ${task.error}`);
         }

@@ -18,6 +18,7 @@ import { IncrementalKnowledgeGraph, FileChange, IncrementalUpdateResult } from '
 import { GraphPartitionManager, PartitionStrategy, MemoryManager } from './graph-partitioning.js';
 import { GraphNode, GraphEdge, GraphConfig, GraphQueryResult, GraphQuery } from './code-knowledge-graph.js';
 import { ProjectContext } from './context.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 
 // Optimized graph configuration
 export interface OptimizedGraphConfig extends GraphConfig {
@@ -840,7 +841,7 @@ export class OptimizedKnowledgeGraph extends IncrementalKnowledgeGraph {
       bottlenecks.push('slow_queries');
     }
 
-    if (this.performanceMetrics.queries.cacheHitRate < 0.7) {
+    if (this.performanceMetrics.queries.cacheHitRate < THRESHOLD_CONSTANTS.CACHE.TARGET_HIT_RATE) {
       bottlenecks.push('low_cache_hit_rate');
     }
 

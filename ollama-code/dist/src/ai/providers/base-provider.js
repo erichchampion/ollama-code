@@ -5,6 +5,7 @@
  * with standardized capabilities, error handling, and performance monitoring.
  */
 import { EventEmitter } from 'events';
+import { normalizeError } from '../../utils/error-utils.js';
 export var AICapability;
 (function (AICapability) {
     AICapability["TEXT_COMPLETION"] = "text_completion";
@@ -104,7 +105,7 @@ export class BaseAIProvider extends EventEmitter {
         catch (error) {
             this.health.status = 'unhealthy';
             this.health.lastCheck = new Date();
-            this.health.details.lastError = error instanceof Error ? error.message : 'Unknown error';
+            this.health.details.lastError = normalizeError(error).message;
             this.health.details.consecutiveFailures += 1;
             this.emit('healthUpdated', this.health);
             this.emit('error', error);

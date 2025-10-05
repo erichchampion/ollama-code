@@ -6,6 +6,7 @@
  */
 
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { logger } from '../utils/logger.js';
@@ -192,7 +193,7 @@ export class BackupManager {
       logger.error('Failed to create checkpoint:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -280,7 +281,7 @@ export class BackupManager {
           logger.error(`Failed to restore file ${file.path}:`, error);
           conflicts.push({
             filePath: file.path,
-            reason: `Restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            reason: `Restore failed: ${normalizeError(error).message}`,
             currentHash: '',
             backupHash: file.originalHash
           });
@@ -312,7 +313,7 @@ export class BackupManager {
       logger.error('Failed to restore checkpoint:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -414,7 +415,7 @@ export class BackupManager {
       return currentCommit;
 
     } catch (error) {
-      throw new Error(`Git checkpoint creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Git checkpoint creation failed: ${normalizeError(error).message}`);
     }
   }
 
@@ -432,7 +433,7 @@ export class BackupManager {
       logger.debug('Restored git state', { commit: commitHash });
 
     } catch (error) {
-      throw new Error(`Git state restoration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Git state restoration failed: ${normalizeError(error).message}`);
     }
   }
 

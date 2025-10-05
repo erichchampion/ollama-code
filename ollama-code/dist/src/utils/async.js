@@ -5,13 +5,14 @@
  * timeouts, retries, and other async patterns.
  */
 import { logger } from './logger.js';
+import { RETRY_CONSTANTS } from '../config/constants.js';
 /**
  * Default retry options
  */
 const DEFAULT_RETRY_OPTIONS = {
-    maxRetries: 3,
-    initialDelayMs: 1000,
-    maxDelayMs: 10000
+    maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+    initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
+    maxDelayMs: RETRY_CONSTANTS.MAX_BACKOFF_DELAY
 };
 /**
  * Sleep for the specified number of milliseconds
@@ -56,9 +57,9 @@ export function withTimeout(fn, timeoutMs) {
 export function withRetry(fn, options = {}) {
     // Set default retry options
     const retryOptions = {
-        maxRetries: options.maxRetries ?? 3,
-        initialDelayMs: options.initialDelayMs ?? 1000,
-        maxDelayMs: options.maxDelayMs ?? 10000,
+        maxRetries: options.maxRetries ?? RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+        initialDelayMs: options.initialDelayMs ?? RETRY_CONSTANTS.BASE_RETRY_DELAY,
+        maxDelayMs: options.maxDelayMs ?? RETRY_CONSTANTS.MAX_BACKOFF_DELAY,
         backoff: options.backoff ?? true,
         isRetryable: options.isRetryable,
         onRetry: options.onRetry

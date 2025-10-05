@@ -5,6 +5,7 @@
  * scheduling, resource management, and adaptive execution capabilities.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { v4 as uuidv4 } from 'uuid';
 export class ExecutionEngine {
     strategies = new Map();
@@ -155,7 +156,7 @@ export class ExecutionEngine {
                 duration: Date.now() - startTime.getTime(),
                 resourceUsage: { cpu: 0, memory: 0, disk: 0, network: 0 },
                 outputs: [],
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 retryable: true
             };
             // Update task status
@@ -309,7 +310,7 @@ export class ExecutionEngine {
                 duration: Date.now() - startTime,
                 resourceUsage: { cpu: 0.05, memory: 25, disk: 5, network: 2 },
                 outputs: [],
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 retryable: true
             };
         }
@@ -368,7 +369,7 @@ export class ExecutionEngine {
                 duration: Date.now() - startTime,
                 resourceUsage: { cpu: 0.15, memory: 50, disk: 25, network: 5 },
                 outputs: [],
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 retryable: true
             };
         }
@@ -411,7 +412,7 @@ export class ExecutionEngine {
                 duration: Date.now() - startTime,
                 resourceUsage: { cpu: 0.1, memory: 40, disk: 10, network: 2 },
                 outputs: [],
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 retryable: true
             };
         }
@@ -447,7 +448,7 @@ export class ExecutionEngine {
                 duration: Date.now() - startTime,
                 resourceUsage: { cpu: 0.02, memory: 10, disk: 2, network: 0 },
                 outputs: [],
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 retryable: true
             };
         }

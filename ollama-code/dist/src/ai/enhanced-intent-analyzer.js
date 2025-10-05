@@ -5,6 +5,8 @@
  * and robust error handling for complex query processing.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
+import { AI_CONSTANTS } from '../config/constants.js';
 /**
  * LRU Cache for intent analysis results
  */
@@ -89,7 +91,7 @@ export class EnhancedIntentAnalyzer {
             }
             catch (error) {
                 lastError = error;
-                logger.debug(`Intent analysis strategy failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.debug(`Intent analysis strategy failed: ${normalizeError(error).message}`);
                 continue;
             }
         }
@@ -146,7 +148,7 @@ export class EnhancedIntentAnalyzer {
         const prompt = this.buildAnalysisPrompt(input, context);
         const response = await Promise.race([
             this.aiClient.complete(prompt, {
-                temperature: 0.2,
+                temperature: AI_CONSTANTS.INTENT_ANALYSIS_TEMPERATURE,
                 maxTokens: 1000
             }),
             this.createTimeoutPromise(timeout)
@@ -542,7 +544,7 @@ Return only valid JSON, no explanatory text.`;
             return parsed;
         }
         catch (error) {
-            logger.debug(`Failed to parse AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            logger.debug(`Failed to parse AI response: ${normalizeError(error).message}`);
             throw error;
         }
     }

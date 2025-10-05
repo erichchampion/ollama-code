@@ -7,6 +7,8 @@
 
 import { logger } from '../../utils/logger.js';
 import { withTimeout, withRetry } from '../../utils/async.js';
+import { normalizeError } from '../../utils/error-utils.js';
+import { TIMEOUT_CONSTANTS, RETRY_CONSTANTS } from '../../config/constants.js';
 import {
   BaseAIProvider,
   AIMessage,
@@ -81,11 +83,12 @@ export class OpenAIProvider extends BaseAIProvider {
     const defaultConfig = {
       name: config.name || 'openai',
       baseUrl: 'https://api.openai.com/v1',
-      timeout: 60000,
+      // OpenAI supports complex reasoning, use extended timeout
+      timeout: TIMEOUT_CONSTANTS.LONG,
       retryOptions: {
-        maxRetries: 3,
-        initialDelayMs: 1000,
-        maxDelayMs: 8000
+        maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+        initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
+        maxDelayMs: RETRY_CONSTANTS.MAX_BACKOFF_DELAY
       },
       rateLimiting: {
         enabled: true,
@@ -278,7 +281,7 @@ export class OpenAIProvider extends BaseAIProvider {
       logger.error('OpenAI completion request failed', { requestId, error });
 
       throw new ProviderError(
-        `OpenAI completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `OpenAI completion failed: ${normalizeError(error).message}`,
         'openai',
         'COMPLETION_ERROR',
         true
@@ -367,7 +370,7 @@ export class OpenAIProvider extends BaseAIProvider {
       }
 
       throw new ProviderError(
-        `OpenAI streaming completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `OpenAI streaming completion failed: ${normalizeError(error).message}`,
         'openai',
         'STREAMING_ERROR',
         true
@@ -403,7 +406,7 @@ export class OpenAIProvider extends BaseAIProvider {
       logger.error('Failed to list OpenAI models', error);
 
       throw new ProviderError(
-        `Failed to list OpenAI models: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to list OpenAI models: ${normalizeError(error).message}`,
         'openai',
         'LIST_MODELS_ERROR',
         true

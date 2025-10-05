@@ -5,6 +5,7 @@
  * Respects user privacy and can be disabled.
  */
 import os from 'os';
+import { normalizeError } from '../utils/error-utils.js';
 import { ErrorCategory } from '../errors/types.js';
 import { logger } from '../utils/logger.js';
 /**
@@ -173,7 +174,7 @@ class TelemetryManager {
         }
         const errorObj = {
             name: error instanceof Error ? error.name : 'UnknownError',
-            message: error instanceof Error ? error.message : String(error),
+            message: normalizeError(error).message,
             category: error instanceof Error &&
                 'category' in error ?
                 error.category :

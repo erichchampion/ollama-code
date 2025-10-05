@@ -4,7 +4,9 @@
  * Provides functions for creating and handling user prompts in the terminal.
  */
 import inquirer from 'inquirer';
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 /**
  * Create and display a prompt for user input
  */
@@ -24,7 +26,7 @@ export async function createPrompt(options, config) {
     if (!isInteractive) {
         // Additional check: sometimes TTY state can be temporarily affected
         // Try a small delay and check again
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE));
         const isInteractiveRetry = process.stdin.isTTY && process.stdout.isTTY;
         if (!isInteractiveRetry) {
             logger.warn('Terminal is not interactive, cannot prompt for input');
@@ -55,7 +57,7 @@ export async function createPrompt(options, config) {
     }
     catch (error) {
         logger.error('Error in prompt', error);
-        throw new Error(`Failed to prompt for ${options.name}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(`Failed to prompt for ${options.name}: ${normalizeError(error).message}`);
     }
 }
 /**

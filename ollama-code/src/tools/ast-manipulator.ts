@@ -6,6 +6,7 @@
  */
 
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 
@@ -201,7 +202,7 @@ export class ASTManipulator {
         originalCode: '',
         modifiedCode: '',
         changes: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -236,7 +237,7 @@ export class ASTManipulator {
         originalCode: '',
         modifiedCode: '',
         changes: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -271,7 +272,7 @@ export class ASTManipulator {
         originalCode: '',
         modifiedCode: '',
         changes: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -311,7 +312,7 @@ export class ASTManipulator {
         originalCode: '',
         modifiedCode: '',
         changes: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -370,7 +371,7 @@ export class ASTManipulator {
         originalCode: '',
         modifiedCode: '',
         changes: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizeError(error).message
       };
     }
   }
@@ -749,7 +750,7 @@ class JSONHandler extends LanguageHandler {
         range: [0, code.length]
       };
     } catch (error) {
-      throw new Error(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Invalid JSON: ${normalizeError(error).message}`);
     }
   }
 

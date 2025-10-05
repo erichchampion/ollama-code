@@ -6,6 +6,8 @@
  */
 import { logger } from '../../utils/logger.js';
 import { withTimeout, withRetry } from '../../utils/async.js';
+import { normalizeError } from '../../utils/error-utils.js';
+import { TIMEOUT_CONSTANTS, RETRY_CONSTANTS } from '../../config/constants.js';
 import { BaseAIProvider, AICapability, ProviderError, ProviderRateLimitError, ProviderAuthenticationError, ProviderConnectionError } from './base-provider.js';
 /**
  * Anthropic Provider
@@ -18,11 +20,12 @@ export class AnthropicProvider extends BaseAIProvider {
         const defaultConfig = {
             name: config.name || 'anthropic',
             baseUrl: 'https://api.anthropic.com',
-            timeout: 120000, // Claude can take longer for complex reasoning
+            // Claude handles long context and complex reasoning, use extended timeout
+            timeout: TIMEOUT_CONSTANTS.LONG,
             retryOptions: {
-                maxRetries: 3,
-                initialDelayMs: 1000,
-                maxDelayMs: 10000
+                maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+                initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
+                maxDelayMs: RETRY_CONSTANTS.MAX_BACKOFF_DELAY
             },
             rateLimiting: {
                 enabled: true,
@@ -187,7 +190,7 @@ export class AnthropicProvider extends BaseAIProvider {
             const processingTime = Date.now() - startTime;
             this.updateMetrics(false, processingTime);
             logger.error('Anthropic completion request failed', { requestId, error });
-            throw new ProviderError(`Anthropic completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'anthropic', 'COMPLETION_ERROR', true);
+            throw new ProviderError(`Anthropic completion failed: ${normalizeError(error).message}`, 'anthropic', 'COMPLETION_ERROR', true);
         }
     }
     async completeStream(prompt, options, onEvent, abortSignal) {
@@ -276,7 +279,7 @@ export class AnthropicProvider extends BaseAIProvider {
             if (error instanceof Error && error.name === 'AbortError') {
                 throw new ProviderError('Anthropic streaming request was cancelled', 'anthropic', 'CANCELLED', false);
             }
-            throw new ProviderError(`Anthropic streaming completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'anthropic', 'STREAMING_ERROR', true);
+            throw new ProviderError(`Anthropic streaming completion failed: ${normalizeError(error).message}`, 'anthropic', 'STREAMING_ERROR', true);
         }
     }
     async listModels() {

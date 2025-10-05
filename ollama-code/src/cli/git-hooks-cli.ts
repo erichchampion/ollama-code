@@ -6,6 +6,7 @@
  */
 
 import { Command } from 'commander';
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import { GitHooksManager, GitHooksConfig, HookExecutionContext, GitHookType, DEFAULT_GIT_HOOKS_CONFIG } from '../ai/vcs/git-hooks-manager.js';
 import { logger } from '../utils/logger.js';
@@ -144,7 +145,7 @@ export class GitHooksCLI {
       console.log('To bypass hooks when needed: OLLAMA_CODE_BYPASS=true git <command>');
 
     } catch (error) {
-      console.error('❌ Failed to install git hooks:', error instanceof Error ? error.message : error);
+      console.error('❌ Failed to install git hooks:', normalizeError(error).message);
       process.exit(1);
     }
   }
@@ -165,7 +166,7 @@ export class GitHooksCLI {
       console.log('✅ Git hooks uninstalled successfully!');
 
     } catch (error) {
-      console.error('❌ Failed to uninstall git hooks:', error instanceof Error ? error.message : error);
+      console.error('❌ Failed to uninstall git hooks:', normalizeError(error).message);
       process.exit(1);
     }
   }
@@ -203,7 +204,7 @@ export class GitHooksCLI {
       console.log('To uninstall hooks: ollama-code hooks uninstall');
 
     } catch (error) {
-      console.error('❌ Failed to check hooks status:', error instanceof Error ? error.message : error);
+      console.error('❌ Failed to check hooks status:', normalizeError(error).message);
       process.exit(1);
     }
   }
@@ -256,7 +257,7 @@ export class GitHooksCLI {
       process.exit(result.exitCode);
 
     } catch (error) {
-      console.error(`❌ Hook execution failed:`, error instanceof Error ? error.message : error);
+      console.error(`❌ Hook execution failed:`, normalizeError(error).message);
       process.exit(1);
     }
   }

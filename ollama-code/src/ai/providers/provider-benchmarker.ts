@@ -7,6 +7,7 @@
 
 import { BaseAIProvider, AIMessage, AICompletionOptions } from './base-provider.js';
 import { logger } from '../../utils/logger.js';
+import { normalizeError } from '../../utils/error-utils.js';
 
 export interface BenchmarkTestCase {
   id: string;
@@ -393,7 +394,7 @@ function partition(arr, low, high) {
         finishReason: 'error',
         qualityScores: { accuracy: 0, relevance: 0, completeness: 0, overall: 0 },
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: normalizeError(error).message
       };
 
       logger.warn(`Test ${testCase.id} failed for ${providerId}: ${result.error}`);

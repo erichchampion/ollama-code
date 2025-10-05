@@ -6,6 +6,7 @@
  */
 
 import { WebSocketServer, WebSocket } from 'ws';
+import { normalizeError } from '../utils/error-utils.js';
 import { createServer, Server } from 'http';
 import { logger } from '../utils/logger.js';
 import { commandRegistry, executeCommand } from '../commands/index.js';
@@ -258,7 +259,7 @@ export class IDEIntegrationServer extends EventEmitter {
       this.sendError(
         client,
         request.id,
-        error instanceof Error ? error.message : 'Unknown error'
+        normalizeError(error).message
       );
     }
   }

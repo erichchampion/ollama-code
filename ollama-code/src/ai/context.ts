@@ -10,6 +10,7 @@ import { watch } from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
+import { TIMEOUT_CONSTANTS } from '../config/constants.js';
 import {
   MAX_FILES_FOR_ANALYSIS,
   MAX_FILES_LIMIT,
@@ -205,7 +206,7 @@ export class ProjectContext {
       projectRoot: this.projectRoot,
       workingDirectory: this.projectRoot,
       environment: process.env as Record<string, string>,
-      timeout: 30000
+      timeout: TIMEOUT_CONSTANTS.MEDIUM
     });
 
     if (!result.success) {
@@ -335,7 +336,7 @@ export class ProjectContext {
           projectRoot: this.projectRoot,
           workingDirectory: this.projectRoot,
           environment: process.env as Record<string, string>,
-          timeout: 10000
+          timeout: TIMEOUT_CONSTANTS.SHORT * 2
         });
 
         if (result.success) {

@@ -5,6 +5,7 @@
  * and project-wide searches with relevance ranking.
  */
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import path from 'path';
 import { BaseTool } from './types.js';
 import { logger } from '../utils/logger.js';
@@ -174,7 +175,7 @@ export class SearchTool extends BaseTool {
             logger.error(`Search tool error: ${error}`);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 metadata: {
                     executionTime: Date.now() - startTime
                 }

@@ -5,6 +5,7 @@
  * Provides environment-specific defaults and validation.
  */
 import { cpus, totalmem } from 'os';
+import { THRESHOLD_CONSTANTS } from './constants.js';
 /**
  * Get performance configuration based on environment
  */
@@ -179,11 +180,11 @@ export function validatePerformanceConfig(config) {
     if (config.cache.maxMemoryMB < 64) {
         errors.push('maxMemoryMB must be at least 64MB');
     }
-    if (config.cache.evictionRatio < 0.1 || config.cache.evictionRatio > 0.9) {
-        errors.push('evictionRatio must be between 0.1 and 0.9');
+    if (config.cache.evictionRatio < THRESHOLD_CONSTANTS.MEMORY.MIN_EVICTION_RATIO || config.cache.evictionRatio > THRESHOLD_CONSTANTS.MEMORY.MAX_EVICTION_RATIO) {
+        errors.push(`evictionRatio must be between ${THRESHOLD_CONSTANTS.MEMORY.MIN_EVICTION_RATIO} and ${THRESHOLD_CONSTANTS.MEMORY.MAX_EVICTION_RATIO}`);
     }
-    if (config.cache.memoryPressureThreshold < 0.5 || config.cache.memoryPressureThreshold > 0.95) {
-        errors.push('memoryPressureThreshold must be between 0.5 and 0.95');
+    if (config.cache.memoryPressureThreshold < 0.5 || config.cache.memoryPressureThreshold > THRESHOLD_CONSTANTS.MEMORY.PRESSURE_THRESHOLD) {
+        errors.push(`memoryPressureThreshold must be between 0.5 and ${THRESHOLD_CONSTANTS.MEMORY.PRESSURE_THRESHOLD}`);
     }
     return errors;
 }

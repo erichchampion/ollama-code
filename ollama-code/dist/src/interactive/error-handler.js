@@ -5,6 +5,9 @@
  * across all interactive mode components.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError, getErrorMessage } from '../utils/error-utils.js';
+// Re-export for backward compatibility
+export { normalizeError, getErrorMessage };
 /**
  * Standard error types for interactive components
  */
@@ -52,42 +55,6 @@ export class ComponentError extends Error {
         }
         return diagnostics;
     }
-}
-/**
- * Normalize any error to a proper Error instance
- */
-export function normalizeError(error) {
-    if (error instanceof Error) {
-        return error;
-    }
-    if (typeof error === 'string') {
-        return new Error(error);
-    }
-    if (error && typeof error === 'object') {
-        const errorObj = error;
-        if (errorObj.message) {
-            return new Error(errorObj.message);
-        }
-    }
-    return new Error(String(error));
-}
-/**
- * Extract error message safely
- */
-export function getErrorMessage(error) {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    if (typeof error === 'string') {
-        return error;
-    }
-    if (error && typeof error === 'object') {
-        const errorObj = error;
-        if (errorObj.message) {
-            return String(errorObj.message);
-        }
-    }
-    return String(error);
 }
 /**
  * Enhanced error handler for interactive components

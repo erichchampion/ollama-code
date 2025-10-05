@@ -10,6 +10,7 @@ import os from 'os';
 import { logger } from '../utils/logger.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
+import { AI_CONSTANTS, TIMEOUT_CONSTANTS } from './constants.js';
 /**
  * Default configuration values
  */
@@ -18,12 +19,12 @@ const DEFAULT_CONFIG = {
     api: {
         baseUrl: 'http://localhost:11434',
         version: 'v1',
-        timeout: 60000
+        timeout: TIMEOUT_CONSTANTS.GIT_OPERATION
     },
     // AI configuration
     ai: {
         model: 'qwen2.5-coder:latest',
-        temperature: 0.5,
+        temperature: AI_CONSTANTS.DEFAULT_TEMPERATURE,
         maxTokens: 4096,
         maxHistoryLength: 20
     },

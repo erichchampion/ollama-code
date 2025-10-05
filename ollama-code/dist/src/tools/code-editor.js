@@ -5,6 +5,7 @@
  * and rollback functionality for autonomous code modifications.
  */
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -83,7 +84,7 @@ export class CodeEditor {
             return {
                 success: false,
                 editId,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -136,7 +137,7 @@ export class CodeEditor {
             return {
                 success: false,
                 editId,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -180,7 +181,7 @@ export class CodeEditor {
             return editIds.map(editId => ({
                 success: false,
                 editId,
-                error: error instanceof Error ? error.message : 'Batch operation failed'
+                error: normalizeError(error).message
             }));
         }
     }
@@ -221,7 +222,7 @@ export class CodeEditor {
             return {
                 success: false,
                 editId,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -259,7 +260,7 @@ export class CodeEditor {
             };
         }
         catch (error) {
-            errors.push(`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            errors.push(`Validation error: ${normalizeError(error).message}`);
             return {
                 isValid: false,
                 errors,
@@ -277,7 +278,7 @@ export class CodeEditor {
             vm.compileFunction(content);
         }
         catch (error) {
-            errors.push(`JavaScript syntax error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            errors.push(`JavaScript syntax error: ${normalizeError(error).message}`);
         }
         // Check for common issues
         if (content.includes('console.log') && !content.includes('debug')) {
@@ -309,7 +310,7 @@ export class CodeEditor {
             JSON.parse(content);
         }
         catch (error) {
-            errors.push(`JSON syntax error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            errors.push(`JSON syntax error: ${normalizeError(error).message}`);
         }
     }
     /**

@@ -5,6 +5,7 @@
  * planning, decomposition, and safety validation.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { getPerformanceConfig } from '../config/performance.js';
 import { ArchitecturalAnalyzer } from './architectural-analyzer.js';
 import { TestGenerator } from './test-generator.js';
@@ -567,7 +568,7 @@ export class AutonomousDeveloper {
                         id: `phase-${phase.id}-error`,
                         type: 'error',
                         category: 'execution',
-                        description: error instanceof Error ? error.message : 'Unknown error',
+                        description: normalizeError(error).message,
                         severity: 'critical',
                         autoFixable: false
                     }]
@@ -623,7 +624,7 @@ export class AutonomousDeveloper {
                 validationResults: [{
                         criterion: 'execution',
                         passed: false,
-                        details: error instanceof Error ? error.message : 'Unknown error'
+                        details: normalizeError(error).message
                     }]
             };
         }

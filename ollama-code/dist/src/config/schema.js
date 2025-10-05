@@ -5,6 +5,7 @@
  * Uses Zod for runtime type validation.
  */
 import { z } from 'zod';
+import { TIMEOUT_CONSTANTS, RETRY_CONSTANTS } from './constants.js';
 import { DEFAULT_OLLAMA_URL, AI_COMPLETION_TIMEOUT, DEFAULT_MAX_RETRIES, DEFAULT_INITIAL_RETRY_DELAY, DEFAULT_MAX_RETRY_DELAY, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_TOP_P, DEFAULT_TOP_K, DEFAULT_REPEAT_PENALTY } from '../constants.js';
 // Define log level enum
 const LogLevel = z.enum(['error', 'warn', 'info', 'verbose', 'debug', 'trace']);
@@ -99,10 +100,10 @@ export const configSchema = z.object({
     api: ApiConfigSchema.default({}),
     ollama: OllamaConfigSchema.default({
         baseUrl: 'http://localhost:11434',
-        timeout: 120000,
+        timeout: TIMEOUT_CONSTANTS.LONG,
         retryOptions: {
-            maxRetries: 3,
-            initialDelayMs: 1000,
+            maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+            initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
             maxDelayMs: 5000
         }
     }),

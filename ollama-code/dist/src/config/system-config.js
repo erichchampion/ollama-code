@@ -4,6 +4,7 @@
  * Centralizes all configuration values to eliminate hardcoded constants
  * throughout the system and provide consistent configuration management.
  */
+import { AI_CONSTANTS, TIMEOUT_CONSTANTS } from './constants.js';
 /**
  * Default system configuration
  */
@@ -12,9 +13,9 @@ export const DEFAULT_SYSTEM_CONFIG = {
         commandConfidenceThreshold: 0.7,
         taskConfidenceThreshold: 0.6,
         healthCheckInterval: 2000,
-        temperature: 0.7,
+        temperature: AI_CONSTANTS.CREATIVE_TEMPERATURE,
         maxTokens: 500,
-        requestTimeout: 30000
+        requestTimeout: TIMEOUT_CONSTANTS.MEDIUM
     },
     vcs: {
         cacheExpiry: 5 * 60 * 1000, // 5 minutes

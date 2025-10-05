@@ -5,8 +5,10 @@
  * output capture, and environment management.
  */
 import { spawn } from 'child_process';
+import { normalizeError } from '../utils/error-utils.js';
 import { BaseTool } from './types.js';
 import { logger } from '../utils/logger.js';
+import { TIMEOUT_CONSTANTS } from '../config/constants.js';
 export class ExecutionTool extends BaseTool {
     metadata = {
         name: 'execution',
@@ -74,7 +76,7 @@ export class ExecutionTool extends BaseTool {
                 parameters: {
                     command: 'npm',
                     args: ['install'],
-                    timeout: 60000
+                    timeout: TIMEOUT_CONSTANTS.GIT_OPERATION
                 }
             },
             {
@@ -91,7 +93,7 @@ export class ExecutionTool extends BaseTool {
                     command: 'npm',
                     args: ['test'],
                     env: { NODE_ENV: 'test' },
-                    timeout: 120000
+                    timeout: TIMEOUT_CONSTANTS.LONG
                 }
             }
         ]
@@ -158,7 +160,7 @@ export class ExecutionTool extends BaseTool {
             logger.error(`Execution tool error: ${error}`);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 metadata: {
                     executionTime: Date.now() - startTime
                 }

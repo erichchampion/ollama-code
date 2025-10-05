@@ -4,6 +4,7 @@
  * Utilities for reporting errors to Sentry.
  * Note: We're skipping the full Sentry SDK implementation as requested.
  */
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
 /**
  * Set up Sentry error reporting
@@ -29,7 +30,7 @@ export function setupSentryReporting(errorManager, options = {}) {
  */
 export function reportErrorToSentry(error, options = {}) {
     logger.debug('Would report error to Sentry:', {
-        error: error instanceof Error ? error.message : String(error),
+        error: normalizeError(error).message,
         level: options.level,
         tags: options.tags,
         user: options.user ? {

@@ -6,6 +6,8 @@
  */
 import { logger } from '../../utils/logger.js';
 import { withTimeout, withRetry } from '../../utils/async.js';
+import { normalizeError } from '../../utils/error-utils.js';
+import { TIMEOUT_CONSTANTS, RETRY_CONSTANTS } from '../../config/constants.js';
 import { BaseAIProvider, AICapability, ProviderError, ProviderRateLimitError, ProviderAuthenticationError, ProviderConnectionError } from './base-provider.js';
 /**
  * OpenAI Provider
@@ -17,11 +19,12 @@ export class OpenAIProvider extends BaseAIProvider {
         const defaultConfig = {
             name: config.name || 'openai',
             baseUrl: 'https://api.openai.com/v1',
-            timeout: 60000,
+            // OpenAI supports complex reasoning, use extended timeout
+            timeout: TIMEOUT_CONSTANTS.LONG,
             retryOptions: {
-                maxRetries: 3,
-                initialDelayMs: 1000,
-                maxDelayMs: 8000
+                maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+                initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
+                maxDelayMs: RETRY_CONSTANTS.MAX_BACKOFF_DELAY
             },
             rateLimiting: {
                 enabled: true,
@@ -183,7 +186,7 @@ export class OpenAIProvider extends BaseAIProvider {
             const processingTime = Date.now() - startTime;
             this.updateMetrics(false, processingTime);
             logger.error('OpenAI completion request failed', { requestId, error });
-            throw new ProviderError(`OpenAI completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'openai', 'COMPLETION_ERROR', true);
+            throw new ProviderError(`OpenAI completion failed: ${normalizeError(error).message}`, 'openai', 'COMPLETION_ERROR', true);
         }
     }
     async completeStream(prompt, options, onEvent, abortSignal) {
@@ -253,7 +256,7 @@ export class OpenAIProvider extends BaseAIProvider {
             if (error instanceof Error && error.name === 'AbortError') {
                 throw new ProviderError('OpenAI streaming request was cancelled', 'openai', 'CANCELLED', false);
             }
-            throw new ProviderError(`OpenAI streaming completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'openai', 'STREAMING_ERROR', true);
+            throw new ProviderError(`OpenAI streaming completion failed: ${normalizeError(error).message}`, 'openai', 'STREAMING_ERROR', true);
         }
     }
     async listModels() {
@@ -280,7 +283,7 @@ export class OpenAIProvider extends BaseAIProvider {
         }
         catch (error) {
             logger.error('Failed to list OpenAI models', error);
-            throw new ProviderError(`Failed to list OpenAI models: ${error instanceof Error ? error.message : 'Unknown error'}`, 'openai', 'LIST_MODELS_ERROR', true);
+            throw new ProviderError(`Failed to list OpenAI models: ${normalizeError(error).message}`, 'openai', 'LIST_MODELS_ERROR', true);
         }
     }
     async getModel(modelId) {

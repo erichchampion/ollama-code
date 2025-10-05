@@ -5,6 +5,7 @@
  * circular references and other common JSON-related issues.
  */
 import { logger } from './logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 /**
  * Safely stringify an object, handling circular references
  */
@@ -71,7 +72,7 @@ export function safeStringify(obj, options = {}) {
                         }
                     }
                     catch (error) {
-                        result[prop] = `[Error accessing property: ${error instanceof Error ? error.message : 'Unknown'}]`;
+                        result[prop] = `[Error accessing property: ${normalizeError(error).message}]`;
                     }
                 }
             }
@@ -86,7 +87,7 @@ export function safeStringify(obj, options = {}) {
     }
     catch (error) {
         logger.error('Safe JSON stringify failed:', error);
-        return `[JSON Stringify Error: ${error instanceof Error ? error.message : 'Unknown'}]`;
+        return `[JSON Stringify Error: ${normalizeError(error).message}]`;
     }
 }
 /**

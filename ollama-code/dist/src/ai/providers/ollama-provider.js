@@ -5,8 +5,10 @@
  * serving as the reference implementation and maintaining backward compatibility.
  */
 import { logger } from '../../utils/logger.js';
+import { normalizeError } from '../../utils/error-utils.js';
 import { withTimeout, withRetry } from '../../utils/async.js';
 import { ensureOllamaServerRunning } from '../../utils/ollama-server.js';
+import { TIMEOUT_CONSTANTS, RETRY_CONSTANTS } from '../../config/constants.js';
 import { BaseAIProvider, AICapability, ProviderError, ProviderConnectionError } from './base-provider.js';
 /**
  * Ollama AI Provider
@@ -18,11 +20,12 @@ export class OllamaProvider extends BaseAIProvider {
         const defaultConfig = {
             name: config.name || 'ollama',
             baseUrl: 'http://127.0.0.1:11434',
-            timeout: 30000,
+            // Ollama is local, use medium timeout for faster failure detection
+            timeout: TIMEOUT_CONSTANTS.MEDIUM,
             retryOptions: {
-                maxRetries: 3,
-                initialDelayMs: 1000,
-                maxDelayMs: 5000
+                maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+                initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
+                maxDelayMs: RETRY_CONSTANTS.MAX_BACKOFF_DELAY
             },
             rateLimiting: {
                 enabled: false,
@@ -190,7 +193,7 @@ export class OllamaProvider extends BaseAIProvider {
             const processingTime = Date.now() - startTime;
             this.updateMetrics(false, processingTime);
             logger.error('Ollama completion request failed', { requestId, error });
-            throw new ProviderError(`Ollama completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'ollama', 'COMPLETION_ERROR', true);
+            throw new ProviderError(`Ollama completion failed: ${normalizeError(error).message}`, 'ollama', 'COMPLETION_ERROR', true);
         }
     }
     async completeStream(prompt, options, onEvent, abortSignal) {
@@ -251,7 +254,7 @@ export class OllamaProvider extends BaseAIProvider {
             if (error instanceof Error && error.name === 'AbortError') {
                 throw new ProviderError('Ollama streaming request was cancelled', 'ollama', 'CANCELLED', false);
             }
-            throw new ProviderError(`Ollama streaming completion failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'ollama', 'STREAMING_ERROR', true);
+            throw new ProviderError(`Ollama streaming completion failed: ${normalizeError(error).message}`, 'ollama', 'STREAMING_ERROR', true);
         }
     }
     async listModels() {
@@ -279,7 +282,7 @@ export class OllamaProvider extends BaseAIProvider {
         }
         catch (error) {
             logger.error('Failed to list Ollama models', error);
-            throw new ProviderError(`Failed to list Ollama models: ${error instanceof Error ? error.message : 'Unknown error'}`, 'ollama', 'LIST_MODELS_ERROR', true);
+            throw new ProviderError(`Failed to list Ollama models: ${normalizeError(error).message}`, 'ollama', 'LIST_MODELS_ERROR', true);
         }
     }
     async getModel(modelId) {

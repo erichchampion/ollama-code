@@ -5,7 +5,9 @@
  * Implements safe refactoring operations with rollback support.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { getPerformanceConfig } from '../config/performance.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 export class RefactoringEngine {
@@ -96,7 +98,7 @@ export class RefactoringEngine {
                         operationsApplied: appliedOperations,
                         backupCreated: backupPath,
                         filesModified: modifiedFiles,
-                        error: `Operation failed: ${error instanceof Error ? error.message : String(error)}`
+                        error: `Operation failed: ${normalizeError(error).message}`
                     };
                 }
             }
@@ -124,7 +126,7 @@ export class RefactoringEngine {
                 operationsApplied: [],
                 backupCreated: '',
                 filesModified: [],
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -376,7 +378,7 @@ export class RefactoringEngine {
     async validateOperations(operations) {
         const errors = [];
         for (const operation of operations) {
-            if (operation.safety.riskLevel === 'high' && operation.safety.confidence < 0.7) {
+            if (operation.safety.riskLevel === 'high' && operation.safety.confidence < THRESHOLD_CONSTANTS.RISK.HIGH_RISK_MIN_CONFIDENCE) {
                 errors.push(`Operation ${operation.id} has high risk and low confidence`);
             }
             if (operation.impact.breakingChange && !this.config.codeAnalysis.refactoring.safetyChecksEnabled) {

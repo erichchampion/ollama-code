@@ -1,4 +1,5 @@
 import { BaseTool, ToolResult, ToolExecutionContext, ToolMetadata } from './types.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -82,7 +83,7 @@ export class AdvancedGitTool extends BaseTool {
                     return this.createErrorResult(`Unknown operation: ${operation}`);
             }
         } catch (error) {
-            return this.createErrorResult(`Git tool error: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Git tool error: ${normalizeError(error).message}`);
         }
     }
 
@@ -114,7 +115,7 @@ export class AdvancedGitTool extends BaseTool {
                 executionTime: Date.now() - startTime
             });
         } catch (error) {
-            return this.createErrorResult(`Repository analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Repository analysis failed: ${normalizeError(error).message}`);
         }
     }
 
@@ -132,7 +133,7 @@ export class AdvancedGitTool extends BaseTool {
             };
         } catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -163,7 +164,7 @@ export class AdvancedGitTool extends BaseTool {
             };
         } catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -187,7 +188,7 @@ export class AdvancedGitTool extends BaseTool {
             };
         } catch (error) {
             return {
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
         }
     }
@@ -228,7 +229,7 @@ export class AdvancedGitTool extends BaseTool {
             }
 
         } catch (error) {
-            health.issues.push(`Health check error: ${error instanceof Error ? error.message : String(error)}`);
+            health.issues.push(`Health check error: ${normalizeError(error).message}`);
         }
 
         return health;
@@ -263,7 +264,7 @@ export class AdvancedGitTool extends BaseTool {
                 timeframe
             });
         } catch (error) {
-            return this.createErrorResult(`History analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`History analysis failed: ${normalizeError(error).message}`);
         }
     }
 
@@ -318,7 +319,7 @@ export class AdvancedGitTool extends BaseTool {
                 }
             });
         } catch (error) {
-            return this.createErrorResult(`Branch analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Branch analysis failed: ${normalizeError(error).message}`);
         }
     }
 
@@ -351,7 +352,7 @@ export class AdvancedGitTool extends BaseTool {
                 stats: diffStats
             });
         } catch (error) {
-            return this.createErrorResult(`Diff analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Diff analysis failed: ${normalizeError(error).message}`);
         }
     }
 
@@ -389,7 +390,7 @@ export class AdvancedGitTool extends BaseTool {
                 }
             });
         } catch (error) {
-            return this.createErrorResult(`Contributor analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Contributor analysis failed: ${normalizeError(error).message}`);
         }
     }
 
@@ -412,7 +413,7 @@ export class AdvancedGitTool extends BaseTool {
                 ] : ['No conflicts detected']
             });
         } catch (error) {
-            return this.createErrorResult(`Conflict detection failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Conflict detection failed: ${normalizeError(error).message}`);
         }
     }
 
@@ -427,7 +428,7 @@ export class AdvancedGitTool extends BaseTool {
 
             return this.createSuccessResult('Repository insights generated', insights);
         } catch (error) {
-            return this.createErrorResult(`Insights generation failed: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Insights generation failed: ${normalizeError(error).message}`);
         }
     }
 

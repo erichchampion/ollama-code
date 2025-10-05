@@ -5,6 +5,7 @@
  * A simplified version of the Ollama Code CLI for testing purposes.
  */
 import { OllamaClient } from './ai/ollama-client.js';
+import { normalizeError } from './utils/error-utils.js';
 import { ensureOllamaServerRunning } from './utils/ollama-server.js';
 // Simple command line argument parsing
 const args = process.argv.slice(2);
@@ -105,7 +106,7 @@ Examples:
         }
     }
     catch (error) {
-        console.error('Error:', error instanceof Error ? error.message : String(error));
+        console.error('Error:', normalizeError(error).message);
         if (error instanceof Error && error.message.includes('fetch')) {
             console.log('\nMake sure Ollama is running:');
             console.log('  1. Install Ollama: https://ollama.ai');

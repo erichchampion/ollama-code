@@ -4,10 +4,12 @@
  * Handles automatic startup and management of the Ollama server.
  */
 import { spawn, exec } from 'child_process';
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from './logger.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
 import { SERVER_HEALTH_TIMEOUT, SERVER_STARTUP_TIMEOUT, HEALTH_CHECK_INTERVAL } from '../constants.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 /**
  * Check if Ollama server is running
  */
@@ -23,7 +25,7 @@ export async function isOllamaServerRunning(baseUrl = 'http://localhost:11434') 
         return response.ok;
     }
     catch (error) {
-        logger.debug('Ollama server check failed', { error: error instanceof Error ? error.message : String(error) });
+        logger.debug('Ollama server check failed', { error: normalizeError(error).message });
         return false;
     }
 }
@@ -177,7 +179,7 @@ export async function ensureOllamaServerRunning(baseUrl = 'http://localhost:1143
     // Start the server
     await startOllamaServer();
     // Wait a moment for the server to fully initialize
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.LONG_DELAY));
     // Verify the server is now running
     const isNowRunning = await isOllamaServerRunning(baseUrl);
     if (!isNowRunning) {

@@ -7,6 +7,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { normalizeError } from '../utils/error-utils.js';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -209,7 +210,7 @@ export class PerformanceBenchmark {
         category,
         metadata,
         false,
-        error instanceof Error ? error.message : String(error)
+        normalizeError(error).message
       );
       throw error;
     }

@@ -5,6 +5,7 @@
  * response quality, cost efficiency, and reliability across different scenarios.
  */
 import { logger } from '../../utils/logger.js';
+import { normalizeError } from '../../utils/error-utils.js';
 export class ProviderBenchmarker {
     providers = new Map();
     testCases = [];
@@ -252,7 +253,7 @@ function partition(arr, low, high) {
                 finishReason: 'error',
                 qualityScores: { accuracy: 0, relevance: 0, completeness: 0, overall: 0 },
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
+                error: normalizeError(error).message
             };
             logger.warn(`Test ${testCase.id} failed for ${providerId}: ${result.error}`);
             return result;

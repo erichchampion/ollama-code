@@ -13,6 +13,7 @@ import { BaseAIProvider, AIModel, ProviderConfig, AICapability } from './base-pr
 import { generateSecureId, generateRequestId } from '../../utils/id-generator.js';
 import { FINE_TUNING_CONFIG, getMergedConfig } from './config/advanced-features-config.js';
 import { DirectoryManager } from '../../utils/directory-manager.js';
+import { normalizeError } from '../../utils/error-utils.js';
 import { ConfigurationMerger } from '../../utils/configuration-merger.js';
 
 export interface FineTuningDataset {
@@ -208,7 +209,7 @@ export class LocalFineTuningManager extends EventEmitter {
       return dataset;
     } catch (error) {
       this.emit('error', error);
-      throw new Error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to create dataset: ${normalizeError(error).message}`);
     }
   }
 
@@ -254,7 +255,7 @@ export class LocalFineTuningManager extends EventEmitter {
       return job;
     } catch (error) {
       job.status = 'failed';
-      job.error = error instanceof Error ? error.message : 'Unknown error';
+      job.error = normalizeError(error).message;
       this.emit('jobFailed', job);
       throw error;
     }

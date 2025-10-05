@@ -5,6 +5,7 @@
  * to resolve complex request handling issues and improve startup performance.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
 import { getComponentFactory } from './component-factory.js';
 import { StreamingInitializer } from './streaming-initializer.js';
@@ -284,7 +285,7 @@ export class OptimizedEnhancedMode {
         }
         catch (error) {
             logger.error('Request processing failed:', error);
-            this.terminal.error(`Failed to process request: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            this.terminal.error(`Failed to process request: ${normalizeError(error).message}`);
             // Suggest using simpler commands
             this.terminal.info('Try using simpler commands like:');
             this.terminal.info('  • "help" - Show available commands');
@@ -523,7 +524,7 @@ export class OptimizedEnhancedMode {
             }
             logger.error('Simple AI request failed:', error);
             // Provide more specific error messages
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            const errorMessage = normalizeError(error).message;
             if (errorMessage.includes('timeout')) {
                 this.terminal?.error('⏱️ Request timed out. The AI might be overloaded. Please try again.');
             }
@@ -589,7 +590,7 @@ export class OptimizedEnhancedMode {
                 return;
             }
             catch (error) {
-                this.terminal.error(`Command execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                this.terminal.error(`Command execution failed: ${normalizeError(error).message}`);
                 return;
             }
         }
@@ -605,7 +606,7 @@ export class OptimizedEnhancedMode {
                 return;
             }
             catch (error) {
-                this.terminal.error(`Conversation processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                this.terminal.error(`Conversation processing failed: ${normalizeError(error).message}`);
                 return;
             }
         }
@@ -630,7 +631,7 @@ export class OptimizedEnhancedMode {
                 }
             }
             catch (error) {
-                this.terminal.error(`Task planning failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                this.terminal.error(`Task planning failed: ${normalizeError(error).message}`);
                 // Fallback to simple AI assistance
                 try {
                     this.terminal.info('Falling back to AI assistance...');
@@ -665,7 +666,7 @@ export class OptimizedEnhancedMode {
                 return;
             }
             catch (error) {
-                this.terminal.error(`Clarification processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                this.terminal.error(`Clarification processing failed: ${normalizeError(error).message}`);
                 return;
             }
         }
@@ -679,7 +680,7 @@ export class OptimizedEnhancedMode {
                 return;
             }
             catch (error) {
-                this.terminal.error(`Tool processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                this.terminal.error(`Tool processing failed: ${normalizeError(error).message}`);
                 return;
             }
         }
@@ -723,7 +724,7 @@ export class OptimizedEnhancedMode {
                 this.terminal?.success(`Plan executed successfully: ${executionResult}`);
             }
             catch (error) {
-                this.terminal?.error(`Plan execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                this.terminal?.error(`Plan execution failed: ${normalizeError(error).message}`);
             }
         }
         else {

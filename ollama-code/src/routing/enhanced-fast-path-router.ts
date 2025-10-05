@@ -8,6 +8,7 @@
 import { logger } from '../utils/logger.js';
 import { commandRegistry } from '../commands/index.js';
 import { FAST_PATH_CONFIG_DEFAULTS } from '../constants/streaming.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 
 export interface FastPathResult {
   commandName: string;
@@ -87,7 +88,7 @@ export class EnhancedFastPathRouter {
 
       for (const strategy of strategies) {
         const result = strategy();
-        if (result && result.confidence > 0.6) {
+        if (result && result.confidence > THRESHOLD_CONSTANTS.PATTERN_MATCH.MINIMUM) {
           // Cache successful matches
           this.commandCache.set(normalizedInput, result);
 
@@ -206,7 +207,7 @@ export class EnhancedFastPathRouter {
         for (const pattern of rule.patterns) {
           const score = this.calculatePatternScore(trimmed, pattern);
 
-          if (score > bestScore && score > 0.6) {
+          if (score > bestScore && score > THRESHOLD_CONSTANTS.PATTERN_MATCH.MINIMUM) {
             bestScore = score;
             bestMatch = {
               commandName: rule.command,
@@ -456,10 +457,10 @@ export class EnhancedFastPathRouter {
     if (input === pattern) return 1.0;
 
     // Contains pattern
-    if (input.includes(pattern)) return 0.9;
+    if (input.includes(pattern)) return THRESHOLD_CONSTANTS.PATTERN_MATCH.EXACT;
 
     // Pattern contains input (partial match)
-    if (pattern.includes(input)) return 0.8;
+    if (pattern.includes(input)) return THRESHOLD_CONSTANTS.PATTERN_MATCH.PARTIAL;
 
     // Word-based matching with improved precision
     const inputWords = input.split(/\s+/);

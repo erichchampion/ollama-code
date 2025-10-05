@@ -5,6 +5,7 @@
  * Integrates code editing, AST manipulation, and backup management.
  */
 import { CodeEditor } from '../tools/code-editor.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { ASTManipulator } from '../tools/ast-manipulator.js';
 import { BackupManager } from './backup-manager.js';
 import { logger } from '../utils/logger.js';
@@ -72,7 +73,7 @@ export class AutonomousModifier {
                 catch (error) {
                     const modError = {
                         operation,
-                        error: error instanceof Error ? error.message : 'Unknown error',
+                        error: normalizeError(error).message,
                         recoverable: this.isRecoverableError(error)
                     };
                     errors.push(modError);
@@ -123,7 +124,7 @@ export class AutonomousModifier {
                 failedOperations: plan.operations.length,
                 errors: [{
                         operation: plan.operations[0],
-                        error: error instanceof Error ? error.message : 'Unknown error',
+                        error: normalizeError(error).message,
                         recoverable: false
                     }]
             };

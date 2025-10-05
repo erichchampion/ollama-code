@@ -5,6 +5,7 @@
  * code analysis, commit enhancement, and quality tracking.
  */
 import * as fs from 'fs/promises';
+import { normalizeError } from '../../utils/error-utils.js';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -212,7 +213,7 @@ export class GitHooksManager {
             };
         }
         catch (error) {
-            const errorMessage = `Pre-commit analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            const errorMessage = `Pre-commit analysis failed: ${normalizeError(error).message}`;
             if (this.config.failOnAnalysisError) {
                 return {
                     success: false,
@@ -296,8 +297,8 @@ export class GitHooksManager {
                 return {
                     success: false,
                     exitCode: 1,
-                    output: `Commit message enhancement failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                    error: error instanceof Error ? error.message : 'Unknown error',
+                    output: `Commit message enhancement failed: ${normalizeError(error).message}`,
+                    error: normalizeError(error).message,
                     executionTime: Date.now() - startTime
                 };
             }
@@ -352,7 +353,7 @@ export class GitHooksManager {
             };
         }
         catch (error) {
-            const errorMessage = `Pre-push analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            const errorMessage = `Pre-push analysis failed: ${normalizeError(error).message}`;
             if (this.config.failOnAnalysisError) {
                 return {
                     success: false,
@@ -405,7 +406,7 @@ export class GitHooksManager {
             return {
                 success: true,
                 exitCode: 0,
-                output: `Quality tracking failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                output: `Quality tracking failed: ${normalizeError(error).message}`,
                 executionTime: Date.now() - startTime
             };
         }

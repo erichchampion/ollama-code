@@ -4,6 +4,7 @@
  * Start/stop/status commands for the IDE Integration Server
  */
 import { ArgType } from './index.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { getIDEIntegrationServer } from '../core/services.js';
 import { logger } from '../utils/logger.js';
 import { IDE_SERVER_DEFAULTS } from '../constants/websocket.js';
@@ -101,7 +102,7 @@ export const ideServerCommand = {
         }
         catch (error) {
             logger.error('IDE server command failed:', error);
-            throw new Error(`IDE server ${action} failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new Error(`IDE server ${action} failed: ${normalizeError(error).message}`);
         }
     }
 };

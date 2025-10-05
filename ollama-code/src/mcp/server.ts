@@ -10,6 +10,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { commandRegistry } from '../commands/index.js';
 // import { progressManager } from '../optimization/progress-manager.js';
 
@@ -146,7 +147,7 @@ export class MCPServer {
       return {
         content: [{
           type: 'text',
-          text: `Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          text: `Tool execution failed: ${normalizeError(error).message}`
         }],
         isError: true
       };

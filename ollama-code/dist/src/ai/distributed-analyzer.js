@@ -12,6 +12,7 @@
  * - Error handling and retry mechanisms for failed chunks
  */
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
+import { normalizeError } from '../utils/error-utils.js';
 import { EventEmitter } from 'events';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
@@ -60,7 +61,7 @@ export class DistributedAnalyzer extends EventEmitter {
             return results;
         }
         catch (error) {
-            logger.error(`Distributed analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+            logger.error(`Distributed analysis failed: ${normalizeError(error).message}`);
             throw error;
         }
         finally {
@@ -384,7 +385,7 @@ export class DistributedAnalyzer extends EventEmitter {
             }
             catch (error) {
                 // File might not exist, skip
-                logger.debug(`Failed to stat file ${file}: ${error instanceof Error ? error.message : String(error)}`);
+                logger.debug(`Failed to stat file ${file}: ${normalizeError(error).message}`);
             }
         }
         // Determine priority based on file types and complexity
@@ -487,7 +488,7 @@ if (!isMainThread && parentPort) {
                 parentPort.postMessage({
                     type: 'chunk_error',
                     chunkId: message.chunk.id,
-                    error: error instanceof Error ? error.message : String(error)
+                    error: normalizeError(error).message
                 });
             }
         }
@@ -528,7 +529,7 @@ async function analyzeChunkInWorker(chunk, config) {
             errors.push({
                 type: 'parse_error',
                 file,
-                message: error instanceof Error ? error.message : String(error),
+                message: normalizeError(error).message,
                 recoverable: true
             });
         }

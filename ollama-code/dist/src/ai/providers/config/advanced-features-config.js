@@ -4,6 +4,7 @@
  * Centralizes all configuration values for fine-tuning, deployment, and fusion
  * to eliminate hardcoded values and provide environment-specific defaults.
  */
+import { AI_CONSTANTS } from '../../../config/constants.js';
 /**
  * Default configuration for fine-tuning features
  */
@@ -18,7 +19,7 @@ export const FINE_TUNING_CONFIG = {
         batchSize: 4,
         validationSplit: 0.1,
         maxSequenceLength: 2048,
-        temperature: 0.7,
+        temperature: AI_CONSTANTS.CREATIVE_TEMPERATURE,
         dropout: 0.1,
         gradientClipping: 1.0,
         weightDecay: 0.01,

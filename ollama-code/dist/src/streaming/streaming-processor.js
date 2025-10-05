@@ -5,6 +5,7 @@
  * to improve perceived performance and user experience.
  */
 import { EventEmitter } from 'events';
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
 import { delay } from '../utils/async.js';
 import { generateOperationId } from '../utils/id-generator.js';
@@ -42,7 +43,7 @@ export class StreamingProcessor extends EventEmitter {
             catch (error) {
                 yield {
                     type: 'error',
-                    message: error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
+                    message: normalizeError(error).message,
                     timestamp: Date.now()
                 };
             }
@@ -92,7 +93,7 @@ export class StreamingProcessor extends EventEmitter {
             logger.error('Streaming operation failed:', error);
             yield {
                 type: 'error',
-                message: `❌ ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`,
+                message: `❌ ${normalizeError(error).message}`,
                 timestamp: Date.now()
             };
         }
@@ -147,7 +148,7 @@ export class StreamingProcessor extends EventEmitter {
         catch (error) {
             yield {
                 type: 'error',
-                message: `${PROGRESS_MESSAGES.COMMAND_FAILED}: ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`,
+                message: `${PROGRESS_MESSAGES.COMMAND_FAILED}: ${normalizeError(error).message}`,
                 timestamp: Date.now()
             };
         }
@@ -199,7 +200,7 @@ export class StreamingProcessor extends EventEmitter {
         catch (error) {
             yield {
                 type: 'error',
-                message: `${PROGRESS_MESSAGES.AI_FAILED}: ${error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR}`,
+                message: `${PROGRESS_MESSAGES.AI_FAILED}: ${normalizeError(error).message}`,
                 timestamp: Date.now()
             };
         }

@@ -10,6 +10,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { ProjectContext, FileInfo } from './context.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 
 // Core interfaces for advanced context management
 export interface SemanticSymbol {
@@ -1214,26 +1215,26 @@ export class AdvancedContextManager {
     // Factor in semantic matches
     if (context.semanticMatches.length > 0) {
       const avgScore = context.semanticMatches.reduce((sum, match) => sum + match.score, 0) / context.semanticMatches.length;
-      confidence += Math.min(avgScore / 20, 1) * 0.4; // 40% weight
+      confidence += Math.min(avgScore / 20, 1) * THRESHOLD_CONSTANTS.WEIGHTS.MAJOR; // 40% weight
       factors++;
     }
 
     // Factor in domain context
     if (context.domainContext.length > 0) {
       const domainConfidence = context.domainContext[0].score / 10;
-      confidence += Math.min(domainConfidence, 1) * 0.3; // 30% weight
+      confidence += Math.min(domainConfidence, 1) * THRESHOLD_CONSTANTS.WEIGHTS.MODERATE; // 30% weight
       factors++;
     }
 
     // Factor in related code availability
     if (context.relatedCode.length > 0) {
-      confidence += Math.min(context.relatedCode.length / 10, 1) * 0.2; // 20% weight
+      confidence += Math.min(context.relatedCode.length / 10, 1) * THRESHOLD_CONSTANTS.WEIGHTS.MINOR; // 20% weight
       factors++;
     }
 
     // Factor in historical context
     if (context.historicalContext.length > 0) {
-      confidence += 0.1; // 10% weight
+      confidence += THRESHOLD_CONSTANTS.WEIGHTS.SMALL; // 10% weight
       factors++;
     }
 

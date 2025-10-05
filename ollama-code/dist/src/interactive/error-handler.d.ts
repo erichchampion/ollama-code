@@ -4,6 +4,8 @@
  * Provides consistent error normalization, logging, and context management
  * across all interactive mode components.
  */
+import { normalizeError, getErrorMessage } from '../utils/error-utils.js';
+export { normalizeError, getErrorMessage };
 /**
  * Standard error context information
  */
@@ -29,14 +31,6 @@ export declare class ComponentError extends Error {
      */
     getDiagnostics(): string;
 }
-/**
- * Normalize any error to a proper Error instance
- */
-export declare function normalizeError(error: unknown): Error;
-/**
- * Extract error message safely
- */
-export declare function getErrorMessage(error: unknown): string;
 /**
  * Enhanced error handler for interactive components
  */

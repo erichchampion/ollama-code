@@ -13,6 +13,7 @@ import path from 'path';
 import { logger } from '../utils/logger.js';
 import { createSpinner } from '../utils/spinner.js';
 import { configManager } from '../config/manager.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 export class TutorialSystem {
     onboardingDir;
     progressFile;
@@ -619,7 +620,7 @@ export class TutorialSystem {
         if (progress.completedAt) {
             const actualTime = progress.completedAt - progress.startedAt;
             const estimatedTime = tutorial.estimatedTime * 60 * 1000; // Convert to ms
-            if (actualTime < estimatedTime * 0.8 && !achievements.includes('Speed Learner')) {
+            if (actualTime < estimatedTime * THRESHOLD_CONSTANTS.WEIGHTS.USAGE_COMPARISON && !achievements.includes('Speed Learner')) {
                 this.onboardingState?.achievements.push('Speed Learner');
             }
         }

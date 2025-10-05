@@ -8,6 +8,7 @@ import { watch } from 'fs';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { toolRegistry } from '../tools/index.js';
+import { TIMEOUT_CONSTANTS } from '../config/constants.js';
 import { MAX_FILES_FOR_ANALYSIS, MAX_FILES_LIMIT, MAX_CONVERSATION_HISTORY, MAX_FILE_WATCHERS } from '../constants.js';
 export class ProjectContext {
     projectRoot;
@@ -69,7 +70,7 @@ export class ProjectContext {
             projectRoot: this.projectRoot,
             workingDirectory: this.projectRoot,
             environment: process.env,
-            timeout: 30000
+            timeout: TIMEOUT_CONSTANTS.MEDIUM
         });
         if (!result.success) {
             throw new Error(`Failed to analyze project structure: ${result.error}`);
@@ -189,7 +190,7 @@ export class ProjectContext {
                     projectRoot: this.projectRoot,
                     workingDirectory: this.projectRoot,
                     environment: process.env,
-                    timeout: 10000
+                    timeout: TIMEOUT_CONSTANTS.SHORT * 2
                 });
                 if (result.success) {
                     const fileInfo = this.structure.files.get(filePath);

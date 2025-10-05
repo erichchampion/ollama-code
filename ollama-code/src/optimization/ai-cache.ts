@@ -12,6 +12,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { logger } from '../utils/logger.js';
+import { DELAY_CONSTANTS, THRESHOLD_CONSTANTS } from '../config/constants.js';
 // import { memoryManager } from './memory-manager.js';
 
 interface CacheEntry {
@@ -257,7 +258,7 @@ export class AICacheManager {
 
       // Add timeout to prevent hanging on file operations
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Cache persist timeout')), 5000);
+        setTimeout(() => reject(new Error('Cache persist timeout')), DELAY_CONSTANTS.RESTART_DELAY);
       });
 
       await Promise.race([
@@ -301,7 +302,7 @@ export class AICacheManager {
       const entryContextKeys = Object.keys(entry.context).sort();
       const contextSimilarity = this.calculateContextSimilarity(contextKeys, entryContextKeys);
 
-      if (contextSimilarity < 0.8) continue; // Context must be quite similar
+      if (contextSimilarity < THRESHOLD_CONSTANTS.CACHE.CONTEXT_SIMILARITY) continue; // Context must be quite similar
 
       // Check query similarity
       const querySimilarity = this.calculateTextSimilarity(
@@ -309,9 +310,9 @@ export class AICacheManager {
         entry.query.toLowerCase().trim()
       );
 
-      const totalScore = (querySimilarity * 0.7) + (contextSimilarity * 0.3);
+      const totalScore = (querySimilarity * 0.7) + (contextSimilarity * THRESHOLD_CONSTANTS.WEIGHTS.MODERATE);
 
-      if (totalScore > 0.85 && totalScore > bestScore) {
+      if (totalScore > THRESHOLD_CONSTANTS.CACHE.SCORE_THRESHOLD && totalScore > bestScore) {
         bestScore = totalScore;
         bestMatch = entry;
       }

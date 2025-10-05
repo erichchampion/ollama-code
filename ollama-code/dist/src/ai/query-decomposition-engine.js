@@ -5,6 +5,7 @@
  * resource calculation, and execution planning for autonomous task execution.
  */
 import { logger } from '../utils/logger.js';
+import { AI_CONSTANTS, THRESHOLD_CONSTANTS } from '../config/constants.js';
 /**
  * Query Decomposition Engine Class
  *
@@ -200,7 +201,7 @@ Focus on identifying:
 4. Concepts and patterns involved
 `;
         const response = await this.aiClient.complete(prompt, {
-            temperature: 0.3,
+            temperature: AI_CONSTANTS.QUERY_DECOMPOSITION_TEMPERATURE,
             max_tokens: 1000
         });
         const aiResult = this.parseAIResponse(response.message?.content || '[]');
@@ -727,7 +728,7 @@ Focus on identifying:
             score += 0.2;
         if (/\b(architecture|microservice|distributed|scalable|enterprise)\b/i.test(query))
             score += 0.4;
-        if (score >= 0.7)
+        if (score >= THRESHOLD_CONSTANTS.CONFIDENCE.MEDIUM)
             return 'high';
         if (score >= 0.4)
             return 'medium';
@@ -933,15 +934,15 @@ Focus on identifying:
         return 'low';
     }
     calculateConfidence(decomposition) {
-        let confidence = 0.8; // Base confidence
+        let confidence = THRESHOLD_CONSTANTS.CONFIDENCE.HIGH; // Base confidence
         // Adjust based on intent confidence
         const avgIntentConfidence = decomposition.intents.reduce((sum, intent) => sum + intent.confidence, 0) / decomposition.intents.length;
         confidence = (confidence + avgIntentConfidence) / 2;
         // Reduce confidence for high complexity
         if (decomposition.complexity === 'high')
-            confidence *= 0.9;
+            confidence *= THRESHOLD_CONSTANTS.WEIGHTS.COMPLEXITY_REDUCTION;
         if (decomposition.conflicts.length > 0)
-            confidence *= 0.85;
+            confidence *= THRESHOLD_CONSTANTS.WEIGHTS.CONFLICT_REDUCTION;
         // Increase confidence for simpler tasks
         if (decomposition.subTasks.length === 1 && decomposition.complexity === 'low') {
             confidence *= 1.1;

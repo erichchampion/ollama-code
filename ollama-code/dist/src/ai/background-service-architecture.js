@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { promisify } from 'util';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
 const unlink = promisify(fs.unlink);
@@ -129,7 +130,7 @@ export class BackgroundServiceDaemon extends EventEmitter {
     async restartDaemon() {
         this.log('info', 'Restarting background service...');
         await this.stopDaemon();
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause
+        await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.MEDIUM_DELAY)); // Brief pause
         await this.startDaemon();
         this.emit('serviceRestarted', {
             pid: process.pid,
@@ -349,7 +350,7 @@ export class BackgroundServiceDaemon extends EventEmitter {
         this.emit('healthCheck', health);
         if (health.status === 'critical' && this.config.autoRestart) {
             this.log('warning', 'Critical health issues detected, triggering restart');
-            setTimeout(() => this.restartDaemon(), 5000);
+            setTimeout(() => this.restartDaemon(), DELAY_CONSTANTS.RESTART_DELAY);
         }
     }
     /**
@@ -455,7 +456,7 @@ export class BackgroundServiceDaemon extends EventEmitter {
                     resolve();
                 }
                 else {
-                    setTimeout(checkCompletion, 1000);
+                    setTimeout(checkCompletion, DELAY_CONSTANTS.MEDIUM_DELAY);
                 }
             };
             checkCompletion();
@@ -564,7 +565,7 @@ class Worker {
         this.isProcessing = true;
         try {
             // Simulate task processing
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.MEDIUM_DELAY));
             // Return mock result based on task type
             switch (task.type) {
                 case 'index_rebuild':

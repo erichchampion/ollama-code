@@ -1,4 +1,5 @@
 import { BaseTool } from './types.js';
+import { normalizeError } from '../utils/error-utils.js';
 import * as fs from 'fs';
 import * as path from 'path';
 export class AdvancedTestingTool extends BaseTool {
@@ -76,7 +77,7 @@ export class AdvancedTestingTool extends BaseTool {
             }
         }
         catch (error) {
-            return this.createErrorResult(`Testing tool error: ${error instanceof Error ? error.message : String(error)}`);
+            return this.createErrorResult(`Testing tool error: ${normalizeError(error).message}`);
         }
     }
     async generateTests(target, context, options) {
@@ -263,7 +264,7 @@ export class AdvancedTestingTool extends BaseTool {
             return { type: 'unknown', body: [] };
         }
         catch (error) {
-            return { type: 'error', body: [], error: error instanceof Error ? error.message : String(error) };
+            return { type: 'error', body: [], error: normalizeError(error).message };
         }
     }
     parseJavaScriptTypeScript(sourceCode) {

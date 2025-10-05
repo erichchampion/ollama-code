@@ -5,13 +5,29 @@
  */
 /**
  * Extract error message safely from unknown error type
+ * @param error - The error to extract message from
+ * @param includeStack - Whether to include stack trace (default: false)
+ * @returns The error message string
  */
-export function getErrorMessage(error) {
+export function getErrorMessage(error, includeStack = false) {
     if (error instanceof Error) {
-        return error.message;
+        return includeStack && error.stack ? error.stack : error.message;
     }
     if (typeof error === 'string') {
         return error;
+    }
+    if (error && typeof error === 'object') {
+        const errorObj = error;
+        if (errorObj.message) {
+            return String(errorObj.message);
+        }
+        // Try to stringify object errors
+        try {
+            return JSON.stringify(error);
+        }
+        catch {
+            return String(error);
+        }
     }
     return 'Unknown error';
 }
@@ -100,5 +116,21 @@ export async function retryWithBackoff(operation, maxRetries = 3, baseDelay = 10
         }
     }
     throw lastError;
+}
+/**
+ * Normalize any thrown value to an Error object
+ * Consolidates the pattern used throughout the codebase
+ */
+export function normalizeError(error) {
+    if (error instanceof Error) {
+        return error;
+    }
+    if (typeof error === 'string') {
+        return new Error(error);
+    }
+    if (error && typeof error === 'object' && 'message' in error) {
+        return new Error(String(error.message));
+    }
+    return new Error(String(error));
 }
 //# sourceMappingURL=error-utils.js.map

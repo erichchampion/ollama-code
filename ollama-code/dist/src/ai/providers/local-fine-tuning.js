@@ -11,6 +11,7 @@ import { BaseAIProvider, AICapability } from './base-provider.js';
 import { generateSecureId, generateRequestId } from '../../utils/id-generator.js';
 import { FINE_TUNING_CONFIG, getMergedConfig } from './config/advanced-features-config.js';
 import { DirectoryManager } from '../../utils/directory-manager.js';
+import { normalizeError } from '../../utils/error-utils.js';
 export class LocalFineTuningManager extends EventEmitter {
     datasets = new Map();
     jobs = new Map();
@@ -80,7 +81,7 @@ export class LocalFineTuningManager extends EventEmitter {
         }
         catch (error) {
             this.emit('error', error);
-            throw new Error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new Error(`Failed to create dataset: ${normalizeError(error).message}`);
         }
     }
     /**
@@ -117,7 +118,7 @@ export class LocalFineTuningManager extends EventEmitter {
         }
         catch (error) {
             job.status = 'failed';
-            job.error = error instanceof Error ? error.message : 'Unknown error';
+            job.error = normalizeError(error).message;
             this.emit('jobFailed', job);
             throw error;
         }

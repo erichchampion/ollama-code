@@ -9,6 +9,8 @@ import { EventEmitter } from 'events';
 import { BaseTool, ToolExecution, ToolExecutionContext, ToolOrchestratorConfig, ToolResult, OrchestrationPlan } from './types.js';
 import { toolRegistry } from './registry.js';
 import { logger } from '../utils/logger.js';
+import { EXECUTION_CONSTANTS } from '../config/constants.js';
+import { normalizeError } from '../utils/error-utils.js';
 
 // Re-export OrchestrationPlan for external use
 export type { OrchestrationPlan } from './types.js';
@@ -27,10 +29,10 @@ export class ToolOrchestrator extends EventEmitter {
   constructor(config: Partial<ToolOrchestratorConfig> = {}) {
     super();
     this.config = {
-      maxConcurrentTools: config.maxConcurrentTools || 5,
-      defaultTimeout: config.defaultTimeout || 30000,
+      maxConcurrentTools: config.maxConcurrentTools || EXECUTION_CONSTANTS.DEFAULT_MAX_CONCURRENT_TOOLS,
+      defaultTimeout: config.defaultTimeout || EXECUTION_CONSTANTS.DEFAULT_TASK_TIMEOUT,
       enableCaching: config.enableCaching !== false,
-      cacheTTL: config.cacheTTL || 300000 // 5 minutes
+      cacheTTL: config.cacheTTL || EXECUTION_CONSTANTS.CACHE_TTL
     };
   }
 
@@ -88,15 +90,16 @@ export class ToolOrchestrator extends EventEmitter {
       return result;
 
     } catch (error) {
+      const normalizedError = normalizeError(error);
       execution.status = 'failed';
       execution.endTime = new Date();
       execution.result = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: normalizedError.message
       };
 
-      this.emit('execution', { type: 'error', execution, data: error });
-      throw error;
+      this.emit('execution', { type: 'error', execution, data: normalizedError });
+      throw normalizedError;
 
     } finally {
       this.activeExecutions.delete(execution.id);
@@ -160,7 +163,7 @@ export class ToolOrchestrator extends EventEmitter {
 
       // Wait a bit before checking for more ready executions
       if (toStart.length === 0 && inProgress.size > 0) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, EXECUTION_CONSTANTS.TASK_POLL_INTERVAL));
       }
 
       // Prevent infinite loop
@@ -293,9 +296,9 @@ export class ToolOrchestrator extends EventEmitter {
   }
 
   private estimatePlanDuration(plan: OrchestrationPlan): number {
-    // Simplified estimation: assume each tool takes 5 seconds
+    // Simplified estimation based on configured average tool duration
     // In reality, this would be based on tool metadata and historical data
-    const avgToolDuration = 5000;
+    const avgToolDuration = EXECUTION_CONSTANTS.AVG_TOOL_DURATION_MS;
     const maxParallel = this.config.maxConcurrentTools;
     const totalTools = plan.executions.length;
 

@@ -5,6 +5,7 @@
  * throughout the application. All timeouts, limits, and thresholds should
  * be defined here.
  */
+import { TIMEOUT_CONSTANTS } from './constants.js';
 /**
  * Default configuration values
  */
@@ -105,7 +106,7 @@ export const DEFAULT_CONFIG = {
     integrations: {
         ollama: {
             url: 'http://localhost:11434',
-            timeout: 30 * 1000,
+            timeout: TIMEOUT_CONSTANTS.MEDIUM,
             enableHealthChecks: true,
             healthCheckInterval: 2 * 1000 // was in constants.ts:66
         },

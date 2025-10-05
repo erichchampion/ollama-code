@@ -5,6 +5,7 @@
  * Tracks changes and can revert them if operations fail.
  */
 import { logger } from './logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { ok, errFromError, errFromString, isErr } from '../types/result.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -129,7 +130,7 @@ export class RollbackManager {
                     logger.debug(`Rollback action executed: ${action.description}`);
                 }
                 catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    const errorMessage = normalizeError(error).message;
                     errors.push(`Failed to rollback ${action.description}: ${errorMessage}`);
                     logger.error(`Rollback action failed: ${action.description}`, error);
                 }
@@ -257,7 +258,7 @@ export class RollbackManager {
                 }
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const errorMessage = normalizeError(error).message;
                 errors.push(`${context.operationId}: ${errorMessage}`);
             }
         }

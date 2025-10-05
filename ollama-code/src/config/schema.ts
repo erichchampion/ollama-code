@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { TIMEOUT_CONSTANTS, RETRY_CONSTANTS } from './constants.js';
 import {
   DEFAULT_OLLAMA_URL,
   AI_COMPLETION_TIMEOUT,
@@ -129,10 +130,10 @@ export const configSchema = z.object({
   api: ApiConfigSchema.default({}),
   ollama: OllamaConfigSchema.default({
     baseUrl: 'http://localhost:11434',
-    timeout: 120000,
+    timeout: TIMEOUT_CONSTANTS.LONG,
     retryOptions: {
-      maxRetries: 3,
-      initialDelayMs: 1000,
+      maxRetries: RETRY_CONSTANTS.DEFAULT_MAX_RETRIES,
+      initialDelayMs: RETRY_CONSTANTS.BASE_RETRY_DELAY,
       maxDelayMs: 5000
     }
   }),

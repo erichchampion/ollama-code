@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { initTerminal } from '../terminal/index.js';
 import { formatErrorForDisplay } from '../errors/formatter.js';
 import { EnhancedIntentAnalyzer } from '../ai/enhanced-intent-analyzer.js';
@@ -24,6 +25,7 @@ import { initializeToolSystem, toolRegistry } from '../tools/index.js';
 import { registerCommands } from '../commands/register.js';
 import { EXIT_COMMANDS } from '../constants.js';
 import { createSpinner } from '../utils/spinner.js';
+import { AI_CONSTANTS, DELAY_CONSTANTS, THRESHOLD_CONSTANTS } from '../config/constants.js';
 
 export interface EnhancedModeOptions {
   autoApprove?: boolean;
@@ -398,7 +400,7 @@ export class EnhancedInteractiveMode {
 
     } catch (error) {
       saveSpinner.fail('Failed to save analysis');
-      this.terminal.error(`Failed to save analysis: ${error instanceof Error ? error.message : String(error)}`);
+      this.terminal.error(`Failed to save analysis: ${normalizeError(error).message}`);
       return true;
     }
   }
@@ -760,7 +762,7 @@ ${analysisResult.actions.map((action: any) =>
       }
     } catch (error) {
       toolSpinner.fail('Tool execution error');
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = normalizeError(error).message;
       this.terminal.error(`Tool execution failed: ${errorMessage}`);
 
       // Update conversation context with error
@@ -956,7 +958,7 @@ ${analysisResult.actions.map((action: any) =>
       // Get AI response using contextual prompt
       const aiClient = getAIClient();
       const response = await aiClient.complete(contextualPrompt, {
-        temperature: 0.7
+        temperature: AI_CONSTANTS.CREATIVE_TEMPERATURE
       });
 
       const responseText = response.message?.content || 'I apologize, but I couldn\'t generate a response.';
@@ -1217,7 +1219,7 @@ ${analysisResult.actions.map((action: any) =>
         this.terminal.text(`      ▶ ${task.description}`);
 
         // Simulate task execution with a brief delay
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.SHORT_DELAY));
 
         this.terminal.success(`      ✓ ${task.description} completed`);
       }
@@ -1683,7 +1685,7 @@ ${plan.tasks.map((task: any, index: number) =>
         this.terminal.text(`  ${index + 1}. ${suggestion}`);
       });
 
-      if (enhancedContext.confidence && enhancedContext.confidence > 0.7) {
+      if (enhancedContext.confidence && enhancedContext.confidence > THRESHOLD_CONSTANTS.CONFIDENCE.MEDIUM) {
         this.terminal.text(`  (Confidence: ${Math.round(enhancedContext.confidence * 100)}%)`);
       }
       console.log();

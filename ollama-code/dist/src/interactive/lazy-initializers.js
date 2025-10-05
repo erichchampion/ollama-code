@@ -5,6 +5,7 @@
  * Ensures proper initialization order and state management.
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { initAI, getAIClient, getEnhancedClient } from '../ai/index.js';
 export var AIInitState;
 (function (AIInitState) {
@@ -180,7 +181,7 @@ export class LazyInitializers {
                     issues.push('AI client not available');
             }
             catch (error) {
-                issues.push(`AI client error: ${error instanceof Error ? error.message : 'Unknown'}`);
+                issues.push(`AI client error: ${normalizeError(error).message}`);
             }
             try {
                 const enhancedClient = getEnhancedClient();
@@ -189,7 +190,7 @@ export class LazyInitializers {
                     issues.push('Enhanced client not available');
             }
             catch (error) {
-                issues.push(`Enhanced client error: ${error instanceof Error ? error.message : 'Unknown'}`);
+                issues.push(`Enhanced client error: ${normalizeError(error).message}`);
             }
             components.projectContext = !!this.aiInitResult.projectContext;
             if (!this.aiInitResult.projectContext) {
@@ -206,7 +207,7 @@ export class LazyInitializers {
             };
         }
         catch (error) {
-            issues.push(`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            issues.push(`Health check failed: ${normalizeError(error).message}`);
             return { healthy: false, issues, components };
         }
     }

@@ -19,6 +19,7 @@ import { AICacheManager } from '../optimization/ai-cache.js';
 import { FileOperationClassifier } from './file-operation-classifier.js';
 import { FileOperationIntent, FileOperationContext } from './file-operation-types.js';
 import { FILE_OPERATION_CONSTANTS } from '../constants/file-operations.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 
 export interface RoutingResult {
   type: 'command' | 'task_plan' | 'conversation' | 'clarification' | 'tool' | 'file_operation';
@@ -191,7 +192,7 @@ export class NaturalLanguageRouter {
 
             // Add timeout to prevent hanging on cache operations
             const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Cache operation timeout')), 3000);
+              setTimeout(() => reject(new Error('Cache operation timeout')), DELAY_CONSTANTS.CACHE_TIMEOUT_DELAY);
             });
 
             await Promise.race([

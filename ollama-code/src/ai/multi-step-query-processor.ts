@@ -9,6 +9,7 @@ import { logger } from '../utils/logger.js';
 import { ProjectContext } from './context.js';
 import { UserIntent } from './intent-analyzer.js';
 import { ConversationManager } from './conversation-manager.js';
+import { AI_CONSTANTS, THRESHOLD_CONSTANTS } from '../config/constants.js';
 
 export interface QuerySession {
   id: string;
@@ -205,10 +206,10 @@ export class MultiStepQueryProcessor {
         workingDirectory: this.querySession.context.workingDirectory,
         recentFiles: this.projectContext?.allFiles.slice(0, 20).map(f => f.path) || []
       });
-      queryInfo.confidence = queryInfo.intent?.confidence || 0.5;
+      queryInfo.confidence = queryInfo.intent?.confidence || THRESHOLD_CONSTANTS.CONFIDENCE.BASE;
     } catch (error) {
       logger.warn('Intent analysis failed, using fallback', { error });
-      queryInfo.confidence = 0.5;
+      queryInfo.confidence = THRESHOLD_CONSTANTS.CONFIDENCE.BASE;
     }
 
     this.querySession.queries.push(queryInfo);
@@ -333,7 +334,7 @@ export class MultiStepQueryProcessor {
 
     try {
       const response = await this.aiClient.complete(prompt, {
-        temperature: 0.7,
+        temperature: AI_CONSTANTS.CREATIVE_TEMPERATURE,
         enableToolUse: true
       });
 

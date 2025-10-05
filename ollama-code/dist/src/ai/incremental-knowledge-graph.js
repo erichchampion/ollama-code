@@ -18,6 +18,7 @@ import { GitChangeTracker } from './git-change-tracker.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 /**
  * Incremental Knowledge Graph Implementation
  *
@@ -168,7 +169,7 @@ export class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
             this.updateQueue.push(change);
             // Process updates in background if enabled
             if (this.incrementalConfig.enableBackgroundUpdates) {
-                setTimeout(() => this.processUpdateQueue(), 1000); // Debounce updates
+                setTimeout(() => this.processUpdateQueue(), DELAY_CONSTANTS.MEDIUM_DELAY); // Debounce updates
             }
         }
         catch (error) {
@@ -217,7 +218,7 @@ export class IncrementalKnowledgeGraph extends CodeKnowledgeGraph {
         }
         // Process remaining changes
         if (this.updateQueue.length > 0) {
-            setTimeout(() => this.processUpdateQueue(), 500);
+            setTimeout(() => this.processUpdateQueue(), DELAY_CONSTANTS.SHORT_DELAY);
         }
     }
     /**

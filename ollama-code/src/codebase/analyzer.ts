@@ -6,6 +6,7 @@
  */
 
 import path from 'path';
+import { normalizeError } from '../utils/error-utils.js';
 import fs from 'fs/promises';
 import { fileExists, directoryExists, readTextFile, findFiles } from '../fs/operations.js';
 import { logger } from '../utils/logger.js';
@@ -241,7 +242,7 @@ export async function analyzeCodebase(
     }
   } catch (error) {
     logger.error('Failed to scan directory for files', error);
-    throw createUserError(`Failed to scan codebase: ${error instanceof Error ? error.message : String(error)}`, {
+    throw createUserError(`Failed to scan codebase: ${normalizeError(error).message}`, {
       cause: error,
       category: ErrorCategory.FILE_SYSTEM
     });

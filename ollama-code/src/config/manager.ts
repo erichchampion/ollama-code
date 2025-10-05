@@ -16,6 +16,7 @@ import os from 'os';
 import { logger } from '../utils/logger.js';
 import { createSpinner } from '../utils/spinner.js';
 import { fileExists } from '../fs/operations.js';
+import { AI_CONSTANTS, TIMEOUT_CONSTANTS } from './constants.js';
 
 export interface UserConfig {
   // AI Settings
@@ -462,9 +463,9 @@ export class ConfigManager {
     return {
       ai: {
         defaultModel: 'qwen2.5-coder:latest',
-        temperature: 0.7,
+        temperature: AI_CONSTANTS.CREATIVE_TEMPERATURE,
         maxTokens: 4096,
-        timeout: 120000,
+        timeout: TIMEOUT_CONSTANTS.LONG,
         enableProjectContext: true,
         enableToolUse: true
       },

@@ -3,6 +3,7 @@
  *
  * Phase 2.3: Visual diff and change preview system for file operations
  */
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { detectFileLanguage } from '../utils/file-operation-helpers.js';
@@ -39,7 +40,7 @@ export class ChangePreviewEngine {
         }
         catch (error) {
             logger.error('Change preview generation failed:', error);
-            throw new Error(`Failed to generate change preview: ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Failed to generate change preview: ${normalizeError(error).message}`);
         }
     }
     /**

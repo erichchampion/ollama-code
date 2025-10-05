@@ -6,6 +6,7 @@
  */
 
 import { ErrorManager } from './types.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -55,7 +56,7 @@ export function reportErrorToSentry(
   } = {}
 ): void {
   logger.debug('Would report error to Sentry:', {
-    error: error instanceof Error ? error.message : String(error),
+    error: normalizeError(error).message,
     level: options.level,
     tags: options.tags,
     user: options.user ? {

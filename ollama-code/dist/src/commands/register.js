@@ -4,6 +4,7 @@
  * Registers all available CLI commands with the command registry.
  */
 import { commandRegistry, ArgType } from './index.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
 import { getAIClient, getEnhancedClient, isEnhancedAIInitialized, cleanupAI } from '../ai/index.js';
 import { readTextFile } from '../fs/operations.js';
@@ -13,6 +14,7 @@ import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
 import { createSpinner } from '../utils/spinner.js';
 import { MAX_SEARCH_RESULTS } from '../constants.js';
+import { AI_CONSTANTS, TIMEOUT_CONSTANTS, DELAY_CONSTANTS } from '../config/constants.js';
 import { validateNonEmptyString, validateFileExists, sanitizeSearchTerm, sanitizeOutput, validateInputSize, validateRateLimit, validateConfigurationValue, sanitizeConfigurationOutput, validateFileTypeForProcessing, validateContentIntegrity, logSecurityEvent, sanitizeConfigurationValue } from '../utils/command-helpers.js';
 // import { toolCommand } from './tool.js';
 import { registerGitCommands } from './git-commands.js';
@@ -177,7 +179,7 @@ function registerAskCommand() {
                         // Get direct AI response with context
                         const aiClient = getAIClient();
                         const response = await aiClient.complete(contextualQuestion, {
-                            temperature: 0.7,
+                            temperature: AI_CONSTANTS.CREATIVE_TEMPERATURE,
                             model: args.model
                         });
                         spinner.succeed('Response ready');
@@ -595,7 +597,7 @@ function registerGenerateCommand() {
                 }
                 catch (error) {
                     spinner.fail('Generation failed');
-                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    const errorMessage = normalizeError(error).message;
                     if (errorMessage.includes('timeout')) {
                         console.error('The request timed out. Please check that Ollama is running and try again.');
                     }
@@ -727,7 +729,7 @@ function registerConfigCommand() {
                 }
             }
             catch (error) {
-                logger.error(`Error executing config command: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error executing config command: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -794,7 +796,7 @@ function registerRunCommand() {
                 logger.debug(`Executing: ${sanitizedCommand}`);
                 // Execute with security constraints
                 const { stdout, stderr } = await execPromise(sanitizedCommand, {
-                    timeout: 30000, // 30 second timeout
+                    timeout: TIMEOUT_CONSTANTS.MEDIUM, // 30 second timeout
                     cwd: process.cwd(), // Restrict to current working directory
                     env: {
                         ...process.env,
@@ -810,7 +812,7 @@ function registerRunCommand() {
                 logger.info('Command executed successfully');
             }
             catch (error) {
-                logger.error(`Error executing command: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error executing command: ${normalizeError(error).message}`);
                 if (error instanceof Error) {
                     console.error(`Error: ${error.message}`);
                 }
@@ -943,7 +945,7 @@ function registerSearchCommand() {
                     logger.debug(`Running search command: ${searchCommand}`);
                     const { stdout, stderr } = await execPromise(searchCommand, {
                         maxBuffer: 10 * 1024 * 1024, // 10MB buffer
-                        timeout: 30000 // 30 second timeout
+                        timeout: TIMEOUT_CONSTANTS.MEDIUM // 30 second timeout
                     });
                     if (stderr) {
                         spinner.setText('Search completed with warnings');
@@ -975,7 +977,7 @@ function registerSearchCommand() {
                 }
             }
             catch (error) {
-                logger.error(`Error searching codebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error searching codebase: ${normalizeError(error).message}`);
                 if (error instanceof Error) {
                     console.error(`Error: ${error.message}`);
                 }
@@ -1061,7 +1063,7 @@ function registerThemeCommand() {
                 console.log('Note: Theme changes are only temporary for this session. Use the config command to make permanent changes.');
             }
             catch (error) {
-                logger.error(`Error changing theme: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error changing theme: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -1143,7 +1145,7 @@ function registerVerbosityCommand() {
                 console.log(`Verbosity level set to: ${level}`);
             }
             catch (error) {
-                logger.error(`Error changing verbosity level: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error changing verbosity level: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -1252,10 +1254,10 @@ function registerEditCommand() {
                     }
                 });
                 // Wait for the editor to start
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+                await new Promise((resolve) => setTimeout(resolve, DELAY_CONSTANTS.MEDIUM_DELAY));
             }
             catch (error) {
-                logger.error(`Error editing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error editing file: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -1343,7 +1345,7 @@ function registerGitCommand() {
                 }
             }
             catch (error) {
-                logger.error(`Error executing git operation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error executing git operation: ${normalizeError(error).message}`);
                 if (error instanceof Error) {
                     console.error(`Error: ${error.message}`);
                 }
@@ -1463,7 +1465,7 @@ function registerResetCommand() {
                 logger.info('Conversation context reset completed');
             }
             catch (error) {
-                logger.error(`Error resetting conversation context: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error resetting conversation context: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -1498,7 +1500,7 @@ function registerHistoryCommand() {
                 // - Implementing a session-based history tracker
             }
             catch (error) {
-                logger.error(`Error retrieving conversation history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error retrieving conversation history: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -1582,7 +1584,7 @@ function registerCommandsCommand() {
                 console.log('  /help <command>');
             }
             catch (error) {
-                logger.error(`Error listing commands: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error listing commands: ${normalizeError(error).message}`);
                 throw error;
             }
         },
@@ -1679,7 +1681,7 @@ function registerHelpCommand() {
                 logger.info('Help information retrieved');
             }
             catch (error) {
-                logger.error(`Error retrieving help: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                logger.error(`Error retrieving help: ${normalizeError(error).message}`);
                 throw error;
             }
         },

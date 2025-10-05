@@ -5,8 +5,10 @@
  */
 
 import inquirer from 'inquirer';
+import { normalizeError } from '../utils/error-utils.js';
 import { PromptOptions, TerminalConfig } from './types.js';
 import { logger } from '../utils/logger.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 
 /**
  * Create and display a prompt for user input
@@ -29,7 +31,7 @@ export async function createPrompt<T>(options: PromptOptions, config: TerminalCo
   if (!isInteractive) {
     // Additional check: sometimes TTY state can be temporarily affected
     // Try a small delay and check again
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE));
     const isInteractiveRetry = process.stdin.isTTY && process.stdout.isTTY;
 
     if (!isInteractiveRetry) {
@@ -63,7 +65,7 @@ export async function createPrompt<T>(options: PromptOptions, config: TerminalCo
     return result as T;
   } catch (error) {
     logger.error('Error in prompt', error);
-    throw new Error(`Failed to prompt for ${options.name}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Failed to prompt for ${options.name}: ${normalizeError(error).message}`);
   }
 }
 

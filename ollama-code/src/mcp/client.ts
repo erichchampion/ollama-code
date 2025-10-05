@@ -8,6 +8,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { logger } from '../utils/logger.js';
 import { ConfigType } from '../config/schema.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 
 export interface MCPTool {
   name: string;
@@ -374,7 +375,7 @@ class MCPClientConnection {
           clearTimeout(timeout);
           resolve();
         } else {
-          setTimeout(checkConnection, 100);
+          setTimeout(checkConnection, DELAY_CONSTANTS.BRIEF_PAUSE);
         }
       };
 

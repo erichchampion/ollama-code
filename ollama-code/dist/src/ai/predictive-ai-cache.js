@@ -6,10 +6,12 @@
  * Designed to achieve 80% faster cached responses and >80% cache hit rates.
  */
 import { EventEmitter } from 'events';
+import { normalizeError } from '../utils/error-utils.js';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { IntelligentCache, CachePriority as MemoryCachePriority } from './memory-optimizer.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 // Use CachePriority from memory-optimizer
 export const CachePriority = MemoryCachePriority;
 /**
@@ -320,11 +322,11 @@ export class PredictiveAICache extends EventEmitter {
                 catch (error) {
                     logger.warn('Prefetch failed', {
                         queryHash: prediction.queryHash.substring(0, 8),
-                        error: error instanceof Error ? error.message : String(error)
+                        error: normalizeError(error).message
                     });
                 }
                 // Small delay to avoid overwhelming the system
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE));
             }
         }
         finally {

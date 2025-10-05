@@ -8,6 +8,7 @@
  * - Automatic garbage collection
  */
 import { logger } from '../utils/logger.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 export class MemoryManager {
     cache = new Map();
     maxCacheSize = 100 * 1024 * 1024; // 100MB default
@@ -139,7 +140,7 @@ export class MemoryManager {
             logger.debug('Forced garbage collection');
         }
         // Small delay to allow cleanup
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE));
     }
     /**
      * Configure memory limits

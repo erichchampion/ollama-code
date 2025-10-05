@@ -6,6 +6,7 @@
  */
 import { spawn } from 'child_process';
 import { logger } from '../utils/logger.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 export class MCPClient {
     connections = new Map();
     config;
@@ -281,7 +282,7 @@ class MCPClientConnection {
                     resolve();
                 }
                 else {
-                    setTimeout(checkConnection, 100);
+                    setTimeout(checkConnection, DELAY_CONSTANTS.BRIEF_PAUSE);
                 }
             };
             checkConnection();

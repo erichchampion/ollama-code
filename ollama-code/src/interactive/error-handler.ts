@@ -6,6 +6,10 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { normalizeError, getErrorMessage } from '../utils/error-utils.js';
+
+// Re-export for backward compatibility
+export { normalizeError, getErrorMessage };
 
 /**
  * Standard error context information
@@ -69,50 +73,6 @@ export class ComponentError extends Error {
 
     return diagnostics;
   }
-}
-
-/**
- * Normalize any error to a proper Error instance
- */
-export function normalizeError(error: unknown): Error {
-  if (error instanceof Error) {
-    return error;
-  }
-
-  if (typeof error === 'string') {
-    return new Error(error);
-  }
-
-  if (error && typeof error === 'object') {
-    const errorObj = error as any;
-    if (errorObj.message) {
-      return new Error(errorObj.message);
-    }
-  }
-
-  return new Error(String(error));
-}
-
-/**
- * Extract error message safely
- */
-export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  if (error && typeof error === 'object') {
-    const errorObj = error as any;
-    if (errorObj.message) {
-      return String(errorObj.message);
-    }
-  }
-
-  return String(error);
 }
 
 /**

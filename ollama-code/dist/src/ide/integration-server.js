@@ -5,6 +5,7 @@
  * Provides real-time AI assistance, code analysis, and project intelligence.
  */
 import { WebSocketServer, WebSocket } from 'ws';
+import { normalizeError } from '../utils/error-utils.js';
 import { createServer } from 'http';
 import { logger } from '../utils/logger.js';
 import { commandRegistry, executeCommand } from '../commands/index.js';
@@ -186,7 +187,7 @@ export class IDEIntegrationServer extends EventEmitter {
         }
         catch (error) {
             logger.error(`Error handling request ${request.type}:`, error);
-            this.sendError(client, request.id, error instanceof Error ? error.message : 'Unknown error');
+            this.sendError(client, request.id, normalizeError(error).message);
         }
     }
     /**

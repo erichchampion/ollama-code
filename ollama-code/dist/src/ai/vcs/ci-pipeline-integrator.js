@@ -5,6 +5,7 @@
  * for comprehensive analysis in CI/CD environments.
  */
 import * as fs from 'fs/promises';
+import { normalizeError } from '../../utils/error-utils.js';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -164,7 +165,7 @@ export class CIPipelineIntegrator {
                         status: 'failed',
                         actualValue: 0,
                         expectedValue: 1,
-                        message: `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        message: `Analysis failed: ${normalizeError(error).message}`
                     }],
                 recommendations: ['Fix analysis execution issues before proceeding'],
                 reportUrls: []

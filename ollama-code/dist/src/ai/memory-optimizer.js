@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger.js';
 import { getPerformanceConfig } from '../config/performance.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 export var CachePriority;
 (function (CachePriority) {
     CachePriority[CachePriority["LOW"] = 1] = "LOW";
@@ -273,11 +274,11 @@ export class IntelligentCache extends EventEmitter {
         setInterval(() => {
             const memoryLimit = this.config.maxMemoryMB * 1024 * 1024;
             const usage = this.memoryUsage / memoryLimit;
-            if (usage > 0.9) {
+            if (usage > THRESHOLD_CONSTANTS.MEMORY.CRITICAL_USAGE) {
                 this.emit('memoryPressure', { usage, level: 'critical' });
                 this.evictMemoryEntries(memoryLimit * 0.3);
             }
-            else if (usage > 0.7) {
+            else if (usage > THRESHOLD_CONSTANTS.MEMORY.WARNING_USAGE) {
                 this.emit('memoryPressure', { usage, level: 'high' });
             }
         }, 30000); // Check every 30 seconds
@@ -304,7 +305,7 @@ export class IntelligentCache extends EventEmitter {
     getOptimizationRecommendations() {
         const recommendations = [];
         const stats = this.getStats();
-        if (stats.hitRate < 0.6) {
+        if (stats.hitRate < THRESHOLD_CONSTANTS.CACHE.MIN_HIT_RATE) {
             recommendations.push({
                 type: 'cache',
                 severity: 'high',
@@ -313,7 +314,7 @@ export class IntelligentCache extends EventEmitter {
                 potentialSavings: 1024 * 1024 * 50 // 50MB estimated
             });
         }
-        if (stats.totalMemoryUsage > this.config.maxMemoryMB * 1024 * 1024 * 0.8) {
+        if (stats.totalMemoryUsage > this.config.maxMemoryMB * 1024 * 1024 * THRESHOLD_CONSTANTS.MEMORY.HIGH_USAGE) {
             recommendations.push({
                 type: 'memory',
                 severity: 'medium',

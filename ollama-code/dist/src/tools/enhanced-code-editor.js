@@ -7,6 +7,7 @@
  * Built upon the existing CodeEditor foundation with enhanced capabilities.
  */
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { CodeEditor } from './code-editor.js';
@@ -135,7 +136,7 @@ export class EnhancedCodeEditor extends CodeEditor {
             return {
                 success: false,
                 editId: uuidv4(),
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: normalizeError(error).message,
                 affectedFiles: [fileOp.path]
             };
         }
@@ -357,7 +358,7 @@ export const {{routeName}} = async (req: Request, res: Response): Promise<void> 
                 previews.push({
                     success: false,
                     editId: `preview-${uuidv4()}`,
-                    error: error instanceof Error ? error.message : 'Preview generation failed',
+                    error: normalizeError(error).message,
                     affectedFiles: [fileOp.path]
                 });
             }

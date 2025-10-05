@@ -3,6 +3,7 @@
  *
  * Commands for managing external MCP server connections
  */
+import { normalizeError } from '../utils/error-utils.js';
 import { logger } from '../utils/logger.js';
 import { UserError } from '../errors/types.js';
 import { ArgType } from './types.js';
@@ -149,7 +150,7 @@ export const mcpClientCallToolCommand = {
         }
         catch (error) {
             logger.error('Failed to call MCP tool:', error);
-            throw new UserError(`Failed to call MCP tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new UserError(`Failed to call MCP tool: ${normalizeError(error).message}`);
         }
     },
     args: [
@@ -199,7 +200,7 @@ export const mcpClientGetResourceCommand = {
         }
         catch (error) {
             logger.error('Failed to get MCP resource:', error);
-            throw new UserError(`Failed to get MCP resource: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new UserError(`Failed to get MCP resource: ${normalizeError(error).message}`);
         }
     },
     args: [
@@ -313,7 +314,7 @@ export const mcpClientReconnectCommand = {
         }
         catch (error) {
             logger.error('Failed to reconnect to MCP server:', error);
-            throw new UserError(`Failed to reconnect to MCP server: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new UserError(`Failed to reconnect to MCP server: ${normalizeError(error).message}`);
         }
     }
 };

@@ -13,6 +13,7 @@ import { promises as fs } from 'fs';
 import { getEnhancedClient } from '../ai/index.js';
 import { createSpinner } from '../utils/spinner.js';
 import { fileExists } from '../fs/operations.js';
+import { AI_CONSTANTS } from '../config/constants.js';
 export class RefactoringManager {
     workingDir;
     constructor(workingDir = process.cwd()) {
@@ -51,7 +52,7 @@ For each opportunity, provide:
 
 Return as JSON array of RefactoringOperation objects.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.3
+                temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
             });
             let operations;
             try {
@@ -162,7 +163,7 @@ Please:
 
 Return the complete refactored file content.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.2
+                temperature: AI_CONSTANTS.REFACTOR_TEMPERATURE
             });
             // Backup original file
             await fs.writeFile(`${filePath}.backup`, code);
@@ -203,7 +204,7 @@ Please:
 
 Return the complete refactored file content.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.2
+                temperature: AI_CONSTANTS.REFACTOR_TEMPERATURE
             });
             // Backup and write
             await fs.writeFile(`${filePath}.backup`, code);
@@ -246,7 +247,7 @@ ${code}
 
 Return the updated code with the symbol renamed appropriately.`;
                 const response = await aiClient.complete(prompt, {
-                    temperature: 0.1 // Very low temperature for precise renaming
+                    temperature: AI_CONSTANTS.ANALYSIS_TEMPERATURE
                 });
                 // Check if any changes were made
                 if (response.content !== code) {
@@ -290,7 +291,7 @@ Maintain functionality while improving performance. Add comments explaining opti
 
 Return the optimized code.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.3
+                temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
             });
             // Backup and write
             await fs.writeFile(`${filePath}.backup`, code);
@@ -330,7 +331,7 @@ Please:
 
 Return the refactored code with the design pattern applied.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.3
+                temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
             });
             // Backup and write
             await fs.writeFile(`${filePath}.backup`, code);
@@ -479,7 +480,7 @@ Identify specific issues like:
 
 Return as JSON array of CodeSmell objects with type, severity, location, description, and suggestion.`;
             const response = await aiClient.complete(prompt, {
-                temperature: 0.3
+                temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
             });
             return JSON.parse(response.content);
         }

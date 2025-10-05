@@ -9,6 +9,7 @@
  * - Secure authentication and permission management
  */
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 export class MCPServer {
     tools = new Map();
     resources = new Map();
@@ -92,7 +93,7 @@ export class MCPServer {
             return {
                 content: [{
                         type: 'text',
-                        text: `Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        text: `Tool execution failed: ${normalizeError(error).message}`
                     }],
                 isError: true
             };

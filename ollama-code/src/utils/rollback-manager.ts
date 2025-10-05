@@ -6,6 +6,7 @@
  */
 
 import { logger } from './logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { Result, ok, err, errFromError, errFromString, ErrorDetails, isErr } from '../types/result.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -190,7 +191,7 @@ export class RollbackManager {
           await this.executeRollbackAction(action);
           logger.debug(`Rollback action executed: ${action.description}`);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage = normalizeError(error).message;
           errors.push(`Failed to rollback ${action.description}: ${errorMessage}`);
           logger.error(`Rollback action failed: ${action.description}`, error);
         }
@@ -337,7 +338,7 @@ export class RollbackManager {
           errors.push(`${context.operationId}: ${result.error.message}`);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = normalizeError(error).message;
         errors.push(`${context.operationId}: ${errorMessage}`);
       }
     }

@@ -5,6 +5,7 @@
  */
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import { RISK_CONFIG, FILE_SIZE_THRESHOLDS } from './safety-constants.js';
 import { isSystemFile, isConfigFile, isSecurityFile } from './safety-utils.js';
 export class RiskAssessmentEngine {
@@ -219,13 +220,13 @@ export class RiskAssessmentEngine {
      * Calculate confidence in the risk assessment
      */
     calculateConfidence(riskFactors, targets) {
-        let confidence = 0.8; // Base confidence
+        let confidence = THRESHOLD_CONSTANTS.RISK.BASE_CONFIDENCE; // Base confidence
         // Reduce confidence for unknown file types
         const unknownFiles = targets.filter(t => !t.language);
-        confidence -= (unknownFiles.length / targets.length) * 0.2;
+        confidence -= (unknownFiles.length / targets.length) * THRESHOLD_CONSTANTS.RISK.UNKNOWN_FILE_PENALTY;
         // Reduce confidence for very large operations
         if (targets.length > 20) {
-            confidence -= 0.1;
+            confidence -= THRESHOLD_CONSTANTS.RISK.UNCLEAR_SCOPE_PENALTY;
         }
         // Increase confidence for well-understood risks
         const knownRiskTypes = new Set([
@@ -234,7 +235,7 @@ export class RiskAssessmentEngine {
             'configuration_changes'
         ]);
         const knownRisks = riskFactors.filter(f => knownRiskTypes.has(f.type));
-        confidence += (knownRisks.length / Math.max(riskFactors.length, 1)) * 0.1;
+        confidence += (knownRisks.length / Math.max(riskFactors.length, 1)) * THRESHOLD_CONSTANTS.RISK.KNOWN_RISK_BONUS;
         return Math.max(0.1, Math.min(1.0, confidence));
     }
     /**

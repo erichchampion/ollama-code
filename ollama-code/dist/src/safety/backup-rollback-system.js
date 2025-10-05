@@ -4,6 +4,7 @@
  * Phase 2.3: Comprehensive backup and rollback capabilities for file operations
  */
 import * as fs from 'fs/promises';
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { logger } from '../utils/logger.js';
@@ -44,7 +45,7 @@ export class BackupRollbackSystem {
         }
         catch (error) {
             logger.error(`Backup creation failed for operation ${operationId}:`, error);
-            throw new Error(`Failed to create backup: ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Failed to create backup: ${normalizeError(error).message}`);
         }
     }
     /**
@@ -155,7 +156,7 @@ export class BackupRollbackSystem {
                     logger.debug(`Completed rollback step ${step.order}: ${step.description}`);
                 }
                 catch (error) {
-                    const errorMsg = `Step ${step.order} failed: ${error instanceof Error ? error.message : String(error)}`;
+                    const errorMsg = `Step ${step.order} failed: ${normalizeError(error).message}`;
                     logger.error(errorMsg);
                     errors.push(errorMsg);
                     if (!step.fallback || step.fallback.length === 0) {
@@ -190,7 +191,7 @@ export class BackupRollbackSystem {
             return { success, errors };
         }
         catch (error) {
-            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorMsg = normalizeError(error).message;
             logger.error(`Rollback execution failed: ${errorMsg}`);
             errors.push(`Rollback execution failed: ${errorMsg}`);
             return { success: false, errors };
@@ -266,7 +267,7 @@ export class BackupRollbackSystem {
             }
         }
         catch (error) {
-            throw new Error(`Failed to delete ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Failed to delete ${filePath}: ${normalizeError(error).message}`);
         }
     }
     /**
@@ -475,7 +476,7 @@ export class BackupRollbackSystem {
                     logger.debug(`Cleaned up old backup: ${backup.id}`);
                 }
                 catch (error) {
-                    logger.warn(`Failed to cleanup backup ${backup.id}:`, error instanceof Error ? error.message : String(error));
+                    logger.warn(`Failed to cleanup backup ${backup.id}:`, normalizeError(error).message);
                 }
             }
         }

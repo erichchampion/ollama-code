@@ -15,6 +15,7 @@ import { performance } from 'perf_hooks';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { getMemoryUsageMB } from '../utils/memory.js';
+import { DELAY_CONSTANTS } from '../config/constants.js';
 
 export interface StartupMetrics {
   totalStartupTime: number;
@@ -475,7 +476,7 @@ export class StartupOptimizer extends EventEmitter {
     logger.info('Initializing core systems');
 
     // Simulate core system initialization
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE));
 
     this.metrics.coreInitTime += performance.now() - initStart;
     this.emit('phase:complete', { phase: 'core-init', time: this.metrics.coreInitTime });
@@ -487,7 +488,7 @@ export class StartupOptimizer extends EventEmitter {
     logger.info('Preloading caches and indexes');
 
     // Simulate cache preloading
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, DELAY_CONSTANTS.BRIEF_PAUSE * 2));
 
     this.metrics.cacheWarmupTime = performance.now() - cacheStart;
     this.emit('phase:complete', { phase: 'cache-preload', time: this.metrics.cacheWarmupTime });

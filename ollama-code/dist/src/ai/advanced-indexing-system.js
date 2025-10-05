@@ -9,6 +9,7 @@
  * - Index maintenance during incremental updates
  */
 import { ManagedEventEmitter } from '../utils/managed-event-emitter.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { getPerformanceConfig } from '../config/performance.js';
 export class BTreeIndex {
     root;
@@ -556,7 +557,7 @@ export class AdvancedIndexingSystem extends ManagedEventEmitter {
             this.emit('nodeIndexed', { nodeId, indexCount: this.getIndexCount() });
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = normalizeError(error).message;
             this.emit('indexError', { nodeId, error: errorMessage });
             throw error;
         }
@@ -589,7 +590,7 @@ export class AdvancedIndexingSystem extends ManagedEventEmitter {
             this.emit('nodeUnindexed', { nodeId });
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = normalizeError(error).message;
             this.emit('indexError', { nodeId, error: errorMessage });
             throw error;
         }
@@ -640,7 +641,7 @@ export class AdvancedIndexingSystem extends ManagedEventEmitter {
             this.emit('rebuildCompleted');
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = normalizeError(error).message;
             this.emit('rebuildError', { error: errorMessage });
             throw error;
         }

@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { initAI, getAIClient, getEnhancedClient } from '../ai/index.js';
 import { OllamaClient } from '../ai/ollama-client.js';
 import { EnhancedClient } from '../ai/enhanced-client.js';
@@ -230,7 +231,7 @@ export class LazyInitializers {
         components.aiClient = !!aiClient;
         if (!aiClient) issues.push('AI client not available');
       } catch (error) {
-        issues.push(`AI client error: ${error instanceof Error ? error.message : 'Unknown'}`);
+        issues.push(`AI client error: ${normalizeError(error).message}`);
       }
 
       try {
@@ -238,7 +239,7 @@ export class LazyInitializers {
         components.enhancedClient = !!enhancedClient;
         if (!enhancedClient) issues.push('Enhanced client not available');
       } catch (error) {
-        issues.push(`Enhanced client error: ${error instanceof Error ? error.message : 'Unknown'}`);
+        issues.push(`Enhanced client error: ${normalizeError(error).message}`);
       }
 
       components.projectContext = !!this.aiInitResult.projectContext;
@@ -258,7 +259,7 @@ export class LazyInitializers {
       };
 
     } catch (error) {
-      issues.push(`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      issues.push(`Health check failed: ${normalizeError(error).message}`);
       return { healthy: false, issues, components };
     }
   }

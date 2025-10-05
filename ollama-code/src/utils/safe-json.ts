@@ -6,6 +6,7 @@
  */
 
 import { logger } from './logger.js';
+import { normalizeError } from '../utils/error-utils.js';
 
 export interface SafeJsonOptions {
   maxDepth?: number;
@@ -98,7 +99,7 @@ export function safeStringify(
               result[prop] = circularReplacer(prop, value[prop], currentDepth + 1);
             }
           } catch (error) {
-            result[prop] = `[Error accessing property: ${error instanceof Error ? error.message : 'Unknown'}]`;
+            result[prop] = `[Error accessing property: ${normalizeError(error).message}]`;
           }
         }
       }
@@ -113,7 +114,7 @@ export function safeStringify(
     return JSON.stringify(obj, circularReplacer, space);
   } catch (error) {
     logger.error('Safe JSON stringify failed:', error);
-    return `[JSON Stringify Error: ${error instanceof Error ? error.message : 'Unknown'}]`;
+    return `[JSON Stringify Error: ${normalizeError(error).message}]`;
   }
 }
 

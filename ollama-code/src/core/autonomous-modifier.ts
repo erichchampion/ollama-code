@@ -6,6 +6,7 @@
  */
 
 import { CodeEditor, CodeEdit, EditResult } from '../tools/code-editor.js';
+import { normalizeError } from '../utils/error-utils.js';
 import { ASTManipulator, CodeTransformation } from '../tools/ast-manipulator.js';
 import { BackupManager, Checkpoint, BackupResult, RestoreResult } from './backup-manager.js';
 import { logger } from '../utils/logger.js';
@@ -123,7 +124,7 @@ export class AutonomousModifier {
         } catch (error) {
           const modError: ModificationError = {
             operation,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: normalizeError(error).message,
             recoverable: this.isRecoverableError(error)
           };
 
@@ -183,7 +184,7 @@ export class AutonomousModifier {
         failedOperations: plan.operations.length,
         errors: [{
           operation: plan.operations[0],
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: normalizeError(error).message,
           recoverable: false
         }]
       };

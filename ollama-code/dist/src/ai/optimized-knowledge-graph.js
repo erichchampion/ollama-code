@@ -15,6 +15,7 @@
  */
 import { IncrementalKnowledgeGraph } from './incremental-knowledge-graph.js';
 import { GraphPartitionManager } from './graph-partitioning.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 /**
  * Optimized Knowledge Graph Implementation
  *
@@ -615,7 +616,7 @@ export class OptimizedKnowledgeGraph extends IncrementalKnowledgeGraph {
         if (this.performanceMetrics.queries.avgQueryTime > 500) {
             bottlenecks.push('slow_queries');
         }
-        if (this.performanceMetrics.queries.cacheHitRate < 0.7) {
+        if (this.performanceMetrics.queries.cacheHitRate < THRESHOLD_CONSTANTS.CACHE.TARGET_HIT_RATE) {
             bottlenecks.push('low_cache_hit_rate');
         }
         if (this.performanceMetrics.graph.memoryUsage > 2048) {

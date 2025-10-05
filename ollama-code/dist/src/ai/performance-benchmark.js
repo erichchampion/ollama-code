@@ -6,6 +6,7 @@
  * and memory usage tracking.
  */
 import { performance } from 'perf_hooks';
+import { normalizeError } from '../utils/error-utils.js';
 import * as os from 'os';
 import * as fs from 'fs/promises';
 import { logger } from '../utils/logger.js';
@@ -135,7 +136,7 @@ export class PerformanceBenchmark {
             return { result, benchmark };
         }
         catch (error) {
-            const benchmark = this.endTimer(operationName, category, metadata, false, error instanceof Error ? error.message : String(error));
+            const benchmark = this.endTimer(operationName, category, metadata, false, normalizeError(error).message);
             throw error;
         }
     }

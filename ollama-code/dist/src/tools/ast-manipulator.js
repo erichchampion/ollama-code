@@ -5,6 +5,7 @@
  * for safe and precise code modifications.
  */
 import { promises as fs } from 'fs';
+import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 export class ASTManipulator {
     languageSupport = new Map();
@@ -96,7 +97,7 @@ export class ASTManipulator {
                 originalCode: '',
                 modifiedCode: '',
                 changes: [],
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -125,7 +126,7 @@ export class ASTManipulator {
                 originalCode: '',
                 modifiedCode: '',
                 changes: [],
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -154,7 +155,7 @@ export class ASTManipulator {
                 originalCode: '',
                 modifiedCode: '',
                 changes: [],
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -183,7 +184,7 @@ export class ASTManipulator {
                 originalCode: '',
                 modifiedCode: '',
                 changes: [],
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -229,7 +230,7 @@ export class ASTManipulator {
                 originalCode: '',
                 modifiedCode: '',
                 changes: [],
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: normalizeError(error).message
             };
         }
     }
@@ -548,7 +549,7 @@ class JSONHandler extends LanguageHandler {
             };
         }
         catch (error) {
-            throw new Error(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new Error(`Invalid JSON: ${normalizeError(error).message}`);
         }
     }
     extractFunctions(code) {

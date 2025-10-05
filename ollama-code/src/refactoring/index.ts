@@ -16,6 +16,7 @@ import { logger } from '../utils/logger.js';
 import { getEnhancedClient } from '../ai/index.js';
 import { createSpinner } from '../utils/spinner.js';
 import { fileExists } from '../fs/operations.js';
+import { AI_CONSTANTS } from '../config/constants.js';
 
 export interface RefactoringOperation {
   type: 'extract-function' | 'extract-variable' | 'extract-component' | 'rename' |
@@ -98,7 +99,7 @@ For each opportunity, provide:
 Return as JSON array of RefactoringOperation objects.`;
 
       const response = await aiClient.complete(prompt, {
-        temperature: 0.3
+        temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
       });
 
       let operations: RefactoringOperation[];
@@ -228,7 +229,7 @@ Please:
 Return the complete refactored file content.`;
 
       const response = await aiClient.complete(prompt, {
-        temperature: 0.2
+        temperature: AI_CONSTANTS.REFACTOR_TEMPERATURE
       });
 
       // Backup original file
@@ -280,7 +281,7 @@ Please:
 Return the complete refactored file content.`;
 
       const response = await aiClient.complete(prompt, {
-        temperature: 0.2
+        temperature: AI_CONSTANTS.REFACTOR_TEMPERATURE
       });
 
       // Backup and write
@@ -335,7 +336,7 @@ ${code}
 Return the updated code with the symbol renamed appropriately.`;
 
         const response = await aiClient.complete(prompt, {
-          temperature: 0.1 // Very low temperature for precise renaming
+          temperature: AI_CONSTANTS.ANALYSIS_TEMPERATURE
         });
 
         // Check if any changes were made
@@ -384,7 +385,7 @@ Maintain functionality while improving performance. Add comments explaining opti
 Return the optimized code.`;
 
       const response = await aiClient.complete(prompt, {
-        temperature: 0.3
+        temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
       });
 
       // Backup and write
@@ -433,7 +434,7 @@ Please:
 Return the refactored code with the design pattern applied.`;
 
       const response = await aiClient.complete(prompt, {
-        temperature: 0.3
+        temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
       });
 
       // Backup and write
@@ -614,7 +615,7 @@ Identify specific issues like:
 Return as JSON array of CodeSmell objects with type, severity, location, description, and suggestion.`;
 
       const response = await aiClient.complete(prompt, {
-        temperature: 0.3
+        temperature: AI_CONSTANTS.CODE_GEN_TEMPERATURE
       });
 
       return JSON.parse(response.content);
