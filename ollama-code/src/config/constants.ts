@@ -567,5 +567,65 @@ export const THRESHOLD_CONSTANTS = {
 
     /** Memory analysis confidence */
     MEMORY_ANALYSIS_CONFIDENCE: 0.7
+  },
+
+  /**
+   * Provider Benchmarking Evaluation Criteria (0.0 - 1.0)
+   */
+  BENCHMARKING: {
+    /** Accuracy evaluation thresholds */
+    ACCURACY: {
+      VERY_HIGH: 0.95,
+      HIGH: 0.9,
+      MEDIUM: 0.85,
+      LOW: 0.8,
+      DEFAULT: 0.5
+    },
+
+    /** Relevance evaluation thresholds */
+    RELEVANCE: {
+      VERY_HIGH: 0.95,
+      HIGH: 0.9,
+      MEDIUM: 0.8,
+      LOW: 0.4
+    },
+
+    /** Completeness evaluation thresholds */
+    COMPLETENESS: {
+      HIGH: 0.9,
+      MEDIUM: 0.85,
+      LOW: 0.8
+    },
+
+    /** Code quality evaluation thresholds */
+    CODE_QUALITY: {
+      HIGH: 0.85,
+      MEDIUM: 0.8
+    }
+  },
+
+  /**
+   * Test Execution Time Estimates (minutes per test)
+   */
+  TEST_ESTIMATION: {
+    /** Unit test execution time (minutes) */
+    UNIT_TEST_TIME: 0.1,
+
+    /** Integration test execution time (minutes) */
+    INTEGRATION_TEST_TIME: 0.5,
+
+    /** End-to-end test execution time (minutes) */
+    E2E_TEST_TIME: 2
+  },
+
+  /**
+   * Workload Distribution Thresholds (0.0 - 2.0 multipliers)
+   */
+  WORKLOAD: {
+    /** Chunk size upper threshold (1.5x target) */
+    CHUNK_SIZE_UPPER_MULTIPLIER: 1.5,
+
+    /** Chunk size lower threshold (0.5x target) */
+    CHUNK_SIZE_LOWER_MULTIPLIER: 0.5
   }
 } as const;

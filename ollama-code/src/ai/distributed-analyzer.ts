@@ -18,6 +18,7 @@ import { EventEmitter } from 'events';
 import * as os from 'os';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import { GraphNode, GraphEdge } from './code-knowledge-graph.js';
 import { ProjectContext } from './context.js';
 import { getPerformanceConfig, DistributedAnalysisConfig } from '../config/performance.js';
@@ -594,8 +595,8 @@ export class DistributedAnalyzer extends EventEmitter {
       const current = chunks[i];
       const next = chunks[i + 1];
 
-      if (current.files.length > this.config.chunkSizeTarget * 1.5 &&
-          next.files.length < this.config.chunkSizeTarget * 0.5) {
+      if (current.files.length > this.config.chunkSizeTarget * THRESHOLD_CONSTANTS.WORKLOAD.CHUNK_SIZE_UPPER_MULTIPLIER &&
+          next.files.length < this.config.chunkSizeTarget * THRESHOLD_CONSTANTS.WORKLOAD.CHUNK_SIZE_LOWER_MULTIPLIER) {
         // Move some files from current to next
         const filesToMove = current.files.splice(this.config.chunkSizeTarget);
         next.files.push(...filesToMove);

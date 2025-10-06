@@ -16,6 +16,7 @@ import { normalizeError } from '../utils/error-utils.js';
 import { EventEmitter } from 'events';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import { getPerformanceConfig } from '../config/performance.js';
 /**
  * Distributed Analyzer for parallel codebase processing
@@ -440,8 +441,8 @@ export class DistributedAnalyzer extends EventEmitter {
         for (let i = 0; i < chunks.length - 1; i++) {
             const current = chunks[i];
             const next = chunks[i + 1];
-            if (current.files.length > this.config.chunkSizeTarget * 1.5 &&
-                next.files.length < this.config.chunkSizeTarget * 0.5) {
+            if (current.files.length > this.config.chunkSizeTarget * THRESHOLD_CONSTANTS.WORKLOAD.CHUNK_SIZE_UPPER_MULTIPLIER &&
+                next.files.length < this.config.chunkSizeTarget * THRESHOLD_CONSTANTS.WORKLOAD.CHUNK_SIZE_LOWER_MULTIPLIER) {
                 // Move some files from current to next
                 const filesToMove = current.files.splice(this.config.chunkSizeTarget);
                 next.files.push(...filesToMove);

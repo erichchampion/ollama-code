@@ -7,6 +7,7 @@
 
 import { logger } from '../utils/logger.js';
 import { getPerformanceConfig } from '../config/performance.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import * as path from 'path';
 
 export interface TestGenerationRequest {
@@ -832,7 +833,9 @@ export default defineConfig({
     const integrationTests = tests.filter(t => t.testType === 'integration').length;
     const e2eTests = tests.filter(t => t.testType === 'e2e').length;
 
-    const totalMinutes = (unitTests * 0.1) + (integrationTests * 0.5) + (e2eTests * 2);
+    const totalMinutes = (unitTests * THRESHOLD_CONSTANTS.TEST_ESTIMATION.UNIT_TEST_TIME) +
+                         (integrationTests * THRESHOLD_CONSTANTS.TEST_ESTIMATION.INTEGRATION_TEST_TIME) +
+                         (e2eTests * THRESHOLD_CONSTANTS.TEST_ESTIMATION.E2E_TEST_TIME);
 
     if (totalMinutes < 1) return '< 1 minute';
     if (totalMinutes < 60) return `~${Math.ceil(totalMinutes)} minutes`;

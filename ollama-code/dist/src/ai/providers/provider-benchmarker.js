@@ -6,6 +6,7 @@
  */
 import { logger } from '../../utils/logger.js';
 import { normalizeError } from '../../utils/error-utils.js';
+import { THRESHOLD_CONSTANTS } from '../../config/constants.js';
 export class ProviderBenchmarker {
     providers = new Map();
     testCases = [];
@@ -52,7 +53,12 @@ export class ProviderBenchmarker {
                 ],
                 expectedKeywords: ['function', 'factorial', 'return'],
                 maxResponseTime: 5000,
-                evaluationCriteria: { accuracy: 0.9, relevance: 0.95, completeness: 0.8, codeQuality: 0.85 }
+                evaluationCriteria: {
+                    accuracy: THRESHOLD_CONSTANTS.BENCHMARKING.ACCURACY.HIGH,
+                    relevance: THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.VERY_HIGH,
+                    completeness: THRESHOLD_CONSTANTS.BENCHMARKING.COMPLETENESS.LOW,
+                    codeQuality: THRESHOLD_CONSTANTS.BENCHMARKING.CODE_QUALITY.HIGH
+                }
             },
             // Code Analysis Tests
             {
@@ -76,7 +82,11 @@ console.log(result);`
                 ],
                 expectedKeywords: ['division by zero', 'infinity', 'validation', 'error'],
                 maxResponseTime: 8000,
-                evaluationCriteria: { accuracy: 0.85, relevance: 0.9, completeness: 0.8 }
+                evaluationCriteria: {
+                    accuracy: THRESHOLD_CONSTANTS.BENCHMARKING.ACCURACY.MEDIUM,
+                    relevance: THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.HIGH,
+                    completeness: THRESHOLD_CONSTANTS.BENCHMARKING.COMPLETENESS.LOW
+                }
             },
             // Debugging Tests
             {
@@ -106,7 +116,12 @@ The function is slow and sometimes throws errors.`
                 ],
                 expectedKeywords: ['parallel', 'Promise.all', 'error handling', 'try-catch'],
                 maxResponseTime: 15000,
-                evaluationCriteria: { accuracy: 0.8, relevance: 0.9, completeness: 0.85, codeQuality: 0.8 }
+                evaluationCriteria: {
+                    accuracy: THRESHOLD_CONSTANTS.BENCHMARKING.ACCURACY.LOW,
+                    relevance: THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.HIGH,
+                    completeness: THRESHOLD_CONSTANTS.BENCHMARKING.COMPLETENESS.MEDIUM,
+                    codeQuality: THRESHOLD_CONSTANTS.BENCHMARKING.CODE_QUALITY.MEDIUM
+                }
             },
             // Explanation Tests
             {
@@ -145,7 +160,11 @@ function partition(arr, low, high) {
                 ],
                 expectedKeywords: ['divide and conquer', 'pivot', 'partition', 'recursive', 'sorting'],
                 maxResponseTime: 10000,
-                evaluationCriteria: { accuracy: 0.9, relevance: 0.95, completeness: 0.9 }
+                evaluationCriteria: {
+                    accuracy: THRESHOLD_CONSTANTS.BENCHMARKING.ACCURACY.HIGH,
+                    relevance: THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.VERY_HIGH,
+                    completeness: THRESHOLD_CONSTANTS.BENCHMARKING.COMPLETENESS.HIGH
+                }
             },
             // General Coding Question
             {
@@ -159,7 +178,11 @@ function partition(arr, low, high) {
                 ],
                 expectedKeywords: ['readable', 'maintainable', 'DRY', 'SOLID', 'naming'],
                 maxResponseTime: 5000,
-                evaluationCriteria: { accuracy: 0.85, relevance: 0.9, completeness: 0.8 }
+                evaluationCriteria: {
+                    accuracy: THRESHOLD_CONSTANTS.BENCHMARKING.ACCURACY.MEDIUM,
+                    relevance: THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.HIGH,
+                    completeness: THRESHOLD_CONSTANTS.BENCHMARKING.COMPLETENESS.LOW
+                }
             }
         ];
         standardTests.forEach(testCase => this.addTestCase(testCase));
@@ -280,12 +303,14 @@ function partition(arr, low, high) {
             scores.accuracy = foundKeywords.length / testCase.expectedKeywords.length;
         }
         else {
-            scores.accuracy = 0.5; // Default if no keywords specified
+            scores.accuracy = THRESHOLD_CONSTANTS.BENCHMARKING.ACCURACY.DEFAULT;
         }
         // Basic relevance heuristics
-        scores.relevance = response.length > 50 ? 0.8 : 0.4;
+        scores.relevance = response.length > 50
+            ? THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.MEDIUM
+            : THRESHOLD_CONSTANTS.BENCHMARKING.RELEVANCE.LOW;
         // Completeness based on response length and structure
-        scores.completeness = Math.min(response.length / 200, 1) * 0.8;
+        scores.completeness = Math.min(response.length / 200, 1) * THRESHOLD_CONSTANTS.BENCHMARKING.COMPLETENESS.LOW;
         // Code quality for code generation tasks
         if (testCase.category === 'code_generation') {
             const hasFunction = /function|=>|def\s/.test(response);
