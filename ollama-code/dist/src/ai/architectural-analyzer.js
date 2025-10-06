@@ -7,6 +7,7 @@
 import { logger } from '../utils/logger.js';
 import { getPerformanceConfig } from '../config/performance.js';
 import { calculateCyclomaticComplexity } from '../utils/complexity-calculator.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 export class ArchitecturalAnalyzer {
     config = getPerformanceConfig();
     /**
@@ -128,10 +129,10 @@ export class ArchitecturalAnalyzer {
                 factoryScore += 0.3;
             }
         }
-        if (factoryScore >= 0.6) {
+        if (factoryScore >= THRESHOLD_CONSTANTS.ARCHITECTURE.FACTORY_PATTERN_THRESHOLD) {
             patterns.push({
                 name: 'Factory',
-                confidence: Math.min(factoryScore, 0.9),
+                confidence: Math.min(factoryScore, THRESHOLD_CONSTANTS.ARCHITECTURE.VERY_HIGH_CONFIDENCE),
                 location: {
                     file: file.path,
                     startLine: 1,
@@ -164,10 +165,10 @@ export class ArchitecturalAnalyzer {
                 observerScore += 0.25;
             }
         }
-        if (observerScore >= 0.5) {
+        if (observerScore >= THRESHOLD_CONSTANTS.ARCHITECTURE.OBSERVER_PATTERN_THRESHOLD) {
             patterns.push({
                 name: 'Observer',
-                confidence: Math.min(observerScore, 0.9),
+                confidence: Math.min(observerScore, THRESHOLD_CONSTANTS.ARCHITECTURE.VERY_HIGH_CONFIDENCE),
                 location: {
                     file: file.path,
                     startLine: 1,
@@ -190,7 +191,7 @@ export class ArchitecturalAnalyzer {
         if (/@\w+\s*\(|decorator/i.test(file.content)) {
             return [{
                     name: 'Decorator',
-                    confidence: 0.7,
+                    confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.MEDIUM_CONFIDENCE,
                     location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
                     description: 'Decorator pattern detected',
                     benefits: ['Extends functionality', 'Composition over inheritance']
@@ -203,7 +204,7 @@ export class ArchitecturalAnalyzer {
         if (mvcIndicators.test(file.path) || mvcIndicators.test(file.content)) {
             return [{
                     name: 'MVC',
-                    confidence: 0.6,
+                    confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.LOW_CONFIDENCE,
                     location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
                     description: 'MVC pattern structure detected',
                     benefits: ['Separation of concerns', 'Maintainable code', 'Testable components']
@@ -215,7 +216,7 @@ export class ArchitecturalAnalyzer {
         if (/repository|repo\b/i.test(file.path) && /find|save|delete|update/.test(file.content)) {
             return [{
                     name: 'Repository',
-                    confidence: 0.8,
+                    confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.HIGH_CONFIDENCE,
                     location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
                     description: 'Repository pattern detected for data access',
                     benefits: ['Data access abstraction', 'Testable persistence', 'Centralized queries']
@@ -239,7 +240,7 @@ export class ArchitecturalAnalyzer {
         if (/strategy|algorithm/i.test(file.content) && /execute\(|apply\(/.test(file.content)) {
             return [{
                     name: 'Strategy',
-                    confidence: 0.7,
+                    confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.MEDIUM_CONFIDENCE,
                     location: { file: file.path, startLine: 1, endLine: file.content.split('\n').length },
                     description: 'Strategy pattern detected for algorithm selection',
                     benefits: ['Interchangeable algorithms', 'Runtime selection', 'Open/closed principle']
@@ -281,7 +282,7 @@ export class ArchitecturalAnalyzer {
                     codeSmells.push({
                         type: 'God Class',
                         severity: 'high',
-                        confidence: 0.8,
+                        confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.HIGH_CONFIDENCE,
                         location: {
                             file: file.path,
                             startLine: classStartLine,
@@ -340,7 +341,7 @@ export class ArchitecturalAnalyzer {
                         codeSmells.push({
                             type: 'Long Method',
                             severity: 'medium',
-                            confidence: 0.9,
+                            confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.VERY_HIGH_CONFIDENCE,
                             location: {
                                 file: file.path,
                                 startLine: methodStartLine,
@@ -374,7 +375,7 @@ export class ArchitecturalAnalyzer {
                     codeSmells.push({
                         type: 'Duplicate Code',
                         severity: 'medium',
-                        confidence: 0.7,
+                        confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.MEDIUM_CONFIDENCE,
                         location: {
                             file: file.path,
                             startLine: i + 1,
@@ -408,7 +409,7 @@ export class ArchitecturalAnalyzer {
             return [{
                     type: 'Large Class',
                     severity: 'medium',
-                    confidence: 0.8,
+                    confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.HIGH_CONFIDENCE,
                     location: { file: file.path, startLine: 1, endLine: lines },
                     description: `File has ${lines} lines`,
                     impact: 'Reduces maintainability',
@@ -428,7 +429,7 @@ export class ArchitecturalAnalyzer {
                 codeSmells.push({
                     type: 'Long Parameter List',
                     severity: 'low',
-                    confidence: 0.9,
+                    confidence: THRESHOLD_CONSTANTS.ARCHITECTURE.VERY_HIGH_CONFIDENCE,
                     location: { file: file.path, startLine: 1, endLine: 1 },
                     description: `Function has ${params.length} parameters`,
                     impact: 'Reduces readability',

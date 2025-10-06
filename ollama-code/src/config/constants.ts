@@ -527,5 +527,45 @@ export const THRESHOLD_CONSTANTS = {
 
     /** Overall caching impact on costs */
     CACHING_IMPACT: 0.3
+  },
+
+  /**
+   * Architectural Pattern Detection Confidence (0.0 - 1.0)
+   */
+  ARCHITECTURE: {
+    /** Very high confidence for clear patterns */
+    VERY_HIGH_CONFIDENCE: 0.9,
+
+    /** High confidence for well-defined patterns */
+    HIGH_CONFIDENCE: 0.8,
+
+    /** Medium confidence for probable patterns */
+    MEDIUM_CONFIDENCE: 0.7,
+
+    /** Low confidence for possible patterns */
+    LOW_CONFIDENCE: 0.6,
+
+    /** Minimum confidence for pattern detection */
+    MINIMUM_CONFIDENCE: 0.5,
+
+    /** Factory pattern detection threshold */
+    FACTORY_PATTERN_THRESHOLD: 0.6,
+
+    /** Observer pattern detection threshold */
+    OBSERVER_PATTERN_THRESHOLD: 0.5
+  },
+
+  /**
+   * Performance Analysis Confidence (0.0 - 1.0)
+   */
+  PERFORMANCE: {
+    /** Static analysis confidence (high accuracy) */
+    STATIC_ANALYSIS_CONFIDENCE: 0.9,
+
+    /** Pattern matching confidence */
+    PATTERN_MATCH_CONFIDENCE: 0.8,
+
+    /** Memory analysis confidence */
+    MEMORY_ANALYSIS_CONFIDENCE: 0.7
   }
 } as const;

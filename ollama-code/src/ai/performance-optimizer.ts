@@ -8,6 +8,7 @@
 import { logger } from '../utils/logger.js';
 import { getPerformanceConfig } from '../config/performance.js';
 import { ArchitecturalAnalyzer } from './architectural-analyzer.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import { calculateCyclomaticComplexity } from '../utils/complexity-calculator.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -638,7 +639,7 @@ export class PerformanceOptimizer {
           evidence: [{
             type: 'static-analysis',
             description: 'McCabe complexity analysis',
-            confidence: 0.9
+            confidence: THRESHOLD_CONSTANTS.PERFORMANCE.STATIC_ANALYSIS_CONFIDENCE
           }],
           frequency: 'constant',
           measuredCost: {
@@ -680,7 +681,7 @@ export class PerformanceOptimizer {
           evidence: [{
             type: 'static-analysis',
             description: 'Memory usage pattern analysis',
-            confidence: 0.7
+            confidence: THRESHOLD_CONSTANTS.PERFORMANCE.MEMORY_ANALYSIS_CONFIDENCE
           }],
           frequency: 'frequent',
           measuredCost: {
@@ -724,7 +725,7 @@ export class PerformanceOptimizer {
       evidence: [{
         type: 'pattern-matching',
         description: `Pattern detected: ${pattern.type}`,
-        confidence: 0.8,
+        confidence: THRESHOLD_CONSTANTS.PERFORMANCE.PATTERN_MATCH_CONFIDENCE,
         data: pattern
       }],
       frequency: 'frequent',
