@@ -6,7 +6,7 @@
 
 # Interface: TelemetryConfig
 
-Defined in: [telemetry/index.ts:80](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/telemetry/index.ts#L80)
+Defined in: [telemetry/index.ts:81](https://github.com/erichchampion/ollama-code/blob/affe7d5f274db61281678933960f6b13bf0d7a5f/ollama-code/src/telemetry/index.ts#L81)
 
 Telemetry configuration
 
@@ -16,7 +16,7 @@ Telemetry configuration
 
 > **enabled**: `boolean`
 
-Defined in: [telemetry/index.ts:84](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/telemetry/index.ts#L84)
+Defined in: [telemetry/index.ts:85](https://github.com/erichchampion/ollama-code/blob/affe7d5f274db61281678933960f6b13bf0d7a5f/ollama-code/src/telemetry/index.ts#L85)
 
 Whether telemetry is enabled
 
@@ -26,7 +26,7 @@ Whether telemetry is enabled
 
 > **clientId**: `string`
 
-Defined in: [telemetry/index.ts:89](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/telemetry/index.ts#L89)
+Defined in: [telemetry/index.ts:90](https://github.com/erichchampion/ollama-code/blob/affe7d5f274db61281678933960f6b13bf0d7a5f/ollama-code/src/telemetry/index.ts#L90)
 
 Client ID (anonymous)
 
@@ -36,7 +36,7 @@ Client ID (anonymous)
 
 > `optional` **endpoint**: `string`
 
-Defined in: [telemetry/index.ts:94](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/telemetry/index.ts#L94)
+Defined in: [telemetry/index.ts:95](https://github.com/erichchampion/ollama-code/blob/affe7d5f274db61281678933960f6b13bf0d7a5f/ollama-code/src/telemetry/index.ts#L95)
 
 Endpoint for sending telemetry data
 
@@ -46,6 +46,6 @@ Endpoint for sending telemetry data
 
 > `optional` **additionalData**: `Record`\<`string`, `any`\>
 
-Defined in: [telemetry/index.ts:99](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/telemetry/index.ts#L99)
+Defined in: [telemetry/index.ts:100](https://github.com/erichchampion/ollama-code/blob/affe7d5f274db61281678933960f6b13bf0d7a5f/ollama-code/src/telemetry/index.ts#L100)
 
 Additional data to include with all events
