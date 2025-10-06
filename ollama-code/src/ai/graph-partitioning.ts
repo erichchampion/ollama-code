@@ -15,6 +15,7 @@
 
 import { GraphNode, GraphEdge, CodePattern } from './code-knowledge-graph.js';
 import { ProjectContext } from './context.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import * as path from 'path';
 
 // Partition interfaces
@@ -145,7 +146,7 @@ export class GraphPartitionManager {
       currentMemoryUsage: 0,
       loadedPartitions: new Set(),
       evictionPolicy: 'hybrid',
-      memoryPressureThreshold: 0.8,
+      memoryPressureThreshold: THRESHOLD_CONSTANTS.GRAPH_PARTITIONING.MEMORY_PRESSURE_THRESHOLD,
       ...memoryConfig
     };
   }
@@ -749,7 +750,7 @@ export class GraphPartitionManager {
     evictCandidates.sort((a, b) => a.priority - b.priority);
 
     let evictedCount = 0;
-    const targetMemoryUsage = this.memoryManager.maxMemoryUsage * 0.6; // Target 60% usage
+    const targetMemoryUsage = this.memoryManager.maxMemoryUsage * THRESHOLD_CONSTANTS.GRAPH_PARTITIONING.TARGET_MEMORY_USAGE;
 
     for (const candidate of evictCandidates) {
       if (this.memoryManager.currentMemoryUsage <= targetMemoryUsage) break;
@@ -779,7 +780,9 @@ export class GraphPartitionManager {
     const frequencyScore = Math.min(accessFrequency * 10, 100);
     const sizeScore = Math.max(0, 100 - memorySize); // Prefer evicting larger partitions
 
-    return recencyScore * 0.5 + frequencyScore * 0.3 + sizeScore * 0.2;
+    return recencyScore * THRESHOLD_CONSTANTS.GRAPH_PARTITIONING.EVICTION_WEIGHTS.RECENCY +
+           frequencyScore * THRESHOLD_CONSTANTS.GRAPH_PARTITIONING.EVICTION_WEIGHTS.FREQUENCY +
+           sizeScore * THRESHOLD_CONSTANTS.GRAPH_PARTITIONING.EVICTION_WEIGHTS.SIZE;
   }
 
   private storeCrossReferences(crossRefs: CrossPartitionReference[]): void {

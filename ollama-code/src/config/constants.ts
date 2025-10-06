@@ -627,5 +627,57 @@ export const THRESHOLD_CONSTANTS = {
 
     /** Chunk size lower threshold (0.5x target) */
     CHUNK_SIZE_LOWER_MULTIPLIER: 0.5
+  },
+
+  /**
+   * Graph Partitioning Memory Management (0.0 - 1.0)
+   */
+  GRAPH_PARTITIONING: {
+    /** Memory pressure threshold for eviction */
+    MEMORY_PRESSURE_THRESHOLD: 0.8,
+
+    /** Target memory usage after eviction (60%) */
+    TARGET_MEMORY_USAGE: 0.6,
+
+    /** Eviction score weights */
+    EVICTION_WEIGHTS: {
+      RECENCY: 0.5,
+      FREQUENCY: 0.3,
+      SIZE: 0.2
+    }
+  },
+
+  /**
+   * Partition Query Engine Metrics (0.0 - 1.0)
+   */
+  PARTITION_METRICS: {
+    /** Default maintainability score */
+    DEFAULT_MAINTAINABILITY: 0.8,
+
+    /** Default test coverage */
+    DEFAULT_TEST_COVERAGE: 0.6,
+
+    /** Default security risk */
+    DEFAULT_SECURITY_RISK: 0.3,
+
+    /** Maximum complexity difference for grouping */
+    MAX_COMPLEXITY_DIFFERENCE: 0.5
+  },
+
+  /**
+   * Query Performance Monitoring (0.0 - 1.0)
+   */
+  QUERY_PERFORMANCE: {
+    /** Median percentile (50th) */
+    MEDIAN_PERCENTILE: 0.5,
+
+    /** P95 percentile (95th) */
+    P95_PERCENTILE: 0.95,
+
+    /** Low cache hit rate threshold */
+    LOW_CACHE_HIT_RATE: 0.5,
+
+    /** High memory usage alert threshold */
+    HIGH_MEMORY_THRESHOLD: 0.8
   }
 } as const;

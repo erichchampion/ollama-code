@@ -14,6 +14,7 @@
  */
 
 import { logger } from '../utils/logger.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import * as os from 'os';
 
 export interface QueryMetrics {
@@ -206,8 +207,8 @@ export class QueryPerformanceMonitor {
     return {
       totalQueries: filteredMetrics.length,
       averageExecutionTime: this.average(executionTimes),
-      medianExecutionTime: this.percentile(executionTimes, 0.5),
-      p95ExecutionTime: this.percentile(executionTimes, 0.95),
+      medianExecutionTime: this.percentile(executionTimes, THRESHOLD_CONSTANTS.QUERY_PERFORMANCE.MEDIAN_PERCENTILE),
+      p95ExecutionTime: this.percentile(executionTimes, THRESHOLD_CONSTANTS.QUERY_PERFORMANCE.P95_PERCENTILE),
       successRate: successfulQueries.length / filteredMetrics.length,
       averageMemoryUsage: this.average(memoryUsages),
       cacheMissRate: 1 - this.average(cacheHitRates),
@@ -363,7 +364,7 @@ export class QueryPerformanceMonitor {
     }
 
     // Low cache hit rate
-    if (metrics.cacheHitRate < 0.5) {
+    if (metrics.cacheHitRate < THRESHOLD_CONSTANTS.QUERY_PERFORMANCE.LOW_CACHE_HIT_RATE) {
       opportunities.push({
         type: 'caching',
         description: 'Low cache hit rate',
@@ -457,7 +458,7 @@ export class QueryPerformanceMonitor {
 
   private checkResourceAlerts(resource: SystemResource): void {
     // High memory usage alert
-    if (resource.memoryUsage > resource.memoryTotal * 0.8) {
+    if (resource.memoryUsage > resource.memoryTotal * THRESHOLD_CONSTANTS.QUERY_PERFORMANCE.HIGH_MEMORY_THRESHOLD) {
       this.alerts.push({
         type: 'memory_spike',
         severity: 'warning',

@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { createHash } from 'crypto';
 import { IntelligentCache } from './memory-optimizer.js';
 import { QueryPerformanceMonitor } from './query-performance-monitor.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 export var PartitionType;
 (function (PartitionType) {
     PartitionType["DOMAIN"] = "domain";
@@ -78,9 +79,9 @@ export class PartitionQueryEngine extends EventEmitter {
                 lastModified: Date.now(),
                 metadata: {
                     complexity: 1,
-                    maintainability: 0.8,
-                    testCoverage: 0.6,
-                    securityRisk: 0.3,
+                    maintainability: THRESHOLD_CONSTANTS.PARTITION_METRICS.DEFAULT_MAINTAINABILITY,
+                    testCoverage: THRESHOLD_CONSTANTS.PARTITION_METRICS.DEFAULT_TEST_COVERAGE,
+                    securityRisk: THRESHOLD_CONSTANTS.PARTITION_METRICS.DEFAULT_SECURITY_RISK,
                     performanceProfile: {
                         queryComplexity: 'medium',
                         indexSize: 1024,
@@ -318,7 +319,7 @@ export class PartitionQueryEngine extends EventEmitter {
         let currentGroup = [];
         let currentComplexity = 0;
         for (const partition of sorted) {
-            if (Math.abs(partition.metadata.complexity - currentComplexity) > 0.5) {
+            if (Math.abs(partition.metadata.complexity - currentComplexity) > THRESHOLD_CONSTANTS.PARTITION_METRICS.MAX_COMPLEXITY_DIFFERENCE) {
                 if (currentGroup.length > 0) {
                     groups.push(currentGroup);
                 }
