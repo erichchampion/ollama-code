@@ -8,6 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { logger } from '../../utils/logger.js';
+import { THRESHOLD_CONSTANTS } from '../../config/constants.js';
 
 export interface BudgetConfig {
   id: string;
@@ -870,14 +871,14 @@ export class CostBudgetManager extends EventEmitter {
     let potential = 0;
 
     // Check for cache hit opportunities
-    const cacheHitRate = 0.3; // Would get from actual cache metrics
-    potential += current.totalCost * (1 - cacheHitRate) * 0.5;
+    const cacheHitRate = THRESHOLD_CONSTANTS.COST_OPTIMIZATION.EXPECTED_CACHE_HIT_RATE;
+    potential += current.totalCost * (1 - cacheHitRate) * THRESHOLD_CONSTANTS.COST_OPTIMIZATION.CACHE_SAVINGS_FACTOR;
 
     // Check for provider optimization
     if (current.providerBreakdown.length > 1) {
       const mostExpensive = Math.max(...current.providerBreakdown.map(p => p.averageCostPerRequest));
       const cheapest = Math.min(...current.providerBreakdown.map(p => p.averageCostPerRequest));
-      potential += (mostExpensive - cheapest) * current.totalRequests * 0.3;
+      potential += (mostExpensive - cheapest) * current.totalRequests * THRESHOLD_CONSTANTS.COST_OPTIMIZATION.PROVIDER_SWITCH_SAVINGS;
     }
 
     return potential;
@@ -905,7 +906,7 @@ export class CostBudgetManager extends EventEmitter {
             description: `Consider using ${cheaper.providerId} more often. It's ${(expensive.averageCostPerRequest / cheaper.averageCostPerRequest).toFixed(1)}x cheaper per request.`,
             impact: 'high',
             effort: 'low',
-            estimatedSavings: (expensive.averageCostPerRequest - cheaper.averageCostPerRequest) * expensive.requests * 0.5,
+            estimatedSavings: (expensive.averageCostPerRequest - cheaper.averageCostPerRequest) * expensive.requests * THRESHOLD_CONSTANTS.COST_OPTIMIZATION.ROUTING_SAVINGS_ESTIMATE,
             implementation: [
               'Update provider routing preferences',
               'A/B test quality differences',
@@ -924,7 +925,7 @@ export class CostBudgetManager extends EventEmitter {
       description: 'Implement smart caching to reduce duplicate requests and save costs.',
       impact: 'medium',
       effort: 'low',
-      estimatedSavings: current.totalCost * 0.3,
+      estimatedSavings: current.totalCost * THRESHOLD_CONSTANTS.COST_OPTIMIZATION.CACHING_IMPACT,
       implementation: [
         'Enable provider-specific caching',
         'Implement semantic similarity caching',

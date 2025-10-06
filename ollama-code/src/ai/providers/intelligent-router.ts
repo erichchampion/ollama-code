@@ -9,6 +9,7 @@
 import { EventEmitter } from 'events';
 import { logger } from '../../utils/logger.js';
 import { normalizeError } from '../../utils/error-utils.js';
+import { THRESHOLD_CONSTANTS } from '../../config/constants.js';
 import {
   BaseAIProvider,
   AIMessage,
@@ -447,7 +448,7 @@ export class IntelligentAIRouter extends EventEmitter {
     return {
       provider: bestProvider,
       reasoning: `Selected ${bestProvider.getName()} for best performance (${bestResponseTime}ms response time)`,
-      confidence: 0.8
+      confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.HIGH_CONFIDENCE
     };
   }
 
@@ -469,7 +470,7 @@ export class IntelligentAIRouter extends EventEmitter {
     return {
       provider: bestProvider,
       reasoning: `Selected ${bestProvider.getName()} for lowest cost ($${bestCost.toFixed(4)} per 1500 tokens)`,
-      confidence: 0.9
+      confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.VERY_HIGH_CONFIDENCE
     };
   }
 
@@ -500,7 +501,7 @@ export class IntelligentAIRouter extends EventEmitter {
     return {
       provider: bestProvider,
       reasoning: `Selected ${bestProvider.getName()} for highest quality (score: ${bestScore}/100)`,
-      confidence: 0.7
+      confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.MEDIUM_CONFIDENCE
     };
   }
 
@@ -514,7 +515,7 @@ export class IntelligentAIRouter extends EventEmitter {
     return {
       provider: selectedProvider,
       reasoning: `Selected ${selectedProvider.getName()} using round-robin load balancing`,
-      confidence: 0.6
+      confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.LOW_CONFIDENCE
     };
   }
 
@@ -530,7 +531,7 @@ export class IntelligentAIRouter extends EventEmitter {
         return {
           provider: stickyProvider,
           reasoning: `Selected ${stickyProvider.getName()} for session stickiness`,
-          confidence: 0.9
+          confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.VERY_HIGH_CONFIDENCE
         };
       }
     }
@@ -544,7 +545,7 @@ export class IntelligentAIRouter extends EventEmitter {
     return {
       provider: selectedProvider,
       reasoning: `Selected ${selectedProvider.getName()} as session default`,
-      confidence: 0.7
+      confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.MEDIUM_CONFIDENCE
     };
   }
 
@@ -559,7 +560,7 @@ export class IntelligentAIRouter extends EventEmitter {
     return {
       provider: selectedProvider,
       reasoning: `Selected ${selectedProvider.getName()} based on capability matching`,
-      confidence: 0.8
+      confidence: THRESHOLD_CONSTANTS.PROVIDER_ROUTING.HIGH_CONFIDENCE
     };
   }
 
@@ -700,7 +701,7 @@ export class IntelligentAIRouter extends EventEmitter {
     if (this.metrics.totalRequests === 1) {
       this.metrics.averageDecisionTime = decisionTime;
     } else {
-      const alpha = 0.1; // Smoothing factor
+      const alpha = THRESHOLD_CONSTANTS.PROVIDER_ROUTING.EMA_SMOOTHING_FACTOR;
       this.metrics.averageDecisionTime = alpha * decisionTime + (1 - alpha) * this.metrics.averageDecisionTime;
     }
   }

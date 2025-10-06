@@ -6,7 +6,7 @@
 
 # Class: MetricsCalculator
 
-Defined in: [utils/metrics-calculator.ts:28](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L28)
+Defined in: [utils/metrics-calculator.ts:28](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L28)
 
 ## Constructors
 
@@ -24,7 +24,7 @@ Defined in: [utils/metrics-calculator.ts:28](https://github.com/erichchampion/ol
 
 > `static` **calculateMovingAverage**(`currentAverage`, `newValue`, `alpha`, `isFirstValue`): `number`
 
-Defined in: [utils/metrics-calculator.ts:32](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L32)
+Defined in: [utils/metrics-calculator.ts:32](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L32)
 
 Calculate exponential moving average
 
@@ -56,7 +56,7 @@ Calculate exponential moving average
 
 > `static` **updateMovingAverage**(`state`, `newValue`): [`MovingAverageState`](../interfaces/MovingAverageState.md)
 
-Defined in: [utils/metrics-calculator.ts:47](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L47)
+Defined in: [utils/metrics-calculator.ts:47](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L47)
 
 Update moving average state
 
@@ -80,7 +80,7 @@ Update moving average state
 
 > `static` **calculateWeightedAverage**\<`T`\>(`items`, `valueExtractor`): `number`
 
-Defined in: [utils/metrics-calculator.ts:64](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L64)
+Defined in: [utils/metrics-calculator.ts:64](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L64)
 
 Calculate weighted average
 
@@ -110,7 +110,7 @@ Calculate weighted average
 
 > `static` **calculateSimpleWeightedAverage**(`values`, `weights`): `number`
 
-Defined in: [utils/metrics-calculator.ts:87](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L87)
+Defined in: [utils/metrics-calculator.ts:87](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L87)
 
 Calculate simple weighted average from arrays
 
@@ -134,7 +134,7 @@ Calculate simple weighted average from arrays
 
 > `static` **calculateStatistics**(`values`): [`StatisticalSummary`](../interfaces/StatisticalSummary.md)
 
-Defined in: [utils/metrics-calculator.ts:106](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L106)
+Defined in: [utils/metrics-calculator.ts:106](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L106)
 
 Calculate statistical summary for an array of numbers
 
@@ -154,7 +154,7 @@ Calculate statistical summary for an array of numbers
 
 > `static` **calculatePercentile**(`values`, `targetValue`): `number`
 
-Defined in: [utils/metrics-calculator.ts:144](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L144)
+Defined in: [utils/metrics-calculator.ts:144](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L144)
 
 Calculate percentile for a value in a dataset
 
@@ -178,7 +178,7 @@ Calculate percentile for a value in a dataset
 
 > `static` **calculateRate**(`count`, `timeWindowMs`): `number`
 
-Defined in: [utils/metrics-calculator.ts:164](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L164)
+Defined in: [utils/metrics-calculator.ts:164](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L164)
 
 Calculate rate (requests per second, etc.)
 
@@ -202,7 +202,7 @@ Calculate rate (requests per second, etc.)
 
 > `static` **calculateThroughput**(`totalRequests`, `totalTimeMs`, `windowSizeMs`): `object`
 
-Defined in: [utils/metrics-calculator.ts:175](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L175)
+Defined in: [utils/metrics-calculator.ts:175](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L175)
 
 Calculate throughput metrics
 
@@ -242,7 +242,7 @@ Calculate throughput metrics
 
 > `static` **calculateSuccessRate**(`successCount`, `totalCount`): `number`
 
-Defined in: [utils/metrics-calculator.ts:198](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L198)
+Defined in: [utils/metrics-calculator.ts:198](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L198)
 
 Calculate success rate percentage
 
@@ -266,7 +266,7 @@ Calculate success rate percentage
 
 > `static` **calculateErrorRate**(`errorCount`, `totalCount`): `number`
 
-Defined in: [utils/metrics-calculator.ts:209](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L209)
+Defined in: [utils/metrics-calculator.ts:209](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L209)
 
 Calculate error rate percentage
 
@@ -290,7 +290,7 @@ Calculate error rate percentage
 
 > `static` **calculateTimeDecay**(`ageMs`, `halfLifeMs`): `number`
 
-Defined in: [utils/metrics-calculator.ts:219](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L219)
+Defined in: [utils/metrics-calculator.ts:219](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L219)
 
 Calculate exponential decay factor for time-based weighting
 
@@ -314,7 +314,7 @@ Calculate exponential decay factor for time-based weighting
 
 > `static` **calculateWindowAverage**(`values`, `windowSizeMs`, `currentTime`): `number`
 
-Defined in: [utils/metrics-calculator.ts:229](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L229)
+Defined in: [utils/metrics-calculator.ts:229](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L229)
 
 Calculate moving window average
 
@@ -342,7 +342,7 @@ Calculate moving window average
 
 > `static` **calculateCorrelation**(`dataX`, `dataY`): `number`
 
-Defined in: [utils/metrics-calculator.ts:247](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L247)
+Defined in: [utils/metrics-calculator.ts:247](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L247)
 
 Calculate correlation coefficient between two datasets
 
@@ -366,7 +366,7 @@ Calculate correlation coefficient between two datasets
 
 > `static` **normalize**(`value`, `min`, `max`): `number`
 
-Defined in: [utils/metrics-calculator.ts:279](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L279)
+Defined in: [utils/metrics-calculator.ts:279](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L279)
 
 Normalize value to 0-1 range based on min/max bounds
 
@@ -394,7 +394,7 @@ Normalize value to 0-1 range based on min/max bounds
 
 > `static` **calculateRollingVariance**(`values`, `windowSize`): `number`[]
 
-Defined in: [utils/metrics-calculator.ts:291](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/metrics-calculator.ts#L291)
+Defined in: [utils/metrics-calculator.ts:291](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/metrics-calculator.ts#L291)
 
 Calculate rolling variance
 

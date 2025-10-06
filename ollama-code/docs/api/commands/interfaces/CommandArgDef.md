@@ -6,7 +6,7 @@
 
 # Interface: CommandArgDef
 
-Defined in: [commands/types.ts:14](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L14)
+Defined in: [commands/types.ts:14](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L14)
 
 Command argument definition
 
@@ -16,7 +16,7 @@ Command argument definition
 
 > **name**: `string`
 
-Defined in: [commands/types.ts:18](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L18)
+Defined in: [commands/types.ts:18](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L18)
 
 Argument name
 
@@ -26,7 +26,7 @@ Argument name
 
 > **description**: `string`
 
-Defined in: [commands/types.ts:23](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L23)
+Defined in: [commands/types.ts:23](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L23)
 
 Argument description
 
@@ -36,7 +36,7 @@ Argument description
 
 > **type**: [`ArgType`](../enumerations/ArgType.md)
 
-Defined in: [commands/types.ts:28](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L28)
+Defined in: [commands/types.ts:28](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L28)
 
 Argument type
 
@@ -46,7 +46,7 @@ Argument type
 
 > `optional` **position**: `number`
 
-Defined in: [commands/types.ts:33](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L33)
+Defined in: [commands/types.ts:33](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L33)
 
 Argument position in positional args
 
@@ -56,7 +56,7 @@ Argument position in positional args
 
 > `optional` **required**: `boolean`
 
-Defined in: [commands/types.ts:38](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L38)
+Defined in: [commands/types.ts:38](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L38)
 
 Whether the argument is required
 
@@ -66,7 +66,7 @@ Whether the argument is required
 
 > `optional` **default**: `any`
 
-Defined in: [commands/types.ts:43](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L43)
+Defined in: [commands/types.ts:43](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L43)
 
 Default value
 
@@ -76,7 +76,7 @@ Default value
 
 > `optional` **choices**: `string`[]
 
-Defined in: [commands/types.ts:48](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L48)
+Defined in: [commands/types.ts:48](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L48)
 
 Choices for the argument (if applicable)
 
@@ -86,7 +86,7 @@ Choices for the argument (if applicable)
 
 > `optional` **shortFlag**: `string`
 
-Defined in: [commands/types.ts:53](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L53)
+Defined in: [commands/types.ts:53](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L53)
 
 Short flag (e.g., -v for --verbose)
 
@@ -96,7 +96,7 @@ Short flag (e.g., -v for --verbose)
 
 > `optional` **flag**: `string`
 
-Defined in: [commands/types.ts:58](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L58)
+Defined in: [commands/types.ts:58](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L58)
 
 Long flag (e.g., --verbose)
 
@@ -106,6 +106,6 @@ Long flag (e.g., --verbose)
 
 > `optional` **hidden**: `boolean`
 
-Defined in: [commands/types.ts:63](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/commands/types.ts#L63)
+Defined in: [commands/types.ts:63](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/commands/types.ts#L63)
 
 Whether to hide from help

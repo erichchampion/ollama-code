@@ -455,5 +455,77 @@ export const THRESHOLD_CONSTANTS = {
   COMPLEXITY: {
     /** Maximum acceptable complexity difference */
     MAX_DIFFERENCE: 0.5
+  },
+
+  /**
+   * Code Review Quality Thresholds (0.0 - 1.0)
+   */
+  CODE_REVIEW: {
+    /** Documentation coverage ratio (functions with docs / total functions) */
+    GOOD_DOCUMENTATION_RATIO: 0.7,
+
+    /** Error handling coverage ratio (try-catch / total functions) */
+    GOOD_ERROR_HANDLING_RATIO: 0.3,
+
+    /** Security issue weight (critical issues impact) */
+    SECURITY_CRITICAL_WEIGHT: 0.5,
+
+    /** Security issue weight (major issues impact) */
+    SECURITY_MAJOR_WEIGHT: 0.2,
+
+    /** Documentation score when issues found */
+    DOCUMENTATION_WITH_ISSUES: 0.5,
+
+    /** Quality threshold for requesting major changes */
+    MAJOR_CHANGES_THRESHOLD: 0.6,
+
+    /** Quality threshold for requesting minor changes */
+    MINOR_CHANGES_THRESHOLD: 0.8,
+
+    /** Maximum major issues before requiring changes */
+    MAX_MAJOR_ISSUES: 5,
+
+    /** Maximum total issues before requiring changes */
+    MAX_TOTAL_ISSUES: 10
+  },
+
+  /**
+   * AI Provider Routing Confidence Scores (0.0 - 1.0)
+   */
+  PROVIDER_ROUTING: {
+    /** Very high confidence (sticky session, cost-based) */
+    VERY_HIGH_CONFIDENCE: 0.9,
+
+    /** High confidence (capability match, performance-based) */
+    HIGH_CONFIDENCE: 0.8,
+
+    /** Medium confidence (session default, quality-based) */
+    MEDIUM_CONFIDENCE: 0.7,
+
+    /** Low confidence (round-robin, fallback) */
+    LOW_CONFIDENCE: 0.6,
+
+    /** Exponential moving average smoothing factor */
+    EMA_SMOOTHING_FACTOR: 0.1
+  },
+
+  /**
+   * Cost Optimization Thresholds (0.0 - 1.0)
+   */
+  COST_OPTIMIZATION: {
+    /** Expected cache hit rate for cost calculations */
+    EXPECTED_CACHE_HIT_RATE: 0.3,
+
+    /** Cost savings from cache hits (50% of cache misses) */
+    CACHE_SAVINGS_FACTOR: 0.5,
+
+    /** Provider switching savings potential (30% of cost difference) */
+    PROVIDER_SWITCH_SAVINGS: 0.3,
+
+    /** Estimated savings from provider routing (50% of difference) */
+    ROUTING_SAVINGS_ESTIMATE: 0.5,
+
+    /** Overall caching impact on costs */
+    CACHING_IMPACT: 0.3
   }
 } as const;

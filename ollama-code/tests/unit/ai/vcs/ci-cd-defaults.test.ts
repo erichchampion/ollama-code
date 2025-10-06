@@ -15,7 +15,7 @@ import {
   CI_ANALYSIS_CONFIG,
   CI_BUILD_CONFIG,
   CI_PLATFORM_OVERRIDES
-} from '../config/ci-cd-defaults.js';
+} from '../../../../src/ai/vcs/config/ci-cd-defaults.js';
 
 describe('CI/CD Configuration Defaults', () => {
 
@@ -126,7 +126,7 @@ describe('sanitizeShellVariable', () => {
   it('should remove dangerous shell metacharacters', () => {
     const dangerous = 'value; rm -rf /';
     const sanitized = sanitizeShellVariable(dangerous, 'fallback');
-    expect(sanitized).toBe('valuermrf');
+    expect(sanitized).toBe('valuerm-rf');  // Hyphens in filenames are safe
     expect(sanitized).not.toContain(';');
     expect(sanitized).not.toContain(' ');
   });

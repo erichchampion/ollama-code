@@ -6,7 +6,7 @@
 
 # Interface: DirectoryStructure
 
-Defined in: [utils/directory-manager.ts:11](https://github.com/erichchampion/ollama-code/blob/3ba5f33b3e9ed162574fb0c1b20bfa222984db0a/ollama-code/src/utils/directory-manager.ts#L11)
+Defined in: [utils/directory-manager.ts:11](https://github.com/erichchampion/ollama-code/blob/faff9979b25460f33a7dca555e6939125be92809/ollama-code/src/utils/directory-manager.ts#L11)
 
 ## Indexable
 

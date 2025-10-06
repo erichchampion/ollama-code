@@ -7,6 +7,7 @@
 import { logger } from '../utils/logger.js';
 import { getPerformanceConfig } from '../config/performance.js';
 import { ArchitecturalAnalyzer } from './architectural-analyzer.js';
+import { THRESHOLD_CONSTANTS } from '../config/constants.js';
 import { calculateCyclomaticComplexity } from '../utils/complexity-calculator.js';
 import { detectLanguageFromPath } from '../utils/language-detector.js';
 import * as fs from 'fs/promises';
@@ -577,7 +578,7 @@ export class AutomatedCodeReviewer {
         // Good documentation
         const functionCount = this.extractMethods(file.content, file.language || 'typescript').length;
         const docCount = (file.content.match(/\/\*\*[\s\S]*?\*\//g) || []).length;
-        if (functionCount > 0 && docCount / functionCount > 0.7) {
+        if (functionCount > 0 && docCount / functionCount > THRESHOLD_CONSTANTS.CODE_REVIEW.GOOD_DOCUMENTATION_RATIO) {
             points.push({
                 category: 'documentation',
                 description: 'Good documentation coverage with JSDoc comments',
@@ -587,7 +588,7 @@ export class AutomatedCodeReviewer {
         // Proper error handling
         const tryCount = (file.content.match(/try\s*\{/g) || []).length;
         const functionCount2 = this.extractMethods(file.content, file.language || 'typescript').length;
-        if (functionCount2 > 0 && tryCount / functionCount2 > 0.3) {
+        if (functionCount2 > 0 && tryCount / functionCount2 > THRESHOLD_CONSTANTS.CODE_REVIEW.GOOD_ERROR_HANDLING_RATIO) {
             points.push({
                 category: 'error-handling',
                 description: 'Good error handling with appropriate try-catch blocks',
@@ -653,8 +654,8 @@ export class AutomatedCodeReviewer {
         const maintainability = avgMaintainability;
         const testability = Math.max(0, 1 - avgComplexity);
         const performance = Math.max(0, 1 - (fileReviews.reduce((sum, review) => sum + review.issues.filter(i => i.category === 'performance').length, 0) / (totalIssues || 1)));
-        const security = Math.max(0, 1 - (criticalIssues * 0.5 + majorIssues * 0.2) / Math.max(totalIssues, 1));
-        const documentationScore = fileReviews.reduce((sum, review) => sum + (review.issues.filter(i => i.category === 'documentation').length === 0 ? 1 : 0.5), 0) / fileReviews.length;
+        const security = Math.max(0, 1 - (criticalIssues * THRESHOLD_CONSTANTS.CODE_REVIEW.SECURITY_CRITICAL_WEIGHT + majorIssues * THRESHOLD_CONSTANTS.CODE_REVIEW.SECURITY_MAJOR_WEIGHT) / Math.max(totalIssues, 1));
+        const documentationScore = fileReviews.reduce((sum, review) => sum + (review.issues.filter(i => i.category === 'documentation').length === 0 ? 1 : THRESHOLD_CONSTANTS.CODE_REVIEW.DOCUMENTATION_WITH_ISSUES), 0) / fileReviews.length;
         const overallQuality = (readability + maintainability + testability + performance + security + documentationScore) / 6;
         // Determine recommended action
         let recommendedAction;
@@ -663,11 +664,11 @@ export class AutomatedCodeReviewer {
             recommendedAction = 'reject';
             reasoning = `${criticalIssues} critical security or quality issues must be addressed before approval`;
         }
-        else if (majorIssues > 5 || overallQuality < 0.6) {
+        else if (majorIssues > THRESHOLD_CONSTANTS.CODE_REVIEW.MAX_MAJOR_ISSUES || overallQuality < THRESHOLD_CONSTANTS.CODE_REVIEW.MAJOR_CHANGES_THRESHOLD) {
             recommendedAction = 'major-changes';
             reasoning = `Significant issues found that impact code quality and maintainability`;
         }
-        else if (totalIssues > 10 || overallQuality < 0.8) {
+        else if (totalIssues > THRESHOLD_CONSTANTS.CODE_REVIEW.MAX_TOTAL_ISSUES || overallQuality < THRESHOLD_CONSTANTS.CODE_REVIEW.MINOR_CHANGES_THRESHOLD) {
             recommendedAction = 'minor-changes';
             reasoning = `Some issues found that should be addressed for better code quality`;
         }

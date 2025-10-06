@@ -17,6 +17,7 @@ export default {
       testMatch: [
         '**/tests/*.test.js',
         '**/tests/unit/**/*.test.js',
+        '**/tests/unit/**/*.test.ts',
         '**/tests/unit/**/*.test.cjs',
         '**/__tests__/**/*.test.ts',
         '**/__tests__/**/*.test.js'
@@ -27,12 +28,21 @@ export default {
       transform: {
         '^.+\\.js$': 'babel-jest',
         '^.+\\.ts$': ['ts-jest', {
-          useESM: true
+          useESM: true,
+          tsconfig: {
+            module: 'ESNext',
+            moduleResolution: 'node',
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true
+          }
         }]
       },
       moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1'
-      }
+      },
+      transformIgnorePatterns: [
+        'node_modules/(?!(.*\\.mjs$))'
+      ]
     },
     {
       displayName: 'integration',
