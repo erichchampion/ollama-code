@@ -6,10 +6,14 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import path from 'path';
 import { normalizeError } from '../utils/error-utils.js';
 import { BaseTool, ToolMetadata, ToolResult, ToolExecutionContext } from './types.js';
 import { logger } from '../utils/logger.js';
 import { TIMEOUT_CONSTANTS } from '../config/constants.js';
+import { isPathSafe } from '../utils/path-security.js';
+import { TOOL_EXECUTION_CONSTANTS } from '../constants/tool-orchestration.js';
+import { DANGEROUS_COMMANDS } from '../constants/security.js';
 
 interface ExecutionResult {
   command: string;
@@ -26,6 +30,7 @@ export class ExecutionTool extends BaseTool {
     description: 'Secure command execution with timeout and output capture',
     category: 'core',
     version: '1.0.0',
+    displayOutput: true,
     parameters: [
       {
         name: 'command',
@@ -156,7 +161,7 @@ export class ExecutionTool extends BaseTool {
         : context.workingDirectory;
 
       // Security check: ensure working directory is within project boundaries
-      if (!this.isPathSafe(workingDir, context.projectRoot)) {
+      if (!isPathSafe(workingDir, context.projectRoot)) {
         return {
           success: false,
           error: 'Working directory is outside project boundaries'
@@ -233,15 +238,17 @@ export class ExecutionTool extends BaseTool {
           if (!child.killed) {
             child.kill('SIGKILL');
           }
-        }, 5000);
+        }, TOOL_EXECUTION_CONSTANTS.FORCE_KILL_GRACE_PERIOD);
       }, options.timeout);
 
-      // Handle abort signal
+      // Handle abort signal with cleanup
+      let abortHandler: (() => void) | undefined;
       if (options.abortSignal) {
-        options.abortSignal.addEventListener('abort', () => {
+        abortHandler = () => {
           clearTimeout(timeoutId);
           child.kill('SIGTERM');
-        });
+        };
+        options.abortSignal.addEventListener('abort', abortHandler);
       }
 
       // Capture output if requested
@@ -257,11 +264,20 @@ export class ExecutionTool extends BaseTool {
 
       child.on('error', (error) => {
         clearTimeout(timeoutId);
+        // Clean up abort listener
+        if (abortHandler && options.abortSignal) {
+          options.abortSignal.removeEventListener('abort', abortHandler);
+        }
         reject(error);
       });
 
       child.on('close', (code) => {
         clearTimeout(timeoutId);
+
+        // Clean up abort listener
+        if (abortHandler && options.abortSignal) {
+          options.abortSignal.removeEventListener('abort', abortHandler);
+        }
 
         const result: ExecutionResult = {
           command: `${options.command} ${options.args.join(' ')}`.trim(),
@@ -278,29 +294,14 @@ export class ExecutionTool extends BaseTool {
   }
 
   private isCommandSafe(command: string): boolean {
-    // Blacklist of dangerous commands
-    const dangerousCommands = [
-      'rm', 'rmdir', 'del', 'format', 'fdisk',
-      'sudo', 'su', 'chmod', 'chown',
-      'wget', 'curl', 'nc', 'netcat',
-      'eval', 'exec', 'sh', 'bash', 'cmd',
-      'powershell', 'pwsh'
-    ];
-
     const commandName = command.toLowerCase().split(/[/\\]/).pop() || command;
-    return !dangerousCommands.includes(commandName);
+    return !DANGEROUS_COMMANDS.includes(commandName as any);
   }
 
   private resolvePath(targetPath: string, basePath: string): string {
-    if (require('path').isAbsolute(targetPath)) {
+    if (path.isAbsolute(targetPath)) {
       return targetPath;
     }
-    return require('path').resolve(basePath, targetPath);
-  }
-
-  private isPathSafe(targetPath: string, projectRoot: string): boolean {
-    const resolved = require('path').resolve(targetPath);
-    const root = require('path').resolve(projectRoot);
-    return resolved.startsWith(root);
+    return path.resolve(basePath, targetPath);
   }
 }

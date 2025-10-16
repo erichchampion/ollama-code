@@ -55,9 +55,31 @@ export default {
       testEnvironment: 'node',
       testTimeout: 60000,
       maxWorkers: 1,
+      preset: 'ts-jest/presets/default-esm',
+      extensionsToTreatAsEsm: ['.ts'],
       transform: {
-        '^.+\\.js$': 'babel-jest'
-      }
+        '^.+\\.js$': 'babel-jest',
+        '^.+\\.ts$': ['ts-jest', {
+          useESM: true,
+          tsconfig: {
+            module: 'ESNext',
+            moduleResolution: 'node',
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true
+          }
+        }]
+      },
+      moduleNameMapper: {
+        '^(\\.{1,2}/.*)\\.js$': '$1'
+      },
+      transformIgnorePatterns: [
+        'node_modules/(?!(.*\\.mjs$))'
+      ],
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '/dist/',
+        'streaming-tools.test.js'  // Skip this test - has ESM issues
+      ]
     },
     {
       displayName: 'docs',

@@ -11,6 +11,7 @@ import { toolRegistry } from './registry.js';
 import { logger } from '../utils/logger.js';
 import { EXECUTION_CONSTANTS } from '../config/constants.js';
 import { normalizeError } from '../utils/error-utils.js';
+import { safeStringify } from '../utils/safe-json.js';
 
 // Re-export OrchestrationPlan for external use
 export type { OrchestrationPlan } from './types.js';
@@ -25,6 +26,7 @@ export class ToolOrchestrator extends EventEmitter {
   private config: ToolOrchestratorConfig;
   private activeExecutions = new Map<string, ToolExecution>();
   private executionCache = new Map<string, ToolResult>();
+  private cacheTimers = new Map<string, NodeJS.Timeout>();
 
   constructor(config: Partial<ToolOrchestratorConfig> = {}) {
     super();
@@ -79,11 +81,21 @@ export class ToolOrchestrator extends EventEmitter {
 
       // Cache successful results
       if (this.config.enableCaching && result.success) {
+        // Clear existing timer if any
+        const existingTimer = this.cacheTimers.get(cacheKey);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+        }
+
         this.executionCache.set(cacheKey, result);
-        // Set TTL cleanup
-        setTimeout(() => {
+
+        // Set TTL cleanup with tracked timer
+        const timer = setTimeout(() => {
           this.executionCache.delete(cacheKey);
+          this.cacheTimers.delete(cacheKey);
         }, this.config.cacheTTL);
+
+        this.cacheTimers.set(cacheKey, timer);
       }
 
       this.emit('execution', { type: 'complete', execution, data: result });
@@ -124,6 +136,9 @@ export class ToolOrchestrator extends EventEmitter {
     logger.info(`Starting orchestrated execution of ${queue.length} tools (max ${maxConcurrent} concurrent)`);
 
     while (queue.length > 0 || inProgress.size > 0) {
+      // Track promises for proper async coordination
+      const executionPromises: Promise<ToolResult>[] = [];
+
       // Find ready executions (dependencies satisfied)
       const readyExecutions = queue.filter(execution =>
         execution.dependencies.every(dep => completed.has(dep))
@@ -139,14 +154,13 @@ export class ToolOrchestrator extends EventEmitter {
         queue.splice(index, 1);
         inProgress.add(execution.id);
 
-        // Execute asynchronously
-        this.executeTool(execution.toolName, execution.parameters, context)
+        // Execute asynchronously and track promise
+        const promise = this.executeTool(execution.toolName, execution.parameters, context)
           .then(result => {
             results.set(execution.id, result);
             completed.add(execution.id);
-            inProgress.delete(execution.id);
-
             logger.debug(`Completed execution ${execution.id} (${execution.toolName})`);
+            return result;
           })
           .catch(error => {
             const errorResult: ToolResult = {
@@ -155,14 +169,21 @@ export class ToolOrchestrator extends EventEmitter {
             };
             results.set(execution.id, errorResult);
             completed.add(execution.id);
-            inProgress.delete(execution.id);
-
             logger.error(`Failed execution ${execution.id} (${execution.toolName}): ${error.message}`);
+            return errorResult;
+          })
+          .finally(() => {
+            inProgress.delete(execution.id);
           });
+
+        executionPromises.push(promise);
       }
 
-      // Wait a bit before checking for more ready executions
-      if (toStart.length === 0 && inProgress.size > 0) {
+      // Wait for at least one promise to complete before checking dependencies
+      if (executionPromises.length > 0) {
+        await Promise.race(executionPromises);
+      } else if (inProgress.size > 0) {
+        // If no new executions started but we have in-progress ones, wait briefly
         await new Promise(resolve => setTimeout(resolve, EXECUTION_CONSTANTS.TASK_POLL_INTERVAL));
       }
 
@@ -244,6 +265,12 @@ export class ToolOrchestrator extends EventEmitter {
       });
     }
     this.activeExecutions.clear();
+
+    // Clear all cache timers to prevent memory leaks
+    for (const timer of this.cacheTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.cacheTimers.clear();
   }
 
   private generateExecutionId(): string {
@@ -251,8 +278,24 @@ export class ToolOrchestrator extends EventEmitter {
   }
 
   private generateCacheKey(toolName: string, parameters: Record<string, any>): string {
-    const paramString = JSON.stringify(parameters, Object.keys(parameters).sort());
+    const paramString = safeStringify(parameters, { maxDepth: 5 });
+
+    // Use faster hash for large objects instead of base64
+    if (paramString.length > 1000) {
+      return `${toolName}:${this.hashString(paramString)}`;
+    }
+
     return `${toolName}:${Buffer.from(paramString).toString('base64')}`;
+  }
+
+  private hashString(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
   }
 
   private validateDependencies(plan: OrchestrationPlan): void {

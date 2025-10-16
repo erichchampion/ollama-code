@@ -9,6 +9,8 @@ import { promises as fs } from 'fs';
 import { normalizeError } from '../utils/error-utils.js';
 import * as path from 'path';
 import { logger } from '../utils/logger.js';
+import { getOrCompileGlobalRegex, getOrCompileRegex } from '../utils/regex-cache.js';
+import { safeParse } from '../utils/safe-json.js';
 
 export interface ASTNode {
   type: string;
@@ -494,7 +496,7 @@ class JavaScriptHandler extends LanguageHandler {
 
   renameSymbol(code: string, oldName: string, newName: string, scope?: string): ManipulationResult {
     const changes: CodeChange[] = [];
-    const symbolRegex = new RegExp(`\\b${oldName}\\b`, 'g');
+    const symbolRegex = getOrCompileGlobalRegex(`\\b${oldName}\\b`);
 
     let modifiedCode = code;
     let match;
@@ -521,7 +523,7 @@ class JavaScriptHandler extends LanguageHandler {
 
   extractFunction(code: string, functionName: string, targetLocation: string): ManipulationResult {
     // Simplified implementation - would need proper AST parsing for production
-    const functionRegex = new RegExp(`(function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{[^}]*\\})`, 'g');
+    const functionRegex = getOrCompileGlobalRegex(`(function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{[^}]*\\})`);
     const match = functionRegex.exec(code);
 
     if (!match) {
@@ -601,7 +603,7 @@ class TypeScriptHandler extends JavaScriptHandler {
 
     // Enhanced for TypeScript - extract type information
     functions.forEach(func => {
-      const typeRegex = new RegExp(`${func.name}\\s*\\([^)]*\\)\\s*:\\s*([^{]+)\\s*\\{`);
+      const typeRegex = getOrCompileRegex(`${func.name}\\s*\\([^)]*\\)\\s*:\\s*([^{]+)\\s*\\{`);
       const typeMatch = typeRegex.exec(code);
       if (typeMatch) {
         func.returnType = typeMatch[1].trim();
@@ -686,7 +688,7 @@ class PythonHandler extends LanguageHandler {
   renameSymbol(code: string, oldName: string, newName: string, scope?: string): ManipulationResult {
     // Similar to JavaScript implementation
     const changes: CodeChange[] = [];
-    const symbolRegex = new RegExp(`\\b${oldName}\\b`, 'g');
+    const symbolRegex = getOrCompileGlobalRegex(`\\b${oldName}\\b`);
 
     const modifiedCode = code.replace(symbolRegex, newName);
 
@@ -741,17 +743,16 @@ class PythonHandler extends LanguageHandler {
  */
 class JSONHandler extends LanguageHandler {
   parse(code: string): ASTNode {
-    try {
-      JSON.parse(code);
-      return {
-        type: 'JSON',
-        start: 0,
-        end: code.length,
-        range: [0, code.length]
-      };
-    } catch (error) {
-      throw new Error(`Invalid JSON: ${normalizeError(error).message}`);
+    const parsed = safeParse(code);
+    if (!parsed) {
+      throw new Error('Invalid JSON: Failed to parse');
     }
+    return {
+      type: 'JSON',
+      start: 0,
+      end: code.length,
+      range: [0, code.length]
+    };
   }
 
   extractFunctions(code: string): FunctionInfo[] {
@@ -768,7 +769,16 @@ class JSONHandler extends LanguageHandler {
 
   renameSymbol(code: string, oldName: string, newName: string): ManipulationResult {
     // Rename JSON property keys
-    const obj = JSON.parse(code);
+    const obj = safeParse(code);
+    if (!obj) {
+      return {
+        success: false,
+        originalCode: code,
+        modifiedCode: code,
+        changes: [],
+        error: 'Failed to parse JSON'
+      };
+    }
     const modifiedObj = this.renameObjectProperty(obj, oldName, newName);
 
     return {

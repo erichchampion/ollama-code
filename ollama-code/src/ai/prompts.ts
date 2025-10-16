@@ -331,6 +331,21 @@ function getLanguageFromFilePath(filePath: string): string {
 }
 
 /**
+ * System prompt for tool-calling mode
+ */
+export const TOOL_CALLING_SYSTEM_PROMPT = `You have access to tools. Use them to complete tasks.
+
+Tool Usage Guidelines:
+- For CODE CREATION tasks (e.g., "create a user auth system"), use the 'filesystem' tool with operation 'write' to create files
+- For CODE ANALYSIS tasks (e.g., "analyze this code"), use 'advanced-code-analysis' tool on existing files
+- Analysis tools ONLY work on existing code - if a path doesn't exist, use 'filesystem' to create it first
+- When using 'filesystem' tool, valid operations are: read, write, list, create, delete, search, exists
+- Use operation 'write' to create or update files with code content
+- Use operation 'create' to make new directories
+- Never use placeholder paths like "/path/to/..." - use actual relative paths like "src/auth.js" or omit optional path parameters
+- If a tool fails because a file doesn't exist and you need to create it, use 'filesystem' tool with 'write' operation`;
+
+/**
  * Generate a system prompt for enhanced AI
  */
 export function generateSystemPrompt(context?: any): string {
@@ -338,6 +353,13 @@ export function generateSystemPrompt(context?: any): string {
 
 You have access to project context and tools to assist with your tasks.
 Use the available tools effectively to provide accurate and helpful responses.`;
+}
+
+/**
+ * Generate a system prompt for tool calling
+ */
+export function generateToolCallingSystemPrompt(): string {
+  return TOOL_CALLING_SYSTEM_PROMPT;
 }
 
 /**

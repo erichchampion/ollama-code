@@ -136,7 +136,7 @@ This manual test plan validates the key functional capabilities of the Ollama Co
 - At least one Ollama model available (e.g., `llama3.2`, `codellama`)
 - Optional: API keys for testing multi-provider features (OpenAI, Anthropic, Google)
 - Project built successfully (`npm run build`)
-- CLI executable permissions set (`chmod +x dist/src/cli-selector.js`)
+- CLI built successfully (`yarn build`)
 - Git repository for testing git-related features
 
 ## Test Environment Setup
@@ -331,7 +331,7 @@ GitHub Actions workflow (`.github/workflows/test-e2e.yml`) provides:
 #### Test: Basic Intent Types
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced
+./dist/src/cli-selector.js --mode interactive
 ```
 
 **Test Queries:**
@@ -352,9 +352,10 @@ GitHub Actions workflow (`.github/workflows/test-e2e.yml`) provides:
 
 #### Test: Complex Query Understanding
 **Test Queries:**
-1. `"Create a user authentication system with JWT tokens and password hashing"`
-2. `"Analyze the security vulnerabilities in this code and suggest improvements"`
-3. `"Generate unit tests for the math functions and set up a testing framework"`
+1. `"Create a file called test.txt with content 'Hello World'"`
+2. `"Create a user authentication system with JWT tokens and password hashing"`
+3. `"Analyze the security vulnerabilities in this code and suggest improvements"`
+4. `"Generate unit tests for the math functions and set up a testing framework"`
 
 **Expected:**
 - Multi-faceted requests properly parsed
@@ -371,7 +372,7 @@ GitHub Actions workflow (`.github/workflows/test-e2e.yml`) provides:
 **Test Sequence:**
 ```bash
 # Start session
-./dist/src/cli-selector.js enhanced
+./dist/src/cli-selector.js --mode interactive
 ```
 1. `"Analyze this repository structure"`
 2. `"What about the test coverage?"`  (follow-up)
@@ -658,7 +659,7 @@ echo "Configuration data" > config.json
 #### Test: Specification Parsing and Understanding
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced
+./dist/src/cli-selector.js --mode interactive
 ```
 
 **Test Specifications:**
@@ -1012,7 +1013,7 @@ EOF
 #### Test: Provider Discovery and Capabilities
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced
+./dist/src/cli-selector.js --mode interactive
 ```
 
 **Test Queries:**
@@ -2039,7 +2040,7 @@ EOF
 ```
 
 **Commands:**
-1. `"Start enhanced mode"` (missing config)
+1. `"Start interactive mode"` (missing config)
 2. `"Analyze performance"` (invalid config)
 3. `"Set default model to llama3.2"` (config correction)
 
@@ -3142,9 +3143,9 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Analyze this repository's development patterns"
-./dist/src/cli-selector.js enhanced "Show me repository health metrics"
-./dist/src/cli-selector.js enhanced "Identify file hotspots and change patterns"
+./dist/src/cli-selector.js ask "Analyze this repository's development patterns"
+./dist/src/cli-selector.js ask "Show me repository health metrics"
+./dist/src/cli-selector.js ask "Identify file hotspots and change patterns"
 ```
 
 **Expected Results:**
@@ -3165,9 +3166,9 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Which files are changed most frequently?"
-./dist/src/cli-selector.js enhanced "Show me potential problem areas in the codebase"
-./dist/src/cli-selector.js enhanced "Analyze technical debt hotspots"
+./dist/src/cli-selector.js ask "Which files are changed most frequently?"
+./dist/src/cli-selector.js ask "Show me potential problem areas in the codebase"
+./dist/src/cli-selector.js ask "Analyze technical debt hotspots"
 ```
 
 **Expected:**
@@ -3189,8 +3190,8 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Generate conventional commit message for staged changes"
-./dist/src/cli-selector.js enhanced "Create commit message in conventional format"
+./dist/src/cli-selector.js git-commit
+./dist/src/cli-selector.js git-commit --style conventional
 ```
 
 **Expected Results:**
@@ -3209,8 +3210,8 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Generate descriptive commit message"
-./dist/src/cli-selector.js enhanced "Create detailed commit with explanation"
+./dist/src/cli-selector.js git-commit
+./dist/src/cli-selector.js git-commit --style detailed
 ```
 
 **Expected:**
@@ -3224,8 +3225,8 @@ kill $NC_PID  # Clean up
 #### Test: Emoji-Enhanced Commit Style
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Generate commit message with emojis"
-./dist/src/cli-selector.js enhanced "Create fun commit message with appropriate emojis"
+./dist/src/cli-selector.js git-commit --style emoji
+./dist/src/cli-selector.js git-commit --emoji
 ```
 
 **Expected:**
@@ -3247,9 +3248,9 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Review pull request #123"
-./dist/src/cli-selector.js enhanced "Analyze this merge request for potential issues"
-./dist/src/cli-selector.js enhanced "Generate comprehensive PR review"
+./dist/src/cli-selector.js git-pr --review 123
+./dist/src/cli-selector.js ask "Analyze this merge request for potential issues"
+./dist/src/cli-selector.js git-pr --review --comprehensive
 ```
 
 **Expected Results:**
@@ -3304,9 +3305,9 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Assess regression risk for current changes"
-./dist/src/cli-selector.js enhanced "Analyze historical patterns for similar changes"
-./dist/src/cli-selector.js enhanced "Predict potential issues with this modification"
+./dist/src/cli-selector.js ask "Assess regression risk for current changes"
+./dist/src/cli-selector.js ask "Analyze historical patterns for similar changes"
+./dist/src/cli-selector.js ask "Predict potential issues with this modification"
 ```
 
 **Expected Results:**
@@ -3345,9 +3346,9 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Show code quality trends over time"
-./dist/src/cli-selector.js enhanced "Generate quality improvement recommendations"
-./dist/src/cli-selector.js enhanced "Track technical debt progression"
+./dist/src/cli-selector.js ask "Show code quality trends over time"
+./dist/src/cli-selector.js ask "Generate quality improvement recommendations"
+./dist/src/cli-selector.js ask "Track technical debt progression"
 ```
 
 **Expected Results:**
@@ -3384,8 +3385,8 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Analyze impact across related repositories"
-./dist/src/cli-selector.js enhanced "Show cross-repo dependency changes"
+./dist/src/cli-selector.js ask "Analyze impact across related repositories"
+./dist/src/cli-selector.js ask "Show cross-repo dependency changes"
 ```
 
 **Expected:**
@@ -3398,8 +3399,8 @@ kill $NC_PID  # Clean up
 #### Test: Team Activity Insights
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Show team collaboration patterns"
-./dist/src/cli-selector.js enhanced "Generate development activity summary"
+./dist/src/cli-selector.js ask "Show team collaboration patterns"
+./dist/src/cli-selector.js ask "Generate development activity summary"
 ```
 
 **Expected:**
@@ -3420,9 +3421,9 @@ kill $NC_PID  # Clean up
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Install git hooks for AI-powered analysis"
-./dist/src/cli-selector.js enhanced "Configure git hooks with quality gates"
-./dist/src/cli-selector.js enhanced "Show git hooks status and configuration"
+./dist/src/cli-selector.js ask "Install git hooks for AI-powered analysis"
+./dist/src/cli-selector.js ask "Configure git hooks with quality gates"
+./dist/src/cli-selector.js git-status
 ```
 
 **Expected Results:**
@@ -3538,8 +3539,8 @@ git push origin feature/documentation-update
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Generate CI/CD configuration for platform X"
-./dist/src/cli-selector.js enhanced "Analyze CI pipeline integration options"
+./dist/src/cli-selector.js generate "CI/CD configuration for platform X"
+./dist/src/cli-selector.js ask "Analyze CI pipeline integration options"
 ```
 
 **Expected Results:**
@@ -3591,8 +3592,8 @@ git push origin feature/documentation-update
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Validate VCS configuration settings"
-./dist/src/cli-selector.js enhanced "Show configuration defaults and overrides"
+./dist/src/cli-selector.js config-show
+./dist/src/cli-selector.js config-show --all
 ```
 
 **Expected Results:**
@@ -3626,8 +3627,8 @@ git push origin feature/documentation-update
 
 **Commands:**
 ```bash
-./dist/src/cli-selector.js enhanced "Initialize VCS intelligence with default settings"
-./dist/src/cli-selector.js enhanced "Create custom VCS configuration for security-focused workflow"
+./dist/src/cli-selector.js git-init
+./dist/src/cli-selector.js config-init
 ```
 
 **Expected Results:**
@@ -4034,8 +4035,8 @@ DEBUG=component-status ./dist/src/cli-selector.js --mode interactive
 #### Test: Real-Time File Watching and Updates
 **Test Setup:**
 ```bash
-# Start file watching in background
-./dist/src/cli-selector.js enhanced
+# Start interactive mode in background
+./dist/src/cli-selector.js --mode interactive
 # In another terminal, make file changes
 echo "// New function" >> src/validation.js
 echo "export const newVar = 42;" >> math.js
@@ -4534,7 +4535,7 @@ git add . && git commit -m "Large codebase simulation"
 **Test Scenario:**
 ```bash
 # Start real-time monitoring
-./dist/src/cli-selector.js enhanced
+./dist/src/cli-selector.js --mode interactive
 # Command: "Start real-time monitoring for this project"
 
 # In separate terminal, simulate development activity
@@ -4640,7 +4641,7 @@ mkdir src/new-module && echo "export class NewModule {}" > src/new-module/index.
 ```bash
 # Simulate multiple concurrent sessions
 for i in {1..5}; do
-  ./dist/src/cli-selector.js enhanced &
+  ./dist/src/cli-selector.js --mode interactive &
 done
 ```
 

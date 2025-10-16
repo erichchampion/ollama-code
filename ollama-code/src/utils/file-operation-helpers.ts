@@ -35,9 +35,12 @@ export interface EditRequestFile {
 /**
  * Initialize file operation context (eliminates repeated initialization)
  */
-export function initializeFileOperationContext(): FileOperationContext {
+export async function initializeFileOperationContext(): Promise<FileOperationContext> {
+  const editor = new EnhancedCodeEditor();
+  await editor.initialize();
+
   return {
-    editor: new EnhancedCodeEditor(),
+    editor,
     aiClient: getAIClient()
   };
 }
@@ -165,6 +168,48 @@ export async function modifyFileWithContent(
 }
 
 /**
+ * Extract code from markdown code blocks
+ */
+function extractCodeFromMarkdown(content: string): string {
+  if (!content) return '';
+
+  // Try to find markdown code blocks
+  const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)```/g;
+  const matches = [...content.matchAll(codeBlockRegex)];
+
+  if (matches.length > 0) {
+    // Return the first code block content
+    return matches[0][1].trim();
+  }
+
+  // If no code blocks found, check if the content itself looks like code
+  // (doesn't start with prose-like text)
+  const lines = content.trim().split('\n');
+  const firstLine = lines[0].trim();
+
+  // If it starts with typical code patterns, return as-is
+  if (
+    firstLine.startsWith('import ') ||
+    firstLine.startsWith('export ') ||
+    firstLine.startsWith('const ') ||
+    firstLine.startsWith('let ') ||
+    firstLine.startsWith('var ') ||
+    firstLine.startsWith('function ') ||
+    firstLine.startsWith('class ') ||
+    firstLine.startsWith('//') ||
+    firstLine.startsWith('/*') ||
+    firstLine.startsWith('{') ||
+    firstLine.startsWith('(')
+  ) {
+    return content.trim();
+  }
+
+  // Otherwise, assume the whole content is wrapped in explanation text
+  // and try to extract what looks like code
+  return content.trim();
+}
+
+/**
  * Generate code using AI with consistent prompt structure
  */
 export async function generateCodeWithAI(
@@ -202,7 +247,7 @@ export async function generateCodeWithAI(
 Requirements:
 {requirements}
 
-Provide only the code:`,
+IMPORTANT: Respond with ONLY the code, no explanations or markdown formatting:`,
     {
       description,
       context: contextParts.length > 0 ? '\n' + contextParts.join('\n') : '',
@@ -211,7 +256,10 @@ Provide only the code:`,
   );
 
   const response = await context.aiClient.complete(prompt);
-  return response.message?.content || '';
+  const rawContent = response.message?.content || '';
+
+  // Extract code from markdown if present
+  return extractCodeFromMarkdown(rawContent);
 }
 
 /**

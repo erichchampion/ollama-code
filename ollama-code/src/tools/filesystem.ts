@@ -10,20 +10,23 @@ import { normalizeError } from '../utils/error-utils.js';
 import path from 'path';
 import { BaseTool, ToolMetadata, ToolResult, ToolExecutionContext } from './types.js';
 import { logger } from '../utils/logger.js';
-import { getGitIgnoreParser } from '../utils/gitignore-parser.js';
-import { getDefaultExcludePatterns, globToRegex } from '../config/file-patterns.js';
+import { getGitIgnoreParserSafe } from '../utils/gitignore-parser.js';
+import { getDefaultExcludePatterns } from '../config/file-patterns.js';
+import { isPathSafe } from '../utils/path-security.js';
+import { createMultiPathExclusionChecker } from '../utils/file-exclusion.js';
+import { globToRegex } from '../utils/regex-cache.js';
 
 export class FileSystemTool extends BaseTool {
   metadata: ToolMetadata = {
     name: 'filesystem',
-    description: 'Comprehensive file system operations for reading, writing, and managing files',
+    description: 'Comprehensive file system operations for reading, writing, creating, and managing files. Use this tool to create new code files, modify existing files, read file contents, and manage directories.',
     category: 'core',
     version: '1.0.0',
     parameters: [
       {
         name: 'operation',
         type: 'string',
-        description: 'The file operation to perform',
+        description: 'The file operation to perform (read, write, list, create, delete, search, exists). Use "write" to create or update files with content, "create" to make directories, "read" to get file contents.',
         required: true,
         validation: (value) => ['read', 'write', 'list', 'create', 'delete', 'search', 'exists'].includes(value)
       },
@@ -124,7 +127,7 @@ export class FileSystemTool extends BaseTool {
       const resolvedPath = path.resolve(context.workingDirectory, filePath);
 
       // Security check: ensure path is within project boundaries
-      if (!this.isPathSafe(resolvedPath, context.projectRoot)) {
+      if (!isPathSafe(resolvedPath, context.projectRoot)) {
         return {
           success: false,
           error: 'Path is outside project boundaries'
@@ -241,27 +244,10 @@ export class FileSystemTool extends BaseTool {
     const items: any[] = [];
 
     // Set up gitignore parser if enabled
-    let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
-    if (respectGitIgnore && projectRoot) {
-      try {
-        gitIgnoreParser = getGitIgnoreParser(projectRoot);
-      } catch (error) {
-        logger.warn('Failed to load .gitignore parser for listing', error);
-      }
-    }
+    const gitIgnoreParser = getGitIgnoreParserSafe(projectRoot, respectGitIgnore, 'listing');
 
-    // Create exclude regexes
-    const excludeRegexes = excludePatterns.map(pattern => globToRegex(pattern));
-
-    const shouldExclude = (filePath: string): boolean => {
-      // Check gitignore first (if enabled)
-      if (gitIgnoreParser && gitIgnoreParser.isIgnored(filePath)) {
-        return true;
-      }
-
-      // Check hardcoded patterns
-      return excludeRegexes.some(regex => regex.test(filePath));
-    };
+    // Create exclusion checker
+    const shouldExclude = createMultiPathExclusionChecker(excludePatterns, gitIgnoreParser);
 
     const processDirectory = async (currentPath: string): Promise<void> => {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
@@ -271,7 +257,7 @@ export class FileSystemTool extends BaseTool {
         const relativePath = path.relative(dirPath, fullPath);
 
         // Skip excluded paths
-        if (shouldExclude(fullPath) || shouldExclude(relativePath) || shouldExclude(entry.name)) {
+        if (shouldExclude(fullPath, relativePath, entry.name)) {
           continue;
         }
 
@@ -323,30 +309,13 @@ export class FileSystemTool extends BaseTool {
 
   private async searchFiles(dirPath: string, pattern?: string, recursive: boolean = false, excludePatterns: string[] = [], respectGitIgnore: boolean = true, projectRoot?: string): Promise<any> {
     const matches: any[] = [];
-    const regex = pattern ? new RegExp(pattern.replace(/\*/g, '.*')) : null;
+    const regex = pattern ? globToRegex(pattern) : null;
 
     // Set up gitignore parser if enabled
-    let gitIgnoreParser: ReturnType<typeof getGitIgnoreParser> | null = null;
-    if (respectGitIgnore && projectRoot) {
-      try {
-        gitIgnoreParser = getGitIgnoreParser(projectRoot);
-      } catch (error) {
-        logger.warn('Failed to load .gitignore parser for searching', error);
-      }
-    }
+    const gitIgnoreParser = getGitIgnoreParserSafe(projectRoot, respectGitIgnore, 'searching');
 
-    // Create exclude regexes
-    const excludeRegexes = excludePatterns.map(pattern => globToRegex(pattern));
-
-    const shouldExclude = (filePath: string): boolean => {
-      // Check gitignore first (if enabled)
-      if (gitIgnoreParser && gitIgnoreParser.isIgnored(filePath)) {
-        return true;
-      }
-
-      // Check hardcoded patterns
-      return excludeRegexes.some(regex => regex.test(filePath));
-    };
+    // Create exclusion checker
+    const shouldExclude = createMultiPathExclusionChecker(excludePatterns, gitIgnoreParser);
 
     const searchDirectory = async (currentPath: string): Promise<void> => {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
@@ -356,7 +325,7 @@ export class FileSystemTool extends BaseTool {
         const relativePath = path.relative(dirPath, fullPath);
 
         // Skip excluded paths
-        if (shouldExclude(fullPath) || shouldExclude(relativePath) || shouldExclude(entry.name)) {
+        if (shouldExclude(fullPath, relativePath, entry.name)) {
           continue;
         }
 
@@ -388,11 +357,5 @@ export class FileSystemTool extends BaseTool {
     } catch {
       return false;
     }
-  }
-
-  private isPathSafe(targetPath: string, projectRoot: string): boolean {
-    const resolved = path.resolve(targetPath);
-    const root = path.resolve(projectRoot);
-    return resolved.startsWith(root);
   }
 }

@@ -87,7 +87,7 @@ describe('Model Management & Analytics CLI Commands Integration', () => {
           expect(result.exitCode).toBe(0);
           expect(result.stdout.includes(model) || result.stdout.includes('Downloading')).toBe(true);
         }
-      });
+      }, 180000); // 3 minutes timeout for pulling 3 models (45s each + buffer)
 
       test('should test pull-model command help', async () => {
         const helpResult = await cliRunner.testCommandHelp('pull-model');

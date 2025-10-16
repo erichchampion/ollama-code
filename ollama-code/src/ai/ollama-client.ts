@@ -27,6 +27,40 @@ import {
 export interface OllamaMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  tool_calls?: OllamaToolCall[];
+}
+
+// Tool calling types
+export interface OllamaTool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: {
+      type: 'object';
+      properties: Record<string, {
+        type: string;
+        description: string;
+        enum?: string[];
+      }>;
+      required: string[];
+    };
+  };
+}
+
+export interface OllamaToolCall {
+  id?: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string; // JSON string
+  };
+}
+
+export interface OllamaToolResult {
+  tool_call_id: string;
+  role: 'tool';
+  content: string;
 }
 
 export interface OllamaCompletionOptions {
@@ -54,6 +88,7 @@ export interface OllamaCompletionRequest {
   system?: string;
   context?: number[];
   format?: string;
+  tools?: OllamaTool[];
 }
 
 export interface OllamaCompletionResponse {
@@ -79,6 +114,7 @@ export interface OllamaStreamEvent {
   message?: {
     role: string;
     content: string;
+    tool_calls?: OllamaToolCall[];
   };
   done: boolean;
   total_duration?: number;
@@ -288,6 +324,129 @@ export class OllamaClient {
     }
   }
   
+  /**
+   * Send a streaming completion request with tool calling support
+   */
+  async completeStreamWithTools(
+    prompt: string | OllamaMessage[],
+    tools: OllamaTool[],
+    options: OllamaCompletionOptions = {},
+    callbacks: {
+      onContent?: (chunk: string) => void;
+      onToolCall?: (toolCall: OllamaToolCall) => Promise<any>;
+      onComplete?: () => void;
+      onError?: (error: Error) => void;
+    },
+    abortSignal?: AbortSignal
+  ): Promise<void> {
+    logger.debug('Sending streaming completion request with tools', {
+      model: options.model || this.config.defaultModel,
+      toolCount: tools.length
+    });
+
+    // Format the request
+    const messages: OllamaMessage[] = Array.isArray(prompt)
+      ? prompt
+      : [{ role: 'user', content: prompt }];
+
+    const request: OllamaCompletionRequest = {
+      model: options.model || this.config.defaultModel,
+      messages,
+      temperature: options.temperature ?? this.config.defaultTemperature,
+      top_p: options.topP ?? this.config.defaultTopP,
+      top_k: options.topK ?? this.config.defaultTopK,
+      stream: true,
+      tools: tools.length > 0 ? tools : undefined
+    };
+
+    // Add optional parameters
+    if (options.repeatPenalty !== undefined) request.repeat_penalty = options.repeatPenalty;
+    if (options.stopSequences) request.stop = options.stopSequences;
+    if (options.system) request.system = options.system;
+    if (options.context) request.context = options.context;
+    if (options.format) request.format = options.format;
+
+    // Track tool calls for this request
+    const pendingToolCalls = new Map<string, OllamaToolCall>();
+
+    try {
+      await this.sendStreamRequest('/api/chat', {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(request),
+        signal: abortSignal
+      }, async (event: OllamaStreamEvent) => {
+        try {
+          // Handle content streaming
+          if (event.message?.content && callbacks.onContent) {
+            callbacks.onContent(event.message.content);
+          }
+
+          // Handle tool calls
+          if (event.message?.tool_calls) {
+            for (const toolCall of event.message.tool_calls) {
+              const callId = toolCall.id || `${toolCall.function.name}-${Date.now()}`;
+
+              // Check if this is a new or updated tool call
+              if (!pendingToolCalls.has(callId)) {
+                pendingToolCalls.set(callId, toolCall);
+
+                // Execute tool call if callback provided
+                if (callbacks.onToolCall) {
+                  try {
+                    const result = await callbacks.onToolCall(toolCall);
+                    logger.debug('Tool call executed', {
+                      toolName: toolCall.function.name,
+                      success: true
+                    });
+                  } catch (toolError) {
+                    logger.error('Tool execution failed', {
+                      toolName: toolCall.function.name,
+                      error: toolError
+                    });
+                    if (callbacks.onError) {
+                      callbacks.onError(toolError as Error);
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // Handle completion
+          if (event.done && callbacks.onComplete) {
+            callbacks.onComplete();
+          }
+        } catch (eventError) {
+          logger.error('Error processing stream event', eventError);
+          if (callbacks.onError) {
+            callbacks.onError(eventError as Error);
+          }
+        }
+      }, abortSignal);
+
+    } catch (error) {
+      logger.error('Streaming completion with tools failed', error);
+
+      if (callbacks.onError) {
+        callbacks.onError(error as Error);
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw createUserError('Streaming request was cancelled', {
+          category: ErrorCategory.TIMEOUT,
+          resolution: 'Request was aborted by user or system.'
+        });
+      }
+
+      throw createUserError('Failed to get streaming response from Ollama', {
+        cause: error,
+        category: ErrorCategory.AI_SERVICE,
+        resolution: 'Check that Ollama is running and the model is available. Try running "ollama serve" to start the server.'
+      });
+    }
+  }
+
   /**
    * List available models
    */

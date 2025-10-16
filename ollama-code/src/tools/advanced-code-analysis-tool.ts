@@ -8,6 +8,7 @@ import { ArchitecturalAnalyzer } from '../ai/architectural-analyzer.js';
 import { RefactoringEngine } from '../ai/refactoring-engine.js';
 import { TestGenerator } from '../ai/test-generator.js';
 import { calculateCyclomaticComplexity } from '../utils/complexity-calculator.js';
+import { CODE_ANALYSIS_CONSTANTS } from '../constants/tool-orchestration.js';
 
 export interface CodeAnalysisOptions {
     language?: 'typescript' | 'javascript' | 'python' | 'auto';
@@ -32,7 +33,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
 
     metadata: ToolMetadata = {
         name: 'advanced-code-analysis',
-        description: 'Comprehensive code quality analysis and improvement suggestions with AST parsing and semantic analysis',
+        description: 'Comprehensive code quality analysis and improvement suggestions for EXISTING code with AST parsing and semantic analysis. This tool analyzes code that already exists - use filesystem tool to create new files first.',
         category: 'code-quality',
         version: '1.0.0',
         parameters: [
@@ -45,7 +46,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
             {
                 name: 'target',
                 type: 'string',
-                description: 'File or directory path to analyze',
+                description: 'File or directory path to analyze. Use relative paths like "src/app.ts" or "." for current directory. Omit this parameter entirely to analyze the working directory.',
                 required: false
             },
             {
@@ -118,7 +119,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
         const targetPath = path.resolve(context.workingDirectory, target);
 
         if (!fs.existsSync(targetPath)) {
-            return this.createErrorResult(`Target path does not exist: ${targetPath}`);
+            return this.createErrorResult(`Target path does not exist: ${targetPath}. This tool analyzes existing code only. To create new files, use the filesystem tool with operation 'write' or 'create' first.`);
         }
 
         const isDirectory = fs.statSync(targetPath).isDirectory();
@@ -1046,7 +1047,7 @@ export class AdvancedCodeAnalysisTool extends BaseTool {
                     recommendations.push('Reduce function complexity by breaking down large functions');
                 }
 
-                if (content.length > 10000) {
+                if (content.length > CODE_ANALYSIS_CONSTANTS.MAX_FILE_SIZE_FOR_ANALYSIS) {
                     recommendations.push('Consider splitting large files into smaller modules');
                 }
 

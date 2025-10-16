@@ -108,12 +108,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 349,
+                      "duration": 293,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.381Z",
+                      "startTime": "2025-10-08T02:50:10.980Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -142,12 +142,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 362,
+                      "duration": 294,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.372Z",
+                      "startTime": "2025-10-08T02:50:10.984Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -176,12 +176,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 713,
+                      "duration": 696,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.378Z",
+                      "startTime": "2025-10-08T02:50:10.983Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -218,7 +218,7 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "failed",
-                      "duration": 451,
+                      "duration": 379,
                       "error": {
                         "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m",
                         "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n    at /Users/erich/git/github/erichchampion/ollama-code/ollama-code/tests/e2e/cli/basic-cli.e2e.test.ts:58:29",
@@ -227,7 +227,7 @@
                           "column": 29,
                           "line": 58
                         },
-                        "snippet": "  56 |\n  57 |     // Basic smoke test - should not crash\n> 58 |     expect(result.exitCode).toBe(0);\n     |                             ^\n  59 |     expect(result.stdout.length).toBeGreaterThan(0);\n  60 |   });\n  61 |"
+                        "snippet": "\u001b[0m \u001b[90m 56 |\u001b[39m\n \u001b[90m 57 |\u001b[39m     \u001b[90m// Basic smoke test - should not crash\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 58 |\u001b[39m     expect(result\u001b[33m.\u001b[39mexitCode)\u001b[33m.\u001b[39mtoBe(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 59 |\u001b[39m     expect(result\u001b[33m.\u001b[39mstdout\u001b[33m.\u001b[39mlength)\u001b[33m.\u001b[39mtoBeGreaterThan(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 60 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 61 |\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
@@ -236,13 +236,13 @@
                             "column": 29,
                             "line": 58
                           },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\n  56 |\n  57 |     // Basic smoke test - should not crash\n> 58 |     expect(result.exitCode).toBe(0);\n     |                             ^\n  59 |     expect(result.stdout.length).toBeGreaterThan(0);\n  60 |   });\n  61 |\n    at /Users/erich/git/github/erichchampion/ollama-code/ollama-code/tests/e2e/cli/basic-cli.e2e.test.ts:58:29"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\n\u001b[0m \u001b[90m 56 |\u001b[39m\n \u001b[90m 57 |\u001b[39m     \u001b[90m// Basic smoke test - should not crash\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 58 |\u001b[39m     expect(result\u001b[33m.\u001b[39mexitCode)\u001b[33m.\u001b[39mtoBe(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 59 |\u001b[39m     expect(result\u001b[33m.\u001b[39mstdout\u001b[33m.\u001b[39mlength)\u001b[33m.\u001b[39mtoBeGreaterThan(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 60 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 61 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/erich/git/github/erichchampion/ollama-code/ollama-code/tests/e2e/cli/basic-cli.e2e.test.ts:58:29\u001b[22m"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.376Z",
+                      "startTime": "2025-10-08T02:50:10.986Z",
                       "annotations": [],
                       "attachments": [],
                       "errorLocation": {
@@ -281,7 +281,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.378Z",
+                      "startTime": "2025-10-08T02:50:10.982Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -318,12 +318,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 326,
+                      "duration": 281,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.405Z",
+                      "startTime": "2025-10-08T02:50:11.009Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -349,15 +349,15 @@
                   "projectName": "cli-e2e",
                   "results": [
                     {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 608,
+                      "duration": 641,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-10-01T21:29:45.738Z",
+                      "startTime": "2025-10-08T02:50:11.286Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -377,8 +377,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-10-01T21:29:44.665Z",
-    "duration": 1696.935,
+    "startTime": "2025-10-08T02:50:10.470Z",
+    "duration": 1472.0389999999998,
     "expected": 6,
     "skipped": 0,
     "unexpected": 1,

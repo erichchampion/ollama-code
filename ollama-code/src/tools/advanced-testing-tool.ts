@@ -28,7 +28,7 @@ export class AdvancedTestingTool extends BaseTool {
             {
                 name: 'target',
                 type: 'string',
-                description: 'File or directory path to analyze for testing',
+                description: 'File or directory path to analyze for testing. Use relative paths like "src/utils.ts" or "." for current directory. Omit this parameter entirely to analyze the working directory.',
                 required: false
             },
             {

@@ -257,6 +257,39 @@ export function getGitIgnoreParser(projectRoot: string): GitIgnoreParser {
 }
 
 /**
+ * Safely get a GitIgnoreParser with error handling
+ *
+ * @param projectRoot - The root directory of the project
+ * @param respectGitIgnore - Whether to respect .gitignore files
+ * @param operation - The operation being performed (for logging)
+ * @returns GitIgnoreParser instance or null if disabled or on error
+ *
+ * @example
+ * ```typescript
+ * const parser = getGitIgnoreParserSafe('/project/root', true, 'listing');
+ * if (parser) {
+ *   const isIgnored = parser.isIgnored('node_modules/file.js');
+ * }
+ * ```
+ */
+export function getGitIgnoreParserSafe(
+    projectRoot: string | undefined,
+    respectGitIgnore: boolean,
+    operation: string
+): GitIgnoreParser | null {
+    if (!respectGitIgnore || !projectRoot) {
+        return null;
+    }
+
+    try {
+        return getGitIgnoreParser(projectRoot);
+    } catch (error) {
+        logger.warn(`Failed to load .gitignore parser for ${operation}`, error);
+        return null;
+    }
+}
+
+/**
  * Clear the parser cache (useful for testing)
  */
 export function clearParserCache(): void {

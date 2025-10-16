@@ -17,7 +17,7 @@ export * from './advanced-git-tool.js';
 export * from './advanced-code-analysis-tool.js';
 export * from './advanced-testing-tool.js';
 
-import { toolRegistry } from './registry.js';
+import { ToolRegistry, toolRegistry } from './registry.js';
 import { FileSystemTool } from './filesystem.js';
 import { SearchTool } from './search.js';
 import { ExecutionTool } from './execution.js';
@@ -26,10 +26,19 @@ import { AdvancedCodeAnalysisTool } from './advanced-code-analysis-tool.js';
 import { AdvancedTestingTool } from './advanced-testing-tool.js';
 import { logger } from '../utils/logger.js';
 
+// Track if tool system has been initialized
+let toolSystemInitialized = false;
+
 /**
  * Initialize the tool system by registering all available tools
  */
 export function initializeToolSystem(): void {
+  // Skip if already initialized
+  if (toolSystemInitialized) {
+    logger.debug('Tool system already initialized, skipping');
+    return;
+  }
+
   try {
     // Register core tools
     toolRegistry.register(new FileSystemTool());
@@ -41,6 +50,7 @@ export function initializeToolSystem(): void {
     toolRegistry.register(new AdvancedCodeAnalysisTool());
     toolRegistry.register(new AdvancedTestingTool());
 
+    toolSystemInitialized = true;
     logger.info('Tool system initialized successfully');
     logger.debug(`Registered ${toolRegistry.list().length} tools`);
 
@@ -48,6 +58,21 @@ export function initializeToolSystem(): void {
     logger.error(`Failed to initialize tool system: ${error}`);
     throw error;
   }
+}
+
+/**
+ * Reset tool system initialization state (mainly for testing)
+ */
+export function resetToolSystem(): void {
+  toolSystemInitialized = false;
+  logger.debug('Tool system initialization state reset');
+}
+
+/**
+ * Get the tool registry instance
+ */
+export function getToolRegistry(): ToolRegistry {
+  return toolRegistry;
 }
 
 /**

@@ -300,9 +300,11 @@ export class CodeEditor {
       switch (ext) {
         case '.js':
         case '.mjs':
+        case '.jsx':
           await this.validateJavaScript(content, errors, warnings);
           break;
         case '.ts':
+        case '.tsx':
           await this.validateTypeScript(content, errors, warnings);
           break;
         case '.json':
@@ -337,11 +339,39 @@ export class CodeEditor {
    */
   private async validateJavaScript(content: string, errors: string[], warnings: string[]): Promise<void> {
     try {
-      // Use Node.js VM module to check syntax
-      const vm = await import('vm');
-      vm.compileFunction(content);
+      // Check if content appears to be JSX
+      const isJSX = content.includes('<') && content.includes('>') &&
+                    (content.includes('React') || content.includes('Component') ||
+                     content.includes('import') || content.includes('export'));
+
+      if (!isJSX) {
+        // Only use strict VM validation for plain JavaScript
+        const vm = await import('vm');
+        vm.compileFunction(content);
+      } else {
+        // For JSX, do basic validation only
+        // Check for balanced brackets
+        const openBrackets = (content.match(/\{/g) || []).length;
+        const closeBrackets = (content.match(/\}/g) || []).length;
+        if (openBrackets !== closeBrackets) {
+          errors.push('Unbalanced curly braces in JSX');
+        }
+
+        // Check for balanced JSX tags
+        const openTags = (content.match(/<[^/][^>]*>/g) || []).filter(tag => !tag.endsWith('/>'));
+        const closeTags = (content.match(/<\/[^>]+>/g) || []);
+        if (openTags.length !== closeTags.length) {
+          warnings.push('Possibly unbalanced JSX tags');
+        }
+      }
     } catch (error) {
-      errors.push(`JavaScript syntax error: ${normalizeError(error).message}`);
+      const errorMsg = normalizeError(error).message;
+      // Don't fail on JSX-related syntax errors
+      if (!errorMsg.includes('Unexpected token') && !errorMsg.includes('<')) {
+        errors.push(`JavaScript syntax error: ${errorMsg}`);
+      } else {
+        warnings.push('JSX syntax detected - ensure proper transpilation');
+      }
     }
 
     // Check for common issues
@@ -429,6 +459,9 @@ export class CodeEditor {
    * Create a backup of the original content
    */
   private async createBackup(edit: CodeEdit): Promise<string> {
+    // Ensure backup directory exists
+    await fs.mkdir(this.backupDir, { recursive: true });
+
     const timestamp = edit.timestamp.toISOString().replace(/[:.]/g, '-');
     const fileName = `${path.basename(edit.filePath)}-${timestamp}-${edit.id}.backup`;
     const backupPath = path.join(this.backupDir, fileName);

@@ -32,6 +32,7 @@ export interface OptimizedEnhancedModeOptions {
   enableBackgroundLoading?: boolean;
   performanceMonitoring?: boolean;
   fallbackMode?: boolean;
+  enableStreamingTools?: boolean;
 }
 
 interface PromptResult {
@@ -49,6 +50,9 @@ export class OptimizedEnhancedMode {
   private running = false;
   private options: Required<OptimizedEnhancedModeOptions>;
   private initializationResult?: any;
+  private conversationHistory: any[] = []; // Track conversation for streaming tools
+  private streamingOrchestrator?: any; // Reuse orchestrator to maintain state
+  private conversationInitialized = false; // Track if conversation has been initialized
 
   // Cached components for quick access
   private componentsReady = new Set<ComponentType>();
@@ -63,7 +67,8 @@ export class OptimizedEnhancedMode {
       preferredApproach: options.preferredApproach ?? 'balanced',
       enableBackgroundLoading: options.enableBackgroundLoading ?? true,
       performanceMonitoring: options.performanceMonitoring ?? true,
-      fallbackMode: options.fallbackMode ?? false
+      fallbackMode: options.fallbackMode ?? false,
+      enableStreamingTools: options.enableStreamingTools ?? true
     };
 
     // Initialize core systems with LEGACY factory to avoid circular dependency
@@ -243,8 +248,12 @@ export class OptimizedEnhancedMode {
           continue;
         }
 
-        // Process the input with smart component loading
-        await this.processUserInputOptimized(userInput);
+        // Process the input with streaming tools or traditional routing
+        if (this.options.enableStreamingTools) {
+          await this.processWithStreamingTools(userInput);
+        } else {
+          await this.processUserInputOptimized(userInput);
+        }
 
         // Add a small delay to allow terminal to stabilize after streaming output
         await new Promise(resolve => setTimeout(resolve, TIMEOUT_CONFIG.INITIALIZATION_DELAY));
@@ -255,6 +264,106 @@ export class OptimizedEnhancedMode {
     }
 
     this.terminal?.info('Goodbye! 👋');
+  }
+
+  /**
+   * Process user input with streaming tools (if enabled)
+   */
+  private async processWithStreamingTools(userInput: string): Promise<void> {
+    if (!this.terminal) {
+      throw new Error('Terminal not available');
+    }
+
+    try {
+      // Import streaming orchestrator and constants
+      const { StreamingToolOrchestrator } = await import('../tools/streaming-orchestrator.js');
+      const { initializeToolSystem, getToolRegistry } = await import('../tools/index.js');
+      const { TOOL_ORCHESTRATION_DEFAULTS } = await import('../constants/tool-orchestration.js');
+
+      // Initialize tool system if needed
+      await initializeToolSystem();
+      const toolRegistry = getToolRegistry();
+
+      // Get Ollama client
+      const aiClient = await this.componentFactory.getComponent<any>('aiClient', {
+        timeout: this.getComponentTimeout('aiClient')
+      });
+
+      // Create terminal adapter for streaming orchestrator
+      const terminalAdapter = {
+        write: (text: string) => {
+          if (this.terminal && typeof this.terminal.write === 'function') {
+            this.terminal.write(text);
+          } else {
+            process.stdout.write(text);
+          }
+        },
+        info: (text: string) => {
+          if (this.terminal && typeof this.terminal.info === 'function') {
+            this.terminal.info(text);
+          } else {
+            console.log(`INFO: ${text}`);
+          }
+        },
+        success: (text: string) => {
+          if (this.terminal && typeof this.terminal.success === 'function') {
+            this.terminal.success(text);
+          } else {
+            console.log(`SUCCESS: ${text}`);
+          }
+        },
+        warn: (text: string) => {
+          if (this.terminal && typeof this.terminal.warn === 'function') {
+            this.terminal.warn(text);
+          } else {
+            console.warn(`WARN: ${text}`);
+          }
+        },
+        error: (text: string) => {
+          if (this.terminal && typeof this.terminal.error === 'function') {
+            this.terminal.error(text);
+          } else {
+            console.error(`ERROR: ${text}`);
+          }
+        }
+      };
+
+      // Create or reuse orchestrator to maintain conversation state
+      if (!this.streamingOrchestrator) {
+        this.streamingOrchestrator = new StreamingToolOrchestrator(
+          aiClient.client || aiClient, // Get underlying Ollama client
+          toolRegistry,
+          terminalAdapter,
+          {
+            enableToolCalling: TOOL_ORCHESTRATION_DEFAULTS.ENABLE_TOOL_CALLING,
+            maxToolsPerRequest: TOOL_ORCHESTRATION_DEFAULTS.MAX_TOOLS_PER_REQUEST,
+            toolTimeout: TOOL_ORCHESTRATION_DEFAULTS.TOOL_TIMEOUT
+          }
+        );
+      }
+
+      // Add user message to conversation history
+      this.conversationHistory.push({ role: 'user', content: userInput });
+
+      // Execute with streaming tools, passing conversation history
+      await this.streamingOrchestrator.executeWithStreamingAndHistory(
+        this.conversationHistory,
+        {
+          projectRoot: process.cwd(),
+          workingDirectory: process.cwd(),
+          environment: process.env as Record<string, string>,
+          timeout: TOOL_ORCHESTRATION_DEFAULTS.TOOL_CONTEXT_TIMEOUT
+        }
+      );
+
+    } catch (error) {
+      logger.error('Streaming tools execution failed:', error);
+      this.terminal.error(`Error: ${normalizeError(error).message}`);
+
+      // Fallback to traditional routing
+      this.terminal.info('Falling back to traditional processing...');
+      await this.processUserInputOptimized(userInput);
+    }
   }
 
   /**
@@ -668,6 +777,15 @@ export class OptimizedEnhancedMode {
       return;
     }
 
+    // Debug log the result type
+    logger.debug('handleRoutingResult received:', {
+      type: result.type,
+      action: result.action,
+      hasData: !!result.data,
+      hasResponse: !!result.response,
+      hasEnhancedContext: !!result.enhancedContext
+    });
+
     // Store result for conversation management - simplified for now
     // TODO: Implement proper conversation turn storage based on ConversationManager interface
     try {
@@ -702,7 +820,10 @@ export class OptimizedEnhancedMode {
     } else if (result.type === 'conversation') {
       // Handle conversation/AI response requests
       try {
-        logger.debug('Processing conversation response');
+        logger.debug('Processing conversation response', {
+          hasContextualPrompt: !!result.data?.contextualPrompt,
+          hasEnhancedContext: !!result.enhancedContext
+        });
 
         // Use the contextual prompt from the routing data
         const prompt = result.data?.contextualPrompt || userInput;
@@ -784,6 +905,108 @@ export class OptimizedEnhancedMode {
         return;
       } catch (error) {
         this.terminal.error(`Tool processing failed: ${normalizeError(error).message}`);
+        return;
+      }
+    } else if (result.type === 'file_operation') {
+      // Handle file operation requests (create, edit, delete files)
+      try {
+        const operation = result.fileOperation?.operation;
+        const targetFile = result.fileOperation?.targetFile;
+
+        logger.debug('Processing file operation request', {
+          operation,
+          targetFile,
+          hasDescription: !!result.fileOperation?.description
+        });
+
+        // Execute the appropriate file operation command
+        const { executeCommand } = await import('../commands/index.js');
+
+        if (operation === 'create') {
+          const description = result.fileOperation?.description || userInput;
+
+          // Check if we have a target file path
+          if (!targetFile) {
+            // No file path specified - need to generate one based on the description
+            this.terminal.info('Determining file path and generating code...');
+
+            try {
+              // Ask AI to suggest a file path based on the description
+              const aiClient = await this.componentFactory.getComponent<any>('aiClient', {
+                timeout: this.getComponentTimeout('aiClient')
+              });
+
+              const pathPrompt = `Based on this request: "${description}"
+
+Suggest a single, appropriate file path. Consider:
+- Component type (React component, class, function, etc.)
+- Naming conventions (PascalCase for components, camelCase for utilities, etc.)
+- File extension (.jsx, .tsx, .js, .ts, .py, etc.)
+- Common directory structures (src/, components/, utils/, etc.)
+
+Reply with ONLY the file path, nothing else. Example: src/components/LoginForm.jsx`;
+
+              const response = await aiClient.complete(pathPrompt);
+              const rawContent = response.message?.content;
+              const suggestedPath = rawContent ? rawContent.trim() : '';
+
+              if (suggestedPath && suggestedPath.length > 0 && suggestedPath.length < 200) {
+                // Use the suggested path
+                this.terminal.info(`Creating file: ${suggestedPath}...`);
+                await executeCommand('create-file', ['--path', suggestedPath, '--description', description]);
+                this.terminal.success(`✓ File created: ${suggestedPath}`);
+                return;
+              } else {
+                // Invalid path from AI - fall back to generate-code
+                logger.debug('AI suggested invalid path, falling back to generate-code');
+                this.terminal.info('Generating code (could not determine file path)...');
+                await executeCommand('generate-code', ['--description', description]);
+                this.terminal.info('\nTo save this code, use: create-file with a specific path');
+                return;
+              }
+            } catch (error) {
+              logger.debug('Failed to determine file path via AI:', error);
+              this.terminal.info('Generating code (could not determine file path)...');
+              await executeCommand('generate-code', ['--description', description]);
+              this.terminal.info('\nTo save this code, use: create-file with a specific path');
+              return;
+            }
+          }
+
+          this.terminal.info(`Creating file: ${targetFile}...`);
+
+          // Use create-file command with the user's description
+          const args = ['--path', targetFile, '--description', description];
+
+          await executeCommand('create-file', args);
+          this.terminal.success(`✓ File created successfully`);
+          return;
+        } else if (operation === 'edit' || operation === 'modify') {
+          if (!targetFile) {
+            this.terminal.warn('No target file specified. Please specify which file to edit.');
+            return;
+          }
+
+          this.terminal.info(`Editing file: ${targetFile}...`);
+
+          // Use edit-file command with the user's instructions
+          const instructions = result.fileOperation?.description || userInput;
+          await executeCommand('edit-file', ['--path', targetFile, '--instructions', instructions]);
+          this.terminal.success(`✓ File edited successfully`);
+          return;
+        } else if (operation === 'delete') {
+          // For safety, we should ask for confirmation before deleting
+          this.terminal.warn('File deletion requires confirmation. Use the file system directly for deletions.');
+          return;
+        } else {
+          // Unknown operation - fall back to AI assistance
+          logger.debug(`Unknown file operation: ${operation}, falling back to AI`);
+          this.terminal.info('Processing file operation...');
+          await this.handleSimpleAIRequest(userInput);
+          return;
+        }
+      } catch (error) {
+        this.terminal.error(`File operation processing failed: ${normalizeError(error).message}`);
         return;
       }
     }

@@ -11,6 +11,7 @@ export interface ToolParameter {
   description: string;
   required: boolean;
   default?: any;
+  enum?: string[];
   validation?: (value: any) => boolean;
 }
 
@@ -22,6 +23,8 @@ export interface ToolMetadata {
   parameters: ToolParameter[];
   examples: ToolExample[];
   dependencies?: string[];
+  /** Whether to display tool output (stdout/stderr) to user */
+  displayOutput?: boolean;
 }
 
 export interface ToolExample {

@@ -11,7 +11,10 @@ import path from 'path';
 import { BaseTool, ToolMetadata, ToolResult, ToolExecutionContext } from './types.js';
 import { logger } from '../utils/logger.js';
 import { getGitIgnoreParser } from '../utils/gitignore-parser.js';
-import { getDefaultExcludePatterns, globToRegex } from '../config/file-patterns.js';
+import { getDefaultExcludePatterns } from '../config/file-patterns.js';
+import { isPathSafe } from '../utils/path-security.js';
+import { createExclusionChecker } from '../utils/file-exclusion.js';
+import { globToRegex } from '../utils/regex-cache.js';
 
 interface SearchMatch {
   file: string;
@@ -166,7 +169,7 @@ export class SearchTool extends BaseTool {
       const resolvedPath = path.resolve(context.workingDirectory, searchPath);
 
       // Security check
-      if (!this.isPathSafe(resolvedPath, context.projectRoot)) {
+      if (!isPathSafe(resolvedPath, context.projectRoot)) {
         return {
           success: false,
           error: 'Search path is outside project boundaries'
@@ -243,7 +246,7 @@ export class SearchTool extends BaseTool {
     const startTime = Date.now();
 
     const filePatternRegex = options.filePattern
-      ? new RegExp(options.filePattern.replace(/\*/g, '.*'))
+      ? globToRegex(options.filePattern)
       : null;
 
     // Set up gitignore parser if enabled
@@ -256,17 +259,8 @@ export class SearchTool extends BaseTool {
       }
     }
 
-    const excludeRegexes = options.excludePatterns.map(pattern => globToRegex(pattern));
-
-    const shouldExclude = (filePath: string): boolean => {
-      // Check gitignore first (if enabled)
-      if (gitIgnoreParser && gitIgnoreParser.isIgnored(filePath)) {
-        return true;
-      }
-
-      // Check hardcoded patterns
-      return excludeRegexes.some(regex => regex.test(filePath));
-    };
+    // Create exclusion checker
+    const shouldExclude = createExclusionChecker(options.excludePatterns, gitIgnoreParser);
 
     const searchDirectory = async (dirPath: string): Promise<void> => {
       if (matches.length >= options.maxResults) return;
@@ -340,9 +334,13 @@ export class SearchTool extends BaseTool {
         if (matches.length >= options.maxResults) break;
 
         const line = lines[i];
-        const match = options.searchRegex.exec(line);
 
-        if (match) {
+        // Use matchAll for proper regex handling (no stateful lastIndex issues)
+        const lineMatches = Array.from(line.matchAll(options.searchRegex));
+
+        for (const match of lineMatches) {
+          if (matches.length >= options.maxResults) break;
+
           const contextBefore = lines.slice(
             Math.max(0, i - options.contextLines),
             i
@@ -355,7 +353,7 @@ export class SearchTool extends BaseTool {
           matches.push({
             file: relativePath,
             line: i + 1,
-            column: match.index + 1,
+            column: (match.index || 0) + 1,
             content: line,
             context: {
               before: contextBefore,
@@ -363,19 +361,10 @@ export class SearchTool extends BaseTool {
             }
           });
         }
-
-        // Reset regex lastIndex to avoid issues with global regex
-        options.searchRegex.lastIndex = 0;
       }
     } catch (error) {
       // Skip files that can't be read (binary files, permission issues, etc.)
       logger.debug(`Skipping file ${filePath}: ${error}`);
     }
-  }
-
-  private isPathSafe(targetPath: string, projectRoot: string): boolean {
-    const resolved = path.resolve(targetPath);
-    const root = path.resolve(projectRoot);
-    return resolved.startsWith(root);
   }
 }

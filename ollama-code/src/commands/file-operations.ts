@@ -59,7 +59,7 @@ export const createFileCommand: CommandDef = {
     }
 
     await executeFileOperation(async () => {
-      const context = initializeFileOperationContext();
+      const context = await initializeFileOperationContext();
 
       // Generate content if description provided
       let content = args.content || '';
@@ -120,7 +120,7 @@ export const editFileCommand: CommandDef = {
     }
 
     await executeFileOperation(async () => {
-      const context = initializeFileOperationContext();
+      const context = await initializeFileOperationContext();
 
       // Read current content
       const currentContent = await fs.readFile(args.path, 'utf-8');
@@ -199,7 +199,7 @@ export const generateCodeCommand: CommandDef = {
     }
 
     await executeFileOperation(async () => {
-      const context = initializeFileOperationContext();
+      const context = await initializeFileOperationContext();
 
       const generatedCode = await generateCodeWithAI(context, args.description, {
         language: args.language,
@@ -262,7 +262,7 @@ export const createTestsCommand: CommandDef = {
     }
 
     await executeFileOperation(async () => {
-      const context = initializeFileOperationContext();
+      const context = await initializeFileOperationContext();
 
       const sourceContent = await fs.readFile(args.source, 'utf-8');
 

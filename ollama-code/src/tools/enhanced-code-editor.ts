@@ -13,6 +13,7 @@ import * as path from 'path';
 import { logger } from '../utils/logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { CodeEditor, CodeEdit, EditResult, ValidationResult } from './code-editor.js';
+import { getOrCompileGlobalRegex } from '../utils/regex-cache.js';
 
 // Core interfaces for enhanced editing capabilities
 export interface EditRequest {
@@ -313,7 +314,7 @@ export class EnhancedCodeEditor extends CodeEditor {
     }
 
     const pattern = typeof fileOp.searchPattern === 'string'
-      ? new RegExp(fileOp.searchPattern, 'g')
+      ? getOrCompileGlobalRegex(fileOp.searchPattern)
       : fileOp.searchPattern;
 
     return currentContent.replace(pattern, fileOp.replaceContent);
@@ -400,7 +401,8 @@ export class EnhancedCodeEditor extends CodeEditor {
 
     for (const [key, value] of Object.entries(data)) {
       const placeholder = `{{${key}}}`;
-      result = result.replace(new RegExp(placeholder, 'g'), String(value));
+      const regex = getOrCompileGlobalRegex(this.escapeRegex(placeholder));
+      result = result.replace(regex, String(value));
     }
 
     // Apply coding style if available
@@ -569,7 +571,8 @@ export const {{routeName}} = async (req: Request, res: Response): Promise<void> 
     if (style.indentation === 'spaces') {
       result = result.replace(/\t/g, ' '.repeat(style.indentSize));
     } else {
-      result = result.replace(new RegExp(` {${style.indentSize}}`, 'g'), '\t');
+      const spacesRegex = getOrCompileGlobalRegex(` {${style.indentSize}}`);
+      result = result.replace(spacesRegex, '\t');
     }
 
     // Apply line endings
@@ -578,6 +581,10 @@ export const {{routeName}} = async (req: Request, res: Response): Promise<void> 
     }
 
     return result;
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private generateDiff(oldContent: string, newContent: string): string {
