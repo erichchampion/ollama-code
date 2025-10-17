@@ -191,6 +191,18 @@ export class StreamingToolOrchestrator {
           },
           {
             onContent: (chunk: string) => {
+              // Detect if this chunk is part of a JSON tool call
+              // Only show JSON if LOG_LEVEL=debug
+              const isDebugMode = process.env.LOG_LEVEL === 'debug';
+              const looksLikeJson = chunk.trim().match(/^[{\s]*"?(name|arguments)"?[\s:]/);
+
+              // Hide JSON tool calls in normal mode
+              if (!isDebugMode && looksLikeJson) {
+                // Suppress JSON output, will show as formatted tool execution instead
+                assistantMessage.content += chunk;
+                return;
+              }
+
               this.safeTerminalWrite(chunk);
               assistantMessage.content += chunk;
 
@@ -911,8 +923,33 @@ export class StreamingToolOrchestrator {
       }
     }
 
-    // Show execution start
-    this.safeTerminalCall('info', `🔧 Executing: ${toolName}`);
+    // Show execution start - format differently for debug vs normal mode
+    const isDebugMode = process.env.LOG_LEVEL === 'debug';
+    if (isDebugMode) {
+      // Debug mode: show tool name and parameters
+      this.safeTerminalCall('info', `🔧 Tool Call: ${toolName}`);
+      this.safeTerminalCall('info', JSON.stringify(parameters, null, 2));
+      this.safeTerminalCall('info', `🔧 Executing: ${toolName}`);
+    } else {
+      // Normal mode: show clean, readable execution message
+      if (toolName === 'execution' && parameters.command) {
+        this.safeTerminalCall('info', `🔧 Running: ${parameters.command}`);
+      } else if (toolName === 'filesystem' && parameters.operation && parameters.path) {
+        const operation = parameters.operation;
+        const path = parameters.path;
+        if (operation === 'write') {
+          this.safeTerminalCall('info', `🔧 Creating file: ${path}`);
+        } else if (operation === 'read') {
+          this.safeTerminalCall('info', `🔧 Reading file: ${path}`);
+        } else if (operation === 'create') {
+          this.safeTerminalCall('info', `🔧 Creating directory: ${path}`);
+        } else {
+          this.safeTerminalCall('info', `🔧 ${operation}: ${path}`);
+        }
+      } else {
+        this.safeTerminalCall('info', `🔧 Executing: ${toolName}`);
+      }
+    }
 
     try {
 
@@ -921,7 +958,8 @@ export class StreamingToolOrchestrator {
         throw new Error(`Invalid parameters for tool: ${toolName}`);
       }
 
-      // Execute with timeout
+      // Execute with timeout and measure execution time
+      const startTime = Date.now();
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(
           () => reject(new Error(`Tool execution timeout (${this.config.toolTimeout}ms)`)),
@@ -934,13 +972,24 @@ export class StreamingToolOrchestrator {
         timeoutPromise
       ]);
 
+      const executionTime = Math.round((Date.now() - startTime) / 1000);
+
       // Store result with bounds checking
       const callId = toolCall.id || `${toolName}-${Date.now()}`;
       this.addToolResult(callId, result);
 
-      // Show result
+      // Show result with execution time
       if (result.success) {
-        this.safeTerminalCall('success', `✓ ${toolName} completed`);
+        if (isDebugMode) {
+          this.safeTerminalCall('success', `✓ ${toolName} completed`);
+        } else {
+          // Show execution time for long-running commands
+          if (executionTime > 5) {
+            this.safeTerminalCall('success', `✓ completed (${executionTime}s)`);
+          } else {
+            this.safeTerminalCall('success', `✓ completed`);
+          }
+        }
 
         // Show command output if tool has displayOutput flag
         if (tool.metadata.displayOutput && result.data) {

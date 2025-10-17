@@ -12,8 +12,10 @@ export const TOOL_ORCHESTRATION_DEFAULTS = {
   /** Maximum number of tools that can be called in a single request */
   MAX_TOOLS_PER_REQUEST: 10,
 
-  /** Timeout for individual tool execution (30 seconds) */
-  TOOL_TIMEOUT: 30000,
+  /** Timeout for individual tool execution (120 seconds / 2 minutes)
+   * Increased to allow long-running commands like npm install, create-react-app
+   */
+  TOOL_TIMEOUT: 120000,
 
   /** Maximum context size for tool execution (60 seconds) */
   TOOL_CONTEXT_TIMEOUT: 60000,
@@ -94,8 +96,11 @@ export const CODE_ANALYSIS_CONSTANTS = {
  * Streaming and conversation constants
  */
 export const STREAMING_CONSTANTS = {
-  /** Maximum conversation turns to prevent infinite loops */
-  MAX_CONVERSATION_TURNS: 10,
+  /** Maximum conversation turns to prevent infinite loops
+   * Increased to 20 to allow complex multi-step tasks
+   * Smart turn limit (3 consecutive failures) prevents actual infinite loops
+   */
+  MAX_CONVERSATION_TURNS: 20,
 
   /** Maximum JSON parse attempts in streaming content */
   MAX_STREAMING_PARSE_ATTEMPTS: 10
