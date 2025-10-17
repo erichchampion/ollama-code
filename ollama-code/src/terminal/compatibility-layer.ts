@@ -7,6 +7,7 @@
 
 import { logger } from '../utils/logger.js';
 import { initTerminal } from './index.js';
+import { getMinimalConfig } from '../utils/config-helpers.js';
 
 export interface CompatibleTerminal {
   success(message: string): void;
@@ -309,7 +310,7 @@ export class TerminalCompatibilityLayer {
     // Try to create interactive terminal first if preferred
     if (preferInteractive && TerminalCompatibilityLayer.isInteractiveEnvironment()) {
       try {
-        const terminal = await initTerminal({});
+        const terminal = await initTerminal(getMinimalConfig());
         logger.debug('Created interactive terminal');
         return new InteractiveTerminal(terminal);
       } catch (error) {
@@ -397,7 +398,7 @@ export class TerminalCompatibilityLayer {
     if (envInfo.isInteractive) {
       // Try interactive terminal
       try {
-        const terminal = await initTerminal({});
+        const terminal = await initTerminal(getMinimalConfig());
         return new InteractiveTerminal(terminal);
       } catch (error) {
         logger.warn('Failed to create interactive terminal, using fallback:', error);

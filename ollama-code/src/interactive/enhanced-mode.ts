@@ -81,7 +81,8 @@ export class EnhancedInteractiveMode {
     logger.info('Initializing enhanced interactive mode...');
 
     // Initialize terminal
-    this.terminal = await initTerminal({});
+    const { getMinimalConfig } = await import('../utils/config-helpers.js');
+    this.terminal = await initTerminal(getMinimalConfig());
 
     // Register services for dependency injection
     const { registerServices } = await import('../core/services.js');
@@ -277,14 +278,33 @@ export class EnhancedInteractiveMode {
       // Add timeout to prevent hanging on routing
       // Use centralized timeout constant for consistency
       const { INTERACTIVE_REQUEST_TIMEOUT } = await import('../constants.js');
+
+      // Create timeout with proper cleanup to prevent memory leaks
+      let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`Request processing timeout after ${INTERACTIVE_REQUEST_TIMEOUT / 1000} seconds`)), INTERACTIVE_REQUEST_TIMEOUT);
+        timeoutId = setTimeout(() => {
+          reject(new Error(`Request processing timeout after ${INTERACTIVE_REQUEST_TIMEOUT / 1000} seconds`));
+        }, INTERACTIVE_REQUEST_TIMEOUT);
       });
 
-      const routingResult = await Promise.race([
-        this.nlRouter.route(userInput, routingContext),
-        timeoutPromise
-      ]) as any;
+      let routingResult: any;
+      try {
+        routingResult = await Promise.race([
+          this.nlRouter.route(userInput, routingContext),
+          timeoutPromise
+        ]) as any;
+
+        // Clear timeout immediately after race resolves to prevent memory leak
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+      } finally {
+        // Ensure timeout is always cleared, even if an error occurs
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      }
 
       processSpinner.succeed('Request processed');
 
@@ -1411,13 +1431,86 @@ ${analysisResult.actions.map((action: any) =>
    * Utility methods
    */
   private async getUserInput(): Promise<string> {
-    const prompt = await this.terminal.prompt({
-      type: 'input',
-      name: 'input',
-      message: '💬 How can I help you?',
-    });
+    const readline = await import('readline');
 
-    return prompt.input;
+    return new Promise<string>((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: '💬 How can I help you? '
+      });
+
+      let lines: string[] = [];
+      let isMultiLineMode = false;
+      let pasteBuffer: string[] = [];
+      let pasteTimer: NodeJS.Timeout | null = null;
+
+      // Show initial prompt
+      rl.prompt();
+
+      // Handle line input
+      rl.on('line', (line: string) => {
+        // Check if this might be a paste operation (multiple lines received quickly)
+        if (pasteTimer) {
+          clearTimeout(pasteTimer);
+        }
+
+        pasteBuffer.push(line);
+
+        // Set timer to detect end of paste
+        pasteTimer = setTimeout(() => {
+          // If we have accumulated lines in paste buffer, process them as multi-line
+          if (pasteBuffer.length > 1) {
+            if (!isMultiLineMode) {
+              isMultiLineMode = true;
+              this.terminal.info('Multi-line input detected. Enter an empty line to submit, or type "cancel" to cancel.');
+            }
+            lines.push(...pasteBuffer);
+            pasteBuffer = [];
+            rl.prompt();
+          } else if (pasteBuffer.length === 1) {
+            const currentLine = pasteBuffer[0];
+            pasteBuffer = [];
+
+            if (isMultiLineMode) {
+              // In multi-line mode, empty line submits
+              if (currentLine.trim() === '') {
+                rl.close();
+                resolve(lines.join('\n'));
+                return;
+              }
+              // Check for cancel
+              if (currentLine.trim().toLowerCase() === 'cancel') {
+                this.terminal.warn('Input cancelled');
+                rl.close();
+                resolve('');
+                return;
+              }
+              lines.push(currentLine);
+              rl.setPrompt('... ');
+              rl.prompt();
+            } else {
+              // Single line mode - return immediately
+              rl.close();
+              resolve(currentLine);
+            }
+          }
+        }, 50); // 50ms delay to detect paste operations
+      });
+
+      // Handle Ctrl+C
+      rl.on('SIGINT', () => {
+        rl.close();
+        resolve('');
+      });
+
+      // Cleanup on close
+      rl.on('close', () => {
+        if (pasteTimer) {
+          clearTimeout(pasteTimer);
+        }
+      });
+    });
   }
 
   private handleSpecialCommands(input: string): boolean {

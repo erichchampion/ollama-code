@@ -1197,12 +1197,17 @@ function registerThemeCommand(): void {
         // Update the theme in the configuration
         const configModule = await import('../config/index.js');
         const currentConfig = await configModule.loadConfig();
-        
+
         if (!currentConfig.terminal) {
-          currentConfig.terminal = {};
+          currentConfig.terminal = {
+            theme: 'system' as const,
+            useColors: true,
+            showProgressIndicators: true,
+            codeHighlighting: true
+          };
         }
-        
-        currentConfig.terminal.theme = theme.toLowerCase();
+
+        currentConfig.terminal.theme = theme.toLowerCase() as 'dark' | 'light' | 'system';
         
         logger.info(`Theme updated to: ${theme}`);
         console.log(`Theme set to: ${theme}`);
@@ -1290,12 +1295,16 @@ function registerVerbosityCommand(): void {
         // Update the verbosity level in the configuration
         const configModule = await import('../config/index.js');
         const currentConfig = await configModule.loadConfig();
-        
+
         if (!currentConfig.logger) {
-          currentConfig.logger = {};
+          currentConfig.logger = {
+            level: 'info' as const,
+            timestamps: true,
+            colors: true
+          };
         }
-        
-        currentConfig.logger.level = level.toLowerCase();
+
+        currentConfig.logger.level = level.toLowerCase() as 'error' | 'warn' | 'info' | 'debug';
         
         // Update the logger instance directly
         logger.setLevel(logLevel);

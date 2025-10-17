@@ -15,26 +15,15 @@ import { initExecutionEnvironment } from './execution/index.js';
 import { initErrorHandling } from './errors/index.js';
 import { initTelemetry } from './telemetry/index.js';
 import { logger } from './utils/logger.js';
+import type { AppInstance, InitializationOptions } from './types/app-interfaces.js';
 
-/**
- * Application instance that holds references to all initialized subsystems
- */
-export interface AppInstance {
-  config: any;
-  terminal: any;
-  ai: any;
-  codebase: any;
-  commands: any;
-  fileOps: any;
-  execution: any;
-  errors: any;
-  telemetry: any;
-}
+// Re-export the types for external use
+export type { AppInstance, InitializationOptions } from './types/app-interfaces.js';
 
 /**
  * Initialize all application subsystems
  */
-export async function initialize(options: any = {}): Promise<AppInstance> {
+export async function initialize(options: InitializationOptions = {}): Promise<AppInstance> {
   // Set up error handling first
   const errors = initErrorHandling();
   
@@ -62,11 +51,11 @@ export async function initialize(options: any = {}): Promise<AppInstance> {
     // Initialize command processor
     const commands = await initCommandProcessor(config, {
       terminal,
-      ai,
-      codebase,
-      fileOps,
-      execution,
-      errors
+      ai: ai as any,
+      codebase: codebase as any,
+      fileOps: fileOps as any,
+      execution: execution as any,
+      errors: errors as any
     });
     
     // Initialize telemetry if enabled
@@ -79,12 +68,12 @@ export async function initialize(options: any = {}): Promise<AppInstance> {
     return {
       config,
       terminal,
-      ai,
-      codebase,
+      ai: ai as any, // Type assertion: implementation has additional properties
+      codebase: codebase as any, // Type assertion: implementation has additional properties
       commands,
-      fileOps,
-      execution,
-      errors,
+      fileOps: fileOps as any, // Type assertion: implementation has additional properties
+      execution: execution as any, // Type assertion: implementation has additional properties
+      errors: errors as any, // Type assertion: implementation has additional properties
       telemetry
     };
   } catch (error) {
@@ -166,7 +155,7 @@ function setupProcessHandlers(app: AppInstance): void {
 /**
  * Main entry point function
  */
-export async function main(options: any = {}): Promise<void> {
+export async function main(options: InitializationOptions = {}): Promise<void> {
   const app = await initialize(options);
   setupProcessHandlers(app);
   await run(app);

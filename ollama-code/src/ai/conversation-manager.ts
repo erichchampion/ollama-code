@@ -416,9 +416,25 @@ export class ConversationManager {
     }
   }
 
+  /**
+   * Trim conversation history using a sliding window approach
+   * Keeps the most recent messages up to maxHistorySize limit
+   */
   private trimHistory(): void {
-    if (this.conversationHistory.length > this.maxHistorySize) {
+    const currentSize = this.conversationHistory.length;
+
+    if (currentSize > this.maxHistorySize) {
+      const removedCount = currentSize - this.maxHistorySize;
+
+      // Use sliding window: remove oldest messages, keep most recent
       this.conversationHistory = this.conversationHistory.slice(-this.maxHistorySize);
+
+      logger.debug('Trimmed conversation history', {
+        previousSize: currentSize,
+        newSize: this.conversationHistory.length,
+        removedCount,
+        maxSize: this.maxHistorySize
+      });
     }
   }
 
@@ -533,11 +549,33 @@ export class ConversationManager {
     return [];
   }
 
+  /**
+   * Ensure persistence directory exists with retry mechanism
+   */
   private async ensurePersistenceDirectory(): Promise<void> {
-    try {
-      await fs.mkdir(this.persistencePath, { recursive: true });
-    } catch (error) {
-      logger.error('Failed to create persistence directory:', error);
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000; // 1 second
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        await fs.mkdir(this.persistencePath, { recursive: true });
+        logger.debug('Persistence directory created/verified', {
+          path: this.persistencePath,
+          attempt
+        });
+        return; // Success
+      } catch (error) {
+        logger.warn(`Failed to create persistence directory (attempt ${attempt}/${MAX_RETRIES}):`, error);
+
+        if (attempt < MAX_RETRIES) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+        } else {
+          // Final attempt failed
+          logger.error('Failed to create persistence directory after all retries:', error);
+          throw new Error(`Could not create persistence directory: ${error}`);
+        }
+      }
     }
   }
 }

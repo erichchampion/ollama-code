@@ -8,13 +8,13 @@
 
 > **default**: `object`
 
-Defined in: [config/index.ts:274](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/config/index.ts#L274)
+Defined in: [config/index.ts:298](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/config/index.ts#L298)
 
 ## Type Declaration
 
 ### loadConfig()
 
-> **loadConfig**: (`options`) => `Promise`\<`any`\>
+> **loadConfig**: (`options`) => `Promise`\<`AppConfig`\>
 
 Load configuration
 
@@ -22,8 +22,8 @@ Load configuration
 
 ##### options
 
-`any` = `{}`
+`InitializationOptions` = `{}`
 
 #### Returns
 
-`Promise`\<`any`\>
+`Promise`\<`AppConfig`\>

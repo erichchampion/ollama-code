@@ -94,6 +94,7 @@ export class ProviderManager extends EventEmitter {
   private credentialsPath: string;
   private encryptionKey?: Buffer;
   private healthCheckInterval?: ReturnType<typeof setInterval>;
+  private saveLock = { config: false, credentials: false };
 
   constructor(config: ProviderManagerConfig = {}) {
     super();
@@ -157,16 +158,30 @@ export class ProviderManager extends EventEmitter {
   private encrypt(data: string): string {
     if (!this.encryptionKey) return data;
 
-    const iv = randomBytes(12); // 12 bytes for GCM
-    const config = providerConfig.getSecurityConfig();
-    const cipher = require('crypto').createCipherGCM(config.encryptionAlgorithm, this.encryptionKey);
-    cipher.setIV(iv);
+    try {
+      const crypto = require('crypto');
+      const config = providerConfig.getSecurityConfig();
 
-    let encrypted = cipher.update(data, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    const authTag = cipher.getAuthTag();
+      // Validate algorithm
+      const validAlgorithms = ['aes-256-gcm', 'aes-192-gcm', 'aes-128-gcm'];
+      if (!validAlgorithms.includes(config.encryptionAlgorithm)) {
+        throw new Error(`Invalid encryption algorithm: ${config.encryptionAlgorithm}`);
+      }
 
-    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+      const iv = randomBytes(12); // 12 bytes for GCM
+
+      // Use createCipheriv (correct API) instead of createCipherGCM (doesn't exist)
+      const cipher = crypto.createCipheriv(config.encryptionAlgorithm, this.encryptionKey, iv);
+
+      let encrypted = cipher.update(data, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+      const authTag = cipher.getAuthTag();
+
+      return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+    } catch (error) {
+      logger.error('Encryption failed:', error);
+      throw new Error('Failed to encrypt sensitive data');
+    }
   }
 
   /**
@@ -182,13 +197,21 @@ export class ProviderManager extends EventEmitter {
     }
 
     try {
+      const crypto = require('crypto');
       const iv = Buffer.from(parts[0], 'hex');
       const authTag = Buffer.from(parts[1], 'hex');
       const encrypted = parts[2];
 
       const config = providerConfig.getSecurityConfig();
-      const decipher = require('crypto').createDecipherGCM(config.encryptionAlgorithm, this.encryptionKey);
-      decipher.setIV(iv);
+
+      // Validate algorithm
+      const validAlgorithms = ['aes-256-gcm', 'aes-192-gcm', 'aes-128-gcm'];
+      if (!validAlgorithms.includes(config.encryptionAlgorithm)) {
+        throw new Error(`Invalid encryption algorithm: ${config.encryptionAlgorithm}`);
+      }
+
+      // Use createDecipheriv (correct API) instead of createDecipherGCM (doesn't exist)
+      const decipher = crypto.createDecipheriv(config.encryptionAlgorithm, this.encryptionKey, iv);
       decipher.setAuthTag(authTag);
 
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -496,9 +519,17 @@ export class ProviderManager extends EventEmitter {
    * Start health monitoring
    */
   private startHealthMonitoring(): void {
+    // Clear any existing interval to prevent memory leaks
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
+    }
+
     this.healthCheckInterval = setInterval(async () => {
       await this.performHealthChecks();
     }, this.config.healthCheckInterval);
+
+    logger.debug('Health monitoring started');
   }
 
   /**
@@ -558,9 +589,15 @@ export class ProviderManager extends EventEmitter {
   }
 
   /**
-   * Save configuration to disk
+   * Save configuration to disk with file locking to prevent concurrent writes
    */
   private async saveConfiguration(): Promise<void> {
+    // Wait if another save is in progress
+    while (this.saveLock.config) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    this.saveLock.config = true;
     try {
       await mkdir(dirname(this.credentialsPath), { recursive: true });
 
@@ -581,15 +618,25 @@ export class ProviderManager extends EventEmitter {
       const configPath = join(this.credentialsPath, 'config.json');
       await writeFile(configPath, JSON.stringify(config, null, 2));
 
+      logger.debug('Provider configuration saved successfully');
+
     } catch (error) {
       logger.error('Failed to save provider configuration:', error);
+    } finally {
+      this.saveLock.config = false;
     }
   }
 
   /**
-   * Save credentials to disk
+   * Save credentials to disk with file locking to prevent concurrent writes
    */
   private async saveCredentials(): Promise<void> {
+    // Wait if another save is in progress
+    while (this.saveLock.credentials) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    this.saveLock.credentials = true;
     try {
       await mkdir(this.credentialsPath, { recursive: true });
 
@@ -597,8 +644,12 @@ export class ProviderManager extends EventEmitter {
       const credentialsPath = join(this.credentialsPath, 'credentials.json');
       await writeFile(credentialsPath, JSON.stringify(credentialsData, null, 2), { mode: 0o600 });
 
+      logger.debug('Provider credentials saved successfully');
+
     } catch (error) {
       logger.error('Failed to save provider credentials:', error);
+    } finally {
+      this.saveLock.credentials = false;
     }
   }
 
@@ -682,9 +733,11 @@ export class ProviderManager extends EventEmitter {
    * Dispose of the provider manager
    */
   async dispose(): Promise<void> {
-    // Stop health monitoring
+    // Stop health monitoring - clear interval to prevent memory leaks
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
+      logger.debug('Health monitoring stopped');
     }
 
     // Dispose of all providers
@@ -696,12 +749,6 @@ export class ProviderManager extends EventEmitter {
       } catch (error) {
         logger.error(`Failed to dispose provider ${id}:`, error);
       }
-    }
-
-    // Clean up intervals to prevent memory leaks
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
-      this.healthCheckInterval = undefined;
     }
 
     // Save final state

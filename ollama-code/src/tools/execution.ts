@@ -27,7 +27,7 @@ interface ExecutionResult {
 export class ExecutionTool extends BaseTool {
   metadata: ToolMetadata = {
     name: 'execution',
-    description: 'Secure command execution with timeout and output capture',
+    description: 'Execute system commands like npm, git, pytest, cargo build, etc. NEVER EVER use this tool with echo, cat, or printf to create files - that will fail. For ANY file creation (code files, config files, text files), you MUST use the filesystem tool with operation="write". This tool is ONLY for running executable commands, not for creating or modifying file content.',
     category: 'core',
     version: '1.0.0',
     displayOutput: true,
@@ -121,6 +121,9 @@ export class ExecutionTool extends BaseTool {
   ): Promise<ToolResult> {
     const startTime = Date.now();
 
+    // Declare needsShell at function scope so it's accessible in catch block
+    let needsShell = false;
+
     try {
       if (!this.validateParameters(parameters)) {
         return {
@@ -135,10 +138,17 @@ export class ExecutionTool extends BaseTool {
         cwd,
         timeout = 30000,
         env = {},
-        shell = false,
+        shell,
         captureOutput = true,
         allowedCommands
       } = parameters;
+
+      // Auto-enable shell for common commands that need PATH resolution
+      // This fixes ENOENT errors when trying to run node, npm, etc.
+      const commonShellCommands = ['node', 'npm', 'yarn', 'git', 'echo', 'cat', 'ls', 'cd', 'mkdir', 'rm', 'cp', 'mv'];
+      needsShell = shell ?? commonShellCommands.includes(command);
+
+      logger.debug(`Execution tool: command="${command}", shell=${needsShell} (explicit: ${shell !== undefined})`);
 
       // Security check: validate allowed commands
       if (allowedCommands && !allowedCommands.includes(command)) {
@@ -154,6 +164,47 @@ export class ExecutionTool extends BaseTool {
           success: false,
           error: `Command '${command}' is not allowed for security reasons`
         };
+      }
+
+      // Check for commands that are likely trying to write files
+      // These should use the filesystem tool instead
+      // IMPORTANT: Check the command parameter itself, not just args
+      // because AI often puts everything in command parameter
+      const commandLower = command.toLowerCase();
+      const isFileWriteCommand = commandLower.startsWith('echo ') ||
+                                  commandLower.startsWith('cat ') ||
+                                  commandLower.startsWith('printf ') ||
+                                  command === 'echo' ||
+                                  command === 'cat' ||
+                                  command === 'printf';
+
+      if (isFileWriteCommand) {
+        const fullCommand = `${command} ${args.join(' ')}`;
+
+        // Check if command parameter contains redirection (common mistake)
+        if (command.includes('>') || command.includes('>>')) {
+          logger.warn('Detected file write attempt via echo/cat with redirection in command parameter');
+          return {
+            success: false,
+            error: 'Use the filesystem tool with "write" operation to create or modify files, not echo/cat redirection. The filesystem tool can handle files of any size and is the correct way to create code files.'
+          };
+        }
+
+        if (fullCommand.length > 1000) {
+          return {
+            success: false,
+            error: `Command too long (${fullCommand.length} chars). Use the filesystem tool with "write" operation to create files instead of echo/cat commands.`
+          };
+        }
+
+        // Check if it looks like trying to write a file
+        if (fullCommand.includes('>') || fullCommand.includes('>>')) {
+          logger.warn('Detected file write attempt via echo/cat - should use filesystem tool');
+          return {
+            success: false,
+            error: 'Use the filesystem tool with "write" operation to create or modify files, not echo/cat redirection.'
+          };
+        }
       }
 
       const workingDir = cwd
@@ -174,7 +225,7 @@ export class ExecutionTool extends BaseTool {
         cwd: workingDir,
         timeout,
         env: { ...context.environment, ...env },
-        shell,
+        shell: needsShell,
         captureOutput,
         abortSignal: context.abortSignal
       });
@@ -195,9 +246,21 @@ export class ExecutionTool extends BaseTool {
 
     } catch (error) {
       logger.error(`Execution tool error: ${error}`);
+
+      // Improve ENOENT errors to be actionable for AI
+      let errorMessage = normalizeError(error).message;
+      if (errorMessage.includes('ENOENT') || errorMessage.includes('not found')) {
+        const { command, shell } = parameters;
+        if (!shell && !needsShell) {
+          errorMessage = `Command '${command}' not found. This command needs shell mode enabled. Add shell:true parameter or verify the command path.`;
+        } else {
+          errorMessage = `Command '${command}' not found in system PATH. The command may not be installed or available. Consider documenting this as a manual setup requirement instead of attempting to install it.`;
+        }
+      }
+
       return {
         success: false,
-        error: normalizeError(error).message,
+        error: errorMessage,
         metadata: {
           executionTime: Date.now() - startTime
         }

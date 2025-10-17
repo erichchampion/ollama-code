@@ -1108,6 +1108,91 @@ Reply with ONLY the file path, nothing else. Example: src/components/LoginForm.j
     try {
       logger.debug(`Starting input prompt with ${TIMEOUT_CONFIG.USER_INPUT}ms timeout`);
 
+      const readline = await import('readline');
+
+      const inputPromise = new Promise<string>((resolve) => {
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+          prompt: '> '
+        });
+
+        let lines: string[] = [];
+        let isMultiLineMode = false;
+        let pasteBuffer: string[] = [];
+        let pasteTimer: NodeJS.Timeout | null = null;
+
+        // Show initial prompt
+        rl.prompt();
+
+        // Handle line input
+        rl.on('line', (line: string) => {
+          // Check if this might be a paste operation (multiple lines received quickly)
+          if (pasteTimer) {
+            clearTimeout(pasteTimer);
+          }
+
+          pasteBuffer.push(line);
+
+          // Set timer to detect end of paste
+          pasteTimer = setTimeout(() => {
+            // If we have accumulated lines in paste buffer, process them as multi-line
+            if (pasteBuffer.length > 1) {
+              if (!isMultiLineMode) {
+                isMultiLineMode = true;
+                if (this.terminal) {
+                  this.terminal.info('Multi-line input detected. Enter an empty line to submit, or type "cancel" to cancel.');
+                }
+              }
+              lines.push(...pasteBuffer);
+              pasteBuffer = [];
+              rl.prompt();
+            } else if (pasteBuffer.length === 1) {
+              const currentLine = pasteBuffer[0];
+              pasteBuffer = [];
+
+              if (isMultiLineMode) {
+                // In multi-line mode, empty line submits
+                if (currentLine.trim() === '') {
+                  rl.close();
+                  resolve(lines.join('\n'));
+                  return;
+                }
+                // Check for cancel
+                if (currentLine.trim().toLowerCase() === 'cancel') {
+                  if (this.terminal) {
+                    this.terminal.warn('Input cancelled');
+                  }
+                  rl.close();
+                  resolve('');
+                  return;
+                }
+                lines.push(currentLine);
+                rl.setPrompt('... ');
+                rl.prompt();
+              } else {
+                // Single line mode - return immediately
+                rl.close();
+                resolve(currentLine);
+              }
+            }
+          }, 50); // 50ms delay to detect paste operations
+        });
+
+        // Handle Ctrl+C
+        rl.on('SIGINT', () => {
+          rl.close();
+          resolve('');
+        });
+
+        // Cleanup on close
+        rl.on('close', () => {
+          if (pasteTimer) {
+            clearTimeout(pasteTimer);
+          }
+        });
+      });
+
       // Create timeout promise that only rejects
       const inputTimeout = new Promise<never>((_, reject) => {
         setTimeout(() => {
@@ -1116,28 +1201,11 @@ Reply with ONLY the file path, nothing else. Example: src/components/LoginForm.j
         }, TIMEOUT_CONFIG.USER_INPUT);
       });
 
-      // Get input from terminal
-      logger.debug('Creating terminal prompt...');
-      const inputPromise = this.terminal.prompt({
-        type: 'input',
-        name: 'input',
-        message: '> '
-      });
-
       // Race the promises
       logger.debug('Racing input vs timeout...');
       const result = await Promise.race([inputPromise, inputTimeout]);
 
-      // Since inputTimeout always rejects, result must be from inputPromise
-      // Safely extract the input value
-      if (result && typeof result === 'object' && 'input' in result) {
-        const input = result.input;
-        return typeof input === 'string' ? input : String(input || '');
-      }
-
-      // Fallback for unexpected result format
-      logger.warn('Unexpected prompt result format:', result);
-      return '';
+      return result;
     } catch (error) {
       if (error instanceof Error && error.message.includes('timeout')) {
         this.terminal.warn('Input timeout - exiting...');

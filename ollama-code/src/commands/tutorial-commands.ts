@@ -9,13 +9,14 @@ import { logger } from '../utils/logger.js';
 import { tutorialSystem } from '../onboarding/tutorial.js';
 import { validateNonEmptyString } from '../utils/command-helpers.js';
 import { initTerminal } from '../terminal/index.js';
+import { getMinimalConfig } from '../utils/config-helpers.js';
 
 /**
  * Ensure tutorial system has a terminal interface for interactive tutorials
  */
 async function ensureTutorialTerminal(): Promise<void> {
   try {
-    const terminal = await initTerminal({});
+    const terminal = await initTerminal(getMinimalConfig());
     tutorialSystem.setTerminal(terminal);
   } catch (error) {
     logger.warn('Could not initialize terminal for tutorials:', error);

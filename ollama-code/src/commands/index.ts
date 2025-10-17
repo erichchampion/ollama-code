@@ -489,23 +489,34 @@ export async function executeCommand(
   }
 }
 
+import type {
+  AppConfig,
+  AIClient,
+  CodebaseAnalysis,
+  ErrorHandler,
+  ExecutionEnvironment,
+  FileOperations,
+  CommandProcessor as ICommandProcessor
+} from '../types/app-interfaces.js';
+import type { TerminalInterface } from '../terminal/types.js';
+
 /**
  * Initialize the command processor
- * 
+ *
  * @param config Configuration options
  * @param dependencies Application dependencies needed by commands
  */
 export async function initCommandProcessor(
-  config: any, 
+  config: AppConfig,
   dependencies: {
-    terminal: any;
-    ai: any;
-    codebase: any;
-    fileOps: any;
-    execution: any;
-    errors: any;
+    terminal: TerminalInterface;
+    ai: AIClient;
+    codebase: CodebaseAnalysis;
+    fileOps: FileOperations;
+    execution: ExecutionEnvironment;
+    errors: ErrorHandler;
   }
-): Promise<any> {
+): Promise<ICommandProcessor> {
   logger.info('Initializing command processor');
   
   try {
@@ -532,25 +543,24 @@ export async function initCommandProcessor(
         while (running) {
           try {
             // Get command input from user
-            const input = await terminal.prompt({
+            const result = await terminal.prompt<{ command: string }>({
               type: 'input',
               name: 'command',
-              message: 'ollama-code>',
-              prefix: '',
+              message: 'ollama-code>'
             });
-            
-            if (!input.command || input.command.trim() === '') {
+
+            if (!result.command || result.command.trim() === '') {
               continue;
             }
-            
+
             // Handle special exit commands
-            if (['exit', 'quit', 'q', '.exit'].includes(input.command.toLowerCase())) {
+            if (['exit', 'quit', 'q', '.exit'].includes(result.command.toLowerCase())) {
               running = false;
               continue;
             }
-            
+
             // Parse input into command and args, respecting quoted strings
-            const parts = parseCommandInput(input.command.trim());
+            const parts = parseCommandInput(result.command.trim());
             const commandName = parts[0];
             const commandArgs = parts.slice(1);
             

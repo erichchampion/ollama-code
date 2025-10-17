@@ -41,7 +41,7 @@ export async function initializeLazyLoading(): Promise<void> {
   const { getLazyLoader } = await import('../core/services.js');
   const lazyLoader = await getLazyLoader();
   // Register AI system
-  lazyLoader.register('ai', async () => {
+  (lazyLoader as any).register('ai', async () => {
     logger.debug('Initializing AI system...');
     const { initAI } = await import('../ai/index.js');
     await initAI();
@@ -49,7 +49,7 @@ export async function initializeLazyLoading(): Promise<void> {
   });
 
   // Register tool system
-  lazyLoader.register('tools', async () => {
+  (lazyLoader as any).register('tools', async () => {
     logger.debug('Initializing tool system...');
     const { initializeToolSystem } = await import('../tools/index.js');
     initializeToolSystem();
@@ -57,7 +57,7 @@ export async function initializeLazyLoading(): Promise<void> {
   });
 
   // Register command registry
-  lazyLoader.register('commands', async () => {
+  (lazyLoader as any).register('commands', async () => {
     logger.debug('Registering commands...');
     const { registerCommands } = await import('../commands/register.js');
     registerCommands();
@@ -65,7 +65,7 @@ export async function initializeLazyLoading(): Promise<void> {
   });
 
   // Register project context
-  lazyLoader.register('project', async () => {
+  (lazyLoader as any).register('project', async () => {
     logger.debug('Initializing project context...');
     const { ProjectContext } = await import('../ai/context.js');
     const context = new ProjectContext(process.cwd());
@@ -74,21 +74,21 @@ export async function initializeLazyLoading(): Promise<void> {
   });
 
   // Register terminal for interactive features
-  lazyLoader.register('terminal', async () => {
+  (lazyLoader as any).register('terminal', async () => {
     logger.debug('Initializing terminal interface...');
     // Terminal initialization would go here
     return { initialized: true };
   });
 
   // Register analytics
-  lazyLoader.register('analytics', async () => {
+  (lazyLoader as any).register('analytics', async () => {
     logger.debug('Initializing analytics...');
     // Analytics initialization would go here
     return { initialized: true };
   });
 
   // Register configuration
-  lazyLoader.register('config', async () => {
+  (lazyLoader as any).register('config', async () => {
     logger.debug('Loading configuration...');
     // Configuration loading would go here
     return { initialized: true };
@@ -106,7 +106,7 @@ export async function executeCommandOptimized(commandName: string, args: string[
     const lazyLoader = await getLazyLoader();
 
     // Always load commands first (lightweight)
-    await lazyLoader.get('commands');
+    await (lazyLoader as any).get('commands');
 
     // Get command requirements
     const requirements = getCommandRequirements(commandName);
@@ -116,7 +116,7 @@ export async function executeCommandOptimized(commandName: string, args: string[
     const initPromises: Promise<any>[] = [];
 
     if (requirements.needsTools) {
-      initPromises.push(lazyLoader.get('tools'));
+      initPromises.push((lazyLoader as any).get('tools'));
     }
 
     if (requirements.needsAI || requirements.needsProject) {
@@ -125,11 +125,11 @@ export async function executeCommandOptimized(commandName: string, args: string[
     }
 
     if (requirements.needsAI) {
-      initPromises.push(lazyLoader.get('ai'));
+      initPromises.push((lazyLoader as any).get('ai'));
     }
 
     if (requirements.needsProject) {
-      initPromises.push(lazyLoader.get('project'));
+      initPromises.push((lazyLoader as any).get('project'));
     }
 
     // Wait for required components
@@ -193,7 +193,7 @@ export async function preloadCommonComponents(): Promise<void> {
       // Original lazy loader preloading
       const { getLazyLoader } = await import('../core/services.js');
       const lazyLoader = await getLazyLoader();
-      await lazyLoader.preload(['config', 'analytics']);
+      await (lazyLoader as any).preload(['config', 'analytics']);
 
       logger.info('Phase 5 background preload completed');
     } catch (error) {
@@ -212,7 +212,7 @@ export async function getStartupMetrics(): Promise<{
 }> {
   const { getLazyLoader } = await import('../core/services.js');
   const lazyLoader = await getLazyLoader();
-  const status = lazyLoader.getStatus();
+  const status = (lazyLoader as any).getStatus();
   return {
     loadedComponents: status.loaded,
     totalComponents: status.available,
@@ -493,7 +493,7 @@ export async function loadModuleOnDemand(moduleName: string): Promise<any> {
     logger.warn('Enhanced startup optimizer not initialized, falling back to basic loading');
     const { getLazyLoader } = await import('../core/services.js');
     const lazyLoader = await getLazyLoader();
-    return await lazyLoader.get(moduleName);
+    return await (lazyLoader as any).get(moduleName);
   }
 
   return await enhancedStartupOptimizer.loadModuleOnDemand(moduleName);

@@ -6,8 +6,26 @@
  */
 
 import { logger } from '../utils/logger.js';
+import type {
+  AIClient,
+  CodebaseAnalysis,
+  CommandProcessor,
+  ErrorHandler,
+  ExecutionEnvironment,
+  FileOperations,
+  Telemetry
+} from '../types/app-interfaces.js';
+import type { TerminalInterface } from '../terminal/types.js';
 
-export interface ServiceDefinition<T = any> {
+/**
+ * Interface for disposable services
+ * Services implementing this interface will have their dispose method called during cleanup
+ */
+export interface IDisposable {
+  dispose(): Promise<void> | void;
+}
+
+export interface ServiceDefinition<T = unknown> {
   name: string;
   factory: (container: Container) => T | Promise<T>;
   singleton?: boolean;
@@ -21,8 +39,8 @@ export interface ContainerConfig {
 
 export class Container {
   private services = new Map<string, ServiceDefinition>();
-  private instances = new Map<string, any>();
-  private loading = new Map<string, Promise<any>>();
+  private instances = new Map<string, unknown>();
+  private loading = new Map<string, Promise<unknown>>();
   private config: ContainerConfig;
   private resolveStack: string[] = [];
 
@@ -100,12 +118,12 @@ export class Container {
 
       // Return cached instance for singletons
       if (service.singleton && this.instances.has(name)) {
-        return this.instances.get(name);
+        return this.instances.get(name) as T;
       }
 
       // Return loading promise if already in progress
       if (this.loading.has(name)) {
-        return await this.loading.get(name);
+        return await this.loading.get(name) as T;
       }
 
       // Resolve dependencies first
@@ -129,7 +147,7 @@ export class Container {
         logger.debug(`Resolved service: ${name}`);
       }
 
-      return instance;
+      return instance as T;
     } finally {
       if (this.config.enableCircularDetection) {
         this.resolveStack.pop();
@@ -140,7 +158,7 @@ export class Container {
   /**
    * Resolve multiple services at once
    */
-  async resolveAll<T extends Record<string, any>>(names: (keyof T)[]): Promise<T> {
+  async resolveAll<T extends Record<string, unknown>>(names: (keyof T)[]): Promise<T> {
     const promises = names.map(async name => {
       const instance = await this.resolve(name as string);
       return [name, instance] as const;
@@ -179,11 +197,14 @@ export class Container {
 
   /**
    * Dispose of all resources
+   * Calls dispose() on all services implementing IDisposable
    */
   async dispose(): Promise<void> {
-    // Call dispose method on instances that have it
-    for (const [name, instance] of this.instances) {
-      if (instance && typeof instance.dispose === 'function') {
+    // Dispose services in reverse order of registration for proper cleanup
+    const instances = Array.from(this.instances.entries()).reverse();
+
+    for (const [name, instance] of instances) {
+      if (instance && this.isDisposable(instance)) {
         try {
           await instance.dispose();
           if (this.config.enableLogging) {
@@ -196,6 +217,18 @@ export class Container {
     }
 
     this.clear();
+  }
+
+  /**
+   * Type guard to check if an instance implements IDisposable
+   */
+  private isDisposable(instance: unknown): instance is IDisposable {
+    return (
+      instance !== null &&
+      typeof instance === 'object' &&
+      'dispose' in instance &&
+      typeof (instance as IDisposable).dispose === 'function'
+    );
   }
 
   /**
@@ -227,34 +260,44 @@ export class Container {
 }
 
 /**
+ * Logger interface (from winston or similar)
+ */
+export interface Logger {
+  debug(message: string, ...meta: unknown[]): void;
+  info(message: string, ...meta: unknown[]): void;
+  warn(message: string, ...meta: unknown[]): void;
+  error(message: string, ...meta: unknown[]): void;
+}
+
+/**
  * Service registry for type-safe service resolution
  */
 export interface ServiceRegistry {
   // Core services
-  commandRegistry: any;
-  toolRegistry: any;
-  logger: any;
+  commandRegistry: CommandProcessor;
+  toolRegistry: unknown; // ToolRegistry from tools module (avoiding circular dependency)
+  logger: Logger;
 
   // AI services
-  aiClient: any;
-  enhancedClient: any;
+  aiClient: AIClient;
+  enhancedClient: AIClient;
 
   // Optimization services
-  memoryManager: any;
-  aiCacheManager: any;
-  progressManager: any;
-  errorRecoveryManager: any;
-  configValidator: any;
-  lazyLoader: any;
+  memoryManager: unknown; // To be properly typed when implemented
+  aiCacheManager: unknown; // To be properly typed when implemented
+  progressManager: unknown; // To be properly typed when implemented
+  errorRecoveryManager: ErrorHandler;
+  configValidator: unknown; // To be properly typed when implemented
+  lazyLoader: unknown; // To be properly typed when implemented
 
   // MCP services
-  mcpServer: any;
-  mcpClient: any;
+  mcpServer: unknown; // To be properly typed when MCP protocol is implemented
+  mcpClient: unknown; // To be properly typed when MCP protocol is implemented
 
   // Other services
-  terminal: any;
-  projectContext: any;
-  ideIntegrationServer: any;
+  terminal: TerminalInterface;
+  projectContext: unknown; // To be properly typed when implemented
+  ideIntegrationServer: unknown; // To be properly typed when implemented
 }
 
 /**
@@ -267,7 +310,7 @@ export class TypedContainer {
     return this.container.resolve(name as string);
   }
 
-  async resolveAll<T extends Record<string, any>>(names: string[]): Promise<T> {
+  async resolveAll<T extends Record<string, unknown>>(names: string[]): Promise<T> {
     return this.container.resolveAll(names);
   }
 

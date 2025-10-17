@@ -39,7 +39,11 @@ export class StreamingToolOrchestrator {
   private config: StreamingToolOrchestratorConfig;
   private toolResults: Map<string, CachedToolResult> = new Map();
   private approvalCache: ApprovalCache = new ApprovalCache();
+  private failedToolCalls: Map<string, number> = new Map(); // Track repeated failures
+  private recentToolCalls: Map<string, number> = new Map(); // Track recent tool calls with timestamp
   private static readonly MAX_TOOL_RESULTS = TOOL_LIMITS.MAX_TOOL_RESULTS_CACHE;
+  private static readonly MAX_FAILURE_COUNT = 2; // Max times to allow same failure
+  private static readonly TOOL_CALL_DEDUP_TTL = 60000; // 60 seconds - don't retry same call within this time
 
   /**
    * Safely write to terminal with fallback
@@ -99,6 +103,7 @@ export class StreamingToolOrchestrator {
   /**
    * Execute with streaming and maintain conversation history
    * Used by interactive mode to maintain multi-turn conversations
+   * FIXED: Now includes multi-turn loop to allow AI to recover from tool errors
    */
   async executeWithStreamingAndHistory(
     conversationHistory: any[],
@@ -154,235 +159,307 @@ export class StreamingToolOrchestrator {
       const { generateToolCallingSystemPrompt } = await import('../ai/prompts.js');
       const systemPrompt = generateToolCallingSystemPrompt();
 
-      // Process single turn with conversation history
-      let toolCallCount = 0;
-      const turnToolCalls: OllamaToolCall[] = [];
-      let assistantMessage: any = { role: 'assistant', content: '' };
+      // FIXED: Add multi-turn loop to allow AI to recover from tool errors
+      let conversationComplete = false;
+      let totalToolCalls = 0;
+      const maxTurns = STREAMING_CONSTANTS.MAX_CONVERSATION_TURNS;
+      let turnCount = 0;
+      let consecutiveFailures = 0; // Track consecutive tool failures
+      const maxConsecutiveFailures = 3; // Stop if too many failures in a row
 
-      // Track synthetic tool calls to prevent duplicates
-      const processedSyntheticCalls = new Set<string>();
-      const syntheticToolCallPromises: Promise<any>[] = [];
-      let lastProcessedPosition = 0; // Track where we've parsed up to
-      let parseAttempts = 0; // Track parse attempts to prevent infinite loops
-      const maxParseAttempts = STREAMING_CONSTANTS.MAX_STREAMING_PARSE_ATTEMPTS;
+      while (!conversationComplete && turnCount < maxTurns) {
+        turnCount++;
+        logger.debug(`Conversation turn ${turnCount}`);
 
-      await this.ollamaClient.completeStreamWithTools(
-        conversationHistory,
-        tools,
-        {
-          model: options?.model,
-          system: systemPrompt
-        },
-        {
-          onContent: (chunk: string) => {
-            this.safeTerminalWrite(chunk);
-            assistantMessage.content += chunk;
+        // Process single turn with conversation history
+        const turnToolCalls: OllamaToolCall[] = [];
+        let assistantMessage: any = { role: 'assistant', content: '' };
 
-            // WORKAROUND: Some models output tool calls as JSON in content
-            // Try to detect and parse them
-            // Check if we have both fields anywhere in the accumulated content
-            const hasName = assistantMessage.content.includes('"name"');
-            const hasArguments = assistantMessage.content.includes('"arguments"');
+        // Track synthetic tool calls to prevent duplicates
+        const processedSyntheticCalls = new Set<string>();
+        const syntheticToolCallPromises: Promise<any>[] = [];
+        let lastProcessedPosition = 0; // Track where we've parsed up to
+        let parseAttempts = 0; // Track parse attempts to prevent infinite loops
+        const maxParseAttempts = STREAMING_CONSTANTS.MAX_STREAMING_PARSE_ATTEMPTS;
 
-            if (hasName && hasArguments) {
-              try {
-                // Try to extract JSON objects from the accumulated content
-                // We need to find all complete JSON objects, not just the first one
-                const content = assistantMessage.content;
+        await this.ollamaClient.completeStreamWithTools(
+          conversationHistory,
+          tools,
+          {
+            model: options?.model,
+            system: systemPrompt
+          },
+          {
+            onContent: (chunk: string) => {
+              this.safeTerminalWrite(chunk);
+              assistantMessage.content += chunk;
 
-                // Start searching from where we left off
-                let searchFrom = lastProcessedPosition;
+              // WORKAROUND: Some models output tool calls as JSON in content
+              // Try to detect and parse them
+              // Check if we have both fields anywhere in the accumulated content
+              const hasName = assistantMessage.content.includes('"name"');
+              const hasArguments = assistantMessage.content.includes('"arguments"');
 
-                // Find the next { starting from our last position
-                const startIndex = content.indexOf('{', searchFrom);
-                if (startIndex === -1) {
-                  return; // No JSON object found
-                }
+              if (hasName && hasArguments) {
+                try {
+                  // Try to extract JSON objects from the accumulated content
+                  // We need to find all complete JSON objects, not just the first one
+                  const content = assistantMessage.content;
 
-                // Try to parse from this position
-                const jsonCandidate = content.substring(startIndex);
+                  // Start searching from where we left off
+                  let searchFrom = lastProcessedPosition;
 
-                const toolCallData = safeParse<{ name?: string; arguments?: any }>(jsonCandidate);
+                  // Find the next { starting from our last position
+                  const startIndex = content.indexOf('{', searchFrom);
+                  if (startIndex === -1) {
+                    return; // No JSON object found
+                  }
 
-                if (toolCallData && toolCallData.name && toolCallData.arguments) {
-                  // Reset parse attempts on successful parse
-                  parseAttempts = 0;
-                    // Create a unique key to prevent duplicate processing
-                    const callKey = `${toolCallData.name}-${JSON.stringify(toolCallData.arguments)}`;
+                  // Try to parse from this position
+                  const jsonCandidate = content.substring(startIndex);
 
-                    if (!processedSyntheticCalls.has(callKey)) {
-                      processedSyntheticCalls.add(callKey);
-                      toolCallCount++;
+                  const toolCallData = safeParse<{ name?: string; arguments?: any }>(jsonCandidate);
 
-                      logger.debug('Detected tool call in content, converting to tool call', toolCallData);
+                  if (toolCallData && toolCallData.name && toolCallData.arguments) {
+                    // Reset parse attempts on successful parse
+                    parseAttempts = 0;
+                      // Create a unique key to prevent duplicate processing
+                      const callKey = `${toolCallData.name}-${JSON.stringify(toolCallData.arguments)}`;
 
-                      // Update our position to skip past this JSON object
-                      // Find the actual end position by counting braces in the original content
-                      let braceCount = 0;
-                      let endPos = startIndex;
-                      let inString = false;
-                      let escaped = false;
+                      if (!processedSyntheticCalls.has(callKey)) {
+                        processedSyntheticCalls.add(callKey);
+                        totalToolCalls++;
 
-                      for (let i = startIndex; i < content.length; i++) {
-                        const char = content[i];
+                        logger.debug('Detected tool call in content, converting to tool call', toolCallData);
 
-                        if (escaped) {
-                          escaped = false;
-                          continue;
-                        }
+                        // Update our position to skip past this JSON object
+                        // Find the actual end position by counting braces in the original content
+                        let braceCount = 0;
+                        let endPos = startIndex;
+                        let inString = false;
+                        let escaped = false;
 
-                        if (char === '\\') {
-                          escaped = true;
-                          continue;
-                        }
+                        for (let i = startIndex; i < content.length; i++) {
+                          const char = content[i];
 
-                        if (char === '"') {
-                          inString = !inString;
-                          continue;
-                        }
+                          if (escaped) {
+                            escaped = false;
+                            continue;
+                          }
 
-                        if (!inString) {
-                          if (char === '{') braceCount++;
-                          if (char === '}') {
-                            braceCount--;
-                            if (braceCount === 0) {
-                              endPos = i + 1;
-                              break;
+                          if (char === '\\') {
+                            escaped = true;
+                            continue;
+                          }
+
+                          if (char === '"') {
+                            inString = !inString;
+                            continue;
+                          }
+
+                          if (!inString) {
+                            if (char === '{') braceCount++;
+                            if (char === '}') {
+                              braceCount--;
+                              if (braceCount === 0) {
+                                endPos = i + 1;
+                                break;
+                              }
                             }
                           }
                         }
-                      }
 
-                      lastProcessedPosition = endPos;
+                        lastProcessedPosition = endPos;
 
-                      // Create a synthetic tool call
-                      const syntheticToolCall: any = {
-                        id: `${toolCallData.name}-${Date.now()}-${toolCallCount}`,
-                        function: {
-                          name: toolCallData.name,
-                          arguments: toolCallData.arguments
-                        }
-                      };
-
-                      // Add to turn tool calls
-                      turnToolCalls.push(syntheticToolCall);
-
-                      // Execute it and track the promise
-                      const executePromise = this.executeToolCall(syntheticToolCall, context)
-                        .then(result => {
-                          logger.debug('Synthetic tool call executed', {
+                        // Create a synthetic tool call
+                        const syntheticToolCall: any = {
+                          id: `${toolCallData.name}-${Date.now()}-${totalToolCalls}`,
+                          function: {
                             name: toolCallData.name,
-                            success: result.success
+                            arguments: toolCallData.arguments
+                          }
+                        };
+
+                        // Add to turn tool calls
+                        turnToolCalls.push(syntheticToolCall);
+
+                        // Execute it and track the promise
+                        const executePromise = this.executeToolCall(syntheticToolCall, context)
+                          .then(result => {
+                            logger.debug('Synthetic tool call executed', {
+                              name: toolCallData.name,
+                              success: result.success
+                            });
+                            return result;
+                          })
+                          .catch(err => {
+                            logger.error('Synthetic tool call failed', err);
+                            return { success: false, error: err.message };
                           });
-                          return result;
-                        })
-                        .catch(err => {
-                          logger.error('Synthetic tool call failed', err);
-                          return { success: false, error: err.message };
-                        });
 
-                      syntheticToolCallPromises.push(executePromise);
-                    }
+                        syntheticToolCallPromises.push(executePromise);
+                      }
+                  }
+                } catch (e) {
+                  // Not valid JSON yet, this is expected during streaming
+                  // Increment parse attempts only on failure
+                  parseAttempts++;
+                  if (parseAttempts > maxParseAttempts) {
+                    logger.warn('Exceeded maximum JSON parse attempts in streaming content', {
+                      attempts: parseAttempts,
+                      contentLength: assistantMessage.content.length,
+                      error: e instanceof Error ? e.message : String(e)
+                    });
+                    // Don't return - just stop trying to parse for this turn
+                    parseAttempts = 0; // Reset for next turn
+                  }
+                  // Silent ignore - will retry on next chunk
                 }
-              } catch (e) {
-                // Not valid JSON yet, this is expected during streaming
-                // Increment parse attempts only on failure
-                parseAttempts++;
-                if (parseAttempts > maxParseAttempts) {
-                  logger.warn('Exceeded maximum JSON parse attempts in streaming content', {
-                    attempts: parseAttempts,
-                    contentLength: assistantMessage.content.length,
-                    error: e instanceof Error ? e.message : String(e)
-                  });
-                  // Don't return - just stop trying to parse for this turn
-                  parseAttempts = 0; // Reset for next turn
-                }
-                // Silent ignore - will retry on next chunk
               }
+            },
+
+            onToolCall: async (toolCall: OllamaToolCall) => {
+              totalToolCalls++;
+
+              logger.debug('onToolCall callback invoked', {
+                toolName: toolCall.function.name,
+                count: totalToolCalls
+              });
+
+              if (totalToolCalls > this.config.maxToolsPerRequest) {
+                const errorMsg = `Exceeded maximum tool calls (${this.config.maxToolsPerRequest})`;
+                this.safeTerminalCall('error', errorMsg);
+                throw new Error(errorMsg);
+              }
+
+              if (!toolCall.id) {
+                toolCall.id = `${toolCall.function.name}-${Date.now()}-${totalToolCalls}`;
+              }
+
+              turnToolCalls.push(toolCall);
+
+              const result = await this.executeToolCall(toolCall, context);
+              return result;
+            },
+
+            onComplete: () => {
+              logger.debug('Turn completed');
+            },
+
+            onError: (error: Error) => {
+              logger.error('Streaming tool execution error', error);
+              this.safeTerminalCall('error', `Error: ${error.message}`);
             }
-          },
+          }
+        );
 
-          onToolCall: async (toolCall: OllamaToolCall) => {
-            toolCallCount++;
+        // Wait for all synthetic tool calls to complete
+        if (syntheticToolCallPromises.length > 0) {
+          logger.debug(`Waiting for ${syntheticToolCallPromises.length} synthetic tool calls to complete`);
+          await Promise.all(syntheticToolCallPromises);
+          logger.debug('All synthetic tool calls completed');
+        }
 
-            logger.debug('onToolCall callback invoked', {
-              toolName: toolCall.function.name,
-              count: toolCallCount
+        // If there were tool calls, add assistant message and tool results to conversation
+        if (turnToolCalls.length > 0) {
+          // Update conversation history with assistant's response
+          assistantMessage.tool_calls = turnToolCalls;
+          conversationHistory.push(assistantMessage);
+
+          // Add tool results as separate messages with recovery suggestions
+          for (const toolCall of turnToolCalls) {
+            const callId = toolCall.id || `${toolCall.function.name}-${Date.now()}`;
+            const cached = this.toolResults.get(callId);
+            const result = cached?.result;
+
+            // Format result in a clear, readable way for the model
+            let resultContent: string;
+            if (result && result.success) {
+              // Success case - provide clear, unambiguous confirmation
+              const toolName = toolCall.function.name;
+
+              // Clear failure count on success
+              const failureKey = `${toolName}:${JSON.stringify(toolCall.function.arguments)}`;
+              this.failedToolCalls.delete(failureKey);
+
+              if (toolName === 'filesystem' && result.data && result.data.path) {
+                // Filesystem operations - be very explicit
+                const operation = (toolCall.function.arguments as any)?.operation || 'operation';
+                resultContent = `Tool execution successful. The ${operation} operation completed successfully. File: ${result.data.path}, Size: ${result.data.size} bytes.`;
+              } else if (result.data) {
+                resultContent = `Tool execution successful. Result: ${JSON.stringify(result.data)}`;
+              } else {
+                resultContent = 'Tool execution successful. Operation completed.';
+              }
+            } else if (result && result.error) {
+              // Error case - provide clear error message with recovery suggestion
+              const toolName = toolCall.function.name;
+
+              // Track repeated failures
+              const failureKey = `${toolName}:${JSON.stringify(toolCall.function.arguments)}`;
+              const failCount = (this.failedToolCalls.get(failureKey) || 0) + 1;
+              this.failedToolCalls.set(failureKey, failCount);
+
+              // Add specific recovery suggestions for common errors
+              let recoverySuggestion = '';
+              if (toolName === 'advanced-code-analysis' && result.error.includes('does not exist')) {
+                recoverySuggestion = ' To create the file or directory first, call the filesystem tool with operation "write" (for files with content) or "create" (for directories).';
+              }
+
+              // Warn about repeated failures
+              if (failCount >= StreamingToolOrchestrator.MAX_FAILURE_COUNT) {
+                recoverySuggestion += ` WARNING: This same tool call has failed ${failCount} times. Try a different approach instead of retrying the same operation.`;
+              }
+
+              resultContent = `Tool execution failed. Error: ${result.error}${recoverySuggestion}`;
+            } else {
+              // Unknown case
+              resultContent = result ? JSON.stringify(result) : 'Tool execution failed with unknown error';
+            }
+
+            conversationHistory.push({
+              role: 'tool',
+              content: resultContent
             });
 
-            if (toolCallCount > this.config.maxToolsPerRequest) {
-              const errorMsg = `Exceeded maximum tool calls (${this.config.maxToolsPerRequest})`;
-              this.safeTerminalCall('error', errorMsg);
-              throw new Error(errorMsg);
+            logger.debug('Added tool result to conversation', {
+              toolName: toolCall.function.name,
+              success: result?.success,
+              resultPreview: truncateForLog(resultContent)
+            });
+
+            // Track consecutive failures
+            if (result && !result.success) {
+              consecutiveFailures++;
+            } else if (result && result.success) {
+              consecutiveFailures = 0; // Reset on success
             }
-
-            if (!toolCall.id) {
-              toolCall.id = `${toolCall.function.name}-${Date.now()}-${toolCallCount}`;
-            }
-
-            turnToolCalls.push(toolCall);
-
-            const result = await this.executeToolCall(toolCall, context);
-            return result;
-          },
-
-          onComplete: () => {
-            logger.debug('Turn completed');
-          },
-
-          onError: (error: Error) => {
-            logger.error('Streaming tool execution error', error);
-            this.safeTerminalCall('error', `Error: ${error.message}`);
           }
-        }
-      );
 
-      // Wait for all synthetic tool calls to complete
-      if (syntheticToolCallPromises.length > 0) {
-        logger.debug(`Waiting for ${syntheticToolCallPromises.length} synthetic tool calls to complete`);
-        await Promise.all(syntheticToolCallPromises);
-        logger.debug('All synthetic tool calls completed');
-      }
-
-      // Update conversation history with assistant's response
-      if (turnToolCalls.length > 0) {
-        assistantMessage.tool_calls = turnToolCalls;
-      }
-      conversationHistory.push(assistantMessage);
-
-      // Add tool results if any
-      for (const toolCall of turnToolCalls) {
-        const callId = toolCall.id || `${toolCall.function.name}-${Date.now()}`;
-        const cached = this.toolResults.get(callId);
-        const result = cached?.result;
-
-        let resultContent: string;
-        if (result && result.success) {
-          const toolName = toolCall.function.name;
-
-          if (toolName === 'filesystem' && result.data && result.data.path) {
-            const operation = (toolCall.function.arguments as any)?.operation || 'operation';
-            resultContent = `Tool execution successful. The ${operation} operation completed successfully. File: ${result.data.path}, Size: ${result.data.size} bytes.`;
-          } else if (result.data) {
-            resultContent = `Tool execution successful. Result: ${JSON.stringify(result.data)}`;
+          // Check for too many consecutive failures
+          if (consecutiveFailures >= maxConsecutiveFailures) {
+            logger.warn(`Too many consecutive tool failures (${consecutiveFailures}), ending conversation`);
+            this.safeTerminalCall('warn', `⚠️  Multiple consecutive tool failures detected. Ending conversation to prevent loops.`);
+            conversationComplete = true;
           } else {
-            resultContent = 'Tool execution successful. Operation completed.';
+            // Continue the conversation - AI will get a chance to see the tool results and respond
+            conversationComplete = false;
           }
-        } else if (result && result.error) {
-          resultContent = `Tool execution failed. Error: ${result.error}`;
         } else {
-          resultContent = result ? JSON.stringify(result) : 'Tool execution failed with unknown error';
+          // No tool calls means conversation is complete
+          conversationComplete = true;
         }
+      }
 
-        conversationHistory.push({
-          role: 'tool',
-          content: resultContent
-        });
+      if (turnCount >= maxTurns) {
+        logger.warn('Conversation reached maximum turn limit');
+        this.safeTerminalCall('warn', 'Reached maximum conversation turns');
       }
 
       logger.info('Streaming tool execution completed', {
-        toolCallCount,
-        resultsCount: this.toolResults.size
+        totalToolCalls,
+        resultsCount: this.toolResults.size,
+        turns: turnCount
       });
 
     } catch (error) {
@@ -456,7 +533,7 @@ export class StreamingToolOrchestrator {
 
       // Initialize conversation with few-shot examples and user message
       const messages: any[] = [
-        // Few-shot example 1: Demonstrate file creation
+        // Few-shot example 1: Demonstrate CORRECT file creation with filesystem tool
         {
           role: 'user',
           content: 'Create a file called hello.txt with content "Hello World"'
@@ -483,6 +560,33 @@ export class StreamingToolOrchestrator {
           role: 'assistant',
           content: 'I created hello.txt with the content "Hello World".'
         },
+        // Few-shot example 2: Demonstrate creating a code file (CORRECT way)
+        {
+          role: 'user',
+          content: 'Create a server.js file with Express code'
+        },
+        {
+          role: 'assistant',
+          content: '',
+          tool_calls: [{
+            function: {
+              name: 'filesystem',
+              arguments: {
+                operation: 'write',
+                path: 'server.js',
+                content: 'const express = require("express");\nconst app = express();\nconst port = 3000;\n\napp.listen(port, () => console.log(`Server running on port ${port}`));'
+              }
+            }
+          }]
+        },
+        {
+          role: 'tool',
+          content: 'Tool execution successful. The write operation completed successfully. File: server.js, Size: 150 bytes.'
+        },
+        {
+          role: 'assistant',
+          content: 'I created server.js with the Express server code.'
+        },
         // Now the actual user request
         { role: 'user', content: userPrompt }
       ];
@@ -492,6 +596,8 @@ export class StreamingToolOrchestrator {
       let toolCallCount = 0;
       const maxTurns = STREAMING_CONSTANTS.MAX_CONVERSATION_TURNS;
       let turnCount = 0;
+      let consecutiveFailures = 0; // Track consecutive tool failures
+      const maxConsecutiveFailures = 3; // Stop if too many failures in a row
 
       while (!conversationComplete && turnCount < maxTurns) {
         turnCount++;
@@ -567,6 +673,10 @@ export class StreamingToolOrchestrator {
               // Success case - provide clear, unambiguous confirmation
               const toolName = toolCall.function.name;
 
+              // Clear failure count on success
+              const failureKey = `${toolName}:${JSON.stringify(toolCall.function.arguments)}`;
+              this.failedToolCalls.delete(failureKey);
+
               if (toolName === 'filesystem' && result.data && result.data.path) {
                 // Filesystem operations - be very explicit
                 const operation = (toolCall.function.arguments as any)?.operation || 'operation';
@@ -580,10 +690,20 @@ export class StreamingToolOrchestrator {
               // Error case - provide clear error message with recovery suggestion
               const toolName = toolCall.function.name;
 
+              // Track repeated failures
+              const failureKey = `${toolName}:${JSON.stringify(toolCall.function.arguments)}`;
+              const failCount = (this.failedToolCalls.get(failureKey) || 0) + 1;
+              this.failedToolCalls.set(failureKey, failCount);
+
               // Add specific recovery suggestions for common errors
               let recoverySuggestion = '';
               if (toolName === 'advanced-code-analysis' && result.error.includes('does not exist')) {
                 recoverySuggestion = ' To create the file or directory first, call the filesystem tool with operation "write" (for files with content) or "create" (for directories).';
+              }
+
+              // Warn about repeated failures
+              if (failCount >= StreamingToolOrchestrator.MAX_FAILURE_COUNT) {
+                recoverySuggestion += ` WARNING: This same tool call has failed ${failCount} times. Try a different approach instead of retrying the same operation.`;
               }
 
               resultContent = `Tool execution failed. Error: ${result.error}${recoverySuggestion}`;
@@ -603,10 +723,24 @@ export class StreamingToolOrchestrator {
               success: result?.success,
               resultPreview: truncateForLog(resultContent)
             });
+
+            // Track consecutive failures
+            if (result && !result.success) {
+              consecutiveFailures++;
+            } else if (result && result.success) {
+              consecutiveFailures = 0; // Reset on success
+            }
           }
 
-          // Continue the conversation with tool results
-          conversationComplete = false;
+          // Check for too many consecutive failures
+          if (consecutiveFailures >= maxConsecutiveFailures) {
+            logger.warn(`Too many consecutive tool failures (${consecutiveFailures}), ending conversation`);
+            this.safeTerminalCall('warn', `⚠️  Multiple consecutive tool failures detected. Ending conversation to prevent loops.`);
+            conversationComplete = true;
+          } else {
+            // Continue the conversation with tool results
+            conversationComplete = false;
+          }
         } else {
           // No tool calls means conversation is complete
           conversationComplete = true;
@@ -647,7 +781,7 @@ export class StreamingToolOrchestrator {
       throw new Error(errorMsg);
     }
 
-    // Parse arguments first (needed for approval prompt)
+    // Parse arguments first (needed for approval prompt and deduplication)
     let parameters: Record<string, any> = {};
     try {
       // Handle both string and object arguments
@@ -677,6 +811,35 @@ export class StreamingToolOrchestrator {
       };
     }
 
+    // Check for duplicate tool calls (same tool with same parameters within TTL)
+    const callSignature = `${toolName}:${JSON.stringify(parameters)}`;
+    const now = Date.now();
+    const lastCallTime = this.recentToolCalls.get(callSignature);
+
+    if (lastCallTime && (now - lastCallTime) < StreamingToolOrchestrator.TOOL_CALL_DEDUP_TTL) {
+      const timeSinceLastCall = Math.round((now - lastCallTime) / 1000);
+      this.safeTerminalCall('warn', `⚠️  Skipping duplicate tool call: ${toolName} (same call made ${timeSinceLastCall}s ago)`);
+      logger.warn('Duplicate tool call detected', {
+        toolName,
+        parameters,
+        timeSinceLastCall
+      });
+      return {
+        success: false,
+        error: `This exact tool call was already attempted ${timeSinceLastCall} seconds ago. Try a different approach instead of retrying the same operation.`
+      };
+    }
+
+    // Record this tool call
+    this.recentToolCalls.set(callSignature, now);
+
+    // Cleanup old entries (simple TTL-based cleanup)
+    for (const [sig, timestamp] of this.recentToolCalls.entries()) {
+      if (now - timestamp > StreamingToolOrchestrator.TOOL_CALL_DEDUP_TTL) {
+        this.recentToolCalls.delete(sig);
+      }
+    }
+
     // Check if approval is required
     if (this.requiresApproval(tool.metadata.category)) {
       // Check approval cache first
@@ -694,15 +857,39 @@ export class StreamingToolOrchestrator {
           return { approved: false, skipped: true };
         }
 
-        // Prompt for approval
+        // Prompt for approval with timeout to prevent hanging
         try {
-          const result = await promptForApproval({
+          const APPROVAL_TIMEOUT = 60000; // 60 seconds
+          let timeoutId: NodeJS.Timeout | undefined;
+
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => {
+              reject(new Error(`Approval prompt timed out after ${APPROVAL_TIMEOUT / 1000} seconds`));
+            }, APPROVAL_TIMEOUT);
+          });
+
+          const approvalPromise = promptForApproval({
             toolName,
             category: tool.metadata.category,
             description: tool.metadata.description,
             parameters,
             defaultResponse: 'no'
           });
+
+          let result;
+          try {
+            result = await Promise.race([approvalPromise, timeoutPromise]);
+
+            // Clear timeout after successful approval
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+          } finally {
+            // Ensure timeout is always cleared
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+          }
 
           // Cache the decision
           this.approvalCache.setApproval(toolName, tool.metadata.category, result.approved);
@@ -714,8 +901,9 @@ export class StreamingToolOrchestrator {
 
           this.safeTerminalCall('success', `  User approved execution of ${toolName}`);
         } catch (promptError) {
+          const errorMsg = promptError instanceof Error ? promptError.message : String(promptError);
           logger.error('Approval prompt failed', promptError);
-          this.safeTerminalCall('error', `  Failed to get approval for ${toolName}, skipping`);
+          this.safeTerminalCall('error', `  Failed to get approval for ${toolName}: ${errorMsg}`);
           return { approved: false, skipped: true };
         }
       } else {
@@ -812,12 +1000,28 @@ export class StreamingToolOrchestrator {
   }
 
   private addToolResult(callId: string, result: ToolResult): void {
-    // Hard limit check first - evict oldest entries if needed
+    // Hard limit check first - evict using LRU strategy instead of FIFO
     while (this.toolResults.size >= StreamingToolOrchestrator.MAX_TOOL_RESULTS) {
-      const firstKey = this.toolResults.keys().next().value;
-      if (!firstKey) break;
-      this.toolResults.delete(firstKey);
-      logger.debug('Evicted tool result due to capacity', { callId: firstKey });
+      // Find least recently used entry (oldest timestamp)
+      let lruKey: string | null = null;
+      let oldestTime = Date.now();
+
+      for (const [key, cached] of this.toolResults.entries()) {
+        if (cached.timestamp < oldestTime) {
+          oldestTime = cached.timestamp;
+          lruKey = key;
+        }
+      }
+
+      if (lruKey) {
+        this.toolResults.delete(lruKey);
+        logger.debug('Evicted tool result using LRU strategy', {
+          callId: lruKey,
+          age: Date.now() - oldestTime
+        });
+      } else {
+        break; // Safety break if no key found
+      }
     }
 
     // Then cleanup expired entries

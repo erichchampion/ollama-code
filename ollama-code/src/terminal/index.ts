@@ -15,10 +15,12 @@ import { TerminalInterface, TerminalConfig, PromptOptions, SpinnerInstance } fro
 import { formatOutput, clearScreen, getTerminalSize } from './formatting.js';
 import { createPrompt } from './prompt.js';
 
+import type { AppConfig } from '../types/app-interfaces.js';
+
 /**
  * Initialize the terminal interface
  */
-export async function initTerminal(config: any): Promise<TerminalInterface> {
+export async function initTerminal(config: AppConfig): Promise<TerminalInterface> {
   logger.debug('Initializing terminal interface');
   
   const terminalConfig: TerminalConfig = {

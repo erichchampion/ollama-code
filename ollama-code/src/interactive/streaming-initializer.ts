@@ -14,6 +14,7 @@ import { ensureOllamaServerRunning } from '../utils/ollama-server.js';
 import { initAI } from '../ai/index.js';
 import { createCancellableTimeout } from './timeout-config.js';
 import { InteractiveErrorHandler, normalizeError } from './error-handler.js';
+import { getMinimalConfig } from '../utils/config-helpers.js';
 
 export interface InitStep {
   name: string;
@@ -200,7 +201,7 @@ export class StreamingInitializer {
    */
   private async initializeTerminal(): Promise<void> {
     try {
-      this.terminal = await initTerminal({});
+      this.terminal = await initTerminal(getMinimalConfig());
     } catch (error) {
       // Fallback for non-interactive terminals
       logger.warn('Standard terminal initialization failed, using fallback');

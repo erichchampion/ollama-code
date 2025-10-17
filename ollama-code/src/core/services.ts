@@ -72,22 +72,45 @@ export async function registerServices(): Promise<void> {
     return new MCPServer();
   });
 
-  // Register MCP client
+  // Register MCP client with error handling
   globalContainer.singleton('mcpClient', async () => {
-    const { createMCPClient } = await import('../mcp/client.js');
-    const { loadConfig } = await import('../config/loader.js');
-    const config = await loadConfig();
-    // Provide default MCP client config if not present
-    const mcpClientConfig = config.mcp?.client || {
-      enabled: false,
-      connections: [],
-      globalTimeout: 60000,
-      maxConcurrentConnections: 3,
-      logging: { enabled: false, level: 'info', logFile: 'mcp-client.log' }
-    };
-    const client = createMCPClient(mcpClientConfig);
-    await client.initialize();
-    return client;
+    try {
+      const { createMCPClient } = await import('../mcp/client.js');
+      const { loadConfig } = await import('../config/loader.js');
+      const config = await loadConfig();
+
+      // Provide default MCP client config if not present
+      const mcpClientConfig = config.mcp?.client || {
+        enabled: false,
+        connections: [],
+        globalTimeout: 60000,
+        maxConcurrentConnections: 3,
+        logging: { enabled: false, level: 'info', logFile: 'mcp-client.log' }
+      };
+
+      const client = createMCPClient(mcpClientConfig);
+
+      // Initialize with timeout and error handling
+      const INIT_TIMEOUT = 30000; // 30 seconds
+      const initPromise = client.initialize();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('MCP client initialization timed out')), INIT_TIMEOUT);
+      });
+
+      await Promise.race([initPromise, timeoutPromise]);
+
+      logger.info('MCP client initialized successfully');
+      return client;
+    } catch (error) {
+      logger.error('Failed to initialize MCP client:', error);
+      // Return a null client or stub to prevent cascade failures
+      logger.warn('MCP client will be unavailable - returning stub');
+      return {
+        initialize: async () => {},
+        dispose: async () => {},
+        isConnected: () => false
+      };
+    }
   });
 
   // Register IDE Integration Server
@@ -122,7 +145,8 @@ export async function registerServices(): Promise<void> {
   // Register terminal
   globalContainer.singleton('terminal', async () => {
     const { initTerminal } = await import('../terminal/index.js');
-    return await initTerminal({});
+    const { getMinimalConfig } = await import('../utils/config-helpers.js');
+    return await initTerminal(getMinimalConfig());
   });
 
   logger.debug('Core services registered successfully');

@@ -388,7 +388,7 @@ export async function withProgress<T>(
   // This will be injected by the container
   const { getProgressManager } = await import('../core/services.js');
   const progressManager = await getProgressManager();
-  const progressOp = progressManager.startProgress(id, options);
+  const progressOp = (progressManager as any).startProgress(id, options);
 
   try {
     const result = await operation(progressOp);
@@ -398,7 +398,7 @@ export async function withProgress<T>(
     progressOp.cancel();
     throw error;
   } finally {
-    progressManager.completeProgress(id);
+    (progressManager as any).completeProgress(id);
   }
 }
 

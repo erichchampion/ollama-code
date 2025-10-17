@@ -6,7 +6,7 @@
 
 # Class: CITemplateGenerator
 
-Defined in: [ai/vcs/ci-template-generator.ts:36](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/vcs/ci-template-generator.ts#L36)
+Defined in: [ai/vcs/ci-template-generator.ts:36](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/ci-template-generator.ts#L36)
 
 Platform-specific template generators
 
@@ -16,7 +16,7 @@ Platform-specific template generators
 
 > **new CITemplateGenerator**(`config`): `CITemplateGenerator`
 
-Defined in: [ai/vcs/ci-template-generator.ts:40](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/vcs/ci-template-generator.ts#L40)
+Defined in: [ai/vcs/ci-template-generator.ts:40](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/ci-template-generator.ts#L40)
 
 #### Parameters
 
@@ -34,7 +34,7 @@ Defined in: [ai/vcs/ci-template-generator.ts:40](https://github.com/erichchampio
 
 > **generate**(): `string`
 
-Defined in: [ai/vcs/ci-template-generator.ts:118](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/vcs/ci-template-generator.ts#L118)
+Defined in: [ai/vcs/ci-template-generator.ts:118](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/ci-template-generator.ts#L118)
 
 Generate configuration for specific platform
 

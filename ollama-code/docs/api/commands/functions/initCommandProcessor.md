@@ -6,9 +6,9 @@
 
 # Function: initCommandProcessor()
 
-> **initCommandProcessor**(`config`, `dependencies`): `Promise`\<`any`\>
+> **initCommandProcessor**(`config`, `dependencies`): `Promise`\<`CommandProcessor`\>
 
-Defined in: [commands/index.ts:498](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/commands/index.ts#L498)
+Defined in: [commands/index.ts:509](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/commands/index.ts#L509)
 
 Initialize the command processor
 
@@ -16,7 +16,7 @@ Initialize the command processor
 
 ### config
 
-`any`
+`AppConfig`
 
 Configuration options
 
@@ -26,28 +26,28 @@ Application dependencies needed by commands
 
 #### terminal
 
-`any`
+[`TerminalInterface`](../../terminal/interfaces/TerminalInterface.md)
 
 #### ai
 
-`any`
+`AIClient`
 
 #### codebase
 
-`any`
+`CodebaseAnalysis`
 
 #### fileOps
 
-`any`
+`FileOperations`
 
 #### execution
 
-`any`
+`ExecutionEnvironment`
 
 #### errors
 
-`any`
+`ErrorHandler`
 
 ## Returns
 
-`Promise`\<`any`\>
+`Promise`\<`CommandProcessor`\>

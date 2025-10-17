@@ -12,11 +12,12 @@ import { logger } from '../utils/logger.js';
 import { createUserError } from '../errors/formatter.js';
 import { ErrorCategory } from '../errors/types.js';
 import { AI_CONSTANTS, TIMEOUT_CONSTANTS } from './constants.js';
+import type { AppConfig, InitializationOptions } from '../types/app-interfaces.js';
 
 /**
  * Default configuration values
  */
-const DEFAULT_CONFIG = {
+const DEFAULT_CONFIG: AppConfig = {
   // API configuration
   api: {
     baseUrl: 'http://localhost:11434',
@@ -31,16 +32,16 @@ const DEFAULT_CONFIG = {
     maxTokens: 4096,
     maxHistoryLength: 20
   },
-  
-  
+
+
   // Terminal configuration
   terminal: {
-    theme: 'system',
+    theme: 'system' as const,
     useColors: true,
     showProgressIndicators: true,
     codeHighlighting: true
   },
-  
+
   // Telemetry configuration
   telemetry: {
     enabled: true,
@@ -48,24 +49,24 @@ const DEFAULT_CONFIG = {
     maxQueueSize: 100,
     autoSubmit: true
   },
-  
+
   // File operation configuration
   fileOps: {
     maxReadSizeBytes: 10 * 1024 * 1024 // 10MB
   },
-  
+
   // Execution configuration
   execution: {
     shell: process.env.SHELL || 'bash'
   },
-  
+
   // Logger configuration
   logger: {
-    level: 'info',
+    level: 'info' as const,
     timestamps: true,
     colors: true
   },
-  
+
   // App information
   version: '0.2.29'
 };
@@ -96,7 +97,7 @@ const CONFIG_PATHS = [
 /**
  * Load configuration from a file (async)
  */
-async function loadConfigFromFile(configPath: string): Promise<any> {
+async function loadConfigFromFile(configPath: string): Promise<Partial<AppConfig> | null> {
   try {
     // Use async access check instead of existsSync
     try {
@@ -125,80 +126,89 @@ async function loadConfigFromFile(configPath: string): Promise<any> {
 /**
  * Load configuration from environment variables
  */
-function loadConfigFromEnv(): any {
-  const envConfig: any = {};
-  
+function loadConfigFromEnv(): Partial<AppConfig> {
+  const envConfig: Record<string, unknown> = {};
+
   // Check for API URL
   if (process.env.OLLAMA_API_URL) {
-    envConfig.api = envConfig.api || {};
-    envConfig.api.baseUrl = process.env.OLLAMA_API_URL;
+    envConfig.api = {
+      ...(envConfig.api as Record<string, unknown> || {}),
+      baseUrl: process.env.OLLAMA_API_URL
+    };
   }
-  
+
   // Check for log level
   if (process.env.OLLAMA_LOG_LEVEL) {
-    envConfig.logger = envConfig.logger || {};
-    envConfig.logger.level = process.env.OLLAMA_LOG_LEVEL;
+    const level = process.env.OLLAMA_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error';
+    envConfig.logger = {
+      ...(envConfig.logger as Record<string, unknown> || {}),
+      level
+    };
   }
-  
+
   // Check for telemetry opt-out
   if (process.env.OLLAMA_TELEMETRY === '0' || process.env.OLLAMA_TELEMETRY === 'false') {
-    envConfig.telemetry = envConfig.telemetry || {};
-    envConfig.telemetry.enabled = false;
+    envConfig.telemetry = {
+      ...(envConfig.telemetry as Record<string, unknown> || {}),
+      enabled: false
+    };
   }
-  
+
   // Check for model override
   if (process.env.OLLAMA_MODEL) {
-    envConfig.ai = envConfig.ai || {};
-    envConfig.ai.model = process.env.OLLAMA_MODEL;
+    envConfig.ai = {
+      ...(envConfig.ai as Record<string, unknown> || {}),
+      model: process.env.OLLAMA_MODEL
+    };
   }
-  
-  return envConfig;
+
+  return envConfig as Partial<AppConfig>;
 }
 
 /**
  * Merge configuration objects
  */
-function mergeConfigs(...configs: any[]): any {
-  const result: any = {};
-  
+function mergeConfigs(...configs: Array<Partial<AppConfig> | null | undefined>): Partial<AppConfig> {
+  const result: Record<string, unknown> = {};
+
   for (const config of configs) {
     if (!config) continue;
-    
+
     for (const key of Object.keys(config)) {
-      const value = config[key];
-      
+      const value = (config as Record<string, unknown>)[key];
+
       if (value === null || value === undefined) {
         continue;
       }
-      
+
       if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
         // Recursively merge objects
-        result[key] = mergeConfigs(result[key] || {}, value);
+        result[key] = { ...((result[key] as Record<string, unknown>) || {}), ...(value as Record<string, unknown>) };
       } else {
         // Overwrite primitives, arrays, etc.
         result[key] = value;
       }
     }
   }
-  
-  return result;
+
+  return result as Partial<AppConfig>;
 }
 
 /**
  * Validate critical configuration
  */
-function validateConfig(config: any): void {
+function validateConfig(config: Partial<AppConfig>): void {
   // Validate API configuration
-  if (!config.api.baseUrl) {
+  if (!config.api?.baseUrl) {
     throw createUserError('API base URL is not configured', {
       category: ErrorCategory.CONFIGURATION,
       resolution: 'Provide a valid API base URL in your configuration'
     });
   }
-  
-  
+
+
   // Validate AI model
-  if (!config.ai.model) {
+  if (!config.ai?.model) {
     throw createUserError('AI model is not configured', {
       category: ErrorCategory.CONFIGURATION,
       resolution: 'Specify a valid Ollama model in your configuration'
@@ -209,11 +219,11 @@ function validateConfig(config: any): void {
 /**
  * Load configuration
  */
-export async function loadConfig(options: any = {}): Promise<any> {
+export async function loadConfig(options: InitializationOptions = {}): Promise<AppConfig> {
   logger.debug('Loading configuration', { options });
-  
-  // Initialize with defaults
-  let config = { ...DEFAULT_CONFIG };
+
+  // Initialize with defaults - start as Partial to allow merging
+  let config: Partial<AppConfig> = { ...DEFAULT_CONFIG };
   
   // Load configuration from files (async)
   for (const configPath of CONFIG_PATHS) {
@@ -231,19 +241,31 @@ export async function loadConfig(options: any = {}): Promise<any> {
   
   // Override with command line options
   if (options) {
-    const cliConfig: any = {};
-    
+    const cliConfig: Record<string, unknown> = {};
+
     // Map CLI flags to configuration
     if (options.verbose) {
-      cliConfig.logger = { level: 'debug' };
+      cliConfig.logger = {
+        level: 'debug' as const,
+        timestamps: true,
+        colors: true
+      };
     }
-    
+
     if (options.quiet) {
-      cliConfig.logger = { level: 'error' };
+      cliConfig.logger = {
+        level: 'error' as const,
+        timestamps: true,
+        colors: true
+      };
     }
-    
+
     if (options.debug) {
-      cliConfig.logger = { level: 'debug' };
+      cliConfig.logger = {
+        level: 'debug' as const,
+        timestamps: true,
+        colors: true
+      };
     }
     
     if (options.config) {
@@ -258,17 +280,19 @@ export async function loadConfig(options: any = {}): Promise<any> {
         });
       }
     }
-    
+
+
     // Merge CLI options
-    config = mergeConfigs(config, cliConfig);
+    config = mergeConfigs(config, cliConfig as Partial<AppConfig>);
   }
   
   // Validate the configuration
   validateConfig(config);
-  
+
   // Logger configuration is handled by the logger itself
-  
-  return config;
+
+  // After validation, we know all required fields are present
+  return config as AppConfig;
 }
 
 export default { loadConfig }; 

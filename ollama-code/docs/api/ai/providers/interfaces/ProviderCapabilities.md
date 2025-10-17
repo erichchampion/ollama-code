@@ -6,7 +6,7 @@
 
 # Interface: ProviderCapabilities
 
-Defined in: [ai/providers/base-provider.ts:91](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/providers/base-provider.ts#L91)
+Defined in: [ai/providers/base-provider.ts:91](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L91)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/base-provider.ts:91](https://github.com/erichchampion/
 
 > **maxContextWindow**: `number`
 
-Defined in: [ai/providers/base-provider.ts:92](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/providers/base-provider.ts#L92)
+Defined in: [ai/providers/base-provider.ts:92](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L92)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/base-provider.ts:92](https://github.com/erichchampion/
 
 > **supportedCapabilities**: [`AICapability`](../enumerations/AICapability.md)[]
 
-Defined in: [ai/providers/base-provider.ts:93](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/providers/base-provider.ts#L93)
+Defined in: [ai/providers/base-provider.ts:93](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L93)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/base-provider.ts:93](https://github.com/erichchampion/
 
 > **rateLimits**: `object`
 
-Defined in: [ai/providers/base-provider.ts:94](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/providers/base-provider.ts#L94)
+Defined in: [ai/providers/base-provider.ts:94](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L94)
 
 #### requestsPerMinute
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/base-provider.ts:94](https://github.com/erichchampion/
 
 > **features**: `object`
 
-Defined in: [ai/providers/base-provider.ts:98](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/ai/providers/base-provider.ts#L98)
+Defined in: [ai/providers/base-provider.ts:98](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L98)
 
 #### streaming
 

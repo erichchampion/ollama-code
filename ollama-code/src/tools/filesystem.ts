@@ -19,15 +19,16 @@ import { globToRegex } from '../utils/regex-cache.js';
 export class FileSystemTool extends BaseTool {
   metadata: ToolMetadata = {
     name: 'filesystem',
-    description: 'Comprehensive file system operations for reading, writing, creating, and managing files. Use this tool to create new code files, modify existing files, read file contents, and manage directories.',
+    description: 'REQUIRED tool for ALL file creation and modification. Use this tool to create code files, configuration files, and any text files. NEVER use execution tool with echo/cat/printf commands to create files. Use "write" operation to create new files or update existing files with any content length. Use "read" to get file contents, "create" for directories, "list" to browse directories. Examples: create server.js, create README.md, create package.json - ALL use this tool with operation="write".',
     category: 'core',
     version: '1.0.0',
     parameters: [
       {
         name: 'operation',
         type: 'string',
-        description: 'The file operation to perform (read, write, list, create, delete, search, exists). Use "write" to create or update files with content, "create" to make directories, "read" to get file contents.',
+        description: 'The file operation to perform: "write" = create/update FILE with content (REQUIRED content parameter), "create" = make empty DIRECTORY (no content), "read" = get file contents, "list" = browse directory, "delete" = remove file/dir, "search" = find files, "exists" = check if path exists. To create a code file like users.js, use operation="write" with content parameter.',
         required: true,
+        enum: ['read', 'write', 'list', 'create', 'delete', 'search', 'exists'],
         validation: (value) => ['read', 'write', 'list', 'create', 'delete', 'search', 'exists'].includes(value)
       },
       {
@@ -39,7 +40,7 @@ export class FileSystemTool extends BaseTool {
       {
         name: 'content',
         type: 'string',
-        description: 'Content to write (for write operations)',
+        description: 'File content to write. REQUIRED when operation="write". Contains the actual code/text for the file. Not used for operation="create" (directories) or "read".',
         required: false
       },
       {
@@ -90,12 +91,27 @@ export class FileSystemTool extends BaseTool {
         parameters: { operation: 'read', path: 'src/index.ts' }
       },
       {
-        description: 'Write content to file with backup',
+        description: 'Create a new code file (write operation with content)',
         parameters: {
           operation: 'write',
-          path: 'src/new-file.ts',
-          content: 'console.log("Hello");',
+          path: 'src/api/users.js',
+          content: 'const express = require("express");\nconst router = express.Router();\n\nrouter.post("/users", async (req, res) => {\n  // Implementation here\n});\n\nmodule.exports = router;'
+        }
+      },
+      {
+        description: 'Update existing file with new content',
+        parameters: {
+          operation: 'write',
+          path: 'src/config.js',
+          content: 'module.exports = { port: 3000 };',
           createBackup: true
+        }
+      },
+      {
+        description: 'Create a new directory (create operation, no content)',
+        parameters: {
+          operation: 'create',
+          path: 'src/api'
         }
       },
       {
@@ -132,6 +148,26 @@ export class FileSystemTool extends BaseTool {
           success: false,
           error: 'Path is outside project boundaries'
         };
+      }
+
+      // Validate write operation has content
+      if (operation === 'write' && !parameters.content) {
+        return {
+          success: false,
+          error: 'operation="write" requires content parameter. To create an empty directory, use operation="create" instead.'
+        };
+      }
+
+      // Catch common mistake: using create for files instead of write
+      if (operation === 'create' && filePath.includes('.')) {
+        const ext = path.extname(filePath);
+        if (ext) {
+          logger.warn(`Detected potential mistake: using operation="create" for file "${filePath}". Use operation="write" with content parameter for files.`);
+          return {
+            success: false,
+            error: `To create a file like "${filePath}", use operation="write" with content parameter. operation="create" is only for directories.`
+          };
+        }
       }
 
       let result: any;

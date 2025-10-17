@@ -19,7 +19,7 @@ export const mcpClientStatusCommand: Command = {
   handler: async () => {
     try {
       const { getMCPClient } = await import('../core/services.js');
-      const mcpClient = await getMCPClient();
+      const mcpClient = await getMCPClient() as any;
 
       const status = mcpClient.getConnectionStatus();
 
@@ -54,7 +54,7 @@ export const mcpClientListToolsCommand: Command = {
   handler: async () => {
     try {
       const { getMCPClient } = await import('../core/services.js');
-      const mcpClient = await getMCPClient();
+      const mcpClient = await getMCPClient() as any;
 
       const tools = mcpClient.getAvailableTools();
 
@@ -89,7 +89,7 @@ export const mcpClientListResourcesCommand: Command = {
   handler: async () => {
     try {
       const { getMCPClient } = await import('../core/services.js');
-      const mcpClient = await getMCPClient();
+      const mcpClient = await getMCPClient() as any;
 
       const resources = mcpClient.getAvailableResources();
 
@@ -144,7 +144,7 @@ export const mcpClientCallToolCommand: Command = {
 
     try {
       const { getMCPClient } = await import('../core/services.js');
-      const mcpClient = await getMCPClient();
+      const mcpClient = await getMCPClient() as any;
 
       console.log(`Calling tool: ${toolName}`);
       if (Object.keys(toolArgs).length > 0) {
@@ -207,7 +207,7 @@ export const mcpClientGetResourceCommand: Command = {
 
     try {
       const { getMCPClient } = await import('../core/services.js');
-      const mcpClient = await getMCPClient();
+      const mcpClient = await getMCPClient() as any;
 
       console.log(`Getting resource: ${resourceUri}`);
       console.log('');
@@ -355,7 +355,7 @@ export const mcpClientReconnectCommand: Command = {
 
     try {
       const { getMCPClient } = await import('../core/services.js');
-      const mcpClient = await getMCPClient();
+      const mcpClient = await getMCPClient() as any;
 
       console.log(`Reconnecting to MCP server: ${connectionName}...`);
 

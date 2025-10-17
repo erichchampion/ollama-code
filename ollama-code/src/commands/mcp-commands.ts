@@ -10,9 +10,9 @@ import { logger } from '../utils/logger.js';
 import { validateNonEmptyString } from '../utils/command-helpers.js';
 
 // Helper to get MCP server from container
-async function getMCPServerInstance() {
+async function getMCPServerInstance(): Promise<any> {
   const { getMCPServer } = await import('../core/services.js');
-  return getMCPServer();
+  return getMCPServer() as any;
 }
 
 /**

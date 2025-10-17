@@ -109,7 +109,7 @@ export class NaturalLanguageRouter {
     try {
       // Try to get cache manager from DI container
       if (globalContainer.has('aiCacheManager')) {
-        this.cacheManager = await globalContainer.resolve('aiCacheManager');
+        this.cacheManager = await globalContainer.resolve('aiCacheManager') as any;
         logger.debug('AI cache manager initialized for router');
       } else {
         this.cacheManager = false; // Mark as unavailable

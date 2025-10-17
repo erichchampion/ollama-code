@@ -187,14 +187,73 @@ export class ToolOrchestrator extends EventEmitter {
         await new Promise(resolve => setTimeout(resolve, EXECUTION_CONSTANTS.TASK_POLL_INTERVAL));
       }
 
-      // Prevent infinite loop
+      // Detect deadlock using topological sort validation
       if (toStart.length === 0 && inProgress.size === 0 && queue.length > 0) {
-        logger.error('Deadlock detected in orchestration plan - circular dependencies?');
+        // Try to detect circular dependencies
+        const circularDeps = this.detectCircularDependencies(queue);
+        if (circularDeps.length > 0) {
+          logger.error('Deadlock detected - circular dependencies found:', {
+            circularChain: circularDeps.join(' -> ')
+          });
+          throw new Error(`Circular dependency detected: ${circularDeps.join(' -> ')}`);
+        } else {
+          logger.error('Deadlock detected in orchestration plan - unresolved dependencies');
+        }
         break;
       }
     }
 
     return results;
+  }
+
+  /**
+   * Detect circular dependencies using topological sort approach
+   */
+  private detectCircularDependencies(executions: ToolExecution[]): string[] {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    const path: string[] = [];
+
+    const hasCycle = (execution: ToolExecution): boolean => {
+      if (recursionStack.has(execution.id)) {
+        // Found cycle - build the circular path
+        const cycleStart = path.indexOf(execution.id);
+        return true;
+      }
+
+      if (visited.has(execution.id)) {
+        return false;
+      }
+
+      visited.add(execution.id);
+      recursionStack.add(execution.id);
+      path.push(execution.id);
+
+      // Check all dependencies
+      for (const depId of execution.dependencies) {
+        const depExecution = executions.find(e => e.id === depId);
+        if (depExecution && hasCycle(depExecution)) {
+          return true;
+        }
+      }
+
+      recursionStack.delete(execution.id);
+      path.pop();
+      return false;
+    };
+
+    // Check each execution for cycles
+    for (const execution of executions) {
+      if (!visited.has(execution.id)) {
+        if (hasCycle(execution)) {
+          // Return the circular path
+          const cycleStart = path.findIndex(id => recursionStack.has(id));
+          return cycleStart >= 0 ? path.slice(cycleStart) : path;
+        }
+      }
+    }
+
+    return [];
   }
 
   /**
@@ -271,6 +330,24 @@ export class ToolOrchestrator extends EventEmitter {
       clearTimeout(timer);
     }
     this.cacheTimers.clear();
+
+    logger.debug('All tool executions cancelled and timers cleared');
+  }
+
+  /**
+   * Dispose of the orchestrator and cleanup all resources
+   */
+  dispose(): void {
+    // Cancel all active executions and clear timers
+    this.cancelAll();
+
+    // Clear execution cache
+    this.executionCache.clear();
+
+    // Remove all event listeners to prevent memory leaks
+    this.removeAllListeners();
+
+    logger.debug('Tool orchestrator disposed');
   }
 
   private generateExecutionId(): string {

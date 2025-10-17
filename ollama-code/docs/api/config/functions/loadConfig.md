@@ -6,9 +6,9 @@
 
 # Function: loadConfig()
 
-> **loadConfig**(`options`): `Promise`\<`any`\>
+> **loadConfig**(`options`): `Promise`\<`AppConfig`\>
 
-Defined in: [config/index.ts:212](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/config/index.ts#L212)
+Defined in: [config/index.ts:222](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/config/index.ts#L222)
 
 Load configuration
 
@@ -16,8 +16,8 @@ Load configuration
 
 ### options
 
-`any` = `{}`
+`InitializationOptions` = `{}`
 
 ## Returns
 
-`Promise`\<`any`\>
+`Promise`\<`AppConfig`\>

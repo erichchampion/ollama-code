@@ -47,7 +47,7 @@ export const ideServerCommand: CommandDef = {
     const port = (args.port || IDE_SERVER_DEFAULTS.PORT) as number;
 
     try {
-      const server = await getIDEIntegrationServer();
+      const server = await getIDEIntegrationServer() as any;
 
       switch (action) {
         case 'start':

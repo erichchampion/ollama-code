@@ -6,7 +6,7 @@
 
 # Interface: TelemetryEvent
 
-Defined in: [telemetry/index.ts:31](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/telemetry/index.ts#L31)
+Defined in: [telemetry/index.ts:31](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L31)
 
 Telemetry event
 
@@ -16,7 +16,7 @@ Telemetry event
 
 > **type**: [`TelemetryEventType`](../enumerations/TelemetryEventType.md)
 
-Defined in: [telemetry/index.ts:35](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/telemetry/index.ts#L35)
+Defined in: [telemetry/index.ts:35](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L35)
 
 Event type
 
@@ -26,7 +26,7 @@ Event type
 
 > **timestamp**: `string`
 
-Defined in: [telemetry/index.ts:40](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/telemetry/index.ts#L40)
+Defined in: [telemetry/index.ts:40](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L40)
 
 Event timestamp
 
@@ -36,7 +36,7 @@ Event timestamp
 
 > **properties**: `Record`\<`string`, `any`\>
 
-Defined in: [telemetry/index.ts:45](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/telemetry/index.ts#L45)
+Defined in: [telemetry/index.ts:45](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L45)
 
 Event properties
 
@@ -46,7 +46,7 @@ Event properties
 
 > **client**: `object`
 
-Defined in: [telemetry/index.ts:50](https://github.com/erichchampion/ollama-code/blob/71525b68c65a1139d08d5a868e15d1644edd30d9/ollama-code/src/telemetry/index.ts#L50)
+Defined in: [telemetry/index.ts:50](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L50)
 
 Client information
 

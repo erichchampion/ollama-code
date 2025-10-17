@@ -601,8 +601,20 @@ export class OllamaClient {
 
           // Prevent buffer from growing too large (memory leak protection)
           if (buffer.length > 1024 * 1024) { // 1MB limit
-            logger.warn('Stream buffer too large, truncating');
-            buffer = buffer.slice(-512 * 1024); // Keep last 512KB
+            logger.warn('Stream buffer too large, truncating at JSON boundaries');
+
+            // Truncate at newline boundaries (JSON object boundaries) instead of arbitrary position
+            const lines = buffer.split('\n');
+
+            // Keep last 50% of lines to ensure we don't cut JSON objects
+            const midPoint = Math.floor(lines.length / 2);
+            buffer = lines.slice(midPoint).join('\n');
+
+            logger.debug('Buffer truncated', {
+              originalSize: buffer.length + lines.slice(0, midPoint).join('\n').length,
+              newSize: buffer.length,
+              linesRemoved: midPoint
+            });
           }
 
           // Process any complete events in the buffer
