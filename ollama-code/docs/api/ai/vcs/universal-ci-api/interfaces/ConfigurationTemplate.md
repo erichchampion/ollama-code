@@ -6,7 +6,7 @@
 
 # Interface: ConfigurationTemplate
 
-Defined in: [ai/vcs/universal-ci-api.ts:66](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L66)
+Defined in: [ai/vcs/universal-ci-api.ts:66](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L66)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:66](https://github.com/erichchampion/oll
 
 > **filename**: `string`
 
-Defined in: [ai/vcs/universal-ci-api.ts:67](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L67)
+Defined in: [ai/vcs/universal-ci-api.ts:67](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L67)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:67](https://github.com/erichchampion/oll
 
 > **content**: `string`
 
-Defined in: [ai/vcs/universal-ci-api.ts:68](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L68)
+Defined in: [ai/vcs/universal-ci-api.ts:68](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L68)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:68](https://github.com/erichchampion/oll
 
 > **description**: `string`
 
-Defined in: [ai/vcs/universal-ci-api.ts:69](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L69)
+Defined in: [ai/vcs/universal-ci-api.ts:69](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L69)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:69](https://github.com/erichchampion/oll
 
 > `optional` **requiredSecrets**: `string`[]
 
-Defined in: [ai/vcs/universal-ci-api.ts:70](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L70)
+Defined in: [ai/vcs/universal-ci-api.ts:70](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L70)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/vcs/universal-ci-api.ts:70](https://github.com/erichchampion/oll
 
 > `optional` **optionalSecrets**: `string`[]
 
-Defined in: [ai/vcs/universal-ci-api.ts:71](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L71)
+Defined in: [ai/vcs/universal-ci-api.ts:71](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L71)
 
 ***
 
@@ -54,4 +54,4 @@ Defined in: [ai/vcs/universal-ci-api.ts:71](https://github.com/erichchampion/oll
 
 > `optional` **prerequisites**: `string`[]
 
-Defined in: [ai/vcs/universal-ci-api.ts:72](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/vcs/universal-ci-api.ts#L72)
+Defined in: [ai/vcs/universal-ci-api.ts:72](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/vcs/universal-ci-api.ts#L72)

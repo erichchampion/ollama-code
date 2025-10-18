@@ -11,6 +11,7 @@ node_modules
 !.yarn/versions
 /ollama-code/package-lock.json
 /package-lock.json
+/ollama-code/book/venv/
 
 # testing
 /coverage
@@ -22,6 +23,7 @@ node_modules
 # production
 /build
 /ollama-code/dist/
+/ollama-code/book/*.pdf
 
 # misc
 .DS_Store

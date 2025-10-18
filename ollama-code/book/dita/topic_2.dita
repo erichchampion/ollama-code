@@ -1,0 +1,4479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_2">
+  <title>Chapter 2: Multi-Provider AI Integration</title>
+  <body>
+    <section><title>Introduction</title></section>
+    <p>In Chapter 1, we established the foundation of AI coding assistants. Now we tackle one of the most critical architectural decisions: <b>how to integrate with multiple AI providers</b>.</p>
+    <p>Relying on a single AI provider creates significant risks: vendor lock-in, cost unpredictability, service outages, and limited access to best-in-class capabilities. The solution is a multi-provider architecture that abstracts away provider-specific details while enabling intelligent routing, cost optimization, and graceful fallback.</p>
+    <p>This chapter explores <b>ollama-code</b>&apos;s multi-provider system through real code examples, demonstrating how to build a flexible, production-ready AI integration layer.</p>
+    <section><title>What You&apos;ll Learn</title></section>
+    <ul>
+      <li>
+        Why multi-provider support is essential for production systems
+      </li>
+      <li>
+        How to design provider abstractions that work across different APIs
+      </li>
+      <li>
+        Implementing concrete providers (Ollama, OpenAI, Anthropic, Google)
+      </li>
+      <li>
+        Building intelligent routing strategies for cost, quality, and performance
+      </li>
+      <li>
+        Response fusion for critical decisions requiring consensus
+      </li>
+      <li>
+        Security best practices for credential management
+      </li>
+      <li>
+        Cost tracking and budget enforcement
+      </li>
+    </ul>
+    <section><title>Prerequisites</title></section>
+    <ul>
+      <li>
+        Completed Chapter 1
+      </li>
+      <li>
+        Understanding of async/await and Promises
+      </li>
+      <li>
+        Familiarity with TypeScript interfaces and classes
+      </li>
+      <li>
+        Basic knowledge of HTTP APIs
+      </li>
+    </ul>
+    <section><title>2.1 Why Multi-Provider Support?</title></section>
+    <section><title>The Single Provider Problem</title></section>
+    <p>Consider a typical single-provider integration:</p>
+    <codeblock outputclass="language-typescript">// ❌ Locked into a single provider
+import OpenAI from &apos;openai&apos;;
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export async function generateCode(prompt: string): Promise&lt;string&gt; {
+  const completion = await openai.chat.completions.create({
+    model: &apos;gpt-4&apos;,
+    messages: [{ role: &apos;user&apos;, content: prompt }]
+  });
+
+  return completion.choices[0].message.content;
+}
+</codeblock>
+    <p><b>Problems with this approach:</b></p>
+    <ol>
+      <li>
+        <b>Vendor Lock-in</b>
+        : Switching providers requires rewriting all code
+      </li>
+      <li>
+        <b>Cost Unpredictability</b>
+        : No ability to optimize for cost
+      </li>
+      <li>
+        <b>Single Point of Failure</b>
+        : Service outage = complete downtime
+      </li>
+      <li>
+        <b>Limited Capabilities</b>
+        : Can&apos;t use best model for each task
+      </li>
+      <li>
+        <b>No Fallback</b>
+        : If API fails, the entire system fails
+      </li>
+      <li>
+        <b>Budget Risk</b>
+        : No control over spending
+      </li>
+    </ol>
+    <section><title>The Multi-Provider Solution</title></section>
+    <codeblock outputclass="language-typescript">// ✅ Provider abstraction with intelligent routing
+export async function generateCode(prompt: string): Promise&lt;string&gt; {
+  // Intelligent router selects best provider
+  const provider = await router.selectProvider({
+    task: &apos;code_generation&apos;,
+    constraints: {
+      maxCost: 0.01,        // Budget constraint
+      maxLatency: 5000,     // Performance constraint
+      minQuality: 0.8       // Quality threshold
+    }
+  });
+
+  const response = await provider.complete(prompt);
+  return response.content;
+}
+</codeblock>
+    <p><b>Benefits:</b></p>
+    <ol>
+      <li>
+        ✅
+        <b>Flexibility</b>
+        : Switch providers without code changes
+      </li>
+      <li>
+        ✅
+        <b>Cost Optimization</b>
+        : Use cheaper models when appropriate
+      </li>
+      <li>
+        ✅
+        <b>Reliability</b>
+        : Automatic fallback on failures
+      </li>
+      <li>
+        ✅
+        <b>Best-of-Breed</b>
+        : Use optimal model for each task
+      </li>
+      <li>
+        ✅
+        <b>Risk Management</b>
+        : Distributed across multiple vendors
+      </li>
+      <li>
+        ✅
+        <b>Budget Control</b>
+        : Enforce spending limits per provider
+      </li>
+    </ol>
+    <section><title>Real-World Scenarios</title></section>
+    <section><title>Scenario 1: Cost Optimization</title></section>
+    <codeblock outputclass="language-typescript">// Different tasks have different quality requirements
+const scenarios = [
+  {
+    task: &apos;Generate commit message&apos;,
+    requirements: { quality: 0.6, maxCost: 0.001 },
+    optimalProvider: &apos;ollama-qwen2.5-coder&apos;  // Local, free
+  },
+  {
+    task: &apos;Refactor complex algorithm&apos;,
+    requirements: { quality: 0.9, maxCost: 0.05 },
+    optimalProvider: &apos;anthropic-claude-3.5&apos;  // Best quality
+  },
+  {
+    task: &apos;Explain simple code&apos;,
+    requirements: { quality: 0.7, maxCost: 0.005 },
+    optimalProvider: &apos;openai-gpt-3.5-turbo&apos;  // Good balance
+  }
+];
+
+// Router automatically selects based on requirements
+for (const scenario of scenarios) {
+  const provider = await router.selectProvider(scenario.requirements);
+  console.log(`${scenario.task} → ${provider.getName()}`);
+}
+</codeblock>
+    <p><b>Cost Savings:</b></p>
+    <table>
+      <tgroup cols="4">
+        <colspec colname="c1" colnum="1"/>
+        <colspec colname="c2" colnum="2"/>
+        <colspec colname="c3" colnum="3"/>
+        <colspec colname="c4" colnum="4"/>
+        <thead>
+          <row>
+            <entry>Task</entry>
+            <entry>Single Provider (GPT-4)</entry>
+            <entry>Multi-Provider</entry>
+            <entry>Savings</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>Commit messages (100/day)</entry>
+            <entry>$3.00</entry>
+            <entry>$0.00 (Ollama)</entry>
+            <entry>100%</entry>
+          </row>
+          <row>
+            <entry>Code explanations (50/day)</entry>
+            <entry>$1.50</entry>
+            <entry>$0.25 (GPT-3.5)</entry>
+            <entry>83%</entry>
+          </row>
+          <row>
+            <entry>Complex refactoring (10/day)</entry>
+            <entry>$0.60</entry>
+            <entry>$0.50 (Claude)</entry>
+            <entry>17%</entry>
+          </row>
+          <row>
+            <entry><b>Monthly Total</b></entry>
+            <entry><b>$153</b></entry>
+            <entry><b>$22.50</b></entry>
+            <entry><b>85%</b></entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <section><title>Scenario 2: Reliability and Fallback</title></section>
+    <codeblock outputclass="language-typescript">// Primary provider fails, automatic fallback
+const fallbackChain = [
+  { provider: &apos;anthropic-claude-3.5&apos;, priority: 1 },
+  { provider: &apos;openai-gpt-4&apos;, priority: 2 },
+  { provider: &apos;ollama-qwen2.5-coder&apos;, priority: 3 }
+];
+
+async function reliableComplete(prompt: string): Promise&lt;string&gt; {
+  for (const { provider } of fallbackChain) {
+    try {
+      const result = await providers.get(provider).complete(prompt);
+      logger.info(`Success with ${provider}`);
+      return result.content;
+    } catch (error) {
+      logger.warn(`${provider} failed, trying next...`);
+      // Automatic fallback to next provider
+    }
+  }
+
+  throw new Error(&apos;All providers failed&apos;);
+}
+</codeblock>
+    <p><b>Uptime Improvement:</b></p>
+    <ul>
+      <li>
+        Single Provider: 99.9% uptime = 43 minutes downtime/month
+      </li>
+      <li>
+        Multi-Provider (3 providers): 99.9999% uptime = 2.6 seconds downtime/month
+      </li>
+      <li>
+        <b>Improvement: 1000x reduction in downtime</b>
+      </li>
+    </ul>
+    <section><title>Scenario 3: Task-Specific Optimization</title></section>
+    <codeblock outputclass="language-typescript">// Use the best model for each specific task
+const taskProviderMap = {
+  &apos;code_generation&apos;: {
+    provider: &apos;anthropic-claude-3.5&apos;,
+    reason: &apos;Excellent at generating clean, idiomatic code&apos;
+  },
+  &apos;code_review&apos;: {
+    provider: &apos;openai-gpt-4&apos;,
+    reason: &apos;Strong analytical capabilities&apos;
+  },
+  &apos;documentation&apos;: {
+    provider: &apos;google-gemini-pro&apos;,
+    reason: &apos;Good at clear, concise writing&apos;
+  },
+  &apos;quick_questions&apos;: {
+    provider: &apos;ollama-qwen2.5-coder&apos;,
+    reason: &apos;Fast, local, free for simple queries&apos;
+  }
+};
+
+async function taskSpecificComplete(
+  task: string,
+  prompt: string
+): Promise&lt;string&gt; {
+  const config = taskProviderMap[task];
+  const provider = providers.get(config.provider);
+
+  logger.info(`Using ${config.provider}: ${config.reason}`);
+
+  const response = await provider.complete(prompt);
+  return response.content;
+}
+</codeblock>
+    <section><title>Feature Availability Matrix</title></section>
+    <p>Different providers offer different capabilities:</p>
+    <table>
+      <tgroup cols="5">
+        <colspec colname="c1" colnum="1"/>
+        <colspec colname="c2" colnum="2"/>
+        <colspec colname="c3" colnum="3"/>
+        <colspec colname="c4" colnum="4"/>
+        <colspec colname="c5" colnum="5"/>
+        <thead>
+          <row>
+            <entry>Feature</entry>
+            <entry>Ollama</entry>
+            <entry>OpenAI</entry>
+            <entry>Anthropic</entry>
+            <entry>Google</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>Local execution</entry>
+            <entry>✅</entry>
+            <entry>❌</entry>
+            <entry>❌</entry>
+            <entry>❌</entry>
+          </row>
+          <row>
+            <entry>Tool calling</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+          </row>
+          <row>
+            <entry>Vision/Multi-modal</entry>
+            <entry>⚠️</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+          </row>
+          <row>
+            <entry>Large context (200K+)</entry>
+            <entry>❌</entry>
+            <entry>⚠️</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+          </row>
+          <row>
+            <entry>Streaming</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+          </row>
+          <row>
+            <entry>JSON mode</entry>
+            <entry>✅</entry>
+            <entry>✅</entry>
+            <entry>⚠️</entry>
+            <entry>✅</entry>
+          </row>
+          <row>
+            <entry>Cost</entry>
+            <entry>Free</entry>
+            <entry>$$$</entry>
+            <entry>$$$$</entry>
+            <entry>$$</entry>
+          </row>
+          <row>
+            <entry>Privacy</entry>
+            <entry>🔒</entry>
+            <entry>⚠️</entry>
+            <entry>⚠️</entry>
+            <entry>⚠️</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <p><b>Multi-provider architecture lets you use the right tool for each job.</b></p>
+    <section><title>2.2 Provider Abstraction Pattern</title></section>
+    <p>To support multiple providers, we need a clean abstraction that:
+1. Defines a common interface all providers must implement
+2. Handles provider-specific quirks internally
+3. Provides shared functionality (health checks, metrics)
+4. Remains extensible for new providers</p>
+    <section><title>Base Provider Interface</title></section>
+    <codeblock outputclass="language-typescript">// src/ai/providers/base-provider.ts
+import { EventEmitter } from &apos;events&apos;;
+
+export interface ProviderConfig {
+  name: string;
+  apiKey?: string;
+  baseURL?: string;
+  timeout?: number;
+  retryAttempts?: number;
+  customHeaders?: Record&lt;string, string&gt;;
+}
+
+export interface ProviderHealth {
+  status: &apos;healthy&apos; | &apos;degraded&apos; | &apos;unhealthy&apos;;
+  lastCheck: Date;
+  consecutiveFailures: number;
+  responseTime: number;
+  errorRate: number;
+  message?: string;
+}
+
+export interface ProviderMetrics {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTime: number;
+  totalTokensUsed: number;
+  totalCost: number;
+  lastRequestTime?: Date;
+}
+
+export interface CompletionOptions {
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  stopSequences?: string[];
+  model?: string;
+}
+
+export interface AICompletionResponse {
+  content: string;
+  model: string;
+  tokensUsed: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
+  finishReason: &apos;stop&apos; | &apos;length&apos; | &apos;tool_calls&apos; | &apos;content_filter&apos;;
+  metadata?: Record&lt;string, any&gt;;
+}
+
+export type StreamCallback = (event: AIStreamEvent) =&gt; void;
+
+export interface AIStreamEvent {
+  type: &apos;content&apos; | &apos;tool_call&apos; | &apos;done&apos; | &apos;error&apos;;
+  content?: string;
+  toolCall?: ToolCall;
+  error?: Error;
+  metadata?: Record&lt;string, any&gt;;
+}
+
+/**
+ * Abstract base class for AI providers
+ *
+ * All providers must extend this class and implement the abstract methods.
+ * Provides common functionality like health checks and metrics tracking.
+ */
+export abstract class BaseAIProvider extends EventEmitter {
+  protected config: ProviderConfig;
+  protected health: ProviderHealth;
+  protected metrics: ProviderMetrics;
+
+  constructor(config: ProviderConfig) {
+    super();
+    this.config = config;
+
+    // Initialize health status
+    this.health = {
+      status: &apos;healthy&apos;,
+      lastCheck: new Date(),
+      consecutiveFailures: 0,
+      responseTime: 0,
+      errorRate: 0
+    };
+
+    // Initialize metrics
+    this.metrics = {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      averageResponseTime: 0,
+      totalTokensUsed: 0,
+      totalCost: 0
+    };
+  }
+
+  // ============================================================
+  // Abstract Methods - Must be implemented by all providers
+  // ============================================================
+
+  /**
+   * Get the provider&apos;s unique name
+   */
+  abstract getName(): string;
+
+  /**
+   * Initialize the provider (setup API clients, validate config, etc.)
+   */
+  abstract initialize(): Promise&lt;void&gt;;
+
+  /**
+   * Complete a prompt (non-streaming)
+   */
+  abstract complete(
+    prompt: string,
+    options?: CompletionOptions
+  ): Promise&lt;AICompletionResponse&gt;;
+
+  /**
+   * Complete a prompt with streaming responses
+   */
+  abstract completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt;;
+
+  /**
+   * List available models for this provider
+   */
+  abstract listModels(): Promise&lt;AIModel[]&gt;;
+
+  /**
+   * Calculate cost for a request based on token usage
+   */
+  abstract calculateCost(
+    promptTokens: number,
+    completionTokens: number,
+    model?: string
+  ): number;
+
+  /**
+   * Test connection to the provider
+   */
+  abstract testConnection(): Promise&lt;boolean&gt;;
+
+  // ============================================================
+  // Shared Functionality - Available to all providers
+  // ============================================================
+
+  /**
+   * Perform a health check on the provider
+   */
+  async performHealthCheck(): Promise&lt;ProviderHealth&gt; {
+    const startTime = Date.now();
+
+    try {
+      const isHealthy = await this.testConnection();
+      const responseTime = Date.now() - startTime;
+
+      this.health = {
+        status: isHealthy ? &apos;healthy&apos; : &apos;unhealthy&apos;,
+        lastCheck: new Date(),
+        consecutiveFailures: isHealthy ? 0 : this.health.consecutiveFailures + 1,
+        responseTime,
+        errorRate: this.calculateErrorRate()
+      };
+
+      // Emit health status change
+      this.emit(&apos;health_check&apos;, this.health);
+
+      return this.health;
+    } catch (error) {
+      this.health = {
+        status: &apos;unhealthy&apos;,
+        lastCheck: new Date(),
+        consecutiveFailures: this.health.consecutiveFailures + 1,
+        responseTime: Date.now() - startTime,
+        errorRate: this.calculateErrorRate(),
+        message: error instanceof Error ? error.message : &apos;Unknown error&apos;
+      };
+
+      this.emit(&apos;health_check_failed&apos;, this.health);
+
+      return this.health;
+    }
+  }
+
+  /**
+   * Get current health status
+   */
+  getHealth(): ProviderHealth {
+    return { ...this.health };
+  }
+
+  /**
+   * Get current metrics
+   */
+  getMetrics(): ProviderMetrics {
+    return { ...this.metrics };
+  }
+
+  /**
+   * Update metrics after a request
+   */
+  protected updateMetrics(
+    success: boolean,
+    responseTime: number,
+    tokensUsed: number,
+    cost: number
+  ): void {
+    this.metrics.totalRequests++;
+
+    if (success) {
+      this.metrics.successfulRequests++;
+    } else {
+      this.metrics.failedRequests++;
+    }
+
+    // Update average response time (running average)
+    this.metrics.averageResponseTime =
+      (this.metrics.averageResponseTime * (this.metrics.totalRequests - 1) + responseTime) /
+      this.metrics.totalRequests;
+
+    this.metrics.totalTokensUsed += tokensUsed;
+    this.metrics.totalCost += cost;
+    this.metrics.lastRequestTime = new Date();
+
+    // Emit metrics update
+    this.emit(&apos;metrics_updated&apos;, this.metrics);
+  }
+
+  /**
+   * Calculate current error rate
+   */
+  private calculateErrorRate(): number {
+    if (this.metrics.totalRequests === 0) return 0;
+    return this.metrics.failedRequests / this.metrics.totalRequests;
+  }
+
+  /**
+   * Reset metrics (useful for testing or periodic resets)
+   */
+  resetMetrics(): void {
+    this.metrics = {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      averageResponseTime: 0,
+      totalTokensUsed: 0,
+      totalCost: 0
+    };
+
+    this.emit(&apos;metrics_reset&apos;);
+  }
+
+  /**
+   * Get provider configuration (without sensitive data)
+   */
+  getConfig(): Omit&lt;ProviderConfig, &apos;apiKey&apos;&gt; {
+    const { apiKey, ...safeConfig } = this.config;
+    return safeConfig;
+  }
+}
+</codeblock>
+    <section><title>Key Design Decisions</title></section>
+    <section><title>1.Extends EventEmitter</title></section>
+    <codeblock outputclass="language-typescript">export abstract class BaseAIProvider extends EventEmitter {
+  // ...
+}
+
+// Providers can emit events for monitoring
+provider.on(&apos;health_check&apos;, (health) =&gt; {
+  console.log(`Provider health: ${health.status}`);
+});
+
+provider.on(&apos;metrics_updated&apos;, (metrics) =&gt; {
+  console.log(`Total requests: ${metrics.totalRequests}`);
+});
+</codeblock>
+    <p><b>Why?</b> Events enable loose coupling between providers and monitoring systems.</p>
+    <section><title>2.Abstract Methods for Provider-Specific Logic</title></section>
+    <codeblock outputclass="language-typescript">abstract complete(
+  prompt: string,
+  options?: CompletionOptions
+): Promise&lt;AICompletionResponse&gt;;
+</codeblock>
+    <p><b>Why?</b> Each provider has different APIs, but the interface remains consistent.</p>
+    <section><title>3.Shared Functionality in Base Class</title></section>
+    <codeblock outputclass="language-typescript">async performHealthCheck(): Promise&lt;ProviderHealth&gt; {
+  // All providers get this for free
+}
+</codeblock>
+    <p><b>Why?</b> Avoid duplicating health checks, metrics tracking across providers.</p>
+    <section><title>4.Protected Helper Methods</title></section>
+    <codeblock outputclass="language-typescript">protected updateMetrics(
+  success: boolean,
+  responseTime: number,
+  tokensUsed: number,
+  cost: number
+): void {
+  // Providers call this after each request
+}
+</codeblock>
+    <p><b>Why?</b> Enforces consistent metrics tracking across all providers.</p>
+    <section><title>2.3 Provider Implementations</title></section>
+    <p>Now let&apos;s see how real providers implement this abstraction.</p>
+    <section><title>Case Study 1: Ollama Provider</title></section>
+    <p>Ollama is unique because it runs locally, requiring no API keys and offering complete privacy.</p>
+    <codeblock outputclass="language-typescript">// src/ai/providers/ollama-provider.ts
+import { Ollama } from &apos;ollama&apos;;
+import { BaseAIProvider, ProviderConfig, CompletionOptions, AICompletionResponse } from &apos;./base-provider&apos;;
+
+export interface OllamaProviderConfig extends ProviderConfig {
+  host: string;  // e.g., &apos;http://localhost:11434&apos;
+  defaultModel?: string;
+}
+
+export class OllamaProvider extends BaseAIProvider {
+  private client: Ollama;
+  private defaultModel: string;
+
+  constructor(config: OllamaProviderConfig) {
+    super(config);
+    this.defaultModel = config.defaultModel || &apos;qwen2.5-coder:latest&apos;;
+    this.client = new Ollama({ host: config.host });
+  }
+
+  getName(): string {
+    return &apos;ollama&apos;;
+  }
+
+  async initialize(): Promise&lt;void&gt; {
+    // Verify Ollama is running and accessible
+    try {
+      await this.client.list();
+      logger.info(&apos;Ollama provider initialized successfully&apos;);
+    } catch (error) {
+      throw new Error(`Failed to initialize Ollama provider: ${error}`);
+    }
+  }
+
+  async complete(
+    prompt: string,
+    options: CompletionOptions = {}
+  ): Promise&lt;AICompletionResponse&gt; {
+    const startTime = Date.now();
+    const model = options.model || this.defaultModel;
+
+    try {
+      const response = await this.client.chat({
+        model,
+        messages: [{ role: &apos;user&apos;, content: prompt }],
+        options: {
+          temperature: options.temperature,
+          num_predict: options.maxTokens,
+          top_p: options.topP,
+          stop: options.stopSequences
+        }
+      });
+
+      const responseTime = Date.now() - startTime;
+      const tokensUsed = response.eval_count || 0;
+      const cost = this.calculateCost(0, tokensUsed, model);  // Ollama is free
+
+      this.updateMetrics(true, responseTime, tokensUsed, cost);
+
+      return {
+        content: response.message.content,
+        model: response.model,
+        tokensUsed: {
+          prompt: response.prompt_eval_count || 0,
+          completion: response.eval_count || 0,
+          total: (response.prompt_eval_count || 0) + (response.eval_count || 0)
+        },
+        finishReason: &apos;stop&apos;,
+        metadata: {
+          totalDuration: response.total_duration,
+          loadDuration: response.load_duration
+        }
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      this.updateMetrics(false, responseTime, 0, 0);
+      throw error;
+    }
+  }
+
+  async completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt; {
+    const model = options.model || this.defaultModel;
+
+    try {
+      const stream = await this.client.chat({
+        model,
+        messages: [{ role: &apos;user&apos;, content: prompt }],
+        stream: true,
+        options: {
+          temperature: options.temperature,
+          num_predict: options.maxTokens,
+          top_p: options.topP,
+          stop: options.stopSequences
+        }
+      });
+
+      for await (const chunk of stream) {
+        if (chunk.message.content) {
+          onEvent({
+            type: &apos;content&apos;,
+            content: chunk.message.content
+          });
+        }
+
+        if (chunk.done) {
+          onEvent({
+            type: &apos;done&apos;,
+            metadata: {
+              totalDuration: chunk.total_duration,
+              evalCount: chunk.eval_count
+            }
+          });
+        }
+      }
+    } catch (error) {
+      onEvent({
+        type: &apos;error&apos;,
+        error: error instanceof Error ? error : new Error(String(error))
+      });
+    }
+  }
+
+  async listModels(): Promise&lt;AIModel[]&gt; {
+    const response = await this.client.list();
+
+    return response.models.map(model =&gt; ({
+      id: model.name,
+      name: model.name,
+      provider: &apos;ollama&apos;,
+      contextWindow: 8192,  // Default, varies by model
+      capabilities: {
+        completion: true,
+        streaming: true,
+        toolCalling: true,
+        vision: model.name.includes(&apos;vision&apos;)
+      }
+    }));
+  }
+
+  calculateCost(
+    promptTokens: number,
+    completionTokens: number,
+    model?: string
+  ): number {
+    // Ollama is free!
+    return 0;
+  }
+
+  async testConnection(): Promise&lt;boolean&gt; {
+    try {
+      await this.client.list();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+</codeblock>
+    <p><b>Ollama-Specific Considerations:</b></p>
+    <ol>
+      <li>
+        <b>No API Key Required</b>
+        : Simplified authentication
+      </li>
+      <li>
+        <b>Local Execution</b>
+        : Must check if Ollama server is running
+      </li>
+      <li>
+        <b>Free Usage</b>
+        : Cost calculation always returns 0
+      </li>
+      <li>
+        <b>Different Response Format</b>
+        : Must adapt Ollama&apos;s response to common interface
+      </li>
+    </ol>
+    <section><title>Case Study 2: OpenAI Provider</title></section>
+    <p>OpenAI requires API authentication, token tracking, and cost calculation.</p>
+    <codeblock outputclass="language-typescript">// src/ai/providers/openai-provider.ts
+import OpenAI from &apos;openai&apos;;
+import { BaseAIProvider, ProviderConfig, CompletionOptions, AICompletionResponse } from &apos;./base-provider&apos;;
+
+export interface OpenAIProviderConfig extends ProviderConfig {
+  apiKey: string;
+  organization?: string;
+  defaultModel?: string;
+}
+
+// Pricing as of 2025 (per 1M tokens)
+const PRICING = {
+  &apos;gpt-4&apos;: { prompt: 30.00, completion: 60.00 },
+  &apos;gpt-4-turbo&apos;: { prompt: 10.00, completion: 30.00 },
+  &apos;gpt-3.5-turbo&apos;: { prompt: 0.50, completion: 1.50 }
+};
+
+export class OpenAIProvider extends BaseAIProvider {
+  private client: OpenAI;
+  private defaultModel: string;
+
+  constructor(config: OpenAIProviderConfig) {
+    super(config);
+
+    if (!config.apiKey) {
+      throw new Error(&apos;OpenAI API key is required&apos;);
+    }
+
+    this.defaultModel = config.defaultModel || &apos;gpt-4-turbo&apos;;
+    this.client = new OpenAI({
+      apiKey: config.apiKey,
+      organization: config.organization,
+      timeout: config.timeout || 60000,
+      maxRetries: config.retryAttempts || 2
+    });
+  }
+
+  getName(): string {
+    return &apos;openai&apos;;
+  }
+
+  async initialize(): Promise&lt;void&gt; {
+    // Verify API key by listing models
+    try {
+      await this.client.models.list();
+      logger.info(&apos;OpenAI provider initialized successfully&apos;);
+    } catch (error) {
+      if (error.status === 401) {
+        throw new Error(&apos;Invalid OpenAI API key&apos;);
+      }
+      throw new Error(`Failed to initialize OpenAI provider: ${error}`);
+    }
+  }
+
+  async complete(
+    prompt: string,
+    options: CompletionOptions = {}
+  ): Promise&lt;AICompletionResponse&gt; {
+    const startTime = Date.now();
+    const model = options.model || this.defaultModel;
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model,
+        messages: [{ role: &apos;user&apos;, content: prompt }],
+        temperature: options.temperature,
+        max_tokens: options.maxTokens,
+        top_p: options.topP,
+        stop: options.stopSequences
+      });
+
+      const choice = response.choices[0];
+      const usage = response.usage!;
+
+      const responseTime = Date.now() - startTime;
+      const tokensUsed = usage.total_tokens;
+      const cost = this.calculateCost(
+        usage.prompt_tokens,
+        usage.completion_tokens,
+        model
+      );
+
+      this.updateMetrics(true, responseTime, tokensUsed, cost);
+
+      return {
+        content: choice.message.content || &apos;&apos;,
+        model: response.model,
+        tokensUsed: {
+          prompt: usage.prompt_tokens,
+          completion: usage.completion_tokens,
+          total: usage.total_tokens
+        },
+        finishReason: choice.finish_reason as any,
+        metadata: {
+          id: response.id,
+          created: response.created,
+          systemFingerprint: response.system_fingerprint
+        }
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      this.updateMetrics(false, responseTime, 0, 0);
+
+      // Handle specific OpenAI errors
+      if (error.status === 429) {
+        throw new Error(&apos;Rate limit exceeded&apos;);
+      } else if (error.status === 500) {
+        throw new Error(&apos;OpenAI service error&apos;);
+      }
+
+      throw error;
+    }
+  }
+
+  async completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt; {
+    const model = options.model || this.defaultModel;
+
+    try {
+      const stream = await this.client.chat.completions.create({
+        model,
+        messages: [{ role: &apos;user&apos;, content: prompt }],
+        temperature: options.temperature,
+        max_tokens: options.maxTokens,
+        top_p: options.topP,
+        stop: options.stopSequences,
+        stream: true
+      });
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta;
+
+        if (delta?.content) {
+          onEvent({
+            type: &apos;content&apos;,
+            content: delta.content
+          });
+        }
+
+        if (chunk.choices[0]?.finish_reason) {
+          onEvent({
+            type: &apos;done&apos;,
+            metadata: {
+              finishReason: chunk.choices[0].finish_reason
+            }
+          });
+        }
+      }
+    } catch (error) {
+      onEvent({
+        type: &apos;error&apos;,
+        error: error instanceof Error ? error : new Error(String(error))
+      });
+    }
+  }
+
+  async listModels(): Promise&lt;AIModel[]&gt; {
+    const response = await this.client.models.list();
+
+    return response.data
+      .filter(model =&gt; model.id.startsWith(&apos;gpt&apos;))
+      .map(model =&gt; ({
+        id: model.id,
+        name: model.id,
+        provider: &apos;openai&apos;,
+        contextWindow: this.getContextWindow(model.id),
+        capabilities: {
+          completion: true,
+          streaming: true,
+          toolCalling: true,
+          vision: model.id.includes(&apos;vision&apos;)
+        }
+      }));
+  }
+
+  calculateCost(
+    promptTokens: number,
+    completionTokens: number,
+    model: string = this.defaultModel
+  ): number {
+    const pricing = PRICING[model] || PRICING[&apos;gpt-4-turbo&apos;];
+
+    const promptCost = (promptTokens / 1_000_000) * pricing.prompt;
+    const completionCost = (completionTokens / 1_000_000) * pricing.completion;
+
+    return promptCost + completionCost;
+  }
+
+  async testConnection(): Promise&lt;boolean&gt; {
+    try {
+      await this.client.models.list();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private getContextWindow(model: string): number {
+    if (model.includes(&apos;gpt-4-turbo&apos;)) return 128000;
+    if (model.includes(&apos;gpt-4&apos;)) return 8192;
+    if (model.includes(&apos;gpt-3.5-turbo&apos;)) return 16385;
+    return 4096;
+  }
+}
+</codeblock>
+    <p><b>OpenAI-Specific Considerations:</b></p>
+    <ol>
+      <li>
+        <b>API Key Required</b>
+        : Must validate before use
+      </li>
+      <li>
+        <b>Cost Tracking</b>
+        : Accurate pricing based on model and token usage
+      </li>
+      <li>
+        <b>Rate Limiting</b>
+        : Handle 429 errors gracefully
+      </li>
+      <li>
+        <b>Error Handling</b>
+        : Different error codes require different responses
+      </li>
+    </ol>
+    <section><title>Case Study 3: Anthropic Provider</title></section>
+    <p>Anthropic&apos;s Claude models are particularly strong for coding tasks and feature large context windows.</p>
+    <codeblock outputclass="language-typescript">// src/ai/providers/anthropic-provider.ts
+import Anthropic from &apos;@anthropic-ai/sdk&apos;;
+import { BaseAIProvider, ProviderConfig, CompletionOptions, AICompletionResponse } from &apos;./base-provider&apos;;
+
+export interface AnthropicProviderConfig extends ProviderConfig {
+  apiKey: string;
+  defaultModel?: string;
+}
+
+// Pricing as of 2025 (per 1M tokens)
+const ANTHROPIC_PRICING = {
+  &apos;claude-3-5-sonnet-20241022&apos;: { prompt: 3.00, completion: 15.00 },
+  &apos;claude-3-opus-20240229&apos;: { prompt: 15.00, completion: 75.00 },
+  &apos;claude-3-sonnet-20240229&apos;: { prompt: 3.00, completion: 15.00 },
+  &apos;claude-3-haiku-20240307&apos;: { prompt: 0.25, completion: 1.25 }
+};
+
+export class AnthropicProvider extends BaseAIProvider {
+  private client: Anthropic;
+  private defaultModel: string;
+
+  constructor(config: AnthropicProviderConfig) {
+    super(config);
+
+    if (!config.apiKey) {
+      throw new Error(&apos;Anthropic API key is required&apos;);
+    }
+
+    this.defaultModel = config.defaultModel || &apos;claude-3-5-sonnet-20241022&apos;;
+    this.client = new Anthropic({
+      apiKey: config.apiKey,
+      timeout: config.timeout || 60000,
+      maxRetries: config.retryAttempts || 2
+    });
+  }
+
+  getName(): string {
+    return &apos;anthropic&apos;;
+  }
+
+  async initialize(): Promise&lt;void&gt; {
+    // Anthropic doesn&apos;t have a &quot;list models&quot; endpoint, so we test with a minimal request
+    try {
+      await this.client.messages.create({
+        model: this.defaultModel,
+        max_tokens: 1,
+        messages: [{ role: &apos;user&apos;, content: &apos;hi&apos; }]
+      });
+      logger.info(&apos;Anthropic provider initialized successfully&apos;);
+    } catch (error) {
+      if (error.status === 401) {
+        throw new Error(&apos;Invalid Anthropic API key&apos;);
+      }
+      throw new Error(`Failed to initialize Anthropic provider: ${error}`);
+    }
+  }
+
+  async complete(
+    prompt: string,
+    options: CompletionOptions = {}
+  ): Promise&lt;AICompletionResponse&gt; {
+    const startTime = Date.now();
+    const model = options.model || this.defaultModel;
+
+    try {
+      const response = await this.client.messages.create({
+        model,
+        max_tokens: options.maxTokens || 4096,
+        messages: [{ role: &apos;user&apos;, content: prompt }],
+        temperature: options.temperature,
+        top_p: options.topP,
+        stop_sequences: options.stopSequences
+      });
+
+      const content = response.content[0];
+      const textContent = content.type === &apos;text&apos; ? content.text : &apos;&apos;;
+
+      const responseTime = Date.now() - startTime;
+      const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
+      const cost = this.calculateCost(
+        response.usage.input_tokens,
+        response.usage.output_tokens,
+        model
+      );
+
+      this.updateMetrics(true, responseTime, tokensUsed, cost);
+
+      return {
+        content: textContent,
+        model: response.model,
+        tokensUsed: {
+          prompt: response.usage.input_tokens,
+          completion: response.usage.output_tokens,
+          total: tokensUsed
+        },
+        finishReason: response.stop_reason as any,
+        metadata: {
+          id: response.id,
+          type: response.type
+        }
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      this.updateMetrics(false, responseTime, 0, 0);
+
+      // Handle Anthropic-specific errors
+      if (error.status === 429) {
+        throw new Error(&apos;Rate limit exceeded&apos;);
+      } else if (error.status === 529) {
+        throw new Error(&apos;Anthropic service overloaded&apos;);
+      }
+
+      throw error;
+    }
+  }
+
+  async completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt; {
+    const model = options.model || this.defaultModel;
+
+    try {
+      const stream = await this.client.messages.stream({
+        model,
+        max_tokens: options.maxTokens || 4096,
+        messages: [{ role: &apos;user&apos;, content: prompt }],
+        temperature: options.temperature,
+        top_p: options.topP,
+        stop_sequences: options.stopSequences
+      });
+
+      for await (const event of stream) {
+        if (event.type === &apos;content_block_delta&apos;) {
+          if (event.delta.type === &apos;text_delta&apos;) {
+            onEvent({
+              type: &apos;content&apos;,
+              content: event.delta.text
+            });
+          }
+        } else if (event.type === &apos;message_stop&apos;) {
+          onEvent({
+            type: &apos;done&apos;,
+            metadata: {
+              stopReason: stream.finalMessage?.stop_reason
+            }
+          });
+        }
+      }
+    } catch (error) {
+      onEvent({
+        type: &apos;error&apos;,
+        error: error instanceof Error ? error : new Error(String(error))
+      });
+    }
+  }
+
+  async listModels(): Promise&lt;AIModel[]&gt; {
+    // Anthropic doesn&apos;t provide a models API, return known models
+    return [
+      {
+        id: &apos;claude-3-5-sonnet-20241022&apos;,
+        name: &apos;Claude 3.5 Sonnet&apos;,
+        provider: &apos;anthropic&apos;,
+        contextWindow: 200000,
+        capabilities: {
+          completion: true,
+          streaming: true,
+          toolCalling: true,
+          vision: true
+        }
+      },
+      {
+        id: &apos;claude-3-opus-20240229&apos;,
+        name: &apos;Claude 3 Opus&apos;,
+        provider: &apos;anthropic&apos;,
+        contextWindow: 200000,
+        capabilities: {
+          completion: true,
+          streaming: true,
+          toolCalling: true,
+          vision: true
+        }
+      },
+      {
+        id: &apos;claude-3-haiku-20240307&apos;,
+        name: &apos;Claude 3 Haiku&apos;,
+        provider: &apos;anthropic&apos;,
+        contextWindow: 200000,
+        capabilities: {
+          completion: true,
+          streaming: true,
+          toolCalling: true,
+          vision: true
+        }
+      }
+    ];
+  }
+
+  calculateCost(
+    promptTokens: number,
+    completionTokens: number,
+    model: string = this.defaultModel
+  ): number {
+    const pricing = ANTHROPIC_PRICING[model] || ANTHROPIC_PRICING[&apos;claude-3-5-sonnet-20241022&apos;];
+
+    const promptCost = (promptTokens / 1_000_000) * pricing.prompt;
+    const completionCost = (completionTokens / 1_000_000) * pricing.completion;
+
+    return promptCost + completionCost;
+  }
+
+  async testConnection(): Promise&lt;boolean&gt; {
+    try {
+      await this.client.messages.create({
+        model: this.defaultModel,
+        max_tokens: 1,
+        messages: [{ role: &apos;user&apos;, content: &apos;test&apos; }]
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+</codeblock>
+    <p><b>Anthropic-Specific Considerations:</b></p>
+    <ol>
+      <li>
+        <b>Large Context Windows</b>
+        : 200K tokens enable processing entire codebases
+      </li>
+      <li>
+        <b>No Model List API</b>
+        : Must hardcode known models
+      </li>
+      <li>
+        <b>Different Streaming Format</b>
+        : Uses event-based streaming
+      </li>
+      <li>
+        <b>System Prompts</b>
+        : Supports separate system parameter (not shown for brevity)
+      </li>
+      <li>
+        <b>Tool Use</b>
+        : Advanced tool calling capabilities (covered in Chapter 4)
+      </li>
+    </ol>
+    <section><title>Case Study 4: Google Provider</title></section>
+    <p>Google&apos;s Gemini offers multi-modal capabilities and generous free tier.</p>
+    <codeblock outputclass="language-typescript">// src/ai/providers/google-provider.ts
+import { GoogleGenerativeAI, GenerativeModel } from &apos;@google/generative-ai&apos;;
+import { BaseAIProvider, ProviderConfig, CompletionOptions, AICompletionResponse } from &apos;./base-provider&apos;;
+
+export interface GoogleProviderConfig extends ProviderConfig {
+  apiKey: string;
+  defaultModel?: string;
+}
+
+// Pricing as of 2025 (per 1M tokens)
+const GOOGLE_PRICING = {
+  &apos;gemini-pro&apos;: { prompt: 0.50, completion: 1.50 },
+  &apos;gemini-pro-vision&apos;: { prompt: 0.50, completion: 1.50 },
+  &apos;gemini-ultra&apos;: { prompt: 2.00, completion: 6.00 }
+};
+
+export class GoogleProvider extends BaseAIProvider {
+  private client: GoogleGenerativeAI;
+  private defaultModel: string;
+
+  constructor(config: GoogleProviderConfig) {
+    super(config);
+
+    if (!config.apiKey) {
+      throw new Error(&apos;Google API key is required&apos;);
+    }
+
+    this.defaultModel = config.defaultModel || &apos;gemini-pro&apos;;
+    this.client = new GoogleGenerativeAI(config.apiKey);
+  }
+
+  getName(): string {
+    return &apos;google&apos;;
+  }
+
+  async initialize(): Promise&lt;void&gt; {
+    try {
+      const model = this.client.getGenerativeModel({ model: this.defaultModel });
+      await model.generateContent(&apos;test&apos;);
+      logger.info(&apos;Google provider initialized successfully&apos;);
+    } catch (error) {
+      if (error.message?.includes(&apos;API key&apos;)) {
+        throw new Error(&apos;Invalid Google API key&apos;);
+      }
+      throw new Error(`Failed to initialize Google provider: ${error}`);
+    }
+  }
+
+  async complete(
+    prompt: string,
+    options: CompletionOptions = {}
+  ): Promise&lt;AICompletionResponse&gt; {
+    const startTime = Date.now();
+    const modelName = options.model || this.defaultModel;
+
+    try {
+      const model = this.client.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: options.temperature,
+          maxOutputTokens: options.maxTokens,
+          topP: options.topP,
+          stopSequences: options.stopSequences
+        }
+      });
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+
+      const responseTime = Date.now() - startTime;
+
+      // Google doesn&apos;t always provide token counts
+      const promptTokens = response.usageMetadata?.promptTokenCount || 0;
+      const completionTokens = response.usageMetadata?.candidatesTokenCount || 0;
+      const tokensUsed = promptTokens + completionTokens;
+
+      const cost = this.calculateCost(promptTokens, completionTokens, modelName);
+
+      this.updateMetrics(true, responseTime, tokensUsed, cost);
+
+      return {
+        content: text,
+        model: modelName,
+        tokensUsed: {
+          prompt: promptTokens,
+          completion: completionTokens,
+          total: tokensUsed
+        },
+        finishReason: &apos;stop&apos;,
+        metadata: {
+          safetyRatings: response.candidates?.[0]?.safetyRatings
+        }
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      this.updateMetrics(false, responseTime, 0, 0);
+      throw error;
+    }
+  }
+
+  async completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt; {
+    const modelName = options.model || this.defaultModel;
+
+    try {
+      const model = this.client.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: options.temperature,
+          maxOutputTokens: options.maxTokens,
+          topP: options.topP,
+          stopSequences: options.stopSequences
+        }
+      });
+
+      const result = await model.generateContentStream(prompt);
+
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          onEvent({
+            type: &apos;content&apos;,
+            content: text
+          });
+        }
+      }
+
+      onEvent({ type: &apos;done&apos; });
+    } catch (error) {
+      onEvent({
+        type: &apos;error&apos;,
+        error: error instanceof Error ? error : new Error(String(error))
+      });
+    }
+  }
+
+  async listModels(): Promise&lt;AIModel[]&gt; {
+    return [
+      {
+        id: &apos;gemini-pro&apos;,
+        name: &apos;Gemini Pro&apos;,
+        provider: &apos;google&apos;,
+        contextWindow: 32768,
+        capabilities: {
+          completion: true,
+          streaming: true,
+          toolCalling: true,
+          vision: false
+        }
+      },
+      {
+        id: &apos;gemini-pro-vision&apos;,
+        name: &apos;Gemini Pro Vision&apos;,
+        provider: &apos;google&apos;,
+        contextWindow: 16384,
+        capabilities: {
+          completion: true,
+          streaming: true,
+          toolCalling: false,
+          vision: true
+        }
+      }
+    ];
+  }
+
+  calculateCost(
+    promptTokens: number,
+    completionTokens: number,
+    model: string = this.defaultModel
+  ): number {
+    const pricing = GOOGLE_PRICING[model] || GOOGLE_PRICING[&apos;gemini-pro&apos;];
+
+    const promptCost = (promptTokens / 1_000_000) * pricing.prompt;
+    const completionCost = (completionTokens / 1_000_000) * pricing.completion;
+
+    return promptCost + completionCost;
+  }
+
+  async testConnection(): Promise&lt;boolean&gt; {
+    try {
+      const model = this.client.getGenerativeModel({ model: this.defaultModel });
+      await model.generateContent(&apos;test&apos;);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+</codeblock>
+    <p><b>Google-Specific Considerations:</b></p>
+    <ol>
+      <li>
+        <b>Multi-Modal Support</b>
+        : Vision models can process images
+      </li>
+      <li>
+        <b>Safety Ratings</b>
+        : Responses include content safety assessments
+      </li>
+      <li>
+        <b>Generous Free Tier</b>
+        : Good for development and testing
+      </li>
+      <li>
+        <b>Token Count Limitations</b>
+        : Not always available in responses
+      </li>
+      <li>
+        <b>Different API Structure</b>
+        : Uses GenerativeModel pattern
+      </li>
+    </ol>
+    <section><title>Provider Comparison Summary</title></section>
+    <table>
+      <tgroup cols="5">
+        <colspec colname="c1" colnum="1"/>
+        <colspec colname="c2" colnum="2"/>
+        <colspec colname="c3" colnum="3"/>
+        <colspec colname="c4" colnum="4"/>
+        <colspec colname="c5" colnum="5"/>
+        <thead>
+          <row>
+            <entry>Feature</entry>
+            <entry>Ollama</entry>
+            <entry>OpenAI</entry>
+            <entry>Anthropic</entry>
+            <entry>Google</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry><b>Cost</b></entry>
+            <entry>Free</entry>
+            <entry>$$$</entry>
+            <entry>$$$$</entry>
+            <entry>$$</entry>
+          </row>
+          <row>
+            <entry><b>Privacy</b></entry>
+            <entry>🔒 Full</entry>
+            <entry>⚠️ Cloud</entry>
+            <entry>⚠️ Cloud</entry>
+            <entry>⚠️ Cloud</entry>
+          </row>
+          <row>
+            <entry><b>Context Window</b></entry>
+            <entry>8K-128K</entry>
+            <entry>128K</entry>
+            <entry>200K</entry>
+            <entry>32K</entry>
+          </row>
+          <row>
+            <entry><b>Setup Complexity</b></entry>
+            <entry>Medium</entry>
+            <entry>Easy</entry>
+            <entry>Easy</entry>
+            <entry>Easy</entry>
+          </row>
+          <row>
+            <entry><b>Best For</b></entry>
+            <entry>Local dev, privacy</entry>
+            <entry>General purpose</entry>
+            <entry>Complex coding</entry>
+            <entry>Multi-modal</entry>
+          </row>
+          <row>
+            <entry><b>Offline Support</b></entry>
+            <entry>✅</entry>
+            <entry>❌</entry>
+            <entry>❌</entry>
+            <entry>❌</entry>
+          </row>
+          <row>
+            <entry><b>API Maturity</b></entry>
+            <entry>Good</entry>
+            <entry>Excellent</entry>
+            <entry>Excellent</entry>
+            <entry>Good</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <section><title>2.4 Provider Manager</title></section>
+    <p>Now that we have multiple provider implementations, we need a <b>ProviderManager</b> to:
+- Register and configure providers
+- Store credentials securely
+- Track usage and costs
+- Monitor health
+- Enforce budgets</p>
+    <section><title>Architecture</title></section>
+    <codeblock outputclass="language-typescript">// src/ai/providers/provider-manager.ts
+import { EventEmitter } from &apos;events&apos;;
+import { BaseAIProvider } from &apos;./base-provider&apos;;
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from &apos;crypto&apos;;
+import { promises as fs } from &apos;fs&apos;;
+import { join } from &apos;path&apos;;
+
+export interface ProviderCredentials {
+  apiKey?: string;
+  apiSecret?: string;
+  organization?: string;
+  customHeaders?: Record&lt;string, string&gt;;
+}
+
+export interface ProviderUsageStats {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  totalTokensUsed: number;
+  totalCost: number;
+  averageResponseTime: number;
+  dailyUsage: Map&lt;string, number&gt;;
+  monthlyUsage: Map&lt;string, number&gt;;
+  lastUsed?: Date;
+}
+
+export interface ProviderBudget {
+  providerId: string;
+  dailyLimit: number;
+  monthlyLimit: number;
+  alertThresholds: {
+    percentage: number;
+    cost: number;
+  }[];
+}
+
+export class ProviderManager extends EventEmitter {
+  private providers = new Map&lt;string, BaseAIProvider&gt;();
+  private configurations = new Map&lt;string, ProviderConfig&gt;();
+  private credentials = new Map&lt;string, ProviderCredentials&gt;();
+  private usageStats = new Map&lt;string, ProviderUsageStats&gt;();
+  private budgets = new Map&lt;string, ProviderBudget&gt;();
+
+  private credentialsPath: string;
+  private encryptionKey: Buffer;
+
+  constructor(credentialsPath: string, encryptionPassword: string) {
+    super();
+    this.credentialsPath = credentialsPath;
+
+    // Derive encryption key from password
+    this.encryptionKey = scryptSync(encryptionPassword, &apos;salt&apos;, 32);
+  }
+
+  /**
+   * Register a provider with the manager
+   */
+  async registerProvider(
+    id: string,
+    provider: BaseAIProvider,
+    config: ProviderConfig
+  ): Promise&lt;void&gt; {
+    // Initialize provider
+    await provider.initialize();
+
+    // Store provider and config
+    this.providers.set(id, provider);
+    this.configurations.set(id, config);
+
+    // Initialize usage stats
+    this.usageStats.set(id, {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      totalTokensUsed: 0,
+      totalCost: 0,
+      averageResponseTime: 0,
+      dailyUsage: new Map(),
+      monthlyUsage: new Map()
+    });
+
+    // Listen to provider metrics
+    provider.on(&apos;metrics_updated&apos;, (metrics) =&gt; {
+      this.updateUsageStats(id, metrics);
+    });
+
+    logger.info(`Provider registered: ${id} (${provider.getName()})`);
+    this.emit(&apos;provider_registered&apos;, { id, name: provider.getName() });
+  }
+
+  /**
+   * Unregister a provider
+   */
+  async unregisterProvider(id: string): Promise&lt;void&gt; {
+    const provider = this.providers.get(id);
+    if (!provider) {
+      throw new Error(`Provider not found: ${id}`);
+    }
+
+    this.providers.delete(id);
+    this.configurations.delete(id);
+    this.credentials.delete(id);
+    this.usageStats.delete(id);
+    this.budgets.delete(id);
+
+    logger.info(`Provider unregistered: ${id}`);
+    this.emit(&apos;provider_unregistered&apos;, { id });
+  }
+
+  /**
+   * Store credentials securely (encrypted)
+   */
+  async storeCredentials(
+    id: string,
+    credentials: ProviderCredentials
+  ): Promise&lt;void&gt; {
+    // Encrypt credentials
+    const encrypted = this.encryptCredentials(credentials);
+
+    // Store in memory
+    this.credentials.set(id, credentials);
+
+    // Persist to disk (encrypted)
+    await this.persistCredentials(id, encrypted);
+
+    this.emit(&apos;credentials_stored&apos;, { id });
+  }
+
+  /**
+   * Get a provider by ID
+   */
+  getProvider(id: string): BaseAIProvider | undefined {
+    return this.providers.get(id);
+  }
+
+  /**
+   * List all registered providers
+   */
+  listProviders(): Array&lt;{ id: string; name: string; health: ProviderHealth }&gt; {
+    return Array.from(this.providers.entries()).map(([id, provider]) =&gt; ({
+      id,
+      name: provider.getName(),
+      health: provider.getHealth()
+    }));
+  }
+
+  /**
+   * Get usage statistics for a provider
+   */
+  getUsageStats(id: string): ProviderUsageStats | undefined {
+    return this.usageStats.get(id);
+  }
+
+  /**
+   * Set budget limits for a provider
+   */
+  setBudget(budget: ProviderBudget): void {
+    this.budgets.set(budget.providerId, budget);
+    this.emit(&apos;budget_set&apos;, budget);
+  }
+
+  /**
+   * Check if a request would exceed budget
+   */
+  checkBudget(id: string, estimatedCost: number): boolean {
+    const budget = this.budgets.get(id);
+    const stats = this.usageStats.get(id);
+
+    if (!budget || !stats) return true; // No budget set, allow
+
+    const today = new Date().toISOString().split(&apos;T&apos;)[0];
+    const dailyCost = stats.dailyUsage.get(today) || 0;
+
+    // Check daily limit
+    if (dailyCost + estimatedCost &gt; budget.dailyLimit) {
+      this.emit(&apos;budget_exceeded&apos;, {
+        id,
+        type: &apos;daily&apos;,
+        current: dailyCost,
+        limit: budget.dailyLimit
+      });
+      return false;
+    }
+
+    // Check monthly limit
+    const month = new Date().toISOString().substring(0, 7); // YYYY-MM
+    const monthlyCost = stats.monthlyUsage.get(month) || 0;
+
+    if (monthlyCost + estimatedCost &gt; budget.monthlyLimit) {
+      this.emit(&apos;budget_exceeded&apos;, {
+        id,
+        type: &apos;monthly&apos;,
+        current: monthlyCost,
+        limit: budget.monthlyLimit
+      });
+      return false;
+    }
+
+    // Check alert thresholds
+    for (const threshold of budget.alertThresholds) {
+      if (dailyCost &gt;= budget.dailyLimit * (threshold.percentage / 100)) {
+        this.emit(&apos;budget_alert&apos;, {
+          id,
+          type: &apos;daily&apos;,
+          percentage: threshold.percentage,
+          current: dailyCost,
+          limit: budget.dailyLimit
+        });
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Track usage for a provider
+   */
+  trackUsage(
+    id: string,
+    success: boolean,
+    tokensUsed: number,
+    responseTime: number,
+    cost: number
+  ): void {
+    const stats = this.usageStats.get(id);
+    if (!stats) return;
+
+    stats.totalRequests++;
+    if (success) {
+      stats.successfulRequests++;
+    } else {
+      stats.failedRequests++;
+    }
+
+    stats.totalTokensUsed += tokensUsed;
+    stats.totalCost += cost;
+    stats.averageResponseTime =
+      (stats.averageResponseTime * (stats.totalRequests - 1) + responseTime) /
+      stats.totalRequests;
+
+    // Update daily usage
+    const today = new Date().toISOString().split(&apos;T&apos;)[0];
+    const dailyCost = stats.dailyUsage.get(today) || 0;
+    stats.dailyUsage.set(today, dailyCost + cost);
+
+    // Update monthly usage
+    const month = new Date().toISOString().substring(0, 7);
+    const monthlyCost = stats.monthlyUsage.get(month) || 0;
+    stats.monthlyUsage.set(month, monthlyCost + cost);
+
+    stats.lastUsed = new Date();
+
+    this.emit(&apos;usage_tracked&apos;, { id, stats });
+  }
+
+  // ============================================================
+  // Private Helper Methods
+  // ============================================================
+
+  private updateUsageStats(id: string, metrics: ProviderMetrics): void {
+    const stats = this.usageStats.get(id);
+    if (!stats) return;
+
+    // Update from provider metrics
+    stats.totalRequests = metrics.totalRequests;
+    stats.successfulRequests = metrics.successfulRequests;
+    stats.failedRequests = metrics.failedRequests;
+    stats.totalTokensUsed = metrics.totalTokensUsed;
+    stats.totalCost = metrics.totalCost;
+    stats.averageResponseTime = metrics.averageResponseTime;
+  }
+
+  /**
+   * Encrypt credentials using AES-256-GCM
+   */
+  private encryptCredentials(credentials: ProviderCredentials): string {
+    const iv = randomBytes(16);
+    const cipher = createCipheriv(&apos;aes-256-gcm&apos;, this.encryptionKey, iv);
+
+    const plaintext = JSON.stringify(credentials);
+    let encrypted = cipher.update(plaintext, &apos;utf8&apos;, &apos;hex&apos;);
+    encrypted += cipher.final(&apos;hex&apos;);
+
+    const authTag = cipher.getAuthTag();
+
+    // Return: iv:authTag:encrypted
+    return `${iv.toString(&apos;hex&apos;)}:${authTag.toString(&apos;hex&apos;)}:${encrypted}`;
+  }
+
+  /**
+   * Decrypt credentials
+   */
+  private decryptCredentials(encrypted: string): ProviderCredentials {
+    const [ivHex, authTagHex, encryptedData] = encrypted.split(&apos;:&apos;);
+
+    const iv = Buffer.from(ivHex, &apos;hex&apos;);
+    const authTag = Buffer.from(authTagHex, &apos;hex&apos;);
+    const decipher = createDecipheriv(&apos;aes-256-gcm&apos;, this.encryptionKey, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encryptedData, &apos;hex&apos;, &apos;utf8&apos;);
+    decrypted += decipher.final(&apos;utf8&apos;);
+
+    return JSON.parse(decrypted);
+  }
+
+  /**
+   * Persist encrypted credentials to disk
+   */
+  private async persistCredentials(id: string, encrypted: string): Promise&lt;void&gt; {
+    const filePath = join(this.credentialsPath, `${id}.enc`);
+
+    await fs.mkdir(this.credentialsPath, { recursive: true });
+    await fs.writeFile(filePath, encrypted, { mode: 0o600 }); // Read/write owner only
+
+    logger.debug(`Credentials persisted: ${id}`);
+  }
+
+  /**
+   * Load encrypted credentials from disk
+   */
+  private async loadCredentials(id: string): Promise&lt;ProviderCredentials | null&gt; {
+    const filePath = join(this.credentialsPath, `${id}.enc`);
+
+    try {
+      const encrypted = await fs.readFile(filePath, &apos;utf8&apos;);
+      return this.decryptCredentials(encrypted);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === &apos;ENOENT&apos;) {
+        return null; // File doesn&apos;t exist
+      }
+      throw error;
+    }
+  }
+}
+</codeblock>
+    <section><title>Key Features</title></section>
+    <section><title>1.Secure Credential Storage</title></section>
+    <codeblock outputclass="language-typescript">// Credentials are encrypted using AES-256-GCM
+await providerManager.storeCredentials(&apos;openai-main&apos;, {
+  apiKey: process.env.OPENAI_API_KEY,
+  organization: &apos;org-123&apos;
+});
+
+// Stored on disk with restricted permissions (0o600)
+// File: ~/.ollama-code/credentials/openai-main.enc
+// Format: iv:authTag:encryptedData
+</codeblock>
+    <section><title>2.Usage Tracking</title></section>
+    <codeblock outputclass="language-typescript">// Automatic tracking on every request
+provider.on(&apos;metrics_updated&apos;, (metrics) =&gt; {
+  providerManager.trackUsage(
+    &apos;openai-main&apos;,
+    true,  // success
+    1250,  // tokens used
+    450,   // response time (ms)
+    0.025  // cost ($)
+  );
+});
+
+// Get usage stats
+const stats = providerManager.getUsageStats(&apos;openai-main&apos;);
+console.log(`Total cost this month: $${stats.totalCost.toFixed(2)}`);
+</codeblock>
+    <section><title>3.Budget Enforcement</title></section>
+    <codeblock outputclass="language-typescript">// Set budget limits
+providerManager.setBudget({
+  providerId: &apos;openai-main&apos;,
+  dailyLimit: 10.00,    // $10/day
+  monthlyLimit: 200.00, // $200/month
+  alertThresholds: [
+    { percentage: 80, cost: 8.00 },   // Alert at 80% of daily
+    { percentage: 90, cost: 9.00 }    // Alert at 90% of daily
+  ]
+});
+
+// Check before making request
+if (!providerManager.checkBudget(&apos;openai-main&apos;, estimatedCost)) {
+  throw new Error(&apos;Budget exceeded&apos;);
+}
+
+// Listen for budget events
+providerManager.on(&apos;budget_alert&apos;, ({ id, percentage }) =&gt; {
+  console.warn(`${id} reached ${percentage}% of daily budget`);
+});
+
+providerManager.on(&apos;budget_exceeded&apos;, ({ id, type, limit }) =&gt; {
+  console.error(`${id} exceeded ${type} budget of $${limit}`);
+});
+</codeblock>
+    <section><title>2.5 Intelligent Router</title></section>
+    <p>Now that we have provider abstractions and management, we need a <b>router</b> to intelligently select which provider to use for each request. The router is the brain of the multi-provider system, making real-time decisions based on cost, quality, performance, and reliability.</p>
+    <section><title>Why Intelligent Routing?</title></section>
+    <p>Not all AI tasks are created equal. Consider these scenarios:</p>
+    <ol>
+      <li>
+        <b>Simple commit messages</b>
+        : Don&apos;t need GPT-4&apos;s power — use Ollama locally
+      </li>
+      <li>
+        <b>Complex code refactoring</b>
+        : Quality matters — use Claude 3.5 Sonnet
+      </li>
+      <li>
+        <b>Quick answers</b>
+        : Speed matters — use GPT-3.5 Turbo
+      </li>
+      <li>
+        <b>Critical decisions</b>
+        : Accuracy matters — use response fusion with multiple providers
+      </li>
+    </ol>
+    <p>The router handles these decisions automatically based on configurable strategies.</p>
+    <section><title>Router Architecture</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Request context for routing decisions
+ */
+export interface RoutingContext {
+  /** The user&apos;s prompt */
+  prompt: string;
+
+  /** Task complexity (estimated) */
+  complexity: &apos;simple&apos; | &apos;medium&apos; | &apos;complex&apos;;
+
+  /** Priority: cost, quality, or performance */
+  priority: &apos;cost&apos; | &apos;quality&apos; | &apos;performance&apos; | &apos;balanced&apos;;
+
+  /** Maximum acceptable cost for this request */
+  maxCost?: number;
+
+  /** Maximum acceptable latency (ms) */
+  maxLatency?: number;
+
+  /** Required capabilities */
+  requiredCapabilities?: string[];
+
+  /** Conversation history (for context) */
+  conversationHistory?: Message[];
+}
+
+/**
+ * Routing decision result
+ */
+export interface RoutingDecision {
+  /** Selected provider ID */
+  providerId: string;
+
+  /** Selected model */
+  model: string;
+
+  /** Reasoning for this choice */
+  reasoning: string;
+
+  /** Estimated cost */
+  estimatedCost: number;
+
+  /** Fallback providers (in order) */
+  fallbacks: string[];
+
+  /** Confidence score (0-1) */
+  confidence: number;
+}
+
+/**
+ * Routing strategy interface
+ */
+export interface RoutingStrategy {
+  /**
+   * Select the best provider for this context
+   */
+  selectProvider(
+    context: RoutingContext,
+    availableProviders: Map&lt;string, BaseAIProvider&gt;
+  ): Promise&lt;RoutingDecision&gt;;
+
+  /**
+   * Get strategy name
+   */
+  getName(): string;
+}
+</codeblock>
+    <section><title>Routing Strategies</title></section>
+    <section><title>1. Cost-Optimized Strategy</title></section>
+    <p><b>Goal</b>: Minimize cost while meeting quality requirements</p>
+    <codeblock outputclass="language-typescript">export class CostOptimizedStrategy implements RoutingStrategy {
+  getName(): string {
+    return &apos;cost-optimized&apos;;
+  }
+
+  async selectProvider(
+    context: RoutingContext,
+    availableProviders: Map&lt;string, BaseAIProvider&gt;
+  ): Promise&lt;RoutingDecision&gt; {
+    const startTime = Date.now();
+
+    // Filter providers by health and capabilities
+    const healthyProviders = Array.from(availableProviders.entries())
+      .filter(([id, provider]) =&gt; {
+        const health = provider.getHealth();
+        return health.status === &apos;healthy&apos;;
+      });
+
+    if (healthyProviders.length === 0) {
+      throw new Error(&apos;No healthy providers available&apos;);
+    }
+
+    // Estimate tokens for cost calculation
+    const estimatedPromptTokens = this.estimateTokens(context.prompt);
+    const estimatedCompletionTokens = this.estimateCompletionTokens(context.complexity);
+
+    // Calculate cost for each provider
+    const providerCosts = healthyProviders.map(([id, provider]) =&gt; {
+      const models = this.getModelsForComplexity(provider.getName(), context.complexity);
+      const modelCosts = models.map(model =&gt; ({
+        id,
+        model,
+        cost: provider.calculateCost(estimatedPromptTokens, estimatedCompletionTokens, model),
+        provider
+      }));
+
+      // Return cheapest model for this provider
+      return modelCosts.sort((a, b) =&gt; a.cost - b.cost)[0];
+    });
+
+    // Sort by cost (cheapest first)
+    providerCosts.sort((a, b) =&gt; a.cost - b.cost);
+
+    // Select cheapest option
+    const selected = providerCosts[0];
+
+    // Build fallback list
+    const fallbacks = providerCosts
+      .slice(1, 4)  // Top 3 alternatives
+      .map(p =&gt; p.id);
+
+    return {
+      providerId: selected.id,
+      model: selected.model,
+      reasoning: `Lowest cost option at $${selected.cost.toFixed(4)} (estimated)`,
+      estimatedCost: selected.cost,
+      fallbacks,
+      confidence: 0.95
+    };
+  }
+
+  private estimateTokens(text: string): number {
+    // Rough estimate: ~4 characters per token
+    return Math.ceil(text.length / 4);
+  }
+
+  private estimateCompletionTokens(complexity: string): number {
+    switch (complexity) {
+      case &apos;simple&apos;: return 100;
+      case &apos;medium&apos;: return 500;
+      case &apos;complex&apos;: return 2000;
+      default: return 500;
+    }
+  }
+
+  private getModelsForComplexity(providerName: string, complexity: string): string[] {
+    // Map complexity to appropriate models
+    if (providerName === &apos;ollama&apos;) {
+      return [&apos;qwen2.5-coder:7b&apos;, &apos;qwen2.5-coder:14b&apos;];
+    } else if (providerName === &apos;openai&apos;) {
+      switch (complexity) {
+        case &apos;simple&apos;: return [&apos;gpt-3.5-turbo&apos;];
+        case &apos;medium&apos;: return [&apos;gpt-4-turbo&apos;, &apos;gpt-3.5-turbo&apos;];
+        case &apos;complex&apos;: return [&apos;gpt-4&apos;, &apos;gpt-4-turbo&apos;];
+      }
+    } else if (providerName === &apos;anthropic&apos;) {
+      switch (complexity) {
+        case &apos;simple&apos;: return [&apos;claude-3-haiku-20240307&apos;];
+        case &apos;medium&apos;: return [&apos;claude-3-5-sonnet-20241022&apos;, &apos;claude-3-haiku-20240307&apos;];
+        case &apos;complex&apos;: return [&apos;claude-3-5-sonnet-20241022&apos;, &apos;claude-3-opus-20240229&apos;];
+      }
+    } else if (providerName === &apos;google&apos;) {
+      switch (complexity) {
+        case &apos;simple&apos;: return [&apos;gemini-1.5-flash&apos;];
+        case &apos;medium&apos;: return [&apos;gemini-1.5-flash&apos;, &apos;gemini-1.5-pro&apos;];
+        case &apos;complex&apos;: return [&apos;gemini-1.5-pro&apos;];
+      }
+    }
+
+    return [];
+  }
+}
+</codeblock>
+    <section><title>2. Quality-Optimized Strategy</title></section>
+    <p><b>Goal</b>: Maximize output quality, cost is secondary</p>
+    <codeblock outputclass="language-typescript">export class QualityOptimizedStrategy implements RoutingStrategy {
+  // Quality rankings (higher = better)
+  private qualityScores: Record&lt;string, Record&lt;string, number&gt;&gt; = {
+    &apos;ollama&apos;: {
+      &apos;qwen2.5-coder:7b&apos;: 6,
+      &apos;qwen2.5-coder:14b&apos;: 7,
+      &apos;qwen2.5-coder:32b&apos;: 8
+    },
+    &apos;openai&apos;: {
+      &apos;gpt-3.5-turbo&apos;: 7,
+      &apos;gpt-4-turbo&apos;: 9,
+      &apos;gpt-4&apos;: 10
+    },
+    &apos;anthropic&apos;: {
+      &apos;claude-3-haiku-20240307&apos;: 7,
+      &apos;claude-3-5-sonnet-20241022&apos;: 10,
+      &apos;claude-3-opus-20240229&apos;: 9
+    },
+    &apos;google&apos;: {
+      &apos;gemini-1.5-flash&apos;: 6,
+      &apos;gemini-1.5-pro&apos;: 8
+    }
+  };
+
+  getName(): string {
+    return &apos;quality-optimized&apos;;
+  }
+
+  async selectProvider(
+    context: RoutingContext,
+    availableProviders: Map&lt;string, BaseAIProvider&gt;
+  ): Promise&lt;RoutingDecision&gt; {
+    const healthyProviders = Array.from(availableProviders.entries())
+      .filter(([id, provider]) =&gt; provider.getHealth().status === &apos;healthy&apos;);
+
+    if (healthyProviders.length === 0) {
+      throw new Error(&apos;No healthy providers available&apos;);
+    }
+
+    // Find highest quality model for each provider
+    const providerOptions = healthyProviders.map(([id, provider]) =&gt; {
+      const providerName = provider.getName();
+      const scores = this.qualityScores[providerName] || {};
+
+      // Get all models and their quality scores
+      const modelScores = Object.entries(scores)
+        .filter(([model]) =&gt; {
+          // Filter by complexity if needed
+          if (context.complexity === &apos;simple&apos;) {
+            return true;  // All models acceptable
+          } else if (context.complexity === &apos;medium&apos;) {
+            return scores[model] &gt;= 7;
+          } else {  // complex
+            return scores[model] &gt;= 8;
+          }
+        })
+        .map(([model, score]) =&gt; ({ id, model, score, provider }));
+
+      // Return highest quality model
+      modelScores.sort((a, b) =&gt; b.score - a.score);
+      return modelScores[0];
+    }).filter(Boolean);
+
+    // Sort by quality (highest first)
+    providerOptions.sort((a, b) =&gt; b.score - a.score);
+
+    const selected = providerOptions[0];
+
+    // Estimate cost for selected option
+    const estimatedPromptTokens = Math.ceil(context.prompt.length / 4);
+    const estimatedCompletionTokens = context.complexity === &apos;complex&apos; ? 2000 : 500;
+    const estimatedCost = selected.provider.calculateCost(
+      estimatedPromptTokens,
+      estimatedCompletionTokens,
+      selected.model
+    );
+
+    return {
+      providerId: selected.id,
+      model: selected.model,
+      reasoning: `Highest quality model (score: ${selected.score}/10)`,
+      estimatedCost,
+      fallbacks: providerOptions.slice(1, 4).map(p =&gt; p.id),
+      confidence: 0.90
+    };
+  }
+}
+</codeblock>
+    <section><title>3. Performance-Optimized Strategy</title></section>
+    <p><b>Goal</b>: Minimize latency, prioritize speed</p>
+    <codeblock outputclass="language-typescript">export class PerformanceOptimizedStrategy implements RoutingStrategy {
+  getName(): string {
+    return &apos;performance-optimized&apos;;
+  }
+
+  async selectProvider(
+    context: RoutingContext,
+    availableProviders: Map&lt;string, BaseAIProvider&gt;
+  ): Promise&lt;RoutingDecision&gt; {
+    const healthyProviders = Array.from(availableProviders.entries())
+      .filter(([id, provider]) =&gt; provider.getHealth().status === &apos;healthy&apos;);
+
+    if (healthyProviders.length === 0) {
+      throw new Error(&apos;No healthy providers available&apos;);
+    }
+
+    // Sort by average response time (fastest first)
+    const providersBySpeed = healthyProviders
+      .map(([id, provider]) =&gt; {
+        const metrics = provider.getMetrics();
+        return {
+          id,
+          provider,
+          avgResponseTime: metrics.averageResponseTime,
+          // Prefer local providers (lower latency)
+          isLocal: provider.getName() === &apos;ollama&apos;
+        };
+      })
+      .sort((a, b) =&gt; {
+        // Prioritize local providers
+        if (a.isLocal &amp;&amp; !b.isLocal) return -1;
+        if (!a.isLocal &amp;&amp; b.isLocal) return 1;
+
+        // Then sort by response time
+        return a.avgResponseTime - b.avgResponseTime;
+      });
+
+    const selected = providersBySpeed[0];
+
+    // Select fastest model for complexity
+    const model = this.getFastestModel(selected.provider.getName(), context.complexity);
+
+    const estimatedPromptTokens = Math.ceil(context.prompt.length / 4);
+    const estimatedCompletionTokens = context.complexity === &apos;complex&apos; ? 2000 : 500;
+    const estimatedCost = selected.provider.calculateCost(
+      estimatedPromptTokens,
+      estimatedCompletionTokens,
+      model
+    );
+
+    return {
+      providerId: selected.id,
+      model,
+      reasoning: `Fastest provider (avg: ${selected.avgResponseTime.toFixed(0)}ms, local: ${selected.isLocal})`,
+      estimatedCost,
+      fallbacks: providersBySpeed.slice(1, 4).map(p =&gt; p.id),
+      confidence: 0.85
+    };
+  }
+
+  private getFastestModel(providerName: string, complexity: string): string {
+    // Smaller models = faster inference
+    if (providerName === &apos;ollama&apos;) {
+      return &apos;qwen2.5-coder:7b&apos;;  // Smallest model
+    } else if (providerName === &apos;openai&apos;) {
+      return &apos;gpt-3.5-turbo&apos;;  // Fastest OpenAI model
+    } else if (providerName === &apos;anthropic&apos;) {
+      return &apos;claude-3-haiku-20240307&apos;;  // Fastest Claude model
+    } else if (providerName === &apos;google&apos;) {
+      return &apos;gemini-1.5-flash&apos;;  // Flash = fast
+    }
+
+    return &apos;&apos;;
+  }
+}
+</codeblock>
+    <section><title>4. Balanced Strategy</title></section>
+    <p><b>Goal</b>: Balance cost, quality, and performance</p>
+    <codeblock outputclass="language-typescript">export class BalancedStrategy implements RoutingStrategy {
+  // Weights for scoring (total = 1.0)
+  private weights = {
+    cost: 0.35,
+    quality: 0.40,
+    performance: 0.25
+  };
+
+  private qualityOptimized = new QualityOptimizedStrategy();
+  private costOptimized = new CostOptimizedStrategy();
+  private performanceOptimized = new PerformanceOptimizedStrategy();
+
+  getName(): string {
+    return &apos;balanced&apos;;
+  }
+
+  async selectProvider(
+    context: RoutingContext,
+    availableProviders: Map&lt;string, BaseAIProvider&gt;
+  ): Promise&lt;RoutingDecision&gt; {
+    const healthyProviders = Array.from(availableProviders.entries())
+      .filter(([id, provider]) =&gt; provider.getHealth().status === &apos;healthy&apos;);
+
+    if (healthyProviders.length === 0) {
+      throw new Error(&apos;No healthy providers available&apos;);
+    }
+
+    // Get decisions from each strategy
+    const [qualityDecision, costDecision, performanceDecision] = await Promise.all([
+      this.qualityOptimized.selectProvider(context, availableProviders),
+      this.costOptimized.selectProvider(context, availableProviders),
+      this.performanceOptimized.selectProvider(context, availableProviders)
+    ]);
+
+    // Score each provider based on all criteria
+    const scores = new Map&lt;string, number&gt;();
+
+    for (const [id, provider] of healthyProviders) {
+      const metrics = provider.getMetrics();
+
+      // Normalize scores (0-1)
+      const costScore = this.normalizeCost(costDecision.estimatedCost);
+      const qualityScore = this.normalizeQuality(provider.getName(), qualityDecision.model);
+      const performanceScore = this.normalizePerformance(metrics.averageResponseTime);
+
+      // Weighted sum
+      const totalScore =
+        (costScore * this.weights.cost) +
+        (qualityScore * this.weights.quality) +
+        (performanceScore * this.weights.performance);
+
+      scores.set(id, totalScore);
+    }
+
+    // Select highest scoring provider
+    const selectedId = Array.from(scores.entries())
+      .sort((a, b) =&gt; b[1] - a[1])[0][0];
+
+    const selectedProvider = availableProviders.get(selectedId)!;
+
+    // Choose model based on complexity
+    const model = this.selectModel(selectedProvider.getName(), context.complexity);
+
+    const estimatedPromptTokens = Math.ceil(context.prompt.length / 4);
+    const estimatedCompletionTokens = context.complexity === &apos;complex&apos; ? 2000 : 500;
+    const estimatedCost = selectedProvider.calculateCost(
+      estimatedPromptTokens,
+      estimatedCompletionTokens,
+      model
+    );
+
+    return {
+      providerId: selectedId,
+      model,
+      reasoning: `Balanced choice (score: ${scores.get(selectedId)!.toFixed(2)})`,
+      estimatedCost,
+      fallbacks: Array.from(scores.entries())
+        .sort((a, b) =&gt; b[1] - a[1])
+        .slice(1, 4)
+        .map(([id]) =&gt; id),
+      confidence: 0.88
+    };
+  }
+
+  private normalizeCost(cost: number): number {
+    // Lower cost = higher score
+    // $0.00 = 1.0, $0.10+ = 0.0
+    return Math.max(0, 1 - (cost / 0.10));
+  }
+
+  private normalizeQuality(provider: string, model: string): number {
+    const qualityScores: Record&lt;string, Record&lt;string, number&gt;&gt; = {
+      &apos;ollama&apos;: { &apos;qwen2.5-coder:7b&apos;: 0.6, &apos;qwen2.5-coder:14b&apos;: 0.7, &apos;qwen2.5-coder:32b&apos;: 0.8 },
+      &apos;openai&apos;: { &apos;gpt-3.5-turbo&apos;: 0.7, &apos;gpt-4-turbo&apos;: 0.9, &apos;gpt-4&apos;: 1.0 },
+      &apos;anthropic&apos;: { &apos;claude-3-haiku-20240307&apos;: 0.7, &apos;claude-3-5-sonnet-20241022&apos;: 1.0, &apos;claude-3-opus-20240229&apos;: 0.9 },
+      &apos;google&apos;: { &apos;gemini-1.5-flash&apos;: 0.6, &apos;gemini-1.5-pro&apos;: 0.8 }
+    };
+
+    return qualityScores[provider]?.[model] || 0.5;
+  }
+
+  private normalizePerformance(avgResponseTime: number): number {
+    // Lower response time = higher score
+    // 0ms = 1.0, 5000ms+ = 0.0
+    return Math.max(0, 1 - (avgResponseTime / 5000));
+  }
+
+  private selectModel(provider: string, complexity: string): string {
+    // Balanced model selection
+    const models: Record&lt;string, Record&lt;string, string&gt;&gt; = {
+      &apos;ollama&apos;: { &apos;simple&apos;: &apos;qwen2.5-coder:7b&apos;, &apos;medium&apos;: &apos;qwen2.5-coder:14b&apos;, &apos;complex&apos;: &apos;qwen2.5-coder:14b&apos; },
+      &apos;openai&apos;: { &apos;simple&apos;: &apos;gpt-3.5-turbo&apos;, &apos;medium&apos;: &apos;gpt-4-turbo&apos;, &apos;complex&apos;: &apos;gpt-4-turbo&apos; },
+      &apos;anthropic&apos;: { &apos;simple&apos;: &apos;claude-3-haiku-20240307&apos;, &apos;medium&apos;: &apos;claude-3-5-sonnet-20241022&apos;, &apos;complex&apos;: &apos;claude-3-5-sonnet-20241022&apos; },
+      &apos;google&apos;: { &apos;simple&apos;: &apos;gemini-1.5-flash&apos;, &apos;medium&apos;: &apos;gemini-1.5-pro&apos;, &apos;complex&apos;: &apos;gemini-1.5-pro&apos; }
+    };
+
+    return models[provider]?.[complexity] || &apos;&apos;;
+  }
+}
+</codeblock>
+    <section><title>Intelligent Router Implementation</title></section>
+    <codeblock outputclass="language-typescript">export class IntelligentRouter extends EventEmitter {
+  private strategies: Map&lt;string, RoutingStrategy&gt; = new Map();
+  private circuitBreakers: Map&lt;string, CircuitBreaker&gt; = new Map();
+  private defaultStrategy: string = &apos;balanced&apos;;
+
+  constructor(
+    private providerManager: ProviderManager,
+    private logger: Logger
+  ) {
+    super();
+
+    // Register built-in strategies
+    this.registerStrategy(new CostOptimizedStrategy());
+    this.registerStrategy(new QualityOptimizedStrategy());
+    this.registerStrategy(new PerformanceOptimizedStrategy());
+    this.registerStrategy(new BalancedStrategy());
+
+    // Initialize circuit breakers for each provider
+    this.initializeCircuitBreakers();
+  }
+
+  /**
+   * Register a routing strategy
+   */
+  registerStrategy(strategy: RoutingStrategy): void {
+    this.strategies.set(strategy.getName(), strategy);
+    this.logger.debug(`Registered routing strategy: ${strategy.getName()}`);
+  }
+
+  /**
+   * Route a request to the best provider
+   */
+  async route(context: RoutingContext): Promise&lt;RoutingDecision&gt; {
+    const strategyName = this.getStrategyForContext(context);
+    const strategy = this.strategies.get(strategyName);
+
+    if (!strategy) {
+      throw new Error(`Unknown routing strategy: ${strategyName}`);
+    }
+
+    // Get available providers (excluding those with open circuit breakers)
+    const availableProviders = this.getAvailableProviders();
+
+    if (availableProviders.size === 0) {
+      throw new Error(&apos;No available providers (all circuit breakers open)&apos;);
+    }
+
+    try {
+      const decision = await strategy.selectProvider(context, availableProviders);
+
+      this.logger.info(`Routing decision: ${decision.providerId} (${decision.model})`, {
+        strategy: strategyName,
+        reasoning: decision.reasoning,
+        estimatedCost: decision.estimatedCost
+      });
+
+      this.emit(&apos;routing_decision&apos;, { context, decision, strategy: strategyName });
+
+      return decision;
+    } catch (error) {
+      this.logger.error(&apos;Routing failed&apos;, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute a request with automatic fallback
+   */
+  async executeWithFallback(
+    context: RoutingContext,
+    executeFn: (providerId: string, model: string) =&gt; Promise&lt;any&gt;
+  ): Promise&lt;any&gt; {
+    const decision = await this.route(context);
+    const attemptOrder = [decision.providerId, ...decision.fallbacks];
+
+    for (const providerId of attemptOrder) {
+      const circuitBreaker = this.circuitBreakers.get(providerId);
+
+      if (circuitBreaker &amp;&amp; !circuitBreaker.canAttempt()) {
+        this.logger.warn(`Circuit breaker open for ${providerId}, skipping`);
+        continue;
+      }
+
+      try {
+        this.logger.debug(`Attempting request with ${providerId}`);
+        const result = await executeFn(providerId, decision.model);
+
+        // Success - record it
+        circuitBreaker?.recordSuccess();
+
+        this.emit(&apos;request_success&apos;, { providerId, context });
+
+        return result;
+      } catch (error) {
+        this.logger.warn(`Request failed with ${providerId}`, error);
+
+        // Record failure
+        circuitBreaker?.recordFailure();
+
+        this.emit(&apos;request_failure&apos;, { providerId, context, error });
+
+        // Continue to next fallback
+        continue;
+      }
+    }
+
+    // All providers failed
+    throw new Error(&apos;All providers failed (including fallbacks)&apos;);
+  }
+
+  /**
+   * Get strategy name for context
+   */
+  private getStrategyForContext(context: RoutingContext): string {
+    // Use context priority if specified
+    if (context.priority) {
+      switch (context.priority) {
+        case &apos;cost&apos;: return &apos;cost-optimized&apos;;
+        case &apos;quality&apos;: return &apos;quality-optimized&apos;;
+        case &apos;performance&apos;: return &apos;performance-optimized&apos;;
+        case &apos;balanced&apos;: return &apos;balanced&apos;;
+      }
+    }
+
+    // Use default strategy
+    return this.defaultStrategy;
+  }
+
+  /**
+   * Get available providers (healthy + circuit breaker closed)
+   */
+  private getAvailableProviders(): Map&lt;string, BaseAIProvider&gt; {
+    const allProviders = this.providerManager.getAllProviders();
+    const available = new Map&lt;string, BaseAIProvider&gt;();
+
+    for (const [id, provider] of allProviders) {
+      const health = provider.getHealth();
+      const circuitBreaker = this.circuitBreakers.get(id);
+
+      if (health.status === &apos;healthy&apos; &amp;&amp; (!circuitBreaker || circuitBreaker.canAttempt())) {
+        available.set(id, provider);
+      }
+    }
+
+    return available;
+  }
+
+  /**
+   * Initialize circuit breakers for all providers
+   */
+  private initializeCircuitBreakers(): void {
+    const providers = this.providerManager.getAllProviders();
+
+    for (const [id] of providers) {
+      this.circuitBreakers.set(id, new CircuitBreaker({
+        failureThreshold: 5,     // Open after 5 failures
+        resetTimeout: 60000,     // Try again after 60s
+        halfOpenRequests: 1      // Test with 1 request
+      }));
+    }
+  }
+}
+</codeblock>
+    <section><title>Circuit Breaker Pattern</title></section>
+    <p>The circuit breaker prevents cascading failures when a provider is experiencing issues:</p>
+    <codeblock outputclass="language-typescript">type CircuitState = &apos;closed&apos; | &apos;open&apos; | &apos;half-open&apos;;
+
+interface CircuitBreakerConfig {
+  /** Number of failures before opening */
+  failureThreshold: number;
+
+  /** Time to wait before trying again (ms) */
+  resetTimeout: number;
+
+  /** Number of test requests in half-open state */
+  halfOpenRequests: number;
+}
+
+export class CircuitBreaker {
+  private state: CircuitState = &apos;closed&apos;;
+  private failureCount: number = 0;
+  private lastFailureTime: number = 0;
+  private halfOpenAttempts: number = 0;
+
+  constructor(private config: CircuitBreakerConfig) {}
+
+  /**
+   * Check if we can attempt a request
+   */
+  canAttempt(): boolean {
+    if (this.state === &apos;closed&apos;) {
+      return true;
+    }
+
+    if (this.state === &apos;open&apos;) {
+      // Check if reset timeout has passed
+      const now = Date.now();
+      if (now - this.lastFailureTime &gt;= this.config.resetTimeout) {
+        // Transition to half-open
+        this.state = &apos;half-open&apos;;
+        this.halfOpenAttempts = 0;
+        return true;
+      }
+
+      return false;  // Still open
+    }
+
+    if (this.state === &apos;half-open&apos;) {
+      // Allow limited test requests
+      return this.halfOpenAttempts &lt; this.config.halfOpenRequests;
+    }
+
+    return false;
+  }
+
+  /**
+   * Record a successful request
+   */
+  recordSuccess(): void {
+    if (this.state === &apos;half-open&apos;) {
+      // Test succeeded - close the circuit
+      this.state = &apos;closed&apos;;
+      this.failureCount = 0;
+      this.halfOpenAttempts = 0;
+    } else if (this.state === &apos;closed&apos;) {
+      // Reset failure count on success
+      this.failureCount = 0;
+    }
+  }
+
+  /**
+   * Record a failed request
+   */
+  recordFailure(): void {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+
+    if (this.state === &apos;half-open&apos;) {
+      // Test failed - reopen circuit
+      this.state = &apos;open&apos;;
+      this.halfOpenAttempts = 0;
+    } else if (this.state === &apos;closed&apos;) {
+      // Check if we should open
+      if (this.failureCount &gt;= this.config.failureThreshold) {
+        this.state = &apos;open&apos;;
+      }
+    }
+  }
+
+  /**
+   * Get current state
+   */
+  getState(): CircuitState {
+    return this.state;
+  }
+
+  /**
+   * Get failure statistics
+   */
+  getStats(): { state: CircuitState; failureCount: number; lastFailureTime: number } {
+    return {
+      state: this.state,
+      failureCount: this.failureCount,
+      lastFailureTime: this.lastFailureTime
+    };
+  }
+
+  /**
+   * Manually reset the circuit breaker
+   */
+  reset(): void {
+    this.state = &apos;closed&apos;;
+    this.failureCount = 0;
+    this.lastFailureTime = 0;
+    this.halfOpenAttempts = 0;
+  }
+}
+</codeblock>
+    <section><title>Usage Example</title></section>
+    <codeblock outputclass="language-typescript">// Initialize router
+const router = new IntelligentRouter(providerManager, logger);
+
+// Simple cost-optimized request
+const costContext: RoutingContext = {
+  prompt: &apos;Generate a commit message for these changes&apos;,
+  complexity: &apos;simple&apos;,
+  priority: &apos;cost&apos;
+};
+
+const decision1 = await router.route(costContext);
+// Result: Ollama (free local inference)
+
+// Complex quality-focused request
+const qualityContext: RoutingContext = {
+  prompt: &apos;Refactor this legacy codebase to use modern patterns&apos;,
+  complexity: &apos;complex&apos;,
+  priority: &apos;quality&apos;
+};
+
+const decision2 = await router.route(qualityContext);
+// Result: Claude 3.5 Sonnet (highest quality)
+
+// Execute with automatic fallback
+const result = await router.executeWithFallback(
+  qualityContext,
+  async (providerId, model) =&gt; {
+    const provider = providerManager.getProvider(providerId);
+    return await provider.complete(qualityContext.prompt, { model });
+  }
+);
+</codeblock>
+    <section><title>Key Benefits</title></section>
+    <ol>
+      <li>
+        <b>Automatic Provider Selection</b>
+        : No manual configuration per request
+      </li>
+      <li>
+        <b>Intelligent Fallbacks</b>
+        : Graceful degradation if primary provider fails
+      </li>
+      <li>
+        <b>Circuit Breaking</b>
+        : Prevents wasted requests to failing providers
+      </li>
+      <li>
+        <b>Cost Control</b>
+        : Can enforce cost constraints while maintaining quality
+      </li>
+      <li>
+        <b>Performance Optimization</b>
+        : Routes to fastest providers when latency matters
+      </li>
+      <li>
+        <b>Extensible</b>
+        : Easy to add custom routing strategies
+      </li>
+    </ol>
+    <section><title>2.6 Response Fusion</title></section>
+    <p>For critical decisions, relying on a single AI provider isn&apos;t enough. <b>Response fusion</b> combines outputs from multiple providers to achieve higher accuracy and reliability.</p>
+    <section><title>When to Use Response Fusion</title></section>
+    <p>Response fusion is valuable for:</p>
+    <ol>
+      <li>
+        <b>Critical Code Changes</b>
+        : Refactoring production code
+      </li>
+      <li>
+        <b>Security Decisions</b>
+        : Identifying vulnerabilities
+      </li>
+      <li>
+        <b>Architecture Decisions</b>
+        : High-impact design choices
+      </li>
+      <li>
+        <b>Consensus Building</b>
+        : When you need high confidence
+      </li>
+    </ol>
+    <p>The tradeoff: <b>higher cost and latency</b> in exchange for <b>increased accuracy</b>.</p>
+    <section><title>Fusion Strategies</title></section>
+    <section><title>1. Majority Voting</title></section>
+    <p>Ask multiple providers the same question, use the most common answer:</p>
+    <codeblock outputclass="language-typescript">export interface FusionResponse {
+  /** The fused/consensus result */
+  result: string;
+
+  /** Individual provider responses */
+  individualResponses: Array&lt;{
+    providerId: string;
+    response: string;
+    confidence: number;
+  }&gt;;
+
+  /** Fusion method used */
+  fusionMethod: string;
+
+  /** Overall confidence in result (0-1) */
+  confidence: number;
+
+  /** Total cost of fusion */
+  totalCost: number;
+}
+
+export class MajorityVotingFusion {
+  constructor(
+    private router: IntelligentRouter,
+    private logger: Logger
+  ) {}
+
+  /**
+   * Get consensus from multiple providers using majority voting
+   */
+  async fuse(
+    prompt: string,
+    options: {
+      providerIds?: string[];  // Specific providers (default: top 3)
+      minAgreement?: number;    // Minimum agreement % (default: 0.66)
+      complexity?: &apos;simple&apos; | &apos;medium&apos; | &apos;complex&apos;;
+    } = {}
+  ): Promise&lt;FusionResponse&gt; {
+    const { providerIds, minAgreement = 0.66, complexity = &apos;medium&apos; } = options;
+
+    // Determine providers to query
+    const providers = providerIds || await this.selectProvidersForFusion(complexity);
+
+    if (providers.length &lt; 2) {
+      throw new Error(&apos;Fusion requires at least 2 providers&apos;);
+    }
+
+    this.logger.info(`Starting majority voting fusion with ${providers.length} providers`);
+
+    // Query all providers in parallel
+    const responses = await Promise.allSettled(
+      providers.map(async (providerId) =&gt; {
+        const provider = await this.router[&apos;providerManager&apos;].getProvider(providerId);
+        const response = await provider.complete(prompt, { temperature: 0.3 });
+
+        return {
+          providerId,
+          response: response.content,
+          confidence: this.calculateConfidence(response),
+          cost: response.metadata?.cost || 0
+        };
+      })
+    );
+
+    // Extract successful responses
+    const successfulResponses = responses
+      .filter((r): r is PromiseFulfilledResult&lt;any&gt; =&gt; r.status === &apos;fulfilled&apos;)
+      .map(r =&gt; r.value);
+
+    if (successfulResponses.length &lt; 2) {
+      throw new Error(&apos;Fusion requires at least 2 successful responses&apos;);
+    }
+
+    // Group similar responses
+    const groups = this.groupSimilarResponses(successfulResponses);
+
+    // Find majority group
+    const majorityGroup = groups.sort((a, b) =&gt; b.length - a.length)[0];
+    const agreementRatio = majorityGroup.length / successfulResponses.length;
+
+    if (agreementRatio &lt; minAgreement) {
+      this.logger.warn(`Low agreement in fusion: ${(agreementRatio * 100).toFixed(1)}%`);
+    }
+
+    // Calculate total cost
+    const totalCost = successfulResponses.reduce((sum, r) =&gt; sum + r.cost, 0);
+
+    // Use the highest-confidence response from majority group
+    const bestResponse = majorityGroup
+      .sort((a, b) =&gt; b.confidence - a.confidence)[0];
+
+    return {
+      result: bestResponse.response,
+      individualResponses: successfulResponses,
+      fusionMethod: &apos;majority-voting&apos;,
+      confidence: agreementRatio,
+      totalCost
+    };
+  }
+
+  /**
+   * Group similar responses together
+   */
+  private groupSimilarResponses(responses: any[]): any[][] {
+    const groups: any[][] = [];
+
+    for (const response of responses) {
+      let foundGroup = false;
+
+      for (const group of groups) {
+        // Check similarity to first member of group
+        const similarity = this.calculateSimilarity(response.response, group[0].response);
+
+        if (similarity &gt; 0.80) {  // 80% similarity threshold
+          group.push(response);
+          foundGroup = true;
+          break;
+        }
+      }
+
+      if (!foundGroup) {
+        groups.push([response]);
+      }
+    }
+
+    return groups;
+  }
+
+  /**
+   * Calculate similarity between two strings (0-1)
+   */
+  private calculateSimilarity(a: string, b: string): number {
+    // Simple normalized Levenshtein distance
+    const longer = a.length &gt; b.length ? a : b;
+    const shorter = a.length &gt; b.length ? b : a;
+
+    if (longer.length === 0) return 1.0;
+
+    const distance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - distance) / longer.length;
+  }
+
+  /**
+   * Levenshtein distance implementation
+   */
+  private levenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = [];
+
+    for (let i = 0; i &lt;= b.length; i++) {
+      matrix[i] = [i];
+    }
+
+    for (let j = 0; j &lt;= a.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i &lt;= b.length; i++) {
+      for (let j = 1; j &lt;= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+
+    return matrix[b.length][a.length];
+  }
+
+  /**
+   * Select best providers for fusion
+   */
+  private async selectProvidersForFusion(complexity: string): Promise&lt;string[]&gt; {
+    // Use quality-optimized strategy to select top 3 providers
+    const context: RoutingContext = {
+      prompt: &apos;&apos;,
+      complexity: complexity as any,
+      priority: &apos;quality&apos;
+    };
+
+    const decision = await this.router.route(context);
+
+    // Return primary + top 2 fallbacks
+    return [decision.providerId, ...decision.fallbacks.slice(0, 2)];
+  }
+
+  /**
+   * Calculate confidence score for response
+   */
+  private calculateConfidence(response: any): number {
+    // Factors: finish reason, content length, metadata
+    let confidence = 0.5;  // Base confidence
+
+    if (response.finishReason === &apos;stop&apos;) {
+      confidence += 0.3;  // Complete response
+    }
+
+    if (response.content.length &gt; 100) {
+      confidence += 0.1;  // Substantial content
+    }
+
+    if (response.metadata?.confidence) {
+      confidence = (confidence + response.metadata.confidence) / 2;
+    }
+
+    return Math.min(1.0, confidence);
+  }
+}
+</codeblock>
+    <section><title>2. Weighted Consensus</title></section>
+    <p>Weight responses by provider quality scores:</p>
+    <codeblock outputclass="language-typescript">export class WeightedConsensusFusion {
+  // Provider quality weights (sum = 1.0)
+  private providerWeights: Record&lt;string, number&gt; = {
+    &apos;openai-main&apos;: 0.30,
+    &apos;anthropic-main&apos;: 0.35,
+    &apos;google-main&apos;: 0.20,
+    &apos;ollama-local&apos;: 0.15
+  };
+
+  constructor(
+    private router: IntelligentRouter,
+    private logger: Logger
+  ) {}
+
+  /**
+   * Fuse responses using weighted consensus
+   */
+  async fuse(
+    prompt: string,
+    options: {
+      providerIds?: string[];
+      complexity?: &apos;simple&apos; | &apos;medium&apos; | &apos;complex&apos;;
+    } = {}
+  ): Promise&lt;FusionResponse&gt; {
+    const { providerIds, complexity = &apos;medium&apos; } = options;
+
+    const providers = providerIds || Object.keys(this.providerWeights);
+
+    this.logger.info(`Starting weighted consensus fusion with ${providers.length} providers`);
+
+    // Query all providers
+    const responses = await Promise.allSettled(
+      providers.map(async (providerId) =&gt; {
+        const provider = await this.router[&apos;providerManager&apos;].getProvider(providerId);
+        const response = await provider.complete(prompt, { temperature: 0.3 });
+
+        return {
+          providerId,
+          response: response.content,
+          confidence: this.calculateConfidence(response),
+          weight: this.providerWeights[providerId] || 0.10,
+          cost: response.metadata?.cost || 0
+        };
+      })
+    );
+
+    const successfulResponses = responses
+      .filter((r): r is PromiseFulfilledResult&lt;any&gt; =&gt; r.status === &apos;fulfilled&apos;)
+      .map(r =&gt; r.value);
+
+    if (successfulResponses.length === 0) {
+      throw new Error(&apos;All fusion providers failed&apos;);
+    }
+
+    // Group similar responses
+    const groups = this.groupSimilarResponses(successfulResponses);
+
+    // Calculate weighted score for each group
+    const groupScores = groups.map(group =&gt; {
+      const totalWeight = group.reduce((sum, r) =&gt; sum + r.weight, 0);
+      const avgConfidence = group.reduce((sum, r) =&gt; sum + r.confidence, 0) / group.length;
+
+      return {
+        group,
+        score: totalWeight * avgConfidence,
+        totalWeight
+      };
+    });
+
+    // Select highest scoring group
+    const winningGroup = groupScores.sort((a, b) =&gt; b.score - a.score)[0];
+
+    // Use highest confidence response from winning group
+    const bestResponse = winningGroup.group
+      .sort((a, b) =&gt; b.confidence - a.confidence)[0];
+
+    const totalCost = successfulResponses.reduce((sum, r) =&gt; sum + r.cost, 0);
+
+    return {
+      result: bestResponse.response,
+      individualResponses: successfulResponses,
+      fusionMethod: &apos;weighted-consensus&apos;,
+      confidence: winningGroup.score,
+      totalCost
+    };
+  }
+
+  private groupSimilarResponses(responses: any[]): any[][] {
+    // Same implementation as MajorityVotingFusion
+    const groups: any[][] = [];
+
+    for (const response of responses) {
+      let foundGroup = false;
+
+      for (const group of groups) {
+        const similarity = this.calculateSimilarity(response.response, group[0].response);
+
+        if (similarity &gt; 0.80) {
+          group.push(response);
+          foundGroup = true;
+          break;
+        }
+      }
+
+      if (!foundGroup) {
+        groups.push([response]);
+      }
+    }
+
+    return groups;
+  }
+
+  private calculateSimilarity(a: string, b: string): number {
+    // Same implementation as MajorityVotingFusion
+    const longer = a.length &gt; b.length ? a : b;
+    const shorter = a.length &gt; b.length ? b : a;
+
+    if (longer.length === 0) return 1.0;
+
+    const distance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - distance) / longer.length;
+  }
+
+  private levenshteinDistance(a: string, b: string): number {
+    // Same implementation as MajorityVotingFusion
+    const matrix: number[][] = [];
+    for (let i = 0; i &lt;= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j &lt;= a.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i &lt;= b.length; i++) {
+      for (let j = 1; j &lt;= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+
+    return matrix[b.length][a.length];
+  }
+
+  private calculateConfidence(response: any): number {
+    // Same implementation as MajorityVotingFusion
+    let confidence = 0.5;
+
+    if (response.finishReason === &apos;stop&apos;) confidence += 0.3;
+    if (response.content.length &gt; 100) confidence += 0.1;
+    if (response.metadata?.confidence) {
+      confidence = (confidence + response.metadata.confidence) / 2;
+    }
+
+    return Math.min(1.0, confidence);
+  }
+}
+</codeblock>
+    <section><title>Usage Example</title></section>
+    <codeblock outputclass="language-typescript">const fusion = new MajorityVotingFusion(router, logger);
+
+// Critical refactoring decision
+const prompt = `
+Analyze this legacy authentication code and recommend the best approach:
+1. Refactor in place with minimal changes
+2. Complete rewrite using modern OAuth2 patterns
+3. Migrate to third-party auth service (Auth0, Clerk)
+
+Consider: security, maintainability, migration risk, cost
+`;
+
+const result = await fusion.fuse(prompt, {
+  providerIds: [&apos;openai-main&apos;, &apos;anthropic-main&apos;, &apos;google-main&apos;],
+  minAgreement: 0.70,  // Need 70% agreement
+  complexity: &apos;complex&apos;
+});
+
+console.log(`Consensus: ${result.result}`);
+console.log(`Confidence: ${(result.confidence * 100).toFixed(1)}%`);
+console.log(`Total cost: $${result.totalCost.toFixed(4)}`);
+console.log(`Individual responses:`);
+result.individualResponses.forEach(r =&gt; {
+  console.log(`  - ${r.providerId}: ${r.response.substring(0, 100)}...`);
+});
+</codeblock>
+    <section><title>Response Fusion Metrics</title></section>
+    <p>Track fusion effectiveness:</p>
+    <codeblock outputclass="language-typescript">interface FusionMetrics {
+  totalFusions: number;
+  averageAgreement: number;
+  averageCost: number;
+  agreementDistribution: {
+    high: number;    // &gt;80% agreement
+    medium: number;  // 60-80%
+    low: number;     // &lt;60%
+  };
+}
+</codeblock>
+    <section><title>2.7 Best Practices</title></section>
+    <p>Now that we&apos;ve covered the complete multi-provider architecture, let&apos;s discuss best practices for production deployments.</p>
+    <section><title>1. Provider Selection Strategy</title></section>
+    <p><b>❌ Don&apos;t</b>: Use a single provider for everything</p>
+    <codeblock outputclass="language-typescript">// Bad: Always using GPT-4
+const response = await openai.complete(prompt, { model: &apos;gpt-4&apos; });
+</codeblock>
+    <p><b>✅ Do</b>: Use the router with appropriate priorities</p>
+    <codeblock outputclass="language-typescript">// Good: Let the router decide
+const decision = await router.route({
+  prompt,
+  complexity: analyzeComplexity(prompt),
+  priority: &apos;balanced&apos;
+});
+
+const provider = providerManager.getProvider(decision.providerId);
+const response = await provider.complete(prompt, { model: decision.model });
+</codeblock>
+    <section><title>2. Cost Management</title></section>
+    <p><b>❌ Don&apos;t</b>: Let costs run unchecked</p>
+    <codeblock outputclass="language-typescript">// Bad: No budget limits
+providerManager.registerProvider(&apos;openai-main&apos;, openaiProvider);
+</codeblock>
+    <p><b>✅ Do</b>: Always set budget limits with alerts</p>
+    <codeblock outputclass="language-typescript">// Good: Set reasonable budgets
+providerManager.setBudget({
+  providerId: &apos;openai-main&apos;,
+  dailyLimit: 10.00,
+  monthlyLimit: 200.00,
+  alertThresholds: [0.50, 0.75, 0.90]
+});
+
+providerManager.on(&apos;budget_warning&apos;, ({ id, percentage }) =&gt; {
+  logger.warn(`Provider ${id} at ${percentage}% of budget`);
+  // Consider switching to cheaper provider
+});
+</codeblock>
+    <section><title>3. Credential Security</title></section>
+    <p><b>❌ Don&apos;t</b>: Store credentials in plaintext</p>
+    <codeblock outputclass="language-typescript">// Bad: Environment variables exposed in logs
+const apiKey = process.env.OPENAI_API_KEY;
+console.log(`Using API key: ${apiKey}`); // NEVER!
+</codeblock>
+    <p><b>✅ Do</b>: Use encrypted storage and never log credentials</p>
+    <codeblock outputclass="language-typescript">// Good: Encrypted credential storage
+await providerManager.storeCredentials(&apos;openai-main&apos;, {
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// Credentials encrypted with AES-256-GCM
+// Stored with restricted permissions (0o600)
+// Never logged or exposed
+</codeblock>
+    <section><title>4. Error Handling and Fallbacks</title></section>
+    <p><b>❌ Don&apos;t</b>: Fail immediately on errors</p>
+    <codeblock outputclass="language-typescript">// Bad: No retry or fallback
+try {
+  return await provider.complete(prompt);
+} catch (error) {
+  throw error; // User sees error
+}
+</codeblock>
+    <p><b>✅ Do</b>: Use automatic fallbacks with circuit breakers</p>
+    <codeblock outputclass="language-typescript">// Good: Automatic fallback to healthy providers
+const result = await router.executeWithFallback(
+  context,
+  async (providerId, model) =&gt; {
+    const provider = providerManager.getProvider(providerId);
+    return await provider.complete(context.prompt, { model });
+  }
+);
+// Tries primary provider, falls back to alternatives
+// Circuit breaker prevents cascading failures
+</codeblock>
+    <section><title>5. Health Monitoring</title></section>
+    <p><b>❌ Don&apos;t</b>: Assume providers are always healthy</p>
+    <codeblock outputclass="language-typescript">// Bad: No health checks
+const provider = providerManager.getProvider(&apos;openai-main&apos;);
+await provider.complete(prompt); // Might fail
+</codeblock>
+    <p><b>✅ Do</b>: Monitor health continuously</p>
+    <codeblock outputclass="language-typescript">// Good: Regular health monitoring
+setInterval(async () =&gt; {
+  const providers = providerManager.getAllProviders();
+
+  for (const [id, provider] of providers) {
+    const health = await provider.performHealthCheck();
+
+    if (health.status === &apos;unhealthy&apos;) {
+      logger.error(`Provider ${id} unhealthy: ${health.lastError}`);
+      // Alert team, switch to fallback
+    }
+  }
+}, 60000); // Check every minute
+
+// Listen for health events
+provider.on(&apos;health_changed&apos;, ({ status, provider }) =&gt; {
+  if (status === &apos;unhealthy&apos;) {
+    // Trigger alerts, update monitoring dashboard
+  }
+});
+</codeblock>
+    <section><title>6. Performance Optimization</title></section>
+    <p><b>❌ Don&apos;t</b>: Make sequential requests when parallel is possible</p>
+    <codeblock outputclass="language-typescript">// Bad: Sequential requests (slow)
+const result1 = await provider1.complete(prompt);
+const result2 = await provider2.complete(prompt);
+const result3 = await provider3.complete(prompt);
+</codeblock>
+    <p><b>✅ Do</b>: Use parallel requests with Promise.all</p>
+    <codeblock outputclass="language-typescript">// Good: Parallel fusion requests (fast)
+const results = await Promise.allSettled([
+  provider1.complete(prompt),
+  provider2.complete(prompt),
+  provider3.complete(prompt)
+]);
+
+// 3x faster for fusion
+</codeblock>
+    <section><title>7. Usage Tracking</title></section>
+    <p><b>❌ Don&apos;t</b>: Ignore usage metrics</p>
+    <codeblock outputclass="language-typescript">// Bad: No tracking
+await provider.complete(prompt);
+// No idea what it cost or how long it took
+</codeblock>
+    <p><b>✅ Do</b>: Track all requests for analysis</p>
+    <codeblock outputclass="language-typescript">// Good: Automatic usage tracking
+provider.on(&apos;metrics_updated&apos;, (metrics) =&gt; {
+  providerManager.trackUsage(
+    &apos;openai-main&apos;,
+    true,
+    metrics.tokensUsed,
+    metrics.responseTime,
+    metrics.cost
+  );
+});
+
+// Analyze usage patterns
+const stats = providerManager.getUsageStats(&apos;openai-main&apos;);
+logger.info(`Monthly cost: $${stats.totalCost.toFixed(2)}`);
+logger.info(`Avg response time: ${stats.averageResponseTime.toFixed(0)}ms`);
+logger.info(`Success rate: ${(stats.successRate * 100).toFixed(1)}%`);
+</codeblock>
+    <section><title>8. Model Selection</title></section>
+    <p><b>❌ Don&apos;t</b>: Always use the latest/biggest model</p>
+    <codeblock outputclass="language-typescript">// Bad: Using GPT-4 for simple tasks
+const commitMsg = await openai.complete(diff, {
+  model: &apos;gpt-4&apos; // Expensive overkill
+});
+</codeblock>
+    <p><b>✅ Do</b>: Match model to task complexity</p>
+    <codeblock outputclass="language-typescript">// Good: Appropriate model selection
+const complexity = analyzeComplexity(task);
+
+let model;
+if (complexity === &apos;simple&apos;) {
+  model = &apos;gpt-3.5-turbo&apos;; // Fast, cheap
+} else if (complexity === &apos;medium&apos;) {
+  model = &apos;gpt-4-turbo&apos;; // Balanced
+} else {
+  model = &apos;gpt-4&apos;; // Quality for complex tasks
+}
+</codeblock>
+    <section><title>9. Response Fusion Usage</title></section>
+    <p><b>❌ Don&apos;t</b>: Use fusion for every request</p>
+    <codeblock outputclass="language-typescript">// Bad: Fusion for simple tasks (expensive, slow)
+const commitMsg = await fusion.fuse(&apos;Generate commit message&apos;, {
+  providerIds: [&apos;openai&apos;, &apos;anthropic&apos;, &apos;google&apos;]
+});
+// Costs 3x, takes 3x longer
+</codeblock>
+    <p><b>✅ Do</b>: Reserve fusion for critical decisions</p>
+    <codeblock outputclass="language-typescript">// Good: Fusion only for high-stakes decisions
+const isCritical = task.type === &apos;refactoring&apos; || task.type === &apos;security&apos;;
+
+if (isCritical) {
+  // Use fusion for accuracy
+  const result = await fusion.fuse(prompt, {
+    minAgreement: 0.70,
+    complexity: &apos;complex&apos;
+  });
+
+  if (result.confidence &lt; 0.70) {
+    logger.warn(&apos;Low confidence, requesting human review&apos;);
+    await requestHumanReview(result);
+  }
+} else {
+  // Single provider is fine
+  const result = await router.executeWithFallback(context, executeFn);
+}
+</codeblock>
+    <section><title>10. Configuration Management</title></section>
+    <p><b>❌ Don&apos;t</b>: Hardcode configuration</p>
+    <codeblock outputclass="language-typescript">// Bad: Hardcoded values
+const dailyLimit = 10.00;
+const failureThreshold = 5;
+</codeblock>
+    <p><b>✅ Do</b>: Use environment-based configuration</p>
+    <codeblock outputclass="language-typescript">// Good: Environment-aware configuration
+interface MultiProviderConfig {
+  defaultStrategy: &apos;cost&apos; | &apos;quality&apos; | &apos;performance&apos; | &apos;balanced&apos;;
+  budgets: Record&lt;string, { daily: number; monthly: number }&gt;;
+  circuitBreaker: {
+    failureThreshold: number;
+    resetTimeout: number;
+  };
+  fusion: {
+    minAgreement: number;
+    maxProviders: number;
+  };
+}
+
+const config: MultiProviderConfig = {
+  defaultStrategy: process.env.ROUTING_STRATEGY as any || &apos;balanced&apos;,
+  budgets: {
+    &apos;openai-main&apos;: {
+      daily: parseFloat(process.env.OPENAI_DAILY_LIMIT || &apos;10&apos;),
+      monthly: parseFloat(process.env.OPENAI_MONTHLY_LIMIT || &apos;200&apos;)
+    },
+    &apos;anthropic-main&apos;: {
+      daily: parseFloat(process.env.ANTHROPIC_DAILY_LIMIT || &apos;15&apos;),
+      monthly: parseFloat(process.env.ANTHROPIC_MONTHLY_LIMIT || &apos;300&apos;)
+    }
+  },
+  circuitBreaker: {
+    failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_THRESHOLD || &apos;5&apos;),
+    resetTimeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT || &apos;60000&apos;)
+  },
+  fusion: {
+    minAgreement: parseFloat(process.env.FUSION_MIN_AGREEMENT || &apos;0.66&apos;),
+    maxProviders: parseInt(process.env.FUSION_MAX_PROVIDERS || &apos;3&apos;)
+  }
+};
+</codeblock>
+    <section><title>2.8 Real-World Integration Example</title></section>
+    <p>Let&apos;s put it all together with a complete, production-ready integration:</p>
+    <codeblock outputclass="language-typescript">import { ProviderManager } from &apos;./provider-manager&apos;;
+import { IntelligentRouter } from &apos;./intelligent-router&apos;;
+import { MajorityVotingFusion } from &apos;./response-fusion&apos;;
+import { OllamaProvider } from &apos;./providers/ollama&apos;;
+import { OpenAIProvider } from &apos;./providers/openai&apos;;
+import { AnthropicProvider } from &apos;./providers/anthropic&apos;;
+import { GoogleProvider } from &apos;./providers/google&apos;;
+import { Logger } from &apos;./logger&apos;;
+
+/**
+ * Multi-Provider AI Service
+ * Production-ready integration of all components
+ */
+export class MultiProviderAIService {
+  private providerManager: ProviderManager;
+  private router: IntelligentRouter;
+  private fusion: MajorityVotingFusion;
+  private logger: Logger;
+
+  constructor(config: MultiProviderConfig) {
+    this.logger = new Logger(&apos;MultiProviderAI&apos;);
+    this.providerManager = new ProviderManager(this.logger);
+    this.router = new IntelligentRouter(this.providerManager, this.logger);
+    this.fusion = new MajorityVotingFusion(this.router, this.logger);
+
+    this.initialize(config);
+  }
+
+  /**
+   * Initialize all providers and budgets
+   */
+  private async initialize(config: MultiProviderConfig): Promise&lt;void&gt; {
+    try {
+      // Initialize Ollama (local)
+      const ollama = new OllamaProvider({
+        baseUrl: config.ollama.baseUrl || &apos;http://localhost:11434&apos;,
+        defaultModel: config.ollama.defaultModel || &apos;qwen2.5-coder:7b&apos;
+      });
+      await ollama.initialize();
+      await this.providerManager.registerProvider(&apos;ollama-local&apos;, ollama);
+
+      // Initialize OpenAI
+      if (config.openai?.apiKey) {
+        const openai = new OpenAIProvider({
+          apiKey: config.openai.apiKey,
+          organization: config.openai.organization,
+          defaultModel: config.openai.defaultModel || &apos;gpt-4-turbo&apos;
+        });
+        await openai.initialize();
+        await this.providerManager.registerProvider(&apos;openai-main&apos;, openai);
+
+        // Set budget
+        this.providerManager.setBudget({
+          providerId: &apos;openai-main&apos;,
+          dailyLimit: config.budgets[&apos;openai-main&apos;].daily,
+          monthlyLimit: config.budgets[&apos;openai-main&apos;].monthly,
+          alertThresholds: [0.50, 0.75, 0.90]
+        });
+
+        // Store encrypted credentials
+        await this.providerManager.storeCredentials(&apos;openai-main&apos;, {
+          apiKey: config.openai.apiKey,
+          organization: config.openai.organization
+        });
+      }
+
+      // Initialize Anthropic
+      if (config.anthropic?.apiKey) {
+        const anthropic = new AnthropicProvider({
+          apiKey: config.anthropic.apiKey,
+          defaultModel: config.anthropic.defaultModel || &apos;claude-3-5-sonnet-20241022&apos;
+        });
+        await anthropic.initialize();
+        await this.providerManager.registerProvider(&apos;anthropic-main&apos;, anthropic);
+
+        this.providerManager.setBudget({
+          providerId: &apos;anthropic-main&apos;,
+          dailyLimit: config.budgets[&apos;anthropic-main&apos;].daily,
+          monthlyLimit: config.budgets[&apos;anthropic-main&apos;].monthly,
+          alertThresholds: [0.50, 0.75, 0.90]
+        });
+
+        await this.providerManager.storeCredentials(&apos;anthropic-main&apos;, {
+          apiKey: config.anthropic.apiKey
+        });
+      }
+
+      // Initialize Google
+      if (config.google?.apiKey) {
+        const google = new GoogleProvider({
+          apiKey: config.google.apiKey,
+          defaultModel: config.google.defaultModel || &apos;gemini-1.5-pro&apos;
+        });
+        await google.initialize();
+        await this.providerManager.registerProvider(&apos;google-main&apos;, google);
+
+        this.providerManager.setBudget({
+          providerId: &apos;google-main&apos;,
+          dailyLimit: config.budgets[&apos;google-main&apos;]?.daily || 10,
+          monthlyLimit: config.budgets[&apos;google-main&apos;]?.monthly || 200,
+          alertThresholds: [0.50, 0.75, 0.90]
+        });
+
+        await this.providerManager.storeCredentials(&apos;google-main&apos;, {
+          apiKey: config.google.apiKey
+        });
+      }
+
+      // Set up event listeners
+      this.setupEventListeners();
+
+      // Start health monitoring
+      this.startHealthMonitoring();
+
+      this.logger.info(&apos;Multi-provider AI service initialized successfully&apos;);
+    } catch (error) {
+      this.logger.error(&apos;Failed to initialize multi-provider service&apos;, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Complete a prompt using intelligent routing
+   */
+  async complete(
+    prompt: string,
+    options: {
+      complexity?: &apos;simple&apos; | &apos;medium&apos; | &apos;complex&apos;;
+      priority?: &apos;cost&apos; | &apos;quality&apos; | &apos;performance&apos; | &apos;balanced&apos;;
+      maxCost?: number;
+      requireFusion?: boolean;
+      minFusionAgreement?: number;
+    } = {}
+  ): Promise&lt;AICompletionResponse&gt; {
+    const {
+      complexity = &apos;medium&apos;,
+      priority = &apos;balanced&apos;,
+      maxCost,
+      requireFusion = false,
+      minFusionAgreement = 0.66
+    } = options;
+
+    // Use fusion for critical requests
+    if (requireFusion) {
+      const fusionResult = await this.fusion.fuse(prompt, {
+        complexity,
+        minAgreement: minFusionAgreement
+      });
+
+      this.logger.info(&apos;Fusion completed&apos;, {
+        confidence: fusionResult.confidence,
+        cost: fusionResult.totalCost,
+        providers: fusionResult.individualResponses.length
+      });
+
+      return {
+        content: fusionResult.result,
+        metadata: {
+          fusion: true,
+          confidence: fusionResult.confidence,
+          cost: fusionResult.totalCost
+        }
+      } as any;
+    }
+
+    // Normal routing
+    const context: RoutingContext = {
+      prompt,
+      complexity,
+      priority,
+      maxCost
+    };
+
+    const result = await this.router.executeWithFallback(
+      context,
+      async (providerId, model) =&gt; {
+        const provider = this.providerManager.getProvider(providerId);
+        return await provider.complete(prompt, { model });
+      }
+    );
+
+    return result;
+  }
+
+  /**
+   * Stream a completion
+   */
+  async completeStream(
+    prompt: string,
+    onChunk: (chunk: string) =&gt; void,
+    options: {
+      complexity?: &apos;simple&apos; | &apos;medium&apos; | &apos;complex&apos;;
+      priority?: &apos;cost&apos; | &apos;quality&apos; | &apos;performance&apos; | &apos;balanced&apos;;
+    } = {}
+  ): Promise&lt;void&gt; {
+    const { complexity = &apos;medium&apos;, priority = &apos;balanced&apos; } = options;
+
+    const context: RoutingContext = {
+      prompt,
+      complexity,
+      priority
+    };
+
+    const decision = await this.router.route(context);
+    const provider = this.providerManager.getProvider(decision.providerId);
+
+    await provider.completeStream(
+      prompt,
+      { model: decision.model },
+      (event) =&gt; {
+        if (event.type === &apos;content&apos;) {
+          onChunk(event.content);
+        }
+      }
+    );
+  }
+
+  /**
+   * Get usage statistics across all providers
+   */
+  getUsageStats(): Record&lt;string, ProviderUsageStats&gt; {
+    const stats: Record&lt;string, ProviderUsageStats&gt; = {};
+    const providers = this.providerManager.getAllProviders();
+
+    for (const [id] of providers) {
+      stats[id] = this.providerManager.getUsageStats(id);
+    }
+
+    return stats;
+  }
+
+  /**
+   * Get health status of all providers
+   */
+  getHealthStatus(): Record&lt;string, ProviderHealth&gt; {
+    const health: Record&lt;string, ProviderHealth&gt; = {};
+    const providers = this.providerManager.getAllProviders();
+
+    for (const [id, provider] of providers) {
+      health[id] = provider.getHealth();
+    }
+
+    return health;
+  }
+
+  /**
+   * Set up event listeners for monitoring
+   */
+  private setupEventListeners(): void {
+    // Budget warnings
+    this.providerManager.on(&apos;budget_warning&apos;, ({ id, type, percentage }) =&gt; {
+      this.logger.warn(`Budget warning: ${id} at ${(percentage * 100).toFixed(1)}% of ${type} limit`);
+    });
+
+    // Budget exceeded
+    this.providerManager.on(&apos;budget_exceeded&apos;, ({ id, type, current, limit }) =&gt; {
+      this.logger.error(`Budget exceeded: ${id} spent $${current.toFixed(2)} of $${limit} ${type} limit`);
+    });
+
+    // Health changes
+    const providers = this.providerManager.getAllProviders();
+    for (const [id, provider] of providers) {
+      provider.on(&apos;health_changed&apos;, ({ status, lastError }) =&gt; {
+        if (status === &apos;unhealthy&apos;) {
+          this.logger.error(`Provider ${id} unhealthy: ${lastError}`);
+        } else {
+          this.logger.info(`Provider ${id} recovered`);
+        }
+      });
+    }
+
+    // Routing decisions
+    this.router.on(&apos;routing_decision&apos;, ({ decision, strategy }) =&gt; {
+      this.logger.debug(`Routing: ${decision.providerId} (${decision.model}) via ${strategy}`);
+    });
+
+    // Request failures
+    this.router.on(&apos;request_failure&apos;, ({ providerId, error }) =&gt; {
+      this.logger.warn(`Request failed with ${providerId}:`, error);
+    });
+  }
+
+  /**
+   * Start periodic health monitoring
+   */
+  private startHealthMonitoring(): void {
+    setInterval(async () =&gt; {
+      const providers = this.providerManager.getAllProviders();
+
+      for (const [id, provider] of providers) {
+        try {
+          await provider.performHealthCheck();
+        } catch (error) {
+          this.logger.error(`Health check failed for ${id}`, error);
+        }
+      }
+    }, 60000); // Every minute
+  }
+
+  /**
+   * Clean up resources
+   */
+  async dispose(): Promise&lt;void&gt; {
+    this.logger.info(&apos;Shutting down multi-provider AI service&apos;);
+    // Clean up resources, close connections, etc.
+  }
+}
+</codeblock>
+    <section><title>Usage Example</title></section>
+    <codeblock outputclass="language-typescript">// Initialize service
+const service = new MultiProviderAIService({
+  ollama: {
+    baseUrl: &apos;http://localhost:11434&apos;,
+    defaultModel: &apos;qwen2.5-coder:7b&apos;
+  },
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY!,
+    defaultModel: &apos;gpt-4-turbo&apos;
+  },
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+    defaultModel: &apos;claude-3-5-sonnet-20241022&apos;
+  },
+  google: {
+    apiKey: process.env.GOOGLE_API_KEY!,
+    defaultModel: &apos;gemini-1.5-pro&apos;
+  },
+  budgets: {
+    &apos;openai-main&apos;: { daily: 10, monthly: 200 },
+    &apos;anthropic-main&apos;: { daily: 15, monthly: 300 },
+    &apos;google-main&apos;: { daily: 8, monthly: 150 }
+  },
+  defaultStrategy: &apos;balanced&apos;
+});
+
+// Simple request (cost-optimized)
+const commitMsg = await service.complete(
+  &apos;Generate commit message for user authentication refactor&apos;,
+  { complexity: &apos;simple&apos;, priority: &apos;cost&apos; }
+);
+// Likely uses Ollama (free)
+
+// Complex request (quality-optimized)
+const refactorPlan = await service.complete(
+  &apos;Analyze this legacy auth system and propose refactoring strategy&apos;,
+  { complexity: &apos;complex&apos;, priority: &apos;quality&apos; }
+);
+// Likely uses Claude 3.5 Sonnet
+
+// Critical request (fusion for accuracy)
+const securityAnalysis = await service.complete(
+  &apos;Identify security vulnerabilities in this authentication code&apos;,
+  {
+    complexity: &apos;complex&apos;,
+    requireFusion: true,
+    minFusionAgreement: 0.75
+  }
+);
+// Uses 3 providers, requires 75% agreement
+
+// Streaming request
+await service.completeStream(
+  &apos;Explain this codebase architecture&apos;,
+  (chunk) =&gt; process.stdout.write(chunk),
+  { complexity: &apos;medium&apos;, priority: &apos;performance&apos; }
+);
+
+// Get statistics
+const stats = service.getUsageStats();
+console.log(&apos;Monthly costs:&apos;);
+for (const [id, stat] of Object.entries(stats)) {
+  console.log(`  ${id}: $${stat.totalCost.toFixed(2)}`);
+}
+
+// Get health status
+const health = service.getHealthStatus();
+console.log(&apos;Provider health:&apos;);
+for (const [id, h] of Object.entries(health)) {
+  console.log(`  ${id}: ${h.status}`);
+}
+</codeblock>
+    <section><title>2.9 Summary and Key Takeaways</title></section>
+    <p>In this chapter, we&apos;ve built a comprehensive multi-provider AI integration system. Let&apos;s recap the key concepts:</p>
+    <section><title>Architecture Components</title></section>
+    <ol>
+      <li>
+        <b>BaseAIProvider</b>
+        - Abstract base class providing:
+      </li>
+      <li>
+        Consistent interface across all providers
+      </li>
+      <li>
+        Automatic health monitoring
+      </li>
+      <li>
+        Metrics collection and cost tracking
+      </li>
+      <li>
+        <p>Event-driven architecture</p>
+      </li>
+      <li>
+        <p><b>Provider Implementations</b> - Concrete providers for:</p>
+      </li>
+      <li>
+        <b>Ollama</b>
+        : Free local inference, best for privacy and simple tasks
+      </li>
+      <li>
+        <b>OpenAI</b>
+        : Industry standard, balanced quality/cost
+      </li>
+      <li>
+        <b>Anthropic</b>
+        : Best quality for complex coding tasks
+      </li>
+      <li>
+        <p><b>Google</b>: Multi-modal support, competitive pricing</p>
+      </li>
+      <li>
+        <p><b>ProviderManager</b> - Centralized management:</p>
+      </li>
+      <li>
+        Secure credential storage (AES-256-GCM)
+      </li>
+      <li>
+        Usage tracking with daily/monthly aggregation
+      </li>
+      <li>
+        Budget enforcement with configurable alerts
+      </li>
+      <li>
+        <p>Provider lifecycle management</p>
+      </li>
+      <li>
+        <p><b>IntelligentRouter</b> - Smart routing with:</p>
+      </li>
+      <li>
+        4 built-in strategies (cost, quality, performance, balanced)
+      </li>
+      <li>
+        Automatic fallback chains
+      </li>
+      <li>
+        Circuit breaker pattern for reliability
+      </li>
+      <li>
+        <p>Extensible strategy system</p>
+      </li>
+      <li>
+        <p><b>ResponseFusion</b> - Consensus building:</p>
+      </li>
+      <li>
+        Majority voting for agreement
+      </li>
+      <li>
+        Weighted consensus for quality-weighted decisions
+      </li>
+      <li>
+        Levenshtein distance for similarity
+      </li>
+      <li>
+        Confidence scoring
+      </li>
+    </ol>
+    <section><title>Key Benefits</title></section>
+    <p>✅ <b>Cost Optimization</b>: 85% cost reduction using intelligent routing
+✅ <b>Reliability</b>: Circuit breakers and automatic fallbacks
+✅ <b>Quality</b>: Response fusion for critical decisions
+✅ <b>Security</b>: Encrypted credential storage
+✅ <b>Observability</b>: Comprehensive metrics and health monitoring
+✅ <b>Extensibility</b>: Easy to add new providers and strategies</p>
+    <section><title>Design Patterns Used</title></section>
+    <ul>
+      <li>
+        <b>Abstract Factory</b>
+        : BaseAIProvider for provider creation
+      </li>
+      <li>
+        <b>Strategy Pattern</b>
+        : Pluggable routing strategies
+      </li>
+      <li>
+        <b>Circuit Breaker</b>
+        : Prevent cascading failures
+      </li>
+      <li>
+        <b>Observer Pattern</b>
+        : Event-driven monitoring
+      </li>
+      <li>
+        <b>Template Method</b>
+        : Shared provider functionality
+      </li>
+    </ul>
+    <section><title>When to Use What</title></section>
+    <table>
+      <tgroup cols="3">
+        <colspec colname="c1" colnum="1"/>
+        <colspec colname="c2" colnum="2"/>
+        <colspec colname="c3" colnum="3"/>
+        <thead>
+          <row>
+            <entry>Scenario</entry>
+            <entry>Approach</entry>
+            <entry>Why</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>Simple commit messages</entry>
+            <entry>Cost strategy → Ollama</entry>
+            <entry>Free, fast, good enough</entry>
+          </row>
+          <row>
+            <entry>Code explanation</entry>
+            <entry>Balanced strategy</entry>
+            <entry>Good quality, reasonable cost</entry>
+          </row>
+          <row>
+            <entry>Complex refactoring</entry>
+            <entry>Quality strategy → Claude</entry>
+            <entry>Best quality for coding</entry>
+          </row>
+          <row>
+            <entry>Quick answers</entry>
+            <entry>Performance strategy → Local</entry>
+            <entry>Lowest latency</entry>
+          </row>
+          <row>
+            <entry>Security analysis</entry>
+            <entry>Response fusion (3 providers)</entry>
+            <entry>High confidence needed</entry>
+          </row>
+          <row>
+            <entry>Batch processing</entry>
+            <entry>Cost strategy with limits</entry>
+            <entry>Keep costs under control</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <section><title>Common Pitfalls to Avoid</title></section>
+    <p>⚠️ <b>Don&apos;t</b>: Use GPT-4 for everything (expensive)
+⚠️ <b>Don&apos;t</b>: Ignore health monitoring (silent failures)
+⚠️ <b>Don&apos;t</b>: Store credentials in plaintext (security risk)
+⚠️ <b>Don&apos;t</b>: Skip budget limits (cost overruns)
+⚠️ <b>Don&apos;t</b>: Use fusion for simple tasks (3x cost)</p>
+    <section><title>Production Checklist</title></section>
+    <p>Before deploying to production:</p>
+    <ul>
+      <li>
+        [ ] All provider credentials encrypted and stored securely
+      </li>
+      <li>
+        [ ] Budget limits configured for each provider
+      </li>
+      <li>
+        [ ] Health monitoring active with alerts
+      </li>
+      <li>
+        [ ] Circuit breakers configured appropriately
+      </li>
+      <li>
+        [ ] Routing strategy matches use case
+      </li>
+      <li>
+        [ ] Event listeners set up for observability
+      </li>
+      <li>
+        [ ] Cost tracking enabled and analyzed
+      </li>
+      <li>
+        [ ] Fallback chains tested
+      </li>
+      <li>
+        [ ] Error handling comprehensive
+      </li>
+      <li>
+        [ ] Logging sanitized (no credential leaks)
+      </li>
+    </ul>
+    <section><title>Exercises</title></section>
+    <p>Now it&apos;s time to apply what you&apos;ve learned with hands-on exercises.</p>
+    <section><title>Exercise 1: Implement a Custom Provider (60 minutes)</title></section>
+    <p><b>Goal</b>: Create a provider for a new AI service</p>
+    <p><b>Task</b>: Implement a provider for Mistral AI (https://mistral.ai)</p>
+    <p><b>Requirements</b>:
+1. Extend <codeph>BaseAIProvider</codeph>
+2. Implement all abstract methods
+3. Add proper error handling
+4. Include cost calculation
+5. Support streaming</p>
+    <p><b>Starter Code</b>:</p>
+    <codeblock outputclass="language-typescript">import { BaseAIProvider, ProviderConfig, AICompletionResponse } from &apos;../base-provider&apos;;
+import Mistral from &apos;@mistralai/mistralai&apos;;
+
+export class MistralProvider extends BaseAIProvider {
+  private client: Mistral;
+  private defaultModel: string;
+
+  constructor(config: ProviderConfig &amp; { defaultModel?: string }) {
+    super(config);
+    // TODO: Initialize Mistral client
+  }
+
+  getName(): string {
+    return &apos;mistral&apos;;
+  }
+
+  async initialize(): Promise&lt;void&gt; {
+    // TODO: Initialize and test connection
+  }
+
+  async complete(prompt: string, options: CompletionOptions = {}): Promise&lt;AICompletionResponse&gt; {
+    // TODO: Implement completion
+  }
+
+  async completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt; {
+    // TODO: Implement streaming
+  }
+
+  async listModels(): Promise&lt;AIModel[]&gt; {
+    // TODO: List available models
+  }
+
+  calculateCost(promptTokens: number, completionTokens: number, model?: string): number {
+    // TODO: Calculate cost based on Mistral pricing
+    // Mistral pricing: https://mistral.ai/technology/#pricing
+    const PRICING = {
+      &apos;mistral-small-latest&apos;: { prompt: 1.00, completion: 3.00 },
+      &apos;mistral-medium-latest&apos;: { prompt: 2.70, completion: 8.10 },
+      &apos;mistral-large-latest&apos;: { prompt: 8.00, completion: 24.00 }
+    };
+
+    // TODO: Implement calculation
+    return 0;
+  }
+
+  async testConnection(): Promise&lt;boolean&gt; {
+    // TODO: Test connection
+    return false;
+  }
+}
+</codeblock>
+    <p><b>Solution</b>: See <codeph>book/exercises/chapter-02/exercise-01-solution.ts</codeph></p>
+    <section><title>Exercise 2: Custom Routing Strategy (90 minutes)</title></section>
+    <p><b>Goal</b>: Implement a routing strategy that optimizes for carbon emissions</p>
+    <p><b>Background</b>: Different providers have different carbon footprints:
+- Local (Ollama): Minimal emissions
+- Cloud providers: Vary by data center location</p>
+    <p><b>Task</b>: Create a <codeph>CarbonOptimizedStrategy</codeph> that:
+1. Prioritizes local providers
+2. Considers data center locations for cloud providers
+3. Balances emissions with quality requirements</p>
+    <p><b>Starter Code</b>:</p>
+    <codeblock outputclass="language-typescript">import { RoutingStrategy, RoutingContext, RoutingDecision, BaseAIProvider } from &apos;../router&apos;;
+
+export class CarbonOptimizedStrategy implements RoutingStrategy {
+  // Carbon intensity by provider/region (gCO2e per kWh)
+  private carbonIntensity: Record&lt;string, number&gt; = {
+    &apos;ollama-local&apos;: 0,      // Local = minimal
+    &apos;openai-main&apos;: 350,     // US average
+    &apos;anthropic-main&apos;: 350,  // US average
+    &apos;google-main&apos;: 200      // Google uses more renewables
+  };
+
+  getName(): string {
+    return &apos;carbon-optimized&apos;;
+  }
+
+  async selectProvider(
+    context: RoutingContext,
+    availableProviders: Map&lt;string, BaseAIProvider&gt;
+  ): Promise&lt;RoutingDecision&gt; {
+    // TODO: Implement carbon-aware routing
+    // Hints:
+    // 1. Filter healthy providers
+    // 2. Estimate energy consumption based on model size
+    // 3. Calculate carbon emissions = energy * carbon intensity
+    // 4. Balance emissions with quality requirements
+    // 5. Return lowest-carbon option that meets quality needs
+
+    throw new Error(&apos;Not implemented&apos;);
+  }
+
+  private estimateEnergyConsumption(
+    provider: BaseAIProvider,
+    model: string,
+    tokens: number
+  ): number {
+    // TODO: Estimate energy in kWh
+    // Factors: model size, token count, provider efficiency
+    return 0;
+  }
+}
+</codeblock>
+    <p><b>Bonus</b>: Track and log carbon savings compared to always using cloud providers</p>
+    <p><b>Solution</b>: See <codeph>book/exercises/chapter-02/exercise-02-solution.ts</codeph></p>
+    <section><title>Exercise 3: Response Fusion with Confidence Scoring (120 minutes)</title></section>
+    <p><b>Goal</b>: Enhance response fusion with semantic similarity</p>
+    <p><b>Background</b>: Current fusion uses Levenshtein distance (character-level). For better accuracy, use semantic similarity with embeddings.</p>
+    <p><b>Task</b>: Implement <codeph>SemanticFusion</codeph> that:
+1. Gets embeddings for each response
+2. Groups responses by semantic similarity
+3. Uses cosine similarity instead of Levenshtein
+4. Weights by both similarity and provider quality</p>
+    <p><b>Starter Code</b>:</p>
+    <codeblock outputclass="language-typescript">import { FusionResponse } from &apos;../response-fusion&apos;;
+
+export class SemanticFusion {
+  constructor(
+    private router: IntelligentRouter,
+    private embeddingProvider: BaseAIProvider, // Provider with embedding support
+    private logger: Logger
+  ) {}
+
+  async fuse(
+    prompt: string,
+    options: {
+      providerIds?: string[];
+      minAgreement?: number;
+    } = {}
+  ): Promise&lt;FusionResponse&gt; {
+    // TODO: Implement semantic fusion
+    // Steps:
+    // 1. Get responses from all providers
+    // 2. Generate embeddings for each response
+    // 3. Calculate cosine similarity matrix
+    // 4. Cluster responses by similarity
+    // 5. Find majority cluster
+    // 6. Return highest quality response from majority cluster
+
+    throw new Error(&apos;Not implemented&apos;);
+  }
+
+  private async getEmbedding(text: string): Promise&lt;number[]&gt; {
+    // TODO: Get embedding vector for text
+    // Use OpenAI embeddings API or similar
+    return [];
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    // TODO: Calculate cosine similarity between two vectors
+    // Formula: dot(a, b) / (norm(a) * norm(b))
+    return 0;
+  }
+
+  private clusterBySimilarity(
+    responses: Array&lt;{ response: string; embedding: number[] }&gt;,
+    threshold: number = 0.85
+  ): Array&lt;Array&lt;any&gt;&gt; {
+    // TODO: Cluster responses by semantic similarity
+    return [];
+  }
+}
+</codeblock>
+    <p><b>Solution</b>: See <codeph>book/exercises/chapter-02/exercise-03-solution.ts</codeph></p>
+    <section><title>Exercise 4: Budget Optimizer (90 minutes)</title></section>
+    <p><b>Goal</b>: Implement automatic budget reallocation</p>
+    <p><b>Scenario</b>: You have a monthly budget of $500 across all providers. The budget optimizer should:
+1. Monitor usage patterns
+2. Identify underutilized providers
+3. Reallocate budget to overutilized providers
+4. Maintain minimum reserves for each provider</p>
+    <p><b>Task</b>: Create <codeph>BudgetOptimizer</codeph> class</p>
+    <p><b>Requirements</b>:
+- Analyze usage trends (daily, weekly, monthly)
+- Predict future usage
+- Suggest budget reallocations
+- Auto-adjust if enabled
+- Respect minimum budgets per provider</p>
+    <p><b>Starter Code</b>:</p>
+    <codeblock outputclass="language-typescript">export class BudgetOptimizer {
+  constructor(
+    private providerManager: ProviderManager,
+    private logger: Logger
+  ) {}
+
+  /**
+   * Analyze current budget allocation efficiency
+   */
+  analyzeBudgetEfficiency(): BudgetAnalysis {
+    // TODO: Analyze usage vs allocated budget
+    // Return: efficiency score, recommendations
+    throw new Error(&apos;Not implemented&apos;);
+  }
+
+  /**
+   * Suggest budget reallocation
+   */
+  suggestReallocation(
+    totalBudget: number,
+    constraints: {
+      minPerProvider: number;
+      maxPerProvider: number;
+    }
+  ): Record&lt;string, { daily: number; monthly: number }&gt; {
+    // TODO: Suggest optimal budget distribution
+    // Based on: usage patterns, cost per provider, success rates
+    throw new Error(&apos;Not implemented&apos;);
+  }
+
+  /**
+   * Auto-adjust budgets (if enabled)
+   */
+  async autoAdjust(enabled: boolean = false): Promise&lt;void&gt; {
+    // TODO: Automatically adjust budgets based on usage
+    if (!enabled) {
+      this.logger.info(&apos;Auto-adjust disabled, skipping&apos;);
+      return;
+    }
+
+    // TODO: Implement auto-adjustment logic
+  }
+
+  private predictUsage(providerId: string, days: number): number {
+    // TODO: Predict future usage based on historical data
+    // Use simple moving average or linear regression
+    return 0;
+  }
+}
+
+interface BudgetAnalysis {
+  efficiency: number; // 0-1 score
+  underutilized: string[];
+  overutilized: string[];
+  recommendations: string[];
+  projectedSpend: Record&lt;string, number&gt;;
+}
+</codeblock>
+    <p><b>Solution</b>: See <codeph>book/exercises/chapter-02/exercise-04-solution.ts</codeph></p>
+    <section><title>Exercise 5: Multi-Provider Performance Testing (120 minutes)</title></section>
+    <p><b>Goal</b>: Build a comprehensive performance testing framework</p>
+    <p><b>Task</b>: Create a test suite that benchmarks:
+1. Response time by provider
+2. Cost per task type
+3. Quality (subjective, requires test cases)
+4. Reliability (error rates, retries)</p>
+    <p><b>Requirements</b>:
+- Test across multiple task types (simple, medium, complex)
+- Run each test 10+ times for statistical significance
+- Generate comparison reports
+- Identify optimal provider for each task type</p>
+    <p><b>Starter Code</b>:</p>
+    <codeblock outputclass="language-typescript">export class ProviderBenchmark {
+  constructor(private service: MultiProviderAIService) {}
+
+  /**
+   * Run comprehensive benchmark suite
+   */
+  async runBenchmark(): Promise&lt;BenchmarkReport&gt; {
+    const results: BenchmarkResult[] = [];
+
+    // Test cases
+    const testCases = [
+      {
+        type: &apos;simple&apos;,
+        prompt: &apos;Generate a commit message for bug fix&apos;,
+        expectedTokens: 50
+      },
+      {
+        type: &apos;medium&apos;,
+        prompt: &apos;Explain this authentication flow&apos;,
+        expectedTokens: 500
+      },
+      {
+        type: &apos;complex&apos;,
+        prompt: &apos;Refactor this legacy system to use microservices&apos;,
+        expectedTokens: 2000
+      }
+    ];
+
+    // TODO: For each test case:
+    // 1. Run with each provider (10 times)
+    // 2. Measure: response time, cost, tokens
+    // 3. Calculate: avg, min, max, stddev
+    // 4. Compare results
+
+    return {
+      results,
+      summary: this.generateSummary(results),
+      recommendations: this.generateRecommendations(results)
+    };
+  }
+
+  private async runSingleTest(
+    testCase: TestCase,
+    providerId: string,
+    iterations: number = 10
+  ): Promise&lt;TestResult&gt; {
+    // TODO: Run test multiple times
+    // Return aggregated results
+    throw new Error(&apos;Not implemented&apos;);
+  }
+
+  private generateSummary(results: BenchmarkResult[]): BenchmarkSummary {
+    // TODO: Generate summary statistics
+    throw new Error(&apos;Not implemented&apos;);
+  }
+
+  private generateRecommendations(results: BenchmarkResult[]): string[] {
+    // TODO: Analyze results and provide recommendations
+    // e.g., &quot;Use Ollama for simple tasks (3x faster, free)&quot;
+    return [];
+  }
+}
+
+interface BenchmarkReport {
+  results: BenchmarkResult[];
+  summary: BenchmarkSummary;
+  recommendations: string[];
+}
+</codeblock>
+    <p><b>Bonus</b>: Visualize results with charts (response time vs cost, quality vs cost, etc.)</p>
+    <p><b>Solution</b>: See <codeph>book/exercises/chapter-02/exercise-05-solution.ts</codeph></p>
+    <section><title>Chapter 2 Complete!</title></section>
+    <p>Congratulations! You now have a comprehensive understanding of multi-provider AI integration, including:</p>
+    <p>✅ Provider abstraction patterns
+✅ Four production-ready provider implementations
+✅ Secure credential management
+✅ Intelligent routing strategies
+✅ Response fusion for critical decisions
+✅ Cost tracking and budget enforcement
+✅ Circuit breakers and health monitoring
+✅ Production deployment best practices</p>
+    <section><title>What&apos;s Next?</title></section>
+    <p>In <b>Chapter 3: Dependency Injection for AI Systems →</b>, we&apos;ll explore how to manage the lifecycle of all these components using dependency injection, making the system testable, maintainable, and extensible.</p>
+    <p><b>Key topics</b>:
+- Container architecture
+- Service registry patterns
+- Circular dependency resolution
+- Resource disposal (IDisposable)
+- Testing with DI</p>
+    <p><b>Chapter 2 Progress</b>: Complete ✅
+- 2.1 Why Multi-Provider Support? ✅
+- 2.2 Provider Abstraction Pattern ✅
+- 2.3 Provider Implementations ✅
+- 2.4 Provider Manager ✅
+- 2.5 Intelligent Router ✅
+- 2.6 Response Fusion ✅
+- 2.7 Best Practices ✅
+- 2.8 Real-World Integration ✅
+- 2.9 Summary ✅
+- Exercises (5) ✅</p>
+    <p><b>Total</b>: ~4,700 lines | ~100-110 pages</p>
+    <p><i>Continue to Chapter 3: Dependency Injection for AI Systems →</i></p>
+  </body>
+</topic>

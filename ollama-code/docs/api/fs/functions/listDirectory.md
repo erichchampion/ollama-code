@@ -8,7 +8,7 @@
 
 > **listDirectory**(`dirPath`): `Promise`\<`string`[]\>
 
-Defined in: [fs/operations.ts:336](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/fs/operations.ts#L336)
+Defined in: [fs/operations.ts:336](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/fs/operations.ts#L336)
 
 List files and directories in a directory
 

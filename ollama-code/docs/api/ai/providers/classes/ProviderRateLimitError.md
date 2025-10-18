@@ -6,7 +6,7 @@
 
 # Class: ProviderRateLimitError
 
-Defined in: [ai/providers/base-provider.ts:392](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L392)
+Defined in: [ai/providers/base-provider.ts:392](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L392)
 
 Provider error types
 
@@ -20,7 +20,7 @@ Provider error types
 
 > **new ProviderRateLimitError**(`provider`, `retryAfter?`): `ProviderRateLimitError`
 
-Defined in: [ai/providers/base-provider.ts:393](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L393)
+Defined in: [ai/providers/base-provider.ts:393](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L393)
 
 #### Parameters
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/base-provider.ts:393](https://github.com/erichchampion
 
 > **provider**: `string`
 
-Defined in: [ai/providers/base-provider.ts:383](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L383)
+Defined in: [ai/providers/base-provider.ts:383](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L383)
 
 #### Inherited from
 
@@ -58,7 +58,7 @@ Defined in: [ai/providers/base-provider.ts:383](https://github.com/erichchampion
 
 > `optional` **code**: `string`
 
-Defined in: [ai/providers/base-provider.ts:384](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L384)
+Defined in: [ai/providers/base-provider.ts:384](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L384)
 
 #### Inherited from
 
@@ -70,7 +70,7 @@ Defined in: [ai/providers/base-provider.ts:384](https://github.com/erichchampion
 
 > **retryable**: `boolean` = `false`
 
-Defined in: [ai/providers/base-provider.ts:385](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L385)
+Defined in: [ai/providers/base-provider.ts:385](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L385)
 
 #### Inherited from
 

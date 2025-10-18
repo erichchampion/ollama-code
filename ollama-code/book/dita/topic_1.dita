@@ -1,0 +1,1821 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_1">
+  <title>Chapter 1: Introduction to AI Coding Assistants</title>
+  <body>
+    <section><title>Introduction</title></section>
+    <p>In 2021, GitHub Copilot transformed how millions of developers write code. By 2025, AI coding assistants have evolved from simple code completion to sophisticated agents capable of understanding entire codebases, implementing complex features, and collaborating with human developers in real-time.</p>
+    <p>This chapter introduces you to the world of AI coding assistants through the lens of <b>ollama-code</b>, a production-ready open-source implementation that demonstrates architectural patterns and design decisions for building robust, extensible AI development tools.</p>
+    <section><title>What You&apos;ll Learn</title></section>
+    <ul>
+      <li>
+        What AI coding assistants are and how they&apos;ve evolved
+      </li>
+      <li>
+        The core components and architecture of a production AI coding assistant
+      </li>
+      <li>
+        Design principles that make systems maintainable and extensible
+      </li>
+      <li>
+        Technology stack decisions and their tradeoffs
+      </li>
+      <li>
+        Project structure and organization patterns
+      </li>
+    </ul>
+    <section><title>Prerequisites</title></section>
+    <ul>
+      <li>
+        JavaScript/TypeScript proficiency
+      </li>
+      <li>
+        Basic understanding of AI/LLMs
+      </li>
+      <li>
+        Familiarity with software architecture concepts
+      </li>
+      <li>
+        Node.js development experience
+      </li>
+    </ul>
+    <section><title>1.1 What is an AI Coding Assistant?</title></section>
+    <section><title>Definition</title></section>
+    <p>An <b>AI coding assistant</b> is a software tool that leverages large language models (LLMs) to help developers write, understand, modify, and maintain code. Unlike simple code completion tools, modern AI coding assistants can:</p>
+    <ul>
+      <li>
+        Generate entire functions or files from natural language descriptions
+      </li>
+      <li>
+        Understand and explain existing code
+      </li>
+      <li>
+        Refactor code while preserving functionality
+      </li>
+      <li>
+        Debug issues and suggest fixes
+      </li>
+      <li>
+        Generate tests and documentation
+      </li>
+      <li>
+        Review code for quality and security issues
+      </li>
+    </ul>
+    <section><title>Evolution</title></section>
+    <p>The evolution of AI coding assistants can be traced through several generations:</p>
+    <section><title>Generation 1: Static Code Completion (2010-2020)</title></section>
+    <ul>
+      <li>
+        <b>Examples</b>
+        : IntelliSense, autocomplete
+      </li>
+      <li>
+        <b>Capabilities</b>
+        : Syntax-aware suggestions based on static analysis
+      </li>
+      <li>
+        <b>Limitations</b>
+        : No understanding of intent or context
+      </li>
+    </ul>
+    <section><title>Generation 2: ML-Based Completion (2020-2022)</title></section>
+    <ul>
+      <li>
+        <b>Examples</b>
+        : TabNine, Kite
+      </li>
+      <li>
+        <b>Capabilities</b>
+        : Statistical models trained on code corpora
+      </li>
+      <li>
+        <b>Limitations</b>
+        : Limited to line or block completion
+      </li>
+    </ul>
+    <section><title>Generation 3: LLM-Powered Assistants (2022-2023)</title></section>
+    <ul>
+      <li>
+        <b>Examples</b>
+        : GitHub Copilot, Amazon CodeWhisperer
+      </li>
+      <li>
+        <b>Capabilities</b>
+        : Full function generation from comments
+      </li>
+      <li>
+        <b>Limitations</b>
+        : No direct codebase awareness, limited to code generation
+      </li>
+    </ul>
+    <section><title>Generation 4: Coding Agents (2023-Present)</title></section>
+    <ul>
+      <li>
+        <b>Examples</b>
+        : GitHub Copilot Chat, Cursor, ollama-code
+      </li>
+      <li>
+        <b>Capabilities</b>
+        :
+      </li>
+      <li>
+        Natural language conversations about code
+      </li>
+      <li>
+        Codebase-aware suggestions
+      </li>
+      <li>
+        Multi-file edits and refactoring
+      </li>
+      <li>
+        Tool use (git, testing, building)
+      </li>
+      <li>
+        Iterative problem-solving
+      </li>
+    </ul>
+    <section><title>Use Cases</title></section>
+    <p>Modern AI coding assistants excel at:</p>
+    <section><title>1. Code Generation</title></section>
+    <codeblock outputclass="language-typescript">// User: &quot;Create a function that validates email addresses&quot;
+// AI generates:
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email || typeof email !== &apos;string&apos;) {
+    return false;
+  }
+
+  if (email.length &gt; 254) {
+    return false;
+  }
+
+  return emailRegex.test(email);
+}
+</codeblock>
+    <section><title>2. Code Explanation</title></section>
+    <codeblock outputclass="language-typescript">// User: &quot;Explain what this regex does&quot;
+const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&amp;])[A-Za-z\d@$!%*?&amp;]{8,}$/;
+
+// AI explains:
+// This regex validates strong passwords requiring:
+// - At least 8 characters
+// - At least one lowercase letter (?=.*[a-z])
+// - At least one uppercase letter (?=.*[A-Z])
+// - At least one digit (?=.*\d)
+// - At least one special character (?=.*[@$!%*?&amp;])
+</codeblock>
+    <section><title>3. Refactoring</title></section>
+    <codeblock outputclass="language-typescript">// Before: Nested callbacks
+fs.readFile(&apos;data.json&apos;, (err, data) =&gt; {
+  if (err) throw err;
+  const parsed = JSON.parse(data);
+  processData(parsed, (err, result) =&gt; {
+    if (err) throw err;
+    fs.writeFile(&apos;output.json&apos;, result, (err) =&gt; {
+      if (err) throw err;
+      console.log(&apos;Done!&apos;);
+    });
+  });
+});
+
+// After: Async/await (AI-assisted refactor)
+async function processFile(): Promise&lt;void&gt; {
+  try {
+    const data = await fs.promises.readFile(&apos;data.json&apos;, &apos;utf-8&apos;);
+    const parsed = JSON.parse(data);
+    const result = await processData(parsed);
+    await fs.promises.writeFile(&apos;output.json&apos;, result);
+    console.log(&apos;Done!&apos;);
+  } catch (error) {
+    console.error(&apos;Error processing file:&apos;, error);
+    throw error;
+  }
+}
+</codeblock>
+    <section><title>4. Bug Detection and Fixing</title></section>
+    <codeblock outputclass="language-typescript">// User: &quot;This function sometimes crashes, help me debug it&quot;
+function divide(a: number, b: number): number {
+  return a / b;  // ⚠️ No check for division by zero!
+}
+
+// AI suggests:
+function divide(a: number, b: number): number {
+  if (b === 0) {
+    throw new Error(&apos;Division by zero is not allowed&apos;);
+  }
+  return a / b;
+}
+
+// Or with safer handling:
+function divide(a: number, b: number): number | null {
+  if (b === 0) {
+    console.warn(&apos;Attempted division by zero&apos;);
+    return null;
+  }
+  return a / b;
+}
+</codeblock>
+    <section><title>5. Test Generation</title></section>
+    <codeblock outputclass="language-typescript">// Given this function:
+export function fibonacci(n: number): number {
+  if (n &lt;= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// AI generates comprehensive tests:
+describe(&apos;fibonacci&apos;, () =&gt; {
+  it(&apos;should return 0 for n = 0&apos;, () =&gt; {
+    expect(fibonacci(0)).toBe(0);
+  });
+
+  it(&apos;should return 1 for n = 1&apos;, () =&gt; {
+    expect(fibonacci(1)).toBe(1);
+  });
+
+  it(&apos;should return correct values for small n&apos;, () =&gt; {
+    expect(fibonacci(2)).toBe(1);
+    expect(fibonacci(3)).toBe(2);
+    expect(fibonacci(4)).toBe(3);
+    expect(fibonacci(5)).toBe(5);
+    expect(fibonacci(10)).toBe(55);
+  });
+
+  it(&apos;should handle negative numbers&apos;, () =&gt; {
+    expect(fibonacci(-1)).toBe(-1);
+  });
+});
+</codeblock>
+    <section><title>6. Documentation Generation</title></section>
+    <codeblock outputclass="language-typescript">// AI generates JSDoc from implementation:
+/**
+ * Fetches user data from the API with retry logic
+ *
+ * @param userId - The unique identifier for the user
+ * @param options - Configuration options for the request
+ * @param options.maxRetries - Maximum number of retry attempts (default: 3)
+ * @param options.timeout - Request timeout in milliseconds (default: 5000)
+ * @returns Promise resolving to user data
+ * @throws {NetworkError} If network request fails after retries
+ * @throws {ValidationError} If userId is invalid
+ *
+ * @example
+ * ```typescript
+ * const user = await fetchUserWithRetry(&apos;user-123&apos;, { maxRetries: 5 });
+ * console.log(user.name);
+ * ```
+ */
+async function fetchUserWithRetry(
+  userId: string,
+  options: { maxRetries?: number; timeout?: number } = {}
+): Promise&lt;User&gt; {
+  // Implementation...
+}
+</codeblock>
+    <section><title>1.2 Architecture Overview</title></section>
+    <p>Let&apos;s examine the high-level architecture of <b>ollama-code</b> to understand how all the pieces fit together.</p>
+    <section><title>System Components</title></section>
+    <codeblock>┌────────────────────────────────────────────────────────────┐
+│                    AI Coding Assistant                      │
+├────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │             User Interface Layer                      │  │
+│  │  - Terminal Interface (CLI)                           │  │
+│  │  - Command Processor                                  │  │
+│  │  - Interactive Prompts                                │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                         ↕                                   │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         Application Orchestration Layer               │  │
+│  │  - Dependency Injection Container                     │  │
+│  │  - Service Registry                                   │  │
+│  │  - Configuration Management                           │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                         ↕                                   │
+│  ┌───────────┬────────────┬────────────┬────────────────┐  │
+│  │ Streaming │    Tool    │Conversation│   Project      │  │
+│  │Orchestrator│ Registry  │  Manager   │   Context      │  │
+│  └───────────┴────────────┴────────────┴────────────────┘  │
+│                         ↕                                   │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │          Multi-Provider AI Layer                      │  │
+│  │                                                        │  │
+│  │  ┌────────┐ ┌────────┐ ┌─────────┐ ┌───────┐        │  │
+│  │  │ Ollama │ │ OpenAI │ │Anthropic│ │Google │        │  │
+│  │  └────────┘ └────────┘ └─────────┘ └───────┘        │  │
+│  │                                                        │  │
+│  │  [Router] [Fusion] [Health] [Cost Tracking]          │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                         ↕                                   │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │            Tool Execution Layer                       │  │
+│  │  - Filesystem Operations                              │  │
+│  │  - Code Search                                        │  │
+│  │  - Command Execution                                  │  │
+│  │  - Git/VCS Operations                                 │  │
+│  │  - Code Analysis                                      │  │
+│  │  - Testing Framework                                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+└────────────────────────────────────────────────────────────┘
+</codeblock>
+    <section><title>Core Components</title></section>
+    <p>Let&apos;s examine each component&apos;s responsibility:</p>
+    <section><title>1. Terminal Interface</title></section>
+    <codeblock outputclass="language-typescript">// src/terminal/index.ts
+export interface TerminalInterface {
+  // Output methods
+  write(text: string): void;
+  info(message: string): void;
+  success(message: string): void;
+  warn(message: string): void;
+  error(message: string): void;
+
+  // Input methods
+  prompt(message: string, options?: PromptOptions): Promise&lt;string&gt;;
+  confirm(message: string): Promise&lt;boolean&gt;;
+  select&lt;T&gt;(message: string, choices: Choice&lt;T&gt;[]): Promise&lt;T&gt;;
+
+  // Progress indicators
+  startSpinner(message: string): SpinnerInstance;
+  updateProgressBar(id: string, progress: number): void;
+}
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Display formatted output to users
+- Collect user input with validation
+- Show progress indicators for long operations
+- Handle terminal capabilities (colors, formatting)</p>
+    <section><title>2. Command Processor</title></section>
+    <codeblock outputclass="language-typescript">// src/commands/types.ts
+export interface CommandDef {
+  name: string;
+  description: string;
+  arguments: CommandArgDef[];
+  options: CommandOption[];
+  handler: CommandHandler;
+}
+
+export type CommandHandler = (
+  args: ParsedArgs,
+  context: CommandContext
+) =&gt; Promise&lt;void&gt;;
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Parse command-line arguments
+- Route commands to appropriate handlers
+- Validate arguments and options
+- Provide help and documentation</p>
+    <section><title>3. AI Client</title></section>
+    <codeblock outputclass="language-typescript">// src/ai/ollama-client.ts
+export class OllamaClient {
+  async complete(
+    prompt: string,
+    options: CompletionOptions
+  ): Promise&lt;CompletionResponse&gt; {
+    // Single-turn completion
+  }
+
+  async completeStream(
+    prompt: string,
+    options: CompletionOptions,
+    onEvent: StreamCallback
+  ): Promise&lt;void&gt; {
+    // Streaming completion with real-time tokens
+  }
+
+  async completeStreamWithTools(
+    conversationHistory: ConversationTurn[],
+    tools: Tool[],
+    options: CompletionOptions,
+    callbacks: StreamingCallbacks
+  ): Promise&lt;void&gt; {
+    // Multi-turn conversation with tool calling
+  }
+}
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Communicate with AI providers (Ollama, OpenAI, etc.)
+- Handle streaming responses
+- Manage conversation context
+- Execute tool calls</p>
+    <section><title>4. Tool Registry</title></section>
+    <codeblock outputclass="language-typescript">// src/tools/types.ts
+export interface ToolMetadata {
+  name: string;
+  description: string;
+  category: &apos;filesystem&apos; | &apos;execution&apos; | &apos;git&apos; | &apos;search&apos; | &apos;analysis&apos;;
+  parameters: ToolParameter[];
+  examples: ToolExample[];
+}
+
+export abstract class BaseTool {
+  abstract metadata: ToolMetadata;
+  abstract execute(
+    parameters: Record&lt;string, any&gt;,
+    context: ToolExecutionContext
+  ): Promise&lt;ToolResult&gt;;
+}
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Register and manage available tools
+- Validate tool parameters
+- Execute tools in sandbox
+- Cache tool results</p>
+    <section><title>5. Conversation Manager</title></section>
+    <codeblock outputclass="language-typescript">// src/ai/conversation-manager.ts
+export class ConversationManager {
+  async addTurn(
+    userInput: string,
+    intent: UserIntent,
+    response: string,
+    actions: ActionTaken[]
+  ): Promise&lt;ConversationTurn&gt;;
+
+  getRecentHistory(maxTurns: number): ConversationTurn[];
+  getRelevantHistory(currentIntent: UserIntent): ConversationTurn[];
+
+  async persistConversation(): Promise&lt;void&gt;;
+  async summarizeConversation(): Promise&lt;ConversationSummary&gt;;
+}
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Track conversation history
+- Manage context window
+- Persist conversations to disk
+- Summarize long conversations</p>
+    <section><title>6. Project Context</title></section>
+    <codeblock outputclass="language-typescript">// src/codebase/project-context.ts
+export class ProjectContext {
+  async analyzeProject(projectRoot: string): Promise&lt;ProjectInfo&gt;;
+  async getFileStructure(): Promise&lt;DirectoryStructure&gt;;
+  async findRelevantFiles(query: string): Promise&lt;string[]&gt;;
+  async buildCodeGraph(): Promise&lt;CodeKnowledgeGraph&gt;;
+}
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Analyze project structure
+- Detect languages and frameworks
+- Build code dependency graphs
+- Provide context for AI requests</p>
+    <section><title>Data Flow</title></section>
+    <p>Let&apos;s trace a typical user request through the system:</p>
+    <codeblock>1. User Input
+   │
+   ├─&gt; Command Parser
+   │   └─&gt; Validate &amp; Parse Arguments
+   │
+2. Intent Analysis
+   │
+   ├─&gt; Natural Language Router
+   │   └─&gt; Classify Intent (query/command/task)
+   │
+3. Context Gathering
+   │
+   ├─&gt; Project Context
+   │   ├─&gt; Relevant Files
+   │   ├─&gt; Code Structure
+   │   └─&gt; Recent Changes
+   │
+   ├─&gt; Conversation Manager
+   │   └─&gt; Recent History
+   │
+4. AI Processing
+   │
+   ├─&gt; Provider Router
+   │   └─&gt; Select Best Provider
+   │
+   ├─&gt; Streaming Orchestrator
+   │   ├─&gt; Send Request
+   │   ├─&gt; Stream Tokens
+   │   └─&gt; Handle Tool Calls
+   │
+5. Tool Execution
+   │
+   ├─&gt; Tool Registry
+   │   ├─&gt; Validate Parameters
+   │   ├─&gt; Check Approval
+   │   └─&gt; Execute Tool
+   │
+6. Response Display
+   │
+   ├─&gt; Terminal Interface
+   │   ├─&gt; Format Output
+   │   └─&gt; Show Progress
+   │
+7. State Update
+   │
+   └─&gt; Conversation Manager
+       └─&gt; Persist Turn
+</codeblock>
+    <section><title>Example: Complete Request Flow</title></section>
+    <p>Let&apos;s walk through a concrete example:</p>
+    <p><b>User Request:</b> &quot;Add input validation to the login function&quot;</p>
+    <codeblock outputclass="language-typescript">// Step 1: User Input
+// Command: ollama-code &quot;Add input validation to the login function&quot;
+
+// Step 2: Intent Analysis
+const intent = await intentAnalyzer.analyze(&quot;Add input validation to the login function&quot;);
+// Result: { type: &apos;task_request&apos;, action: &apos;modify_code&apos;, confidence: 0.95 }
+
+// Step 3: Context Gathering
+const context = await projectContext.findRelevantFiles(&quot;login function&quot;);
+// Result: [&apos;src/auth/login.ts&apos;, &apos;src/validators/index.ts&apos;]
+
+const loginCode = await fs.readFile(&apos;src/auth/login.ts&apos;);
+// Current code without validation
+
+// Step 4: AI Processing
+const response = await aiClient.completeStream(
+  `Add input validation to this login function:
+
+   ${loginCode}
+
+   Use the validators from src/validators/index.ts`,
+  {
+    onContent: (chunk) =&gt; terminal.write(chunk),
+    onToolCall: async (toolCall) =&gt; {
+      if (toolCall.name === &apos;filesystem&apos;) {
+        // AI wants to write updated code
+        const result = await toolRegistry.execute(toolCall);
+        return result;
+      }
+    }
+  }
+);
+
+// Step 5: Tool Execution
+// AI calls: filesystem tool with operation=&apos;write&apos;
+// Result: Updated src/auth/login.ts with validation
+
+// Step 6: Response Display
+terminal.success(&apos;✓ Added input validation to login function&apos;);
+terminal.info(&apos;Modified files:&apos;);
+terminal.info(&apos;  - src/auth/login.ts&apos;);
+
+// Step 7: State Update
+await conversationManager.addTurn(
+  userInput: &quot;Add input validation to the login function&quot;,
+  intent,
+  response: &quot;I&apos;ve added comprehensive input validation...&quot;,
+  actions: [{ type: &apos;file_modified&apos;, path: &apos;src/auth/login.ts&apos; }]
+);
+</codeblock>
+    <section><title>1.3 Design Principles</title></section>
+    <p>The <b>ollama-code</b> architecture is guided by key design principles:</p>
+    <section><title>1. Modularity and Separation of Concerns</title></section>
+    <p>Each component has a single, well-defined responsibility:</p>
+    <codeblock outputclass="language-typescript">// ❌ BAD: God object doing everything
+class AIAssistant {
+  async processRequest(input: string) {
+    const parsed = this.parseCommand(input);
+    const context = this.analyzeProject();
+    const response = this.callAI(parsed, context);
+    this.executeTools(response);
+    this.updateUI(response);
+    this.saveHistory(response);
+    // Too many responsibilities!
+  }
+}
+
+// ✅ GOOD: Separated concerns
+class AIOrchestrator {
+  constructor(
+    private commandParser: CommandParser,
+    private projectAnalyzer: ProjectAnalyzer,
+    private aiClient: AIClient,
+    private toolExecutor: ToolExecutor,
+    private terminal: TerminalInterface,
+    private conversationManager: ConversationManager
+  ) {}
+
+  async processRequest(input: string) {
+    const command = await this.commandParser.parse(input);
+    const context = await this.projectAnalyzer.analyze();
+    const response = await this.aiClient.complete(command, context);
+    const results = await this.toolExecutor.execute(response.toolCalls);
+    await this.terminal.display(response, results);
+    await this.conversationManager.save(command, response);
+  }
+}
+</codeblock>
+    <section><title>2. Extensibility Through Abstraction</title></section>
+    <p>Use interfaces and abstract classes to enable extension:</p>
+    <codeblock outputclass="language-typescript">// Base provider abstraction
+export abstract class BaseAIProvider {
+  abstract complete(prompt: string): Promise&lt;Response&gt;;
+  abstract completeStream(prompt: string, callback: StreamCallback): Promise&lt;void&gt;;
+}
+
+// Easy to add new providers
+export class OllamaProvider extends BaseAIProvider {
+  async complete(prompt: string): Promise&lt;Response&gt; {
+    // Ollama-specific implementation
+  }
+}
+
+export class OpenAIProvider extends BaseAIProvider {
+  async complete(prompt: string): Promise&lt;Response&gt; {
+    // OpenAI-specific implementation
+  }
+}
+
+// New provider: just extend the base
+export class CustomProvider extends BaseAIProvider {
+  async complete(prompt: string): Promise&lt;Response&gt; {
+    // Custom implementation
+  }
+}
+</codeblock>
+    <section><title>3. Type Safety</title></section>
+    <p>Leverage TypeScript for compile-time safety:</p>
+    <codeblock outputclass="language-typescript">// Define strict types for configuration
+export interface AppConfig {
+  ai: {
+    defaultProvider: &apos;ollama&apos; | &apos;openai&apos; | &apos;anthropic&apos; | &apos;google&apos;;
+    timeout: number;
+    maxTokens: number;
+  };
+  tools: {
+    enableApproval: boolean;
+    categories: ToolCategory[];
+  };
+  conversation: {
+    maxHistory: number;
+    persistPath: string;
+  };
+}
+
+// Type-safe service resolution
+export interface ServiceRegistry {
+  aiClient: AIClient;
+  terminal: TerminalInterface;
+  projectContext: ProjectContext;
+  conversationManager: ConversationManager;
+}
+
+// Compile-time errors for typos
+const terminal = await container.resolve(&apos;terminal&apos;); // ✓ OK
+const termnal = await container.resolve(&apos;termnal&apos;);   // ✗ Error: typo
+</codeblock>
+    <section><title>4. Performance and Scalability</title></section>
+    <p>Design for performance from the start:</p>
+    <codeblock outputclass="language-typescript">// ❌ BAD: Load everything upfront
+async function initialize() {
+  await loadAllProviders();
+  await analyzeEntireCodebase();
+  await buildCompleteCodeGraph();
+  // Slow startup!
+}
+
+// ✅ GOOD: Lazy loading
+async function initialize(level: &apos;minimal&apos; | &apos;standard&apos; | &apos;full&apos; = &apos;standard&apos;) {
+  switch (level) {
+    case &apos;minimal&apos;:
+      await loadEssentialServices();
+      break;
+    case &apos;standard&apos;:
+      await loadEssentialServices();
+      await loadCommonProviders();
+      break;
+    case &apos;full&apos;:
+      await loadAllServices();
+      await buildCodeGraph();
+      break;
+  }
+}
+
+// Load heavy components on demand
+async function getCodeGraph(): Promise&lt;CodeKnowledgeGraph&gt; {
+  if (!this.codeGraph) {
+    this.codeGraph = await buildCodeGraph();
+  }
+  return this.codeGraph;
+}
+</codeblock>
+    <section><title>5. Security by Design</title></section>
+    <p>Build security into the architecture:</p>
+    <codeblock outputclass="language-typescript">// Sandbox tool execution
+export class SandboxedToolExecutor {
+  async execute(tool: Tool, parameters: Record&lt;string, any&gt;): Promise&lt;ToolResult&gt; {
+    // Validate path is within project
+    if (parameters.path &amp;&amp; !this.isPathSafe(parameters.path)) {
+      throw new SecurityError(&apos;Path outside project boundaries&apos;);
+    }
+
+    // Validate no shell injection
+    if (parameters.command &amp;&amp; this.hasShellInjection(parameters.command)) {
+      throw new SecurityError(&apos;Potential shell injection detected&apos;);
+    }
+
+    // Execute with timeout
+    const result = await Promise.race([
+      tool.execute(parameters),
+      this.timeout(30000)
+    ]);
+
+    return result;
+  }
+
+  private isPathSafe(path: string): boolean {
+    const resolved = resolve(this.projectRoot, path);
+    return resolved.startsWith(this.projectRoot);
+  }
+}
+</codeblock>
+    <section><title>1.4 Technology Stack</title></section>
+    <p>Building a production-ready AI coding assistant requires careful technology choices. Let&apos;s examine the decisions behind <b>ollama-code</b>&apos;s stack and understand the tradeoffs.</p>
+    <section><title>Core Language: TypeScript + Node.js</title></section>
+    <p><b>Why TypeScript?</b></p>
+    <codeblock outputclass="language-typescript">// ✅ Type safety catches bugs at compile time
+interface AIProvider {
+  name: string;
+  complete(prompt: string): Promise&lt;Response&gt;;
+}
+
+// This will cause a compile error - typo in method name
+const provider: AIProvider = {
+  name: &apos;ollama&apos;,
+  complet: async (prompt) =&gt; { ... }  // ✗ Error: Property &apos;complete&apos; is missing
+};
+</codeblock>
+    <p><b>Advantages:</b>
+- 🎯 <b>Type Safety</b>: Catch errors before runtime
+- 📝 <b>IntelliSense</b>: Rich IDE support with autocomplete
+- 🔧 <b>Refactoring</b>: Safe automated refactoring
+- 📚 <b>Documentation</b>: Types serve as inline documentation
+- 🛡️ <b>Fewer Bugs</b>: 15% fewer bugs compared to JavaScript (Microsoft research)</p>
+    <p><b>Why Node.js?</b></p>
+    <ul>
+      <li>
+        ⚡
+        <b>Asynchronous</b>
+        : Perfect for I/O-heavy operations (API calls, file operations)
+      </li>
+      <li>
+        📦
+        <b>Rich Ecosystem</b>
+        : 2+ million npm packages
+      </li>
+      <li>
+        🚀
+        <b>Fast Development</b>
+        : Rapid prototyping and iteration
+      </li>
+      <li>
+        🔄
+        <b>Streaming</b>
+        : Native support for streams (crucial for AI responses)
+      </li>
+      <li>
+        🌐
+        <b>Cross-Platform</b>
+        : Runs on Windows, macOS, Linux
+      </li>
+    </ul>
+    <p><b>Tradeoffs:</b></p>
+    <codeblock outputclass="language-typescript">// ❌ Weakness: CPU-intensive operations
+// Node.js is single-threaded, not ideal for heavy computation
+function analyzeComplexity(largeCodebase: string[]): ComplexityMetrics {
+  // This could block the event loop for large codebases
+  return heavyComputation(largeCodebase);
+}
+
+// ✅ Solution: Use worker threads or child processes
+import { Worker } from &apos;worker_threads&apos;;
+
+async function analyzeComplexity(largeCodebase: string[]): Promise&lt;ComplexityMetrics&gt; {
+  return new Promise((resolve, reject) =&gt; {
+    const worker = new Worker(&apos;./complexity-worker.js&apos;, {
+      workerData: largeCodebase
+    });
+    worker.on(&apos;message&apos;, resolve);
+    worker.on(&apos;error&apos;, reject);
+  });
+}
+</codeblock>
+    <section><title>AI SDKs and Libraries</title></section>
+    <section><title>1. Ollama SDK</title></section>
+    <codeblock outputclass="language-typescript">// Simple, local-first AI
+import { Ollama } from &apos;ollama&apos;;
+
+const ollama = new Ollama({ host: &apos;http://localhost:11434&apos; });
+const response = await ollama.chat({
+  model: &apos;qwen2.5-coder:latest&apos;,
+  messages: [{ role: &apos;user&apos;, content: &apos;Explain async/await&apos; }]
+});
+</codeblock>
+    <p><b>Pros:</b>
+- 🏠 Local execution (privacy)
+- 💰 Free to use
+- ⚡ Fast responses (no network latency)
+- 🔒 No API keys needed</p>
+    <p><b>Cons:</b>
+- 🖥️ Requires local compute resources
+- 📊 Smaller models vs cloud alternatives
+- 🔧 User must install Ollama</p>
+    <section><title>2. OpenAI SDK</title></section>
+    <codeblock outputclass="language-typescript">import OpenAI from &apos;openai&apos;;
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const completion = await openai.chat.completions.create({
+  model: &apos;gpt-4&apos;,
+  messages: [{ role: &apos;user&apos;, content: &apos;Explain async/await&apos; }]
+});
+</codeblock>
+    <p><b>Pros:</b>
+- 🧠 State-of-the-art models (GPT-4)
+- 🌐 No local compute needed
+- 📈 Constantly improving</p>
+    <p><b>Cons:</b>
+- 💰 Pay per token
+- 🌐 Requires internet connection
+- 🔑 API key management
+- 🔒 Data sent to third party</p>
+    <section><title>3. Anthropic SDK (Claude)</title></section>
+    <codeblock outputclass="language-typescript">import Anthropic from &apos;@anthropic-ai/sdk&apos;;
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const message = await anthropic.messages.create({
+  model: &apos;claude-3-5-sonnet-20241022&apos;,
+  max_tokens: 1024,
+  messages: [{ role: &apos;user&apos;, content: &apos;Explain async/await&apos; }]
+});
+</codeblock>
+    <p><b>Pros:</b>
+- 🎯 Excellent for coding tasks
+- 📏 Large context windows (200K tokens)
+- 🔧 Advanced tool use capabilities</p>
+    <p><b>Cons:</b>
+- 💰 Premium pricing
+- 🔑 API key required
+- 🌐 Cloud-only</p>
+    <section><title>4. Google AI SDK (Gemini)</title></section>
+    <codeblock outputclass="language-typescript">import { GoogleGenerativeAI } from &apos;@google/generative-ai&apos;;
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: &apos;gemini-pro&apos; });
+const result = await model.generateContent(&apos;Explain async/await&apos;);
+</codeblock>
+    <p><b>Pros:</b>
+- 🆓 Generous free tier
+- 🖼️ Multi-modal capabilities
+- 🔍 Grounding with Google Search</p>
+    <p><b>Cons:</b>
+- 🔑 API key required
+- 🔒 Data privacy considerations</p>
+    <section><title>CLI Frameworks</title></section>
+    <section><title>Commander.js - Command Parsing</title></section>
+    <codeblock outputclass="language-typescript">import { Command } from &apos;commander&apos;;
+
+const program = new Command();
+
+program
+  .name(&apos;ollama-code&apos;)
+  .description(&apos;AI coding assistant&apos;)
+  .version(&apos;1.0.0&apos;);
+
+program
+  .command(&apos;generate&apos;)
+  .description(&apos;Generate code from description&apos;)
+  .argument(&apos;&lt;description&gt;&apos;, &apos;What to generate&apos;)
+  .option(&apos;-o, --output &lt;file&gt;&apos;, &apos;Output file&apos;)
+  .action(async (description, options) =&gt; {
+    await generateCode(description, options);
+  });
+
+program.parse();
+</codeblock>
+    <p><b>Why Commander?</b>
+- ✅ Industry standard
+- ✅ Intuitive API
+- ✅ Automatic help generation
+- ✅ Subcommand support</p>
+    <section><title>Inquirer.js - Interactive Prompts</title></section>
+    <codeblock outputclass="language-typescript">import inquirer from &apos;inquirer&apos;;
+
+const answers = await inquirer.prompt([
+  {
+    type: &apos;confirm&apos;,
+    name: &apos;approve&apos;,
+    message: &apos;Execute this tool call?&apos;,
+    default: false
+  },
+  {
+    type: &apos;list&apos;,
+    name: &apos;provider&apos;,
+    message: &apos;Select AI provider:&apos;,
+    choices: [&apos;Ollama&apos;, &apos;OpenAI&apos;, &apos;Anthropic&apos;, &apos;Google&apos;]
+  }
+]);
+</codeblock>
+    <p><b>Why Inquirer?</b>
+- ✅ Rich prompt types (input, confirm, list, checkbox, password)
+- ✅ Validation support
+- ✅ Conditional prompts
+- ✅ Great UX</p>
+    <section><title>Ora - Spinners and Progress</title></section>
+    <codeblock outputclass="language-typescript">import ora from &apos;ora&apos;;
+
+const spinner = ora(&apos;Analyzing codebase...&apos;).start();
+
+try {
+  await analyzeProject();
+  spinner.succeed(&apos;Analysis complete!&apos;);
+} catch (error) {
+  spinner.fail(&apos;Analysis failed&apos;);
+}
+</codeblock>
+    <p><b>Why Ora?</b>
+- ✅ Elegant loading indicators
+- ✅ Success/failure states
+- ✅ Custom symbols and colors
+- ✅ Non-blocking</p>
+    <section><title>Testing Tools</title></section>
+    <section><title>Vitest - Unit Testing</title></section>
+    <codeblock outputclass="language-typescript">import { describe, it, expect, beforeEach } from &apos;vitest&apos;;
+import { ToolRegistry } from &apos;./registry&apos;;
+
+describe(&apos;ToolRegistry&apos;, () =&gt; {
+  let registry: ToolRegistry;
+
+  beforeEach(() =&gt; {
+    registry = new ToolRegistry();
+  });
+
+  it(&apos;should register a tool&apos;, () =&gt; {
+    const tool = new MockTool();
+    registry.register(tool);
+    expect(registry.get(&apos;mock-tool&apos;)).toBe(tool);
+  });
+
+  it(&apos;should list all registered tools&apos;, () =&gt; {
+    registry.register(new MockTool());
+    registry.register(new AnotherMockTool());
+    expect(registry.list()).toHaveLength(2);
+  });
+});
+</codeblock>
+    <p><b>Why Vitest over Jest?</b>
+- ⚡ <b>Faster</b>: 10x faster than Jest for TypeScript
+- 🔥 <b>HMR</b>: Hot Module Replacement for test files
+- ⚙️ <b>ESM Native</b>: First-class ES modules support
+- 🎯 <b>TypeScript</b>: No configuration needed
+- 🔧 <b>Vite Integration</b>: Shares Vite&apos;s config</p>
+    <section><title>Playwright - E2E Testing</title></section>
+    <codeblock outputclass="language-typescript">import { test, expect } from &apos;@playwright/test&apos;;
+
+test(&apos;CLI should generate code from description&apos;, async ({ page }) =&gt; {
+  // Simulate CLI interaction
+  const cli = await startCLI();
+  await cli.type(&apos;generate a function that validates emails&apos;);
+
+  // Wait for AI response
+  await page.waitForSelector(&apos;.code-output&apos;);
+
+  // Verify code was generated
+  const code = await page.textContent(&apos;.code-output&apos;);
+  expect(code).toContain(&apos;function validateEmail&apos;);
+  expect(code).toContain(&apos;regex&apos;);
+});
+</codeblock>
+    <p><b>Why Playwright?</b>
+- 🎭 <b>Cross-browser</b>: Chromium, Firefox, WebKit
+- 🔄 <b>Auto-wait</b>: Smart waiting for elements
+- 📸 <b>Screenshots</b>: Visual regression testing
+- 🎬 <b>Video Recording</b>: Debug test failures</p>
+    <section><title>Build Tools</title></section>
+    <section><title>TypeScript Compiler (tsc)</title></section>
+    <codeblock outputclass="language-json">// tsconfig.json
+{
+  &quot;compilerOptions&quot;: {
+    &quot;target&quot;: &quot;ES2022&quot;,
+    &quot;module&quot;: &quot;ES2022&quot;,
+    &quot;moduleResolution&quot;: &quot;node&quot;,
+    &quot;outDir&quot;: &quot;./dist&quot;,
+    &quot;rootDir&quot;: &quot;./src&quot;,
+    &quot;strict&quot;: true,
+    &quot;esModuleInterop&quot;: true,
+    &quot;skipLibCheck&quot;: true,
+    &quot;declaration&quot;: true,
+    &quot;declarationMap&quot;: true,
+    &quot;sourceMap&quot;: true
+  },
+  &quot;include&quot;: [&quot;src/**/*&quot;],
+  &quot;exclude&quot;: [&quot;node_modules&quot;, &quot;dist&quot;, &quot;**/*.test.ts&quot;]
+}
+</codeblock>
+    <p><b>Configuration Highlights:</b>
+- <codeph>strict: true</codeph> - Maximum type safety
+- <codeph>declaration: true</codeph> - Generate .d.ts files for libraries
+- <codeph>sourceMap: true</codeph> - Enable debugging</p>
+    <section><title>ESBuild (Optional Fast Build)</title></section>
+    <codeblock outputclass="language-typescript">// build.mjs
+import { build } from &apos;esbuild&apos;;
+
+await build({
+  entryPoints: [&apos;src/index.ts&apos;],
+  bundle: true,
+  platform: &apos;node&apos;,
+  target: &apos;node18&apos;,
+  outdir: &apos;dist&apos;,
+  format: &apos;esm&apos;,
+  minify: true,
+  sourcemap: true
+});
+</codeblock>
+    <p><b>Why ESBuild?</b>
+- 🚀 <b>Speed</b>: 100x faster than webpack
+- 📦 <b>Bundling</b>: Single file output
+- 🗜️ <b>Minification</b>: Smaller binaries</p>
+    <section><title>Package Manager: npm/yarn/pnpm</title></section>
+    <p><b>ollama-code uses yarn</b> for:
+- 📦 <b>Workspaces</b>: Monorepo support
+- 🔒 <b>Lockfile</b>: Deterministic installs
+- ⚡ <b>Speed</b>: Parallel downloads
+- 💾 <b>Cache</b>: Offline installs</p>
+    <codeblock outputclass="language-json">// package.json
+{
+  &quot;name&quot;: &quot;ollama-code&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;engines&quot;: {
+    &quot;node&quot;: &quot;&gt;=18.0.0&quot;
+  },
+  &quot;scripts&quot;: {
+    &quot;build&quot;: &quot;tsc&quot;,
+    &quot;test&quot;: &quot;vitest&quot;,
+    &quot;test:e2e&quot;: &quot;playwright test&quot;,
+    &quot;lint&quot;: &quot;eslint src --ext .ts&quot;,
+    &quot;format&quot;: &quot;prettier --write src&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;ollama&quot;: &quot;^0.5.0&quot;,
+    &quot;openai&quot;: &quot;^4.20.0&quot;,
+    &quot;@anthropic-ai/sdk&quot;: &quot;^0.9.0&quot;,
+    &quot;@google/generative-ai&quot;: &quot;^0.1.0&quot;,
+    &quot;commander&quot;: &quot;^11.0.0&quot;,
+    &quot;inquirer&quot;: &quot;^9.2.0&quot;,
+    &quot;ora&quot;: &quot;^7.0.0&quot;,
+    &quot;chalk&quot;: &quot;^5.3.0&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;typescript&quot;: &quot;^5.3.0&quot;,
+    &quot;vitest&quot;: &quot;^1.0.0&quot;,
+    &quot;@playwright/test&quot;: &quot;^1.40.0&quot;,
+    &quot;eslint&quot;: &quot;^8.55.0&quot;,
+    &quot;prettier&quot;: &quot;^3.1.0&quot;
+  }
+}
+</codeblock>
+    <section><title>Stack Comparison</title></section>
+    <table>
+      <tgroup cols="4">
+        <colspec colname="c1" colnum="1"/>
+        <colspec colname="c2" colnum="2"/>
+        <colspec colname="c3" colnum="3"/>
+        <colspec colname="c4" colnum="4"/>
+        <thead>
+          <row>
+            <entry>Requirement</entry>
+            <entry>Choice</entry>
+            <entry>Alternatives</entry>
+            <entry>Reason</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>Language</entry>
+            <entry>TypeScript</entry>
+            <entry>Python, Go, Rust</entry>
+            <entry>Type safety + ecosystem</entry>
+          </row>
+          <row>
+            <entry>Runtime</entry>
+            <entry>Node.js</entry>
+            <entry>Deno, Bun</entry>
+            <entry>Maturity + compatibility</entry>
+          </row>
+          <row>
+            <entry>Test Framework</entry>
+            <entry>Vitest</entry>
+            <entry>Jest, Mocha</entry>
+            <entry>Speed + DX</entry>
+          </row>
+          <row>
+            <entry>CLI Framework</entry>
+            <entry>Commander</entry>
+            <entry>Yargs, oclif</entry>
+            <entry>Simplicity</entry>
+          </row>
+          <row>
+            <entry>AI SDK</entry>
+            <entry>Multiple</entry>
+            <entry>Single provider</entry>
+            <entry>Flexibility</entry>
+          </row>
+          <row>
+            <entry>Build Tool</entry>
+            <entry>tsc</entry>
+            <entry>esbuild, swc</entry>
+            <entry>Reliability</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <section><title>1.5 Project Structure</title></section>
+    <p>A well-organized project structure is crucial for maintainability and scalability. Let&apos;s examine <b>ollama-code</b>&apos;s organization.</p>
+    <section><title>Directory Layout</title></section>
+    <codeblock>ollama-code/
+├── src/                          # Source code
+│   ├── ai/                       # AI integration layer
+│   │   ├── providers/            # AI provider implementations
+│   │   │   ├── base-provider.ts  # Abstract base class
+│   │   │   ├── ollama-provider.ts
+│   │   │   ├── openai-provider.ts
+│   │   │   ├── anthropic-provider.ts
+│   │   │   ├── google-provider.ts
+│   │   │   ├── intelligent-router.ts
+│   │   │   ├── response-fusion.ts
+│   │   │   └── provider-manager.ts
+│   │   ├── ollama-client.ts      # Ollama-specific client
+│   │   ├── conversation-manager.ts
+│   │   ├── intent-analyzer.ts
+│   │   └── task-planner.ts
+│   │
+│   ├── tools/                    # Tool system
+│   │   ├── types.ts              # Tool interfaces
+│   │   ├── registry.ts           # Tool registry
+│   │   ├── orchestrator.ts       # Tool orchestration
+│   │   ├── streaming-orchestrator.ts
+│   │   ├── filesystem.ts         # Filesystem tool
+│   │   ├── execution.ts          # Command execution tool
+│   │   ├── search.ts             # Code search tool
+│   │   ├── advanced-git-tool.ts  # Git operations
+│   │   ├── advanced-code-analysis-tool.ts
+│   │   └── advanced-testing-tool.ts
+│   │
+│   ├── core/                     # Core infrastructure
+│   │   ├── container.ts          # DI container
+│   │   ├── services.ts           # Service registry
+│   │   └── config.ts             # Configuration
+│   │
+│   ├── commands/                 # CLI commands
+│   │   ├── types.ts              # Command interfaces
+│   │   ├── register.ts           # Command registration
+│   │   ├── generate.ts           # Generate command
+│   │   ├── explain.ts            # Explain command
+│   │   ├── refactor.ts           # Refactor command
+│   │   └── test.ts               # Test command
+│   │
+│   ├── codebase/                 # Codebase analysis
+│   │   ├── project-context.ts    # Project analyzer
+│   │   ├── code-graph.ts         # Dependency graph
+│   │   └── file-index.ts         # File indexing
+│   │
+│   ├── interactive/              # Interactive mode
+│   │   ├── optimized-enhanced-mode.ts
+│   │   ├── component-factory.ts
+│   │   └── streaming-initializer.ts
+│   │
+│   ├── routing/                  # Natural language routing
+│   │   └── nl-router.ts
+│   │
+│   ├── terminal/                 # Terminal I/O
+│   │   ├── index.ts              # Terminal interface
+│   │   └── compatibility-layer.ts
+│   │
+│   ├── utils/                    # Utilities
+│   │   ├── logger.ts             # Logging
+│   │   ├── error-utils.ts        # Error handling
+│   │   ├── approval-prompt.ts    # User approval
+│   │   └── text-utils.ts         # Text utilities
+│   │
+│   ├── constants/                # Constants
+│   │   ├── index.ts
+│   │   └── tool-orchestration.ts
+│   │
+│   ├── errors/                   # Error handling
+│   │   └── formatter.ts
+│   │
+│   └── index.ts                  # Main entry point
+│
+├── tests/                        # Test files
+│   ├── unit/                     # Unit tests
+│   │   ├── tools/
+│   │   ├── ai/
+│   │   └── core/
+│   ├── integration/              # Integration tests
+│   └── e2e/                      # End-to-end tests
+│
+├── docs/                         # Documentation
+│   ├── api/                      # API documentation
+│   ├── guides/                   # User guides
+│   └── architecture/             # Architecture docs
+│
+├── examples/                     # Example usage
+│   └── custom-tool.ts
+│
+├── .github/                      # GitHub config
+│   └── workflows/                # CI/CD workflows
+│
+├── dist/                         # Compiled output
+├── node_modules/                 # Dependencies
+│
+├── package.json                  # Package config
+├── tsconfig.json                 # TypeScript config
+├── vitest.config.ts              # Test config
+├── .eslintrc.json                # ESLint config
+├── .prettierrc                   # Prettier config
+├── .gitignore
+└── README.md
+</codeblock>
+    <section><title>Module Boundaries</title></section>
+    <p>Each directory represents a clear module boundary:</p>
+    <section><title>1.ai/- AI Integration Layer</title></section>
+    <codeblock outputclass="language-typescript">// Public API - what other modules can import
+export { OllamaClient } from &apos;./ollama-client&apos;;
+export { ConversationManager } from &apos;./conversation-manager&apos;;
+export { IntentAnalyzer } from &apos;./intent-analyzer&apos;;
+
+// Provider exports
+export * from &apos;./providers&apos;;
+
+// Types
+export type {
+  ConversationTurn,
+  UserIntent,
+  CompletionOptions
+} from &apos;./types&apos;;
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Communicate with AI providers
+- Manage conversations
+- Analyze user intent
+- Plan multi-step tasks</p>
+    <p><b>Dependencies:</b>
+- <codeph>utils/</codeph> for logging and errors
+- <codeph>core/</codeph> for configuration
+- External AI SDKs</p>
+    <section><title>2.tools/- Tool System</title></section>
+    <codeblock outputclass="language-typescript">// Public API
+export { ToolRegistry, toolRegistry } from &apos;./registry&apos;;
+export { ToolOrchestrator } from &apos;./orchestrator&apos;;
+export { StreamingToolOrchestrator } from &apos;./streaming-orchestrator&apos;;
+
+// Tool implementations
+export { FileSystemTool } from &apos;./filesystem&apos;;
+export { ExecutionTool } from &apos;./execution&apos;;
+export { SearchTool } from &apos;./search&apos;;
+
+// Types
+export type {
+  BaseTool,
+  ToolMetadata,
+  ToolResult,
+  ToolExecutionContext
+} from &apos;./types&apos;;
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Define tool interface
+- Register and discover tools
+- Orchestrate tool execution
+- Handle approvals and sandboxing</p>
+    <p><b>Dependencies:</b>
+- <codeph>utils/</codeph> for logging
+- <codeph>core/</codeph> for configuration
+- Node.js fs, child_process</p>
+    <section><title>3.core/- Infrastructure</title></section>
+    <codeblock outputclass="language-typescript">// Public API
+export { Container } from &apos;./container&apos;;
+export { globalContainer, initializeServices } from &apos;./services&apos;;
+export { loadConfig } from &apos;./config&apos;;
+
+// Types
+export type {
+  ServiceDefinition,
+  ServiceRegistry,
+  AppConfig
+} from &apos;./types&apos;;
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Dependency injection
+- Service lifecycle
+- Configuration management</p>
+    <p><b>Dependencies:</b>
+- Minimal (foundational layer)</p>
+    <section><title>4.commands/- CLI Commands</title></section>
+    <codeblock outputclass="language-typescript">// Public API
+export { registerCommands } from &apos;./register&apos;;
+export type { CommandDef, CommandHandler } from &apos;./types&apos;;
+
+// Command implementations (usually not exported)
+</codeblock>
+    <p><b>Responsibilities:</b>
+- Define CLI commands
+- Parse arguments
+- Delegate to services</p>
+    <p><b>Dependencies:</b>
+- <codeph>ai/</codeph> for AI services
+- <codeph>tools/</codeph> for tool execution
+- <codeph>terminal/</codeph> for I/O</p>
+    <section><title>Dependency Graph</title></section>
+    <codeblock>┌─────────────────────────────────────────────┐
+│              index.ts (Entry Point)          │
+└──────────────────┬──────────────────────────┘
+                   │
+       ┌───────────┴───────────┐
+       │                       │
+       ▼                       ▼
+┌─────────────┐        ┌─────────────┐
+│  commands/  │        │ interactive/│
+└──────┬──────┘        └──────┬──────┘
+       │                      │
+       │     ┌────────────────┘
+       │     │
+       ▼     ▼
+   ┌──────────────┐
+   │  ai/         │
+   │  - providers │
+   │  - conversation│
+   └──────┬───────┘
+          │
+          ▼
+   ┌──────────────┐
+   │  tools/      │
+   │  - registry  │
+   │  - orchestrator│
+   └──────┬───────┘
+          │
+          ▼
+   ┌──────────────┐
+   │  core/       │
+   │  - container │
+   │  - services  │
+   └──────┬───────┘
+          │
+          ▼
+   ┌──────────────┐
+   │  utils/      │
+   │  terminal/   │
+   │  constants/  │
+   └──────────────┘
+</codeblock>
+    <p><b>Key Principles:</b>
+- 🔽 <b>Top-down dependencies</b>: Higher layers depend on lower layers
+- 🚫 <b>No circular dependencies</b>: Core doesn&apos;t depend on commands
+- 🔌 <b>Dependency injection</b>: Services injected via container
+- 🎯 <b>Clear boundaries</b>: Each module has defined public API</p>
+    <section><title>Build and Development Workflow</title></section>
+    <section><title>Development Mode</title></section>
+    <codeblock outputclass="language-bash"># Install dependencies
+yarn install
+
+# Start TypeScript compiler in watch mode
+yarn build --watch
+
+# Run tests in watch mode
+yarn test --watch
+
+# Run the CLI
+node dist/src/index.js --help
+</codeblock>
+    <section><title>Production Build</title></section>
+    <codeblock outputclass="language-bash"># Build for production
+yarn build
+
+# Run tests
+yarn test
+
+# Lint code
+yarn lint
+
+# Format code
+yarn format
+
+# Bundle for distribution
+yarn bundle
+</codeblock>
+    <section><title>CI/CD Pipeline</title></section>
+    <codeblock outputclass="language-yaml"># .github/workflows/ci.yml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: &apos;18&apos;
+
+      - run: yarn install
+      - run: yarn build
+      - run: yarn lint
+      - run: yarn test
+      - run: yarn test:e2e
+</codeblock>
+    <section><title>Exercises</title></section>
+    <section><title>Exercise 1: Setup and Exploration (30 minutes)</title></section>
+    <p><b>Objective:</b> Set up the ollama-code project and explore its structure.</p>
+    <p><b>Steps:</b></p>
+    <ol>
+      <li>
+        Clone the repository:
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash">git clone https://github.com/[org]/ollama-code.git
+cd ollama-code
+</codeblock>
+    <ol>
+      <li>
+        Install dependencies:
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash">yarn install
+</codeblock>
+    <ol>
+      <li>
+        Build the project:
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash">yarn build
+</codeblock>
+    <ol>
+      <li>
+        Explore the codebase:
+      </li>
+      <li>
+        Open
+        <codeph>src/index.ts</codeph>
+        - what does the main entry point do?
+      </li>
+      <li>
+        Look at
+        <codeph>src/ai/ollama-client.ts</codeph>
+        - how does it communicate with Ollama?
+      </li>
+      <li>
+        <p>Examine <codeph>src/tools/filesystem.ts</codeph> - what operations does it support?</p>
+      </li>
+      <li>
+        <p>Run tests:</p>
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash">yarn test
+</codeblock>
+    <p><b>Questions to answer:</b>
+- How many tools are registered by default?
+- What AI providers are supported?
+- What&apos;s the default conversation history size?</p>
+    <section><title>Exercise 2: Create a Simple AI Assistant (60 minutes)</title></section>
+    <p><b>Objective:</b> Build a minimal AI coding assistant using the patterns from this chapter.</p>
+    <p><b>Task:</b> Create a TypeScript program that:
+1. Takes a user prompt via command line
+2. Sends it to an AI provider (use Ollama for simplicity)
+3. Streams the response to the terminal
+4. Handles errors gracefully</p>
+    <p><b>Starter Code:</b></p>
+    <codeblock outputclass="language-typescript">// simple-assistant.ts
+import { Ollama } from &apos;ollama&apos;;
+
+interface AssistantConfig {
+  model: string;
+  host: string;
+}
+
+class SimpleAIAssistant {
+  private ollama: Ollama;
+
+  constructor(config: AssistantConfig) {
+    // TODO: Initialize Ollama client
+  }
+
+  async ask(prompt: string): Promise&lt;void&gt; {
+    // TODO: Send prompt and stream response
+  }
+}
+
+// Main
+const assistant = new SimpleAIAssistant({
+  model: &apos;qwen2.5-coder:latest&apos;,
+  host: &apos;http://localhost:11434&apos;
+});
+
+const prompt = process.argv[2];
+if (!prompt) {
+  console.error(&apos;Usage: node simple-assistant.js &quot;your question&quot;&apos;);
+  process.exit(1);
+}
+
+await assistant.ask(prompt);
+</codeblock>
+    <p><b>Requirements:</b>
+- ✅ Stream tokens as they arrive (don&apos;t wait for full response)
+- ✅ Handle connection errors (Ollama not running)
+- ✅ Add a loading spinner while waiting
+- ✅ Format code blocks with syntax highlighting</p>
+    <p><b>Bonus:</b>
+- Add conversation history (remember previous turns)
+- Support multiple models
+- Add a REPL mode for interactive chat</p>
+    <section><title>Exercise 3: Implement a Custom Tool (90 minutes)</title></section>
+    <p><b>Objective:</b> Create a custom tool following the BaseTool interface.</p>
+    <p><b>Task:</b> Implement a &quot;calculator&quot; tool that can evaluate mathematical expressions.</p>
+    <p><b>Requirements:</b></p>
+    <codeblock outputclass="language-typescript">// calculator-tool.ts
+import { BaseTool, ToolMetadata, ToolResult, ToolExecutionContext } from &apos;./tools/types&apos;;
+
+export class CalculatorTool extends BaseTool {
+  metadata: ToolMetadata = {
+    name: &apos;calculator&apos;,
+    description: &apos;Evaluate mathematical expressions&apos;,
+    category: &apos;utility&apos;,
+    version: &apos;1.0.0&apos;,
+    parameters: [
+      {
+        name: &apos;expression&apos;,
+        type: &apos;string&apos;,
+        description: &apos;Mathematical expression to evaluate (e.g., &quot;2 + 2&quot;)&apos;,
+        required: true
+      }
+    ],
+    examples: [
+      {
+        input: { expression: &apos;2 + 2&apos; },
+        output: { result: 4 }
+      },
+      {
+        input: { expression: &apos;(10 + 5) * 2&apos; },
+        output: { result: 30 }
+      }
+    ]
+  };
+
+  async execute(
+    parameters: Record&lt;string, any&gt;,
+    context: ToolExecutionContext
+  ): Promise&lt;ToolResult&gt; {
+    // TODO: Implement safe expression evaluation
+    // Hint: Don&apos;t use eval()! Use a library like mathjs or build a parser
+  }
+}
+</codeblock>
+    <p><b>Steps:</b>
+1. Install a safe math expression library (e.g., <codeph>mathjs</codeph>)
+2. Implement the <codeph>execute</codeph> method
+3. Add input validation (prevent code injection)
+4. Handle errors (invalid expressions)
+5. Write tests for the tool
+6. Register it in the tool registry</p>
+    <p><b>Test Cases:</b></p>
+    <codeblock outputclass="language-typescript">// calculator-tool.test.ts
+import { describe, it, expect } from &apos;vitest&apos;;
+import { CalculatorTool } from &apos;./calculator-tool&apos;;
+
+describe(&apos;CalculatorTool&apos;, () =&gt; {
+  const tool = new CalculatorTool();
+  const context = { projectRoot: process.cwd(), workingDirectory: process.cwd() };
+
+  it(&apos;should evaluate simple addition&apos;, async () =&gt; {
+    const result = await tool.execute({ expression: &apos;2 + 2&apos; }, context);
+    expect(result.success).toBe(true);
+    expect(result.data.result).toBe(4);
+  });
+
+  it(&apos;should handle complex expressions&apos;, async () =&gt; {
+    const result = await tool.execute({ expression: &apos;(10 + 5) * 2&apos; }, context);
+    expect(result.success).toBe(true);
+    expect(result.data.result).toBe(30);
+  });
+
+  it(&apos;should reject code injection attempts&apos;, async () =&gt; {
+    const result = await tool.execute({
+      expression: &apos;process.exit(1)&apos;
+    }, context);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain(&apos;Invalid expression&apos;);
+  });
+});
+</codeblock>
+    <section><title>Exercise 4: Design Pattern Analysis (45 minutes)</title></section>
+    <p><b>Objective:</b> Analyze the design patterns used in ollama-code.</p>
+    <p><b>Task:</b> Find and document instances of these patterns:</p>
+    <ol>
+      <li>
+        <b>Strategy Pattern</b>
+      </li>
+      <li>
+        Where is it used?
+      </li>
+      <li>
+        What strategies are implemented?
+      </li>
+      <li>
+        <p>How would you add a new strategy?</p>
+      </li>
+      <li>
+        <p><b>Factory Pattern</b></p>
+      </li>
+      <li>
+        Where is it used?
+      </li>
+      <li>
+        What does it create?
+      </li>
+      <li>
+        <p>Why is this better than direct construction?</p>
+      </li>
+      <li>
+        <p><b>Observer Pattern</b></p>
+      </li>
+      <li>
+        Where is it used?
+      </li>
+      <li>
+        What events are emitted?
+      </li>
+      <li>
+        <p>Who subscribes to them?</p>
+      </li>
+      <li>
+        <p><b>Template Method Pattern</b></p>
+      </li>
+      <li>
+        Where is it used?
+      </li>
+      <li>
+        What&apos;s the template?
+      </li>
+      <li>
+        What parts are customizable?
+      </li>
+    </ol>
+    <p><b>Deliverable:</b> Create a markdown document with:
+- Pattern name
+- Location in codebase (file:line)
+- Code snippet showing the pattern
+- Explanation of why it&apos;s used
+- Alternative approaches considered</p>
+    <section><title>Exercise 5: Performance Profiling (60 minutes)</title></section>
+    <p><b>Objective:</b> Profile the application and identify performance bottlenecks.</p>
+    <p><b>Task:</b></p>
+    <ol>
+      <li>
+        <b>Add performance instrumentation:</b>
+      </li>
+    </ol>
+    <codeblock outputclass="language-typescript">// performance-monitor.ts
+export class PerformanceMonitor {
+  private metrics: Map&lt;string, number[]&gt; = new Map();
+
+  start(label: string): () =&gt; void {
+    const startTime = performance.now();
+
+    return () =&gt; {
+      const duration = performance.now() - startTime;
+      if (!this.metrics.has(label)) {
+        this.metrics.set(label, []);
+      }
+      this.metrics.get(label)!.push(duration);
+    };
+  }
+
+  getStats(label: string) {
+    const durations = this.metrics.get(label) || [];
+    return {
+      count: durations.length,
+      avg: durations.reduce((a, b) =&gt; a + b, 0) / durations.length,
+      min: Math.min(...durations),
+      max: Math.max(...durations),
+      p95: this.percentile(durations, 95),
+      p99: this.percentile(durations, 99)
+    };
+  }
+
+  private percentile(values: number[], p: number): number {
+    const sorted = values.slice().sort((a, b) =&gt; a - b);
+    const index = Math.ceil((p / 100) * sorted.length) - 1;
+    return sorted[index];
+  }
+
+  printReport(): void {
+    console.log(&apos;\n=== Performance Report ===&apos;);
+    for (const [label, durations] of this.metrics) {
+      const stats = this.getStats(label);
+      console.log(`\n${label}:`);
+      console.log(`  Count: ${stats.count}`);
+      console.log(`  Average: ${stats.avg.toFixed(2)}ms`);
+      console.log(`  Min: ${stats.min.toFixed(2)}ms`);
+      console.log(`  Max: ${stats.max.toFixed(2)}ms`);
+      console.log(`  P95: ${stats.p95.toFixed(2)}ms`);
+      console.log(`  P99: ${stats.p99.toFixed(2)}ms`);
+    }
+  }
+}
+</codeblock>
+    <ol>
+      <li>
+        <b>Instrument key operations:</b>
+      </li>
+      <li>
+        AI provider requests
+      </li>
+      <li>
+        Tool executions
+      </li>
+      <li>
+        File operations
+      </li>
+      <li>
+        <p>Conversation persistence</p>
+      </li>
+      <li>
+        <p><b>Run profiling:</b></p>
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash"># Profile a complete workflow
+node --prof dist/src/index.js generate &quot;Create a REST API&quot;
+
+# Process profiling output
+node --prof-process isolate-*.log &gt; profile.txt
+</codeblock>
+    <ol>
+      <li>
+        <b>Analyze results:</b>
+      </li>
+      <li>
+        What operations are slowest?
+      </li>
+      <li>
+        Where is most time spent?
+      </li>
+      <li>
+        Are there opportunities for parallelization?
+      </li>
+      <li>
+        Can any operations be cached?
+      </li>
+    </ol>
+    <p><b>Deliverable:</b> A performance report with:
+- Baseline metrics
+- Top 5 bottlenecks
+- Optimization recommendations
+- Expected impact of each optimization</p>
+    <section><title>Summary</title></section>
+    <p>In this chapter, you learned:</p>
+    <p>✅ <b>What AI coding assistants are</b> and how they&apos;ve evolved from simple code completion to sophisticated coding agents</p>
+    <p>✅ <b>The architecture</b> of a production AI coding assistant with clear separation of concerns</p>
+    <p>✅ <b>Core components</b> including Terminal Interface, AI Client, Tool Registry, Conversation Manager, and Project Context</p>
+    <p>✅ <b>Design principles</b> that make the system maintainable: modularity, extensibility, type safety, performance, and security</p>
+    <p>✅ <b>Technology stack decisions</b> and the tradeoffs involved in choosing TypeScript, Node.js, and various frameworks</p>
+    <p>✅ <b>Project structure</b> that scales from small projects to large codebases with clear module boundaries</p>
+    <section><title>Key Takeaways</title></section>
+    <ol>
+      <li>
+        <b>Modularity is crucial</b>
+        : Each component has a single responsibility and clear boundaries
+      </li>
+      <li>
+        <b>Type safety catches bugs</b>
+        : TypeScript prevents many runtime errors
+      </li>
+      <li>
+        <b>Extensibility enables growth</b>
+        : Abstract interfaces allow adding providers and tools
+      </li>
+      <li>
+        <b>Multi-provider support</b>
+        : Don&apos;t lock yourself into a single AI provider
+      </li>
+      <li>
+        <b>Dependency injection helps testing</b>
+        : Mock services for comprehensive test coverage
+      </li>
+    </ol>
+    <section><title>Next Steps</title></section>
+    <p>Now that you understand the foundations, you&apos;re ready to dive deeper into:</p>
+    <ul>
+      <li>
+        <p><b>Chapter 2: Multi-Provider AI Integration →</b> - Learn how to integrate multiple AI providers with intelligent routing and response fusion</p>
+      </li>
+      <li>
+        <p><b>Chapter 3: Dependency Injection for AI Systems →</b> - Master the DI container that powers service management</p>
+      </li>
+      <li>
+        <p><b>Chapter 4: Tool Orchestration and Execution →</b> - Build sophisticated tool systems that enable AI agents to take actions</p>
+      </li>
+    </ul>
+    <p><b>Further Reading:</b>
+- <xref href="https://ollama.ai/docs" format="html" scope="external">Ollama Documentation</xref>
+- <xref href="https://platform.openai.com/docs" format="html" scope="external">OpenAI API Reference</xref>
+- <xref href="https://docs.anthropic.com" format="html" scope="external">Anthropic Claude Documentation</xref>
+- <xref href="https://www.typescriptlang.org/docs/handbook/intro.html" format="html" scope="external">TypeScript Handbook</xref>
+- <xref href="https://github.com/goldbergyoni/nodebestpractices" format="html" scope="external">Node.js Best Practices</xref></p>
+    <p><i>Chapter 1 | Introduction to AI Coding Assistants | 40-50 pages</i></p>
+  </body>
+</topic>

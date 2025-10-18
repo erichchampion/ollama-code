@@ -6,7 +6,7 @@
 
 # Class: UserError
 
-Defined in: [errors/types.ts:252](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L252)
+Defined in: [errors/types.ts:252](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L252)
 
 User error
 
@@ -20,7 +20,7 @@ User error
 
 > **new UserError**(`message`, `options`): `UserError`
 
-Defined in: [errors/types.ts:291](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L291)
+Defined in: [errors/types.ts:291](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L291)
 
 Create a new user error
 
@@ -48,7 +48,7 @@ Create a new user error
 
 > `optional` **cause**: `unknown`
 
-Defined in: [errors/types.ts:256](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L256)
+Defined in: [errors/types.ts:256](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L256)
 
 Original error that caused this error
 
@@ -62,7 +62,7 @@ Original error that caused this error
 
 > **category**: [`ErrorCategory`](../enumerations/ErrorCategory.md)
 
-Defined in: [errors/types.ts:261](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L261)
+Defined in: [errors/types.ts:261](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L261)
 
 Error category
 
@@ -72,7 +72,7 @@ Error category
 
 > **level**: [`ErrorLevel`](../enumerations/ErrorLevel.md)
 
-Defined in: [errors/types.ts:266](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L266)
+Defined in: [errors/types.ts:266](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L266)
 
 Error level
 
@@ -82,7 +82,7 @@ Error level
 
 > `optional` **resolution**: `string` \| `string`[]
 
-Defined in: [errors/types.ts:271](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L271)
+Defined in: [errors/types.ts:271](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L271)
 
 Hint on how to resolve the error
 
@@ -92,7 +92,7 @@ Hint on how to resolve the error
 
 > **details**: `Record`\<`string`, `unknown`\>
 
-Defined in: [errors/types.ts:276](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L276)
+Defined in: [errors/types.ts:276](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L276)
 
 Additional details about the error
 
@@ -102,7 +102,7 @@ Additional details about the error
 
 > `optional` **context**: `Record`\<`string`, `any`\>
 
-Defined in: [errors/types.ts:281](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L281)
+Defined in: [errors/types.ts:281](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L281)
 
 Error context
 
@@ -112,6 +112,6 @@ Error context
 
 > `optional` **code**: `string`
 
-Defined in: [errors/types.ts:286](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/errors/types.ts#L286)
+Defined in: [errors/types.ts:286](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/errors/types.ts#L286)
 
 Error code

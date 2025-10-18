@@ -1,0 +1,1307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_13">
+  <title>Chapter 13: Plugin Architecture and Extension Points</title>
+  <body>
+    <section><title>Table of Contents</title></section>
+    <ul>
+      <li>
+        13.1 Extension Points Design
+      </li>
+      <li>
+        13.2 Plugin System Architecture
+      </li>
+      <li>
+        13.3 Plugin Discovery and Loading
+      </li>
+      <li>
+        13.4 Plugin Isolation and Security
+      </li>
+      <li>
+        13.5 Versioning and Compatibility
+      </li>
+      <li>
+        13.6 Building Your First Plugin
+      </li>
+      <li>
+        13.7 Plugin Marketplace
+      </li>
+      <li>
+        Exercises
+      </li>
+      <li>
+        Summary
+      </li>
+    </ul>
+    <section><title>13.1 Extension Points Design</title></section>
+    <p>Extension points are well-defined locations in your code where plugins can add functionality.</p>
+    <section><title>Core Extension Points</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Extension point types
+ */
+export enum ExtensionPointType {
+  /** Add custom tools */
+  TOOL = &apos;tool&apos;,
+
+  /** Add custom commands */
+  COMMAND = &apos;command&apos;,
+
+  /** Add custom AI providers */
+  PROVIDER = &apos;provider&apos;,
+
+  /** Add custom middleware */
+  MIDDLEWARE = &apos;middleware&apos;,
+
+  /** Subscribe to events */
+  EVENT_HANDLER = &apos;event_handler&apos;,
+
+  /** Modify UI elements */
+  UI_COMPONENT = &apos;ui_component&apos;
+}
+
+/**
+ * Extension point registry
+ */
+export class ExtensionPointRegistry {
+  private points = new Map&lt;string, ExtensionPoint&lt;any&gt;&gt;();
+
+  /**
+   * Register an extension point
+   */
+  register&lt;T&gt;(point: ExtensionPoint&lt;T&gt;): void {
+    this.points.set(point.name, point);
+  }
+
+  /**
+   * Get extension point
+   */
+  get&lt;T&gt;(name: string): ExtensionPoint&lt;T&gt; | undefined {
+    return this.points.get(name);
+  }
+
+  /**
+   * List all extension points
+   */
+  list(): ExtensionPoint&lt;any&gt;[] {
+    return Array.from(this.points.values());
+  }
+}
+
+/**
+ * Extension point for a specific type
+ */
+export class ExtensionPoint&lt;T&gt; {
+  private extensions: T[] = [];
+
+  constructor(
+    public readonly name: string,
+    public readonly type: ExtensionPointType,
+    public readonly description: string
+  ) {}
+
+  /**
+   * Register an extension
+   */
+  register(extension: T): void {
+    this.extensions.push(extension);
+  }
+
+  /**
+   * Unregister an extension
+   */
+  unregister(extension: T): void {
+    const index = this.extensions.indexOf(extension);
+    if (index !== -1) {
+      this.extensions.splice(index, 1);
+    }
+  }
+
+  /**
+   * Get all extensions
+   */
+  getAll(): T[] {
+    return [...this.extensions];
+  }
+
+  /**
+   * Clear all extensions
+   */
+  clear(): void {
+    this.extensions = [];
+  }
+}
+</codeblock>
+    <section><title>Defining Extension Points</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Core system with extension points
+ */
+export class ExtensibleAIAssistant {
+  // Extension points
+  public readonly toolExtensions: ExtensionPoint&lt;Tool&gt;;
+  public readonly commandExtensions: ExtensionPoint&lt;RoutableCommand&gt;;
+  public readonly providerExtensions: ExtensionPoint&lt;AIProvider&gt;;
+  public readonly middlewareExtensions: ExtensionPoint&lt;Middleware&gt;;
+
+  constructor() {
+    // Define extension points
+    this.toolExtensions = new ExtensionPoint(
+      &apos;tools&apos;,
+      ExtensionPointType.TOOL,
+      &apos;Custom tools for code operations&apos;
+    );
+
+    this.commandExtensions = new ExtensionPoint(
+      &apos;commands&apos;,
+      ExtensionPointType.COMMAND,
+      &apos;Custom commands for user interactions&apos;
+    );
+
+    this.providerExtensions = new ExtensionPoint(
+      &apos;providers&apos;,
+      ExtensionPointType.PROVIDER,
+      &apos;Custom AI providers&apos;
+    );
+
+    this.middlewareExtensions = new ExtensionPoint(
+      &apos;middleware&apos;,
+      ExtensionPointType.MIDDLEWARE,
+      &apos;Request/response middleware&apos;
+    );
+  }
+
+  /**
+   * Execute request with extensions
+   */
+  async execute(request: string): Promise&lt;string&gt; {
+    // Apply middleware
+    let processedRequest = request;
+    for (const middleware of this.middlewareExtensions.getAll()) {
+      processedRequest = await middleware.beforeRequest(processedRequest);
+    }
+
+    // Get tools (including extensions)
+    const allTools = [
+      ...this.getCorTools(),
+      ...this.toolExtensions.getAll()
+    ];
+
+    // Execute with all tools
+    const result = await this.executeWithTools(processedRequest, allTools);
+
+    // Apply middleware
+    let processedResult = result;
+    for (const middleware of this.middlewareExtensions.getAll()) {
+      processedResult = await middleware.afterResponse(processedResult);
+    }
+
+    return processedResult;
+  }
+
+  private getCoreTools(): Tool[] {
+    // Core built-in tools
+    return [
+      new ReadFileTool(),
+      new WriteFileTool(),
+      new GitTool()
+    ];
+  }
+
+  private async executeWithTools(request: string, tools: Tool[]): Promise&lt;string&gt; {
+    // Implementation
+    return &apos;result&apos;;
+  }
+}
+
+/**
+ * Middleware interface
+ */
+export interface Middleware {
+  beforeRequest(request: string): Promise&lt;string&gt;;
+  afterResponse(response: string): Promise&lt;string&gt;;
+}
+</codeblock>
+    <section><title>13.2 Plugin System Architecture</title></section>
+    <p>Build a complete plugin system that manages plugin lifecycle.</p>
+    <section><title>Plugin Interface</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Plugin interface - all plugins must implement this
+ */
+export interface Plugin {
+  /** Plugin metadata */
+  readonly metadata: PluginMetadata;
+
+  /**
+   * Called when plugin is activated
+   */
+  activate(context: PluginContext): Promise&lt;void&gt;;
+
+  /**
+   * Called when plugin is deactivated
+   */
+  deactivate(): Promise&lt;void&gt;;
+}
+
+/**
+ * Plugin metadata
+ */
+export interface PluginMetadata {
+  /** Unique plugin identifier */
+  id: string;
+
+  /** Human-readable name */
+  name: string;
+
+  /** Plugin version (semver) */
+  version: string;
+
+  /** Description */
+  description: string;
+
+  /** Author information */
+  author: {
+    name: string;
+    email?: string;
+    url?: string;
+  };
+
+  /** Plugin dependencies */
+  dependencies?: {
+    /** Platform version requirement */
+    platform?: string;
+
+    /** Other plugin dependencies */
+    plugins?: Record&lt;string, string&gt;;
+  };
+
+  /** Plugin capabilities */
+  capabilities?: string[];
+
+  /** Plugin keywords for discovery */
+  keywords?: string[];
+}
+
+/**
+ * Plugin context - provided to plugins on activation
+ */
+export interface PluginContext {
+  /** Extension point registry */
+  extensions: ExtensionPointRegistry;
+
+  /** Logger scoped to this plugin */
+  logger: Logger;
+
+  /** Configuration for this plugin */
+  config: PluginConfig;
+
+  /** Plugin storage directory */
+  storageDir: string;
+
+  /** Global storage (shared across plugins) */
+  globalStorage: Storage;
+
+  /** Event emitter for subscribing to events */
+  events: EventEmitter;
+}
+
+export interface PluginConfig {
+  get&lt;T&gt;(key: string, defaultValue?: T): T | undefined;
+  set&lt;T&gt;(key: string, value: T): Promise&lt;void&gt;;
+}
+</codeblock>
+    <section><title>Plugin Manager</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Manages plugin lifecycle
+ */
+export class PluginManager {
+  private plugins = new Map&lt;string, LoadedPlugin&gt;();
+  private logger: Logger;
+  private extensionRegistry: ExtensionPointRegistry;
+
+  constructor(
+    logger: Logger,
+    extensionRegistry: ExtensionPointRegistry
+  ) {
+    this.logger = logger;
+    this.extensionRegistry = extensionRegistry;
+  }
+
+  /**
+   * Load and activate a plugin
+   */
+  async load(plugin: Plugin): Promise&lt;void&gt; {
+    const { id, version } = plugin.metadata;
+
+    this.logger.info(&apos;Loading plugin&apos;, { id, version });
+
+    // Validate plugin
+    this.validatePlugin(plugin);
+
+    // Check if already loaded
+    if (this.plugins.has(id)) {
+      throw new Error(`Plugin already loaded: ${id}`);
+    }
+
+    // Check dependencies
+    await this.checkDependencies(plugin);
+
+    // Create plugin context
+    const context = await this.createContext(plugin);
+
+    // Activate plugin
+    try {
+      await plugin.activate(context);
+
+      // Store loaded plugin
+      this.plugins.set(id, {
+        plugin,
+        context,
+        state: PluginState.ACTIVE
+      });
+
+      this.logger.info(&apos;Plugin loaded successfully&apos;, { id });
+
+    } catch (error) {
+      this.logger.error(&apos;Plugin activation failed&apos;, error as Error, { id });
+      throw new Error(`Failed to activate plugin ${id}: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Unload and deactivate a plugin
+   */
+  async unload(pluginId: string): Promise&lt;void&gt; {
+    const loaded = this.plugins.get(pluginId);
+
+    if (!loaded) {
+      throw new Error(`Plugin not loaded: ${pluginId}`);
+    }
+
+    this.logger.info(&apos;Unloading plugin&apos;, { id: pluginId });
+
+    try {
+      // Deactivate plugin
+      await loaded.plugin.deactivate();
+
+      // Remove from loaded plugins
+      this.plugins.delete(pluginId);
+
+      this.logger.info(&apos;Plugin unloaded successfully&apos;, { id: pluginId });
+
+    } catch (error) {
+      this.logger.error(&apos;Plugin deactivation failed&apos;, error as Error, { id: pluginId });
+      throw error;
+    }
+  }
+
+  /**
+   * Reload a plugin
+   */
+  async reload(pluginId: string): Promise&lt;void&gt; {
+    const loaded = this.plugins.get(pluginId);
+
+    if (!loaded) {
+      throw new Error(`Plugin not loaded: ${pluginId}`);
+    }
+
+    const plugin = loaded.plugin;
+
+    await this.unload(pluginId);
+    await this.load(plugin);
+  }
+
+  /**
+   * Get loaded plugin
+   */
+  getPlugin(pluginId: string): Plugin | undefined {
+    return this.plugins.get(pluginId)?.plugin;
+  }
+
+  /**
+   * List all loaded plugins
+   */
+  listPlugins(): PluginInfo[] {
+    return Array.from(this.plugins.values()).map(({ plugin, state }) =&gt; ({
+      metadata: plugin.metadata,
+      state
+    }));
+  }
+
+  /**
+   * Validate plugin
+   */
+  private validatePlugin(plugin: Plugin): void {
+    const { id, version, name } = plugin.metadata;
+
+    if (!id || !version || !name) {
+      throw new Error(&apos;Plugin missing required metadata (id, version, name)&apos;);
+    }
+
+    // Validate version is semver
+    if (!this.isValidSemver(version)) {
+      throw new Error(`Invalid plugin version: ${version}`);
+    }
+  }
+
+  /**
+   * Check plugin dependencies
+   */
+  private async checkDependencies(plugin: Plugin): Promise&lt;void&gt; {
+    const deps = plugin.metadata.dependencies;
+
+    if (!deps) return;
+
+    // Check platform version
+    if (deps.platform) {
+      const platformVersion = this.getPlatformVersion();
+      if (!this.satisfiesVersion(platformVersion, deps.platform)) {
+        throw new Error(
+          `Plugin requires platform ${deps.platform}, but current version is ${platformVersion}`
+        );
+      }
+    }
+
+    // Check plugin dependencies
+    if (deps.plugins) {
+      for (const [pluginId, versionRange] of Object.entries(deps.plugins)) {
+        const depPlugin = this.plugins.get(pluginId);
+
+        if (!depPlugin) {
+          throw new Error(`Missing dependency: ${pluginId}`);
+        }
+
+        if (!this.satisfiesVersion(depPlugin.plugin.metadata.version, versionRange)) {
+          throw new Error(
+            `Plugin ${pluginId} version ${depPlugin.plugin.metadata.version} ` +
+            `does not satisfy requirement ${versionRange}`
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Create plugin context
+   */
+  private async createContext(plugin: Plugin): Promise&lt;PluginContext&gt; {
+    const storageDir = path.join(
+      os.homedir(),
+      &apos;.ollama-code&apos;,
+      &apos;plugins&apos;,
+      plugin.metadata.id
+    );
+
+    // Ensure storage directory exists
+    await fs.mkdir(storageDir, { recursive: true });
+
+    return {
+      extensions: this.extensionRegistry,
+      logger: this.logger.child({ plugin: plugin.metadata.id }),
+      config: new PluginConfigImpl(plugin.metadata.id),
+      storageDir,
+      globalStorage: new GlobalStorage(),
+      events: new EventEmitter()
+    };
+  }
+
+  private getPlatformVersion(): string {
+    return &apos;1.0.0&apos;; // Would get from package.json
+  }
+
+  private isValidSemver(version: string): boolean {
+    return /^\d+\.\d+\.\d+/.test(version);
+  }
+
+  private satisfiesVersion(version: string, range: string): boolean {
+    // Simple version check (would use semver package in production)
+    return version &gt;= range;
+  }
+}
+
+enum PluginState {
+  INACTIVE = &apos;inactive&apos;,
+  ACTIVE = &apos;active&apos;,
+  ERROR = &apos;error&apos;
+}
+
+interface LoadedPlugin {
+  plugin: Plugin;
+  context: PluginContext;
+  state: PluginState;
+}
+
+interface PluginInfo {
+  metadata: PluginMetadata;
+  state: PluginState;
+}
+</codeblock>
+    <section><title>13.3 Plugin Discovery and Loading</title></section>
+    <p>Discover and load plugins from various sources.</p>
+    <section><title>Plugin Loader</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Loads plugins from different sources
+ */
+export class PluginLoader {
+  private logger: Logger;
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Load plugin from npm package
+   */
+  async loadFromNpm(packageName: string): Promise&lt;Plugin&gt; {
+    this.logger.info(&apos;Loading plugin from npm&apos;, { package: packageName });
+
+    try {
+      // Import the package
+      const module = await import(packageName);
+
+      // Get plugin export
+      const PluginClass = module.default || module.Plugin;
+
+      if (!PluginClass) {
+        throw new Error(`Package ${packageName} does not export a plugin`);
+      }
+
+      // Instantiate plugin
+      const plugin = new PluginClass();
+
+      return plugin;
+
+    } catch (error) {
+      throw new Error(`Failed to load plugin from npm: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Load plugin from file path
+   */
+  async loadFromPath(filePath: string): Promise&lt;Plugin&gt; {
+    this.logger.info(&apos;Loading plugin from path&apos;, { path: filePath });
+
+    try {
+      // Import the file
+      const module = await import(filePath);
+
+      const PluginClass = module.default || module.Plugin;
+
+      if (!PluginClass) {
+        throw new Error(`File ${filePath} does not export a plugin`);
+      }
+
+      const plugin = new PluginClass();
+
+      return plugin;
+
+    } catch (error) {
+      throw new Error(`Failed to load plugin from path: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Discover plugins in directory
+   */
+  async discoverPlugins(directory: string): Promise&lt;Plugin[]&gt; {
+    this.logger.info(&apos;Discovering plugins&apos;, { directory });
+
+    const plugins: Plugin[] = [];
+
+    try {
+      const entries = await fs.readdir(directory, { withFileTypes: true });
+
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+
+        const pluginDir = path.join(directory, entry.name);
+        const packageJsonPath = path.join(pluginDir, &apos;package.json&apos;);
+
+        try {
+          // Check if it&apos;s a valid plugin
+          const packageJson = JSON.parse(
+            await fs.readFile(packageJsonPath, &apos;utf-8&apos;)
+          );
+
+          if (packageJson.ollamaCodePlugin) {
+            const plugin = await this.loadFromPath(pluginDir);
+            plugins.push(plugin);
+          }
+
+        } catch (error) {
+          // Not a valid plugin, skip
+          continue;
+        }
+      }
+
+      this.logger.info(&apos;Discovered plugins&apos;, { count: plugins.length });
+
+      return plugins;
+
+    } catch (error) {
+      this.logger.error(&apos;Plugin discovery failed&apos;, error as Error);
+      return [];
+    }
+  }
+
+  /**
+   * Install plugin from registry
+   */
+  async install(pluginId: string, version?: string): Promise&lt;Plugin&gt; {
+    this.logger.info(&apos;Installing plugin&apos;, { id: pluginId, version });
+
+    // Construct package name
+    const packageName = `@ollama-code/plugin-${pluginId}`;
+    const versionSpec = version ? `@${version}` : &apos;&apos;;
+
+    // Install using npm
+    const { exec } = await import(&apos;child_process&apos;);
+    const { promisify } = await import(&apos;util&apos;);
+    const execAsync = promisify(exec);
+
+    try {
+      await execAsync(`npm install ${packageName}${versionSpec}`);
+
+      // Load the installed plugin
+      return await this.loadFromNpm(packageName);
+
+    } catch (error) {
+      throw new Error(`Failed to install plugin: ${(error as Error).message}`);
+    }
+  }
+}
+</codeblock>
+    <section><title>Plugin Registry</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Plugin registry for discovering available plugins
+ */
+export class PluginRegistry {
+  private apiUrl: string;
+
+  constructor(apiUrl: string = &apos;https://registry.ollama-code.dev&apos;) {
+    this.apiUrl = apiUrl;
+  }
+
+  /**
+   * Search for plugins
+   */
+  async search(query: string): Promise&lt;PluginSearchResult[]&gt; {
+    const response = await fetch(
+      `${this.apiUrl}/search?q=${encodeURIComponent(query)}`
+    );
+
+    if (!response.ok) {
+      throw new Error(&apos;Failed to search plugins&apos;);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get plugin details
+   */
+  async getPlugin(pluginId: string): Promise&lt;PluginDetails&gt; {
+    const response = await fetch(`${this.apiUrl}/plugins/${pluginId}`);
+
+    if (!response.ok) {
+      throw new Error(`Plugin not found: ${pluginId}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * List popular plugins
+   */
+  async getPopular(limit: number = 10): Promise&lt;PluginSearchResult[]&gt; {
+    const response = await fetch(`${this.apiUrl}/popular?limit=${limit}`);
+
+    if (!response.ok) {
+      throw new Error(&apos;Failed to fetch popular plugins&apos;);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get plugins by category
+   */
+  async getByCategory(category: string): Promise&lt;PluginSearchResult[]&gt; {
+    const response = await fetch(`${this.apiUrl}/category/${category}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch plugins for category: ${category}`);
+    }
+
+    return response.json();
+  }
+}
+
+interface PluginSearchResult {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  downloads: number;
+  rating: number;
+  keywords: string[];
+}
+
+interface PluginDetails extends PluginSearchResult {
+  readme: string;
+  repository: string;
+  homepage: string;
+  versions: string[];
+  dependencies: Record&lt;string, string&gt;;
+}
+</codeblock>
+    <section><title>13.4 Plugin Isolation and Security</title></section>
+    <p>Ensure plugins can&apos;t harm the system or other plugins.</p>
+    <section><title>Plugin Sandbox</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Sandboxes plugin execution
+ */
+export class PluginSandbox {
+  private allowedAPIs: Set&lt;string&gt;;
+
+  constructor(config: SandboxConfig) {
+    this.allowedAPIs = new Set(config.allowedAPIs || []);
+  }
+
+  /**
+   * Create sandboxed context for plugin
+   */
+  createContext(plugin: Plugin): PluginContext {
+    const sandbox = this;
+
+    return {
+      extensions: this.createProxyExtensions(),
+      logger: this.createProxyLogger(plugin.metadata.id),
+      config: this.createProxyConfig(plugin.metadata.id),
+      storageDir: this.getStorageDir(plugin.metadata.id),
+      globalStorage: this.createProxyStorage(),
+      events: this.createProxyEvents()
+    };
+  }
+
+  /**
+   * Create proxied extensions registry
+   */
+  private createProxyExtensions(): ExtensionPointRegistry {
+    // Return a proxy that validates all operations
+    return new Proxy(new ExtensionPointRegistry(), {
+      get: (target, prop) =&gt; {
+        // Intercept method calls to validate permissions
+        const value = (target as any)[prop];
+
+        if (typeof value === &apos;function&apos;) {
+          return (...args: any[]) =&gt; {
+            this.checkPermission(&apos;extensions&apos;);
+            return value.apply(target, args);
+          };
+        }
+
+        return value;
+      }
+    });
+  }
+
+  /**
+   * Create proxied logger
+   */
+  private createProxyLogger(pluginId: string): Logger {
+    // Return a logger that redacts sensitive data
+    return {
+      info: (message: string, context?: any) =&gt; {
+        const sanitized = this.sanitize(context);
+        // Log with plugin prefix
+        console.log(`[${pluginId}] ${message}`, sanitized);
+      },
+      error: (message: string, error?: Error, context?: any) =&gt; {
+        const sanitized = this.sanitize(context);
+        console.error(`[${pluginId}] ${message}`, error, sanitized);
+      },
+      // ... other methods
+    } as any;
+  }
+
+  /**
+   * Check if plugin has permission
+   */
+  private checkPermission(api: string): void {
+    if (!this.allowedAPIs.has(api)) {
+      throw new Error(`Plugin does not have permission to access: ${api}`);
+    }
+  }
+
+  /**
+   * Sanitize context to remove sensitive data
+   */
+  private sanitize(context: any): any {
+    if (!context) return context;
+
+    const sanitized = { ...context };
+
+    // Remove sensitive fields
+    const sensitiveFields = [&apos;apiKey&apos;, &apos;password&apos;, &apos;token&apos;, &apos;secret&apos;];
+
+    for (const field of sensitiveFields) {
+      if (field in sanitized) {
+        sanitized[field] = &apos;[REDACTED]&apos;;
+      }
+    }
+
+    return sanitized;
+  }
+
+  private createProxyConfig(pluginId: string): PluginConfig {
+    // Implementation
+    return {} as any;
+  }
+
+  private getStorageDir(pluginId: string): string {
+    return path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;plugins&apos;, pluginId);
+  }
+
+  private createProxyStorage(): Storage {
+    // Implementation
+    return {} as any;
+  }
+
+  private createProxyEvents(): EventEmitter {
+    // Implementation
+    return {} as any;
+  }
+}
+
+interface SandboxConfig {
+  allowedAPIs?: string[];
+  maxMemory?: number;
+  maxCPU?: number;
+  timeout?: number;
+}
+
+interface Storage {
+  get(key: string): Promise&lt;any&gt;;
+  set(key: string, value: any): Promise&lt;void&gt;;
+  delete(key: string): Promise&lt;void&gt;;
+}
+</codeblock>
+    <section><title>13.5 Versioning and Compatibility</title></section>
+    <p>Manage plugin versions and ensure compatibility.</p>
+    <section><title>Version Manager</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Manages plugin versions and compatibility
+ */
+export class PluginVersionManager {
+  /**
+   * Check if plugin version is compatible
+   */
+  isCompatible(
+    pluginVersion: string,
+    platformVersion: string,
+    requiredVersion?: string
+  ): boolean {
+    if (!requiredVersion) return true;
+
+    return this.satisfiesVersion(platformVersion, requiredVersion);
+  }
+
+  /**
+   * Get migration path between versions
+   */
+  getMigrationPath(
+    fromVersion: string,
+    toVersion: string
+  ): string[] {
+    const migrations: string[] = [];
+
+    // Would return list of migration versions
+    // e.g., [&apos;1.0.0&apos;, &apos;1.1.0&apos;, &apos;2.0.0&apos;]
+
+    return migrations;
+  }
+
+  /**
+   * Check for breaking changes
+   */
+  hasBreakingChanges(fromVersion: string, toVersion: string): boolean {
+    const fromMajor = this.getMajorVersion(fromVersion);
+    const toMajor = this.getMajorVersion(toVersion);
+
+    return toMajor &gt; fromMajor;
+  }
+
+  /**
+   * Parse semver version
+   */
+  parseVersion(version: string): {
+    major: number;
+    minor: number;
+    patch: number;
+  } {
+    const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
+
+    if (!match) {
+      throw new Error(`Invalid version: ${version}`);
+    }
+
+    return {
+      major: parseInt(match[1]),
+      minor: parseInt(match[2]),
+      patch: parseInt(match[3])
+    };
+  }
+
+  /**
+   * Compare versions
+   */
+  compareVersions(v1: string, v2: string): number {
+    const parsed1 = this.parseVersion(v1);
+    const parsed2 = this.parseVersion(v2);
+
+    if (parsed1.major !== parsed2.major) {
+      return parsed1.major - parsed2.major;
+    }
+
+    if (parsed1.minor !== parsed2.minor) {
+      return parsed1.minor - parsed2.minor;
+    }
+
+    return parsed1.patch - parsed2.patch;
+  }
+
+  private getMajorVersion(version: string): number {
+    return this.parseVersion(version).major;
+  }
+
+  private satisfiesVersion(version: string, range: string): boolean {
+    // Simple range check (would use semver package in production)
+    if (range.startsWith(&apos;^&apos;)) {
+      const requiredMajor = this.getMajorVersion(range.substring(1));
+      const actualMajor = this.getMajorVersion(version);
+      return actualMajor === requiredMajor;
+    }
+
+    if (range.startsWith(&apos;~&apos;)) {
+      const required = this.parseVersion(range.substring(1));
+      const actual = this.parseVersion(version);
+      return actual.major === required.major &amp;&amp; actual.minor === required.minor;
+    }
+
+    return this.compareVersions(version, range) &gt;= 0;
+  }
+}
+</codeblock>
+    <section><title>13.6 Building Your First Plugin</title></section>
+    <p>Step-by-step guide to creating a plugin.</p>
+    <section><title>Example: Docker Plugin</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Docker plugin - adds Docker support
+ */
+export class DockerPlugin implements Plugin {
+  readonly metadata: PluginMetadata = {
+    id: &apos;docker&apos;,
+    name: &apos;Docker Plugin&apos;,
+    version: &apos;1.0.0&apos;,
+    description: &apos;Adds Docker container management tools&apos;,
+    author: {
+      name: &apos;Ollama Code Team&apos;,
+      email: &apos;team@ollama-code.dev&apos;
+    },
+    dependencies: {
+      platform: &apos;^1.0.0&apos;
+    },
+    capabilities: [&apos;containers&apos;, &apos;docker&apos;],
+    keywords: [&apos;docker&apos;, &apos;containers&apos;, &apos;devops&apos;]
+  };
+
+  private tools: Tool[] = [];
+
+  /**
+   * Activate plugin
+   */
+  async activate(context: PluginContext): Promise&lt;void&gt; {
+    context.logger.info(&apos;Activating Docker plugin&apos;);
+
+    // Create Docker tools
+    this.tools = [
+      new DockerListTool(context.logger),
+      new DockerRunTool(context.logger),
+      new DockerStopTool(context.logger),
+      new DockerBuildTool(context.logger)
+    ];
+
+    // Register tools
+    const toolExtensions = context.extensions.get&lt;Tool&gt;(&apos;tools&apos;);
+
+    if (toolExtensions) {
+      for (const tool of this.tools) {
+        toolExtensions.register(tool);
+        context.logger.info(&apos;Registered tool&apos;, { tool: tool.name });
+      }
+    }
+
+    // Subscribe to events
+    context.events.on(&apos;before:execute&apos;, this.onBeforeExecute.bind(this));
+
+    context.logger.info(&apos;Docker plugin activated&apos;);
+  }
+
+  /**
+   * Deactivate plugin
+   */
+  async deactivate(): Promise&lt;void&gt; {
+    // Cleanup resources
+    this.tools = [];
+  }
+
+  /**
+   * Event handler
+   */
+  private onBeforeExecute(event: any): void {
+    // Pre-process requests
+  }
+}
+
+/**
+ * Docker list containers tool
+ */
+class DockerListTool implements Tool {
+  readonly name = &apos;docker_list&apos;;
+  readonly description = &apos;List Docker containers&apos;;
+  readonly parameters = {
+    all: {
+      type: &apos;boolean&apos; as const,
+      description: &apos;Show all containers (default: running only)&apos;,
+      required: false
+    }
+  };
+
+  constructor(private logger: Logger) {}
+
+  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
+    this.logger.info(&apos;Listing Docker containers&apos;, { all: params.all });
+
+    try {
+      const { exec } = await import(&apos;child_process&apos;);
+      const { promisify } = await import(&apos;util&apos;);
+      const execAsync = promisify(exec);
+
+      const cmd = params.all ? &apos;docker ps -a&apos; : &apos;docker ps&apos;;
+      const { stdout } = await execAsync(cmd);
+
+      return {
+        success: true,
+        output: stdout
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message
+      };
+    }
+  }
+
+  validateParameters(params: any): { valid: boolean; errors: any[] } {
+    return { valid: true, errors: [] };
+  }
+}
+
+// Additional Docker tools...
+class DockerRunTool implements Tool {
+  readonly name = &apos;docker_run&apos;;
+  readonly description = &apos;Run a Docker container&apos;;
+  readonly parameters = {
+    image: {
+      type: &apos;string&apos; as const,
+      description: &apos;Docker image name&apos;,
+      required: true
+    },
+    command: {
+      type: &apos;string&apos; as const,
+      description: &apos;Command to run&apos;,
+      required: false
+    },
+    ports: {
+      type: &apos;array&apos; as const,
+      description: &apos;Port mappings (e.g., [&quot;8080:80&quot;])&apos;,
+      required: false
+    }
+  };
+
+  constructor(private logger: Logger) {}
+
+  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
+    // Implementation
+    return { success: true };
+  }
+
+  validateParameters(params: any): { valid: boolean; errors: any[] } {
+    const errors = [];
+
+    if (!params.image) {
+      errors.push({ parameter: &apos;image&apos;, message: &apos;Image is required&apos; });
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+}
+
+class DockerStopTool implements Tool {
+  // Implementation
+  readonly name = &apos;docker_stop&apos;;
+  readonly description = &apos;Stop a Docker container&apos;;
+  readonly parameters = {};
+
+  constructor(private logger: Logger) {}
+
+  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
+    return { success: true };
+  }
+
+  validateParameters(params: any): { valid: boolean; errors: any[] } {
+    return { valid: true, errors: [] };
+  }
+}
+
+class DockerBuildTool implements Tool {
+  // Implementation
+  readonly name = &apos;docker_build&apos;;
+  readonly description = &apos;Build a Docker image&apos;;
+  readonly parameters = {};
+
+  constructor(private logger: Logger) {}
+
+  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
+    return { success: true };
+  }
+
+  validateParameters(params: any): { valid: boolean; errors: any[] } {
+    return { valid: true, errors: [] };
+  }
+}
+</codeblock>
+    <section><title>Plugin Package Structure</title></section>
+    <codeblock>@ollama-code/plugin-docker/
+├── package.json
+├── tsconfig.json
+├── src/
+│   ├── index.ts          # Plugin entry point
+│   ├── tools/            # Docker tools
+│   │   ├── list.ts
+│   │   ├── run.ts
+│   │   ├── stop.ts
+│   │   └── build.ts
+│   └── types.ts          # Type definitions
+├── tests/                # Plugin tests
+│   └── plugin.test.ts
+└── README.md             # Plugin documentation
+</codeblock>
+    <codeblock outputclass="language-json">{
+  &quot;name&quot;: &quot;@ollama-code/plugin-docker&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;description&quot;: &quot;Docker plugin for Ollama Code&quot;,
+  &quot;main&quot;: &quot;dist/index.js&quot;,
+  &quot;types&quot;: &quot;dist/index.d.ts&quot;,
+  &quot;ollamaCodePlugin&quot;: true,
+  &quot;keywords&quot;: [&quot;ollama-code-plugin&quot;, &quot;docker&quot;, &quot;containers&quot;],
+  &quot;peerDependencies&quot;: {
+    &quot;@ollama-code/core&quot;: &quot;^1.0.0&quot;
+  }
+}
+</codeblock>
+    <section><title>13.7 Plugin Marketplace</title></section>
+    <p>Build a marketplace for discovering and sharing plugins.</p>
+    <section><title>Publishing a Plugin</title></section>
+    <codeblock outputclass="language-bash"># 1. Build plugin
+npm run build
+
+# 2. Test plugin
+npm test
+
+# 3. Publish to npm
+npm publish --access public
+
+# 4. Register with marketplace
+ollama-code plugin register @ollama-code/plugin-docker
+</codeblock>
+    <section><title>CLI Commands</title></section>
+    <codeblock outputclass="language-bash"># Search for plugins
+ollama-code plugin search docker
+
+# Install plugin
+ollama-code plugin install docker
+
+# List installed plugins
+ollama-code plugin list
+
+# Uninstall plugin
+ollama-code plugin uninstall docker
+
+# Update plugin
+ollama-code plugin update docker
+</codeblock>
+    <section><title>Exercises</title></section>
+    <section><title>Exercise 1: Create a Custom Plugin</title></section>
+    <p>Build a plugin that adds Kubernetes support.</p>
+    <p><b>Requirements:</b>
+- Tool to list pods
+- Tool to describe resources
+- Tool to apply manifests
+- Proper error handling</p>
+    <section><title>Exercise 2: Build a Plugin Marketplace API</title></section>
+    <p>Create a REST API for plugin discovery.</p>
+    <p><b>Endpoints:</b>
+- <codeph>GET /plugins</codeph> - List all plugins
+- <codeph>GET /plugins/:id</codeph> - Get plugin details
+- <codeph>POST /plugins</codeph> - Publish plugin
+- <codeph>GET /search?q=...</codeph> - Search plugins</p>
+    <section><title>Exercise 3: Implement Plugin Hot Reload</title></section>
+    <p>Add ability to reload plugins without restarting.</p>
+    <p><b>Requirements:</b>
+- Detect plugin file changes
+- Safely unload old version
+- Load new version
+- Preserve plugin state</p>
+    <section><title>Summary</title></section>
+    <p>You built a complete plugin architecture that enables extensibility.</p>
+    <section><title>Key Concepts</title></section>
+    <ol>
+      <li>
+        <b>Extension Points</b>
+        - Well-defined customization locations
+      </li>
+      <li>
+        <b>Plugin System</b>
+        - Complete lifecycle management
+      </li>
+      <li>
+        <b>Plugin Discovery</b>
+        - npm, filesystem, registry
+      </li>
+      <li>
+        <b>Isolation</b>
+        - Sandboxing for security
+      </li>
+      <li>
+        <b>Versioning</b>
+        - Compatibility management
+      </li>
+      <li>
+        <b>Marketplace</b>
+        - Ecosystem for sharing
+      </li>
+    </ol>
+    <section><title>Platform Growth</title></section>
+    <codeblock>Week 0: No plugins
+Week 4: 5 core plugins
+Week 12: 20 community plugins
+Week 24: 50+ plugins
+Year 1: 100+ plugins, thriving ecosystem
+</codeblock>
+    <p><b>Next:</b> Chapter 14: IDE Integration →</p>
+    <p><i>Chapter 13 | Plugin Architecture and Extension Points | Complete</i></p>
+  </body>
+</topic>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
+<map>
+  <title>Building AI Coding Assistants: A Comprehensive Guide</title>
+  <topichead navtitle="Table of Contents">
+    <topichead navtitle="Front Matter">
+    </topichead>
+  </topichead>
+  <topichead navtitle="Part I: Foundations">
+    <topicref href="topic_1.dita"/>
+    <topicref href="topic_2.dita"/>
+    <topicref href="topic_3.dita"/>
+  </topichead>
+  <topichead navtitle="Part II: Core Architecture">
+    <topicref href="topic_4.dita"/>
+    <topicref href="topic_5.dita"/>
+    <topicref href="topic_6.dita"/>
+  </topichead>
+  <topichead navtitle="Part III: Advanced Features">
+    <topicref href="topic_7.dita"/>
+    <topicref href="topic_8.dita"/>
+    <topicref href="topic_9.dita"/>
+  </topichead>
+  <topichead navtitle="Part IV: Production Readiness">
+    <topicref href="topic_10.dita"/>
+    <topicref href="topic_11.dita"/>
+    <topicref href="topic_12.dita"/>
+  </topichead>
+  <topichead navtitle="Part V: Extensibility and Platform Building">
+    <topicref href="topic_13.dita"/>
+    <topicref href="topic_14.dita"/>
+    <topicref href="topic_15.dita"/>
+  </topichead>
+  <topichead navtitle="Appendices">
+  </topichead>
+  <topichead navtitle="Book Statistics">
+  </topichead>
+  <topichead navtitle="Quick Navigation by Topic">
+    <topichead navtitle="Getting Started">
+    </topichead>
+    <topichead navtitle="Architecture &amp; Design">
+    </topichead>
+    <topichead navtitle="Advanced Features">
+    </topichead>
+    <topichead navtitle="Production &amp; Performance">
+    </topichead>
+    <topichead navtitle="Extensibility &amp; Platform">
+    </topichead>
+    <topichead navtitle="Reference">
+    </topichead>
+  </topichead>
+</map>

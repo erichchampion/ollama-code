@@ -6,7 +6,7 @@
 
 # Interface: TelemetryConfig
 
-Defined in: [telemetry/index.ts:81](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L81)
+Defined in: [telemetry/index.ts:81](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/telemetry/index.ts#L81)
 
 Telemetry configuration
 
@@ -16,7 +16,7 @@ Telemetry configuration
 
 > **enabled**: `boolean`
 
-Defined in: [telemetry/index.ts:85](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L85)
+Defined in: [telemetry/index.ts:85](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/telemetry/index.ts#L85)
 
 Whether telemetry is enabled
 
@@ -26,7 +26,7 @@ Whether telemetry is enabled
 
 > **clientId**: `string`
 
-Defined in: [telemetry/index.ts:90](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L90)
+Defined in: [telemetry/index.ts:90](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/telemetry/index.ts#L90)
 
 Client ID (anonymous)
 
@@ -36,7 +36,7 @@ Client ID (anonymous)
 
 > `optional` **endpoint**: `string`
 
-Defined in: [telemetry/index.ts:95](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L95)
+Defined in: [telemetry/index.ts:95](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/telemetry/index.ts#L95)
 
 Endpoint for sending telemetry data
 
@@ -46,6 +46,6 @@ Endpoint for sending telemetry data
 
 > `optional` **additionalData**: `Record`\<`string`, `any`\>
 
-Defined in: [telemetry/index.ts:100](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/telemetry/index.ts#L100)
+Defined in: [telemetry/index.ts:100](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/telemetry/index.ts#L100)
 
 Additional data to include with all events

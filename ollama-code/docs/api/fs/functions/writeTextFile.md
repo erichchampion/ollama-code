@@ -8,7 +8,7 @@
 
 > **writeTextFile**(`filePath`, `content`, `options`): `Promise`\<`void`\>
 
-Defined in: [fs/operations.ts:129](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/fs/operations.ts#L129)
+Defined in: [fs/operations.ts:129](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/fs/operations.ts#L129)
 
 Write text to a file
 

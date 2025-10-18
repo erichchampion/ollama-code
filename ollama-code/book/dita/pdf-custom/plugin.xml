@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin id="com.custom.pdf">
+  <feature extension="dita.conductor.xslt.param" file="cfg/fo/attrs/toc-attr.xsl"/>
+</plugin>

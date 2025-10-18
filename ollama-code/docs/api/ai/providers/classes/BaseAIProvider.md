@@ -6,7 +6,7 @@
 
 # Abstract Class: BaseAIProvider
 
-Defined in: [ai/providers/base-provider.ts:157](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L157)
+Defined in: [ai/providers/base-provider.ts:157](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L157)
 
 Abstract base class for all AI providers
 
@@ -28,7 +28,7 @@ Abstract base class for all AI providers
 
 > **new BaseAIProvider**(`config`): `BaseAIProvider`
 
-Defined in: [ai/providers/base-provider.ts:163](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L163)
+Defined in: [ai/providers/base-provider.ts:163](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L163)
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: [ai/providers/base-provider.ts:163](https://github.com/erichchampion
 
 > `abstract` **getName**(): `string`
 
-Defined in: [ai/providers/base-provider.ts:173](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L173)
+Defined in: [ai/providers/base-provider.ts:173](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L173)
 
 Get provider name
 
@@ -64,7 +64,7 @@ Get provider name
 
 > **getDisplayName**(): `string`
 
-Defined in: [ai/providers/base-provider.ts:178](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L178)
+Defined in: [ai/providers/base-provider.ts:178](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L178)
 
 Get provider display name
 
@@ -78,7 +78,7 @@ Get provider display name
 
 > `abstract` **getCapabilities**(): [`ProviderCapabilities`](../interfaces/ProviderCapabilities.md)
 
-Defined in: [ai/providers/base-provider.ts:185](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L185)
+Defined in: [ai/providers/base-provider.ts:185](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L185)
 
 Get provider capabilities
 
@@ -92,7 +92,7 @@ Get provider capabilities
 
 > `abstract` **initialize**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/base-provider.ts:190](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L190)
+Defined in: [ai/providers/base-provider.ts:190](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L190)
 
 Initialize the provider
 
@@ -106,7 +106,7 @@ Initialize the provider
 
 > `abstract` **testConnection**(): `Promise`\<`boolean`\>
 
-Defined in: [ai/providers/base-provider.ts:195](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L195)
+Defined in: [ai/providers/base-provider.ts:195](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L195)
 
 Test connection to the provider
 
@@ -120,7 +120,7 @@ Test connection to the provider
 
 > `abstract` **complete**(`prompt`, `options?`): `Promise`\<[`AICompletionResponse`](../interfaces/AICompletionResponse.md)\>
 
-Defined in: [ai/providers/base-provider.ts:200](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L200)
+Defined in: [ai/providers/base-provider.ts:200](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L200)
 
 Complete text/chat request
 
@@ -144,7 +144,7 @@ Complete text/chat request
 
 > `abstract` **completeStream**(`prompt`, `options`, `onEvent`, `abortSignal?`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/base-provider.ts:208](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L208)
+Defined in: [ai/providers/base-provider.ts:208](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L208)
 
 Stream completion request
 
@@ -176,7 +176,7 @@ Stream completion request
 
 > `abstract` **listModels**(): `Promise`\<[`AIModel`](../interfaces/AIModel.md)[]\>
 
-Defined in: [ai/providers/base-provider.ts:218](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L218)
+Defined in: [ai/providers/base-provider.ts:218](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L218)
 
 List available models
 
@@ -190,7 +190,7 @@ List available models
 
 > `abstract` **getModel**(`modelId`): `Promise`\<`null` \| [`AIModel`](../interfaces/AIModel.md)\>
 
-Defined in: [ai/providers/base-provider.ts:223](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L223)
+Defined in: [ai/providers/base-provider.ts:223](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L223)
 
 Get specific model information
 
@@ -210,7 +210,7 @@ Get specific model information
 
 > `abstract` **calculateCost**(`promptTokens`, `completionTokens`, `model?`): `number`
 
-Defined in: [ai/providers/base-provider.ts:228](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L228)
+Defined in: [ai/providers/base-provider.ts:228](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L228)
 
 Calculate cost for a request
 
@@ -238,7 +238,7 @@ Calculate cost for a request
 
 > **getHealth**(): [`ProviderHealth`](../interfaces/ProviderHealth.md)
 
-Defined in: [ai/providers/base-provider.ts:233](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L233)
+Defined in: [ai/providers/base-provider.ts:233](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L233)
 
 Get provider health status
 
@@ -252,7 +252,7 @@ Get provider health status
 
 > **getMetrics**(): [`ProviderMetrics`](../interfaces/ProviderMetrics.md)
 
-Defined in: [ai/providers/base-provider.ts:240](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L240)
+Defined in: [ai/providers/base-provider.ts:240](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L240)
 
 Get provider metrics
 
@@ -266,7 +266,7 @@ Get provider metrics
 
 > **supportsCapability**(`capability`): `boolean`
 
-Defined in: [ai/providers/base-provider.ts:247](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L247)
+Defined in: [ai/providers/base-provider.ts:247](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L247)
 
 Check if provider supports a capability
 
@@ -286,7 +286,7 @@ Check if provider supports a capability
 
 > **getConfig**(): [`ProviderConfig`](../interfaces/ProviderConfig.md)
 
-Defined in: [ai/providers/base-provider.ts:254](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L254)
+Defined in: [ai/providers/base-provider.ts:254](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L254)
 
 Get provider configuration
 
@@ -300,7 +300,7 @@ Get provider configuration
 
 > **updateConfig**(`config`): `void`
 
-Defined in: [ai/providers/base-provider.ts:261](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L261)
+Defined in: [ai/providers/base-provider.ts:261](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L261)
 
 Update provider configuration
 
@@ -320,7 +320,7 @@ Update provider configuration
 
 > **cleanup**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/base-provider.ts:269](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L269)
+Defined in: [ai/providers/base-provider.ts:269](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L269)
 
 Cleanup provider resources
 
@@ -334,7 +334,7 @@ Cleanup provider resources
 
 > **isReady**(): `boolean`
 
-Defined in: [ai/providers/base-provider.ts:277](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L277)
+Defined in: [ai/providers/base-provider.ts:277](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L277)
 
 Check if provider is initialized
 
@@ -348,7 +348,7 @@ Check if provider is initialized
 
 > **performHealthCheck**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/base-provider.ts:284](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L284)
+Defined in: [ai/providers/base-provider.ts:284](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L284)
 
 Perform health check
 
@@ -362,7 +362,7 @@ Perform health check
 
 > `protected` **updateMetrics**(`success`, `responseTime`, `tokensUsed`, `cost`): `void`
 
-Defined in: [ai/providers/base-provider.ts:314](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L314)
+Defined in: [ai/providers/base-provider.ts:314](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L314)
 
 Update metrics after a request
 
@@ -394,7 +394,7 @@ Update metrics after a request
 
 > `protected` **config**: [`ProviderConfig`](../interfaces/ProviderConfig.md)
 
-Defined in: [ai/providers/base-provider.ts:158](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L158)
+Defined in: [ai/providers/base-provider.ts:158](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L158)
 
 ***
 
@@ -402,7 +402,7 @@ Defined in: [ai/providers/base-provider.ts:158](https://github.com/erichchampion
 
 > `protected` **health**: [`ProviderHealth`](../interfaces/ProviderHealth.md)
 
-Defined in: [ai/providers/base-provider.ts:159](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L159)
+Defined in: [ai/providers/base-provider.ts:159](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L159)
 
 ***
 
@@ -410,7 +410,7 @@ Defined in: [ai/providers/base-provider.ts:159](https://github.com/erichchampion
 
 > `protected` **metrics**: [`ProviderMetrics`](../interfaces/ProviderMetrics.md)
 
-Defined in: [ai/providers/base-provider.ts:160](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L160)
+Defined in: [ai/providers/base-provider.ts:160](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L160)
 
 ***
 
@@ -418,4 +418,4 @@ Defined in: [ai/providers/base-provider.ts:160](https://github.com/erichchampion
 
 > `protected` **isInitialized**: `boolean` = `false`
 
-Defined in: [ai/providers/base-provider.ts:161](https://github.com/erichchampion/ollama-code/blob/f579fc18d250ee6a96568b59118babb3bbd950b6/ollama-code/src/ai/providers/base-provider.ts#L161)
+Defined in: [ai/providers/base-provider.ts:161](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L161)

@@ -1,0 +1,2223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_14">
+  <title>Chapter 14: IDE Integration and Developer Experience</title>
+  <body>
+    <section><title>Chapter Overview</title></section>
+    <p>In Chapter 13, you built a plugin system that enables ecosystem growth. Now, we&apos;ll integrate your AI coding assistant directly into IDEs to create a seamless, invisible developer experience.</p>
+    <p><b>What you&apos;ll learn:</b>
+- VS Code extension architecture
+- Language Server Protocol (LSP) integration
+- IntelliSense and autocomplete integration
+- Quick Fixes and code actions
+- Debugging integration
+- IDE-agnostic patterns for IntelliJ, Vim, etc.</p>
+    <p><b>Why this matters:</b>
+- <b>Context switching kills productivity</b> - Developers lose flow switching between IDE and CLI
+- <b>Native experience expected</b> - Modern developers expect AI assistance inline, not in separate tools
+- <b>10x productivity boost</b> - Inline AI suggestions reduce friction from minutes to seconds</p>
+    <section><title>14.1: The Context Switching Problem</title></section>
+    <section><title>Before IDE Integration</title></section>
+    <codeblock>Developer workflow WITHOUT IDE integration:
+
+1. Write code in VS Code
+2. Encounter error
+3. Copy error message
+4. Switch to terminal
+5. Run: ollama-code &quot;explain this error: [paste]&quot;
+6. Read output in terminal
+7. Switch back to VS Code
+8. Apply fix manually
+9. Repeat...
+
+Time per iteration: 2-5 minutes
+Context switches: 4+ per iteration
+Flow state: Destroyed
+</codeblock>
+    <section><title>After IDE Integration</title></section>
+    <codeblock>Developer workflow WITH IDE integration:
+
+1. Write code in VS Code
+2. Encounter error
+3. Click Quick Fix (Cmd+.)
+4. AI suggests fix inline
+5. Apply with one click
+6. Continue coding
+
+Time per iteration: 10-30 seconds
+Context switches: 0
+Flow state: Preserved
+</codeblock>
+    <p><b>Impact:</b>
+- ⬇️ 80% reduction in time to fix
+- ⬇️ 100% reduction in context switches
+- ⬆️ Developer satisfaction and productivity</p>
+    <section><title>14.2: VS Code Extension Architecture</title></section>
+    <section><title>Extension Structure</title></section>
+    <p>VS Code extensions are TypeScript/JavaScript packages with a specific structure:</p>
+    <codeblock>my-ai-extension/
+├── package.json              # Extension manifest
+├── src/
+│   ├── extension.ts         # Entry point
+│   ├── commands/            # Command handlers
+│   ├── providers/           # IntelliSense, Quick Fixes, etc.
+│   ├── client.ts            # AI client integration
+│   └── utils/
+├── syntaxes/                # Language grammars (optional)
+├── snippets/                # Code snippets (optional)
+└── README.md
+</codeblock>
+    <section><title>package.json - Extension Manifest</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;name&quot;: &quot;ollama-code-vscode&quot;,
+  &quot;displayName&quot;: &quot;Ollama Code AI Assistant&quot;,
+  &quot;description&quot;: &quot;AI coding assistant powered by Ollama&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;publisher&quot;: &quot;your-publisher-id&quot;,
+  &quot;engines&quot;: {
+    &quot;vscode&quot;: &quot;^1.80.0&quot;
+  },
+  &quot;categories&quot;: [&quot;Programming Languages&quot;, &quot;Machine Learning&quot;],
+  &quot;activationEvents&quot;: [
+    &quot;onStartupFinished&quot;
+  ],
+  &quot;main&quot;: &quot;./dist/extension.js&quot;,
+  &quot;contributes&quot;: {
+    &quot;commands&quot;: [
+      {
+        &quot;command&quot;: &quot;ollamaCode.explainCode&quot;,
+        &quot;title&quot;: &quot;Explain Code&quot;,
+        &quot;category&quot;: &quot;Ollama Code&quot;
+      },
+      {
+        &quot;command&quot;: &quot;ollamaCode.fixError&quot;,
+        &quot;title&quot;: &quot;Fix Error&quot;,
+        &quot;category&quot;: &quot;Ollama Code&quot;
+      },
+      {
+        &quot;command&quot;: &quot;ollamaCode.generateTests&quot;,
+        &quot;title&quot;: &quot;Generate Tests&quot;,
+        &quot;category&quot;: &quot;Ollama Code&quot;
+      },
+      {
+        &quot;command&quot;: &quot;ollamaCode.refactor&quot;,
+        &quot;title&quot;: &quot;Refactor Code&quot;,
+        &quot;category&quot;: &quot;Ollama Code&quot;
+      }
+    ],
+    &quot;menus&quot;: {
+      &quot;editor/context&quot;: [
+        {
+          &quot;when&quot;: &quot;editorHasSelection&quot;,
+          &quot;command&quot;: &quot;ollamaCode.explainCode&quot;,
+          &quot;group&quot;: &quot;ollamaCode@1&quot;
+        },
+        {
+          &quot;when&quot;: &quot;editorHasSelection&quot;,
+          &quot;command&quot;: &quot;ollamaCode.refactor&quot;,
+          &quot;group&quot;: &quot;ollamaCode@2&quot;
+        }
+      ]
+    },
+    &quot;keybindings&quot;: [
+      {
+        &quot;command&quot;: &quot;ollamaCode.explainCode&quot;,
+        &quot;key&quot;: &quot;ctrl+shift+e&quot;,
+        &quot;mac&quot;: &quot;cmd+shift+e&quot;,
+        &quot;when&quot;: &quot;editorTextFocus&quot;
+      },
+      {
+        &quot;command&quot;: &quot;ollamaCode.fixError&quot;,
+        &quot;key&quot;: &quot;ctrl+shift+f&quot;,
+        &quot;mac&quot;: &quot;cmd+shift+f&quot;,
+        &quot;when&quot;: &quot;editorTextFocus&quot;
+      }
+    ],
+    &quot;configuration&quot;: {
+      &quot;title&quot;: &quot;Ollama Code&quot;,
+      &quot;properties&quot;: {
+        &quot;ollamaCode.model&quot;: {
+          &quot;type&quot;: &quot;string&quot;,
+          &quot;default&quot;: &quot;codellama:7b&quot;,
+          &quot;description&quot;: &quot;Default AI model to use&quot;
+        },
+        &quot;ollamaCode.apiUrl&quot;: {
+          &quot;type&quot;: &quot;string&quot;,
+          &quot;default&quot;: &quot;http://localhost:11434&quot;,
+          &quot;description&quot;: &quot;Ollama API URL&quot;
+        },
+        &quot;ollamaCode.maxTokens&quot;: {
+          &quot;type&quot;: &quot;number&quot;,
+          &quot;default&quot;: 2048,
+          &quot;description&quot;: &quot;Maximum tokens for completions&quot;
+        },
+        &quot;ollamaCode.enableInlineCompletions&quot;: {
+          &quot;type&quot;: &quot;boolean&quot;,
+          &quot;default&quot;: true,
+          &quot;description&quot;: &quot;Enable inline AI completions&quot;
+        }
+      }
+    }
+  },
+  &quot;scripts&quot;: {
+    &quot;vscode:prepublish&quot;: &quot;yarn run compile&quot;,
+    &quot;compile&quot;: &quot;tsc -p ./&quot;,
+    &quot;watch&quot;: &quot;tsc -watch -p ./&quot;,
+    &quot;pretest&quot;: &quot;yarn run compile&quot;,
+    &quot;test&quot;: &quot;node ./out/test/runTest.js&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;@types/vscode&quot;: &quot;^1.80.0&quot;,
+    &quot;@types/node&quot;: &quot;^18.0.0&quot;,
+    &quot;typescript&quot;: &quot;^5.0.0&quot;
+  },
+  &quot;dependencies&quot;: {
+    &quot;axios&quot;: &quot;^1.4.0&quot;
+  }
+}
+</codeblock>
+    <section><title>Extension Entry Point</title></section>
+    <codeblock outputclass="language-typescript">// src/extension.ts
+import * as vscode from &apos;vscode&apos;;
+import { ExplainCodeCommand } from &apos;./commands/explainCode&apos;;
+import { FixErrorCommand } from &apos;./commands/fixError&apos;;
+import { GenerateTestsCommand } from &apos;./commands/generateTests&apos;;
+import { RefactorCommand } from &apos;./commands/refactor&apos;;
+import { InlineCompletionProvider } from &apos;./providers/inlineCompletions&apos;;
+import { CodeActionProvider } from &apos;./providers/codeActions&apos;;
+import { AIClient } from &apos;./client&apos;;
+
+let aiClient: AIClient;
+
+export function activate(context: vscode.ExtensionContext) {
+  console.log(&apos;Ollama Code extension is now active&apos;);
+
+  // Initialize AI client
+  const config = vscode.workspace.getConfiguration(&apos;ollamaCode&apos;);
+  aiClient = new AIClient({
+    apiUrl: config.get(&apos;apiUrl&apos;) || &apos;http://localhost:11434&apos;,
+    model: config.get(&apos;model&apos;) || &apos;codellama:7b&apos;,
+    maxTokens: config.get(&apos;maxTokens&apos;) || 2048
+  });
+
+  // Register commands
+  registerCommands(context);
+
+  // Register providers
+  registerProviders(context);
+
+  // Watch for configuration changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) =&gt; {
+      if (e.affectsConfiguration(&apos;ollamaCode&apos;)) {
+        const newConfig = vscode.workspace.getConfiguration(&apos;ollamaCode&apos;);
+        aiClient.updateConfig({
+          apiUrl: newConfig.get(&apos;apiUrl&apos;) || &apos;http://localhost:11434&apos;,
+          model: newConfig.get(&apos;model&apos;) || &apos;codellama:7b&apos;,
+          maxTokens: newConfig.get(&apos;maxTokens&apos;) || 2048
+        });
+      }
+    })
+  );
+
+  // Status bar item
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  statusBarItem.text = &apos;$(robot) Ollama Code&apos;;
+  statusBarItem.tooltip = &apos;Ollama Code AI Assistant is active&apos;;
+  statusBarItem.show();
+  context.subscriptions.push(statusBarItem);
+}
+
+function registerCommands(context: vscode.ExtensionContext) {
+  const commands = [
+    new ExplainCodeCommand(aiClient),
+    new FixErrorCommand(aiClient),
+    new GenerateTestsCommand(aiClient),
+    new RefactorCommand(aiClient)
+  ];
+
+  for (const cmd of commands) {
+    const disposable = vscode.commands.registerCommand(
+      cmd.id,
+      cmd.execute.bind(cmd)
+    );
+    context.subscriptions.push(disposable);
+  }
+}
+
+function registerProviders(context: vscode.ExtensionContext) {
+  const config = vscode.workspace.getConfiguration(&apos;ollamaCode&apos;);
+
+  // Inline completions (like GitHub Copilot)
+  if (config.get(&apos;enableInlineCompletions&apos;)) {
+    const inlineProvider = new InlineCompletionProvider(aiClient);
+    context.subscriptions.push(
+      vscode.languages.registerInlineCompletionItemProvider(
+        { pattern: &apos;**&apos; },
+        inlineProvider
+      )
+    );
+  }
+
+  // Code actions (Quick Fixes)
+  const codeActionProvider = new CodeActionProvider(aiClient);
+  context.subscriptions.push(
+    vscode.languages.registerCodeActionsProvider(
+      { pattern: &apos;**&apos; },
+      codeActionProvider,
+      {
+        providedCodeActionKinds: [
+          vscode.CodeActionKind.QuickFix,
+          vscode.CodeActionKind.Refactor
+        ]
+      }
+    )
+  );
+}
+
+export function deactivate() {
+  if (aiClient) {
+    aiClient.dispose();
+  }
+}
+</codeblock>
+    <section><title>14.3: AI Client Integration</title></section>
+    <section><title>Connecting to Ollama Code Backend</title></section>
+    <codeblock outputclass="language-typescript">// src/client.ts
+import axios, { AxiosInstance } from &apos;axios&apos;;
+
+export interface AIClientConfig {
+  apiUrl: string;
+  model: string;
+  maxTokens: number;
+  timeout?: number;
+}
+
+export interface CompletionRequest {
+  prompt: string;
+  context?: string;
+  maxTokens?: number;
+  temperature?: number;
+  stopSequences?: string[];
+}
+
+export interface CompletionResponse {
+  content: string;
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+}
+
+export class AIClient {
+  private config: AIClientConfig;
+  private httpClient: AxiosInstance;
+  private abortControllers: Map&lt;string, AbortController&gt; = new Map();
+
+  constructor(config: AIClientConfig) {
+    this.config = config;
+    this.httpClient = axios.create({
+      baseURL: this.config.apiUrl,
+      timeout: this.config.timeout || 30000,
+      headers: {
+        &apos;Content-Type&apos;: &apos;application/json&apos;
+      }
+    });
+  }
+
+  updateConfig(config: Partial&lt;AIClientConfig&gt;): void {
+    this.config = { ...this.config, ...config };
+    this.httpClient.defaults.baseURL = this.config.apiUrl;
+  }
+
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    const requestId = this.generateRequestId();
+    const abortController = new AbortController();
+    this.abortControllers.set(requestId, abortController);
+
+    try {
+      const response = await this.httpClient.post(
+        &apos;/api/generate&apos;,
+        {
+          model: this.config.model,
+          prompt: this.buildPrompt(request),
+          options: {
+            num_predict: request.maxTokens || this.config.maxTokens,
+            temperature: request.temperature || 0.7,
+            stop: request.stopSequences
+          },
+          stream: false
+        },
+        {
+          signal: abortController.signal
+        }
+      );
+
+      return {
+        content: response.data.response,
+        usage: {
+          inputTokens: response.data.prompt_eval_count || 0,
+          outputTokens: response.data.eval_count || 0,
+          totalTokens: (response.data.prompt_eval_count || 0) +
+                      (response.data.eval_count || 0)
+        }
+      };
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        throw new Error(&apos;Request was cancelled&apos;);
+      }
+      throw new Error(`AI completion failed: ${error.message}`);
+    } finally {
+      this.abortControllers.delete(requestId);
+    }
+  }
+
+  async *streamComplete(
+    request: CompletionRequest
+  ): AsyncGenerator&lt;string, void, unknown&gt; {
+    const requestId = this.generateRequestId();
+    const abortController = new AbortController();
+    this.abortControllers.set(requestId, abortController);
+
+    try {
+      const response = await this.httpClient.post(
+        &apos;/api/generate&apos;,
+        {
+          model: this.config.model,
+          prompt: this.buildPrompt(request),
+          options: {
+            num_predict: request.maxTokens || this.config.maxTokens,
+            temperature: request.temperature || 0.7
+          },
+          stream: true
+        },
+        {
+          signal: abortController.signal,
+          responseType: &apos;stream&apos;
+        }
+      );
+
+      const stream = response.data;
+      let buffer = &apos;&apos;;
+
+      for await (const chunk of stream) {
+        buffer += chunk.toString();
+        const lines = buffer.split(&apos;\n&apos;);
+        buffer = lines.pop() || &apos;&apos;;
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const data = JSON.parse(line);
+              if (data.response) {
+                yield data.response;
+              }
+              if (data.done) {
+                return;
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+    } finally {
+      this.abortControllers.delete(requestId);
+    }
+  }
+
+  cancel(requestId: string): void {
+    const controller = this.abortControllers.get(requestId);
+    if (controller) {
+      controller.abort();
+      this.abortControllers.delete(requestId);
+    }
+  }
+
+  cancelAll(): void {
+    for (const [id, controller] of this.abortControllers) {
+      controller.abort();
+    }
+    this.abortControllers.clear();
+  }
+
+  dispose(): void {
+    this.cancelAll();
+  }
+
+  private buildPrompt(request: CompletionRequest): string {
+    let prompt = &apos;&apos;;
+
+    if (request.context) {
+      prompt += `Context:\n${request.context}\n\n`;
+    }
+
+    prompt += request.prompt;
+
+    return prompt;
+  }
+
+  private generateRequestId(): string {
+    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+}
+</codeblock>
+    <section><title>14.4: Command Implementations</title></section>
+    <section><title>Explain Code Command</title></section>
+    <codeblock outputclass="language-typescript">// src/commands/explainCode.ts
+import * as vscode from &apos;vscode&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+export class ExplainCodeCommand {
+  readonly id = &apos;ollamaCode.explainCode&apos;;
+
+  constructor(private aiClient: AIClient) {}
+
+  async execute(): Promise&lt;void&gt; {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showErrorMessage(&apos;No active editor&apos;);
+      return;
+    }
+
+    const selection = editor.selection;
+    const selectedText = editor.document.getText(selection);
+
+    if (!selectedText) {
+      vscode.window.showErrorMessage(&apos;No code selected&apos;);
+      return;
+    }
+
+    // Show progress
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: &apos;Explaining code...&apos;,
+        cancellable: true
+      },
+      async (progress, token) =&gt; {
+        try {
+          // Get language context
+          const languageId = editor.document.languageId;
+          const fileName = editor.document.fileName;
+
+          const response = await this.aiClient.complete({
+            prompt: `Explain the following ${languageId} code:\n\n${selectedText}`,
+            context: `File: ${fileName}\nLanguage: ${languageId}`,
+            temperature: 0.3
+          });
+
+          // Show explanation in a webview panel
+          this.showExplanation(selectedText, response.content, languageId);
+        } catch (error) {
+          if (token.isCancellationRequested) {
+            return;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to explain code: ${error.message}`
+          );
+        }
+      }
+    );
+  }
+
+  private showExplanation(
+    code: string,
+    explanation: string,
+    language: string
+  ): void {
+    const panel = vscode.window.createWebviewPanel(
+      &apos;codeExplanation&apos;,
+      &apos;Code Explanation&apos;,
+      vscode.ViewColumn.Beside,
+      {
+        enableScripts: true
+      }
+    );
+
+    panel.webview.html = this.getExplanationHtml(code, explanation, language);
+  }
+
+  private getExplanationHtml(
+    code: string,
+    explanation: string,
+    language: string
+  ): string {
+    return `
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;Code Explanation&lt;/title&gt;
+    &lt;style&gt;
+        body {
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h2 {
+            color: var(--vscode-textLink-foreground);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 10px;
+        }
+        pre {
+            background-color: var(--vscode-textBlockQuote-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+        }
+        .explanation {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h2&gt;Selected Code&lt;/h2&gt;
+    &lt;pre&gt;&lt;code class=&quot;language-${language}&quot;&gt;${this.escapeHtml(code)}&lt;/code&gt;&lt;/pre&gt;
+
+    &lt;h2&gt;Explanation&lt;/h2&gt;
+    &lt;div class=&quot;explanation&quot;&gt;${this.escapeHtml(explanation)}&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;`;
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&amp;/g, &apos;&amp;amp;&apos;)
+      .replace(/&lt;/g, &apos;&amp;lt;&apos;)
+      .replace(/&gt;/g, &apos;&amp;gt;&apos;)
+      .replace(/&quot;/g, &apos;&amp;quot;&apos;)
+      .replace(/&apos;/g, &apos;&amp;#039;&apos;);
+  }
+}
+</codeblock>
+    <section><title>Fix Error Command</title></section>
+    <codeblock outputclass="language-typescript">// src/commands/fixError.ts
+import * as vscode from &apos;vscode&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+export class FixErrorCommand {
+  readonly id = &apos;ollamaCode.fixError&apos;;
+
+  constructor(private aiClient: AIClient) {}
+
+  async execute(): Promise&lt;void&gt; {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+
+    // Get diagnostics (errors, warnings) at current position
+    const diagnostics = vscode.languages.getDiagnostics(editor.document.uri);
+    const position = editor.selection.active;
+
+    // Find diagnostic at cursor position
+    const diagnostic = diagnostics.find((d) =&gt;
+      d.range.contains(position)
+    );
+
+    if (!diagnostic) {
+      vscode.window.showInformationMessage(
+        &apos;No error found at cursor position&apos;
+      );
+      return;
+    }
+
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: &apos;Generating fix...&apos;,
+        cancellable: true
+      },
+      async (progress, token) =&gt; {
+        try {
+          const errorRange = diagnostic.range;
+          const errorCode = editor.document.getText(errorRange);
+          const errorMessage = diagnostic.message;
+
+          // Get surrounding context (5 lines before and after)
+          const contextRange = new vscode.Range(
+            Math.max(0, errorRange.start.line - 5),
+            0,
+            Math.min(
+              editor.document.lineCount - 1,
+              errorRange.end.line + 5
+            ),
+            Number.MAX_SAFE_INTEGER
+          );
+          const context = editor.document.getText(contextRange);
+
+          const response = await this.aiClient.complete({
+            prompt: `Fix this error:
+Error: ${errorMessage}
+Code with error: ${errorCode}
+
+Return ONLY the fixed code, without explanation.`,
+            context: `Surrounding context:\n${context}`,
+            temperature: 0.2
+          });
+
+          // Apply fix
+          await this.applyFix(editor, errorRange, response.content);
+        } catch (error) {
+          if (token.isCancellationRequested) {
+            return;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to generate fix: ${error.message}`
+          );
+        }
+      }
+    );
+  }
+
+  private async applyFix(
+    editor: vscode.TextEditor,
+    range: vscode.Range,
+    fixedCode: string
+  ): Promise&lt;void&gt; {
+    // Clean up the AI response (remove markdown code blocks if present)
+    let cleanedCode = fixedCode.trim();
+    if (cleanedCode.startsWith(&apos;```&apos;)) {
+      const lines = cleanedCode.split(&apos;\n&apos;);
+      lines.shift(); // Remove opening ```
+      if (lines[lines.length - 1].trim() === &apos;```&apos;) {
+        lines.pop(); // Remove closing ```
+      }
+      cleanedCode = lines.join(&apos;\n&apos;);
+    }
+
+    const success = await editor.edit((editBuilder) =&gt; {
+      editBuilder.replace(range, cleanedCode);
+    });
+
+    if (success) {
+      vscode.window.showInformationMessage(&apos;Fix applied successfully&apos;);
+    } else {
+      vscode.window.showErrorMessage(&apos;Failed to apply fix&apos;);
+    }
+  }
+}
+</codeblock>
+    <section><title>Generate Tests Command</title></section>
+    <codeblock outputclass="language-typescript">// src/commands/generateTests.ts
+import * as vscode from &apos;vscode&apos;;
+import * as path from &apos;path&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+export class GenerateTestsCommand {
+  readonly id = &apos;ollamaCode.generateTests&apos;;
+
+  constructor(private aiClient: AIClient) {}
+
+  async execute(): Promise&lt;void&gt; {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+
+    const selection = editor.selection;
+    const selectedText = editor.document.getText(selection);
+
+    if (!selectedText) {
+      vscode.window.showErrorMessage(&apos;No code selected&apos;);
+      return;
+    }
+
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: &apos;Generating tests...&apos;,
+        cancellable: true
+      },
+      async (progress, token) =&gt; {
+        try {
+          const languageId = editor.document.languageId;
+          const fileName = path.basename(editor.document.fileName);
+
+          const response = await this.aiClient.complete({
+            prompt: `Generate comprehensive unit tests for the following ${languageId} code.
+Include edge cases, error cases, and happy path tests.
+
+Code to test:
+${selectedText}
+
+Generate tests using a popular testing framework for ${languageId}.`,
+            context: `File: ${fileName}`,
+            temperature: 0.4,
+            maxTokens: 4096
+          });
+
+          // Create test file
+          await this.createTestFile(
+            editor.document.uri,
+            response.content,
+            languageId
+          );
+        } catch (error) {
+          if (token.isCancellationRequested) {
+            return;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to generate tests: ${error.message}`
+          );
+        }
+      }
+    );
+  }
+
+  private async createTestFile(
+    sourceUri: vscode.Uri,
+    testCode: string,
+    languageId: string
+  ): Promise&lt;void&gt; {
+    // Determine test file name based on language conventions
+    const sourcePath = sourceUri.fsPath;
+    const ext = path.extname(sourcePath);
+    const baseName = path.basename(sourcePath, ext);
+    const dirName = path.dirname(sourcePath);
+
+    let testFileName: string;
+    if (languageId === &apos;typescript&apos; || languageId === &apos;javascript&apos;) {
+      testFileName = `${baseName}.test${ext}`;
+    } else if (languageId === &apos;python&apos;) {
+      testFileName = `test_${baseName}${ext}`;
+    } else if (languageId === &apos;go&apos;) {
+      testFileName = `${baseName}_test.go`;
+    } else {
+      testFileName = `${baseName}.test${ext}`;
+    }
+
+    const testFilePath = path.join(dirName, testFileName);
+    const testFileUri = vscode.Uri.file(testFilePath);
+
+    // Create and open test file
+    const edit = new vscode.WorkspaceEdit();
+    edit.createFile(testFileUri, { overwrite: false, ignoreIfExists: false });
+    edit.insert(testFileUri, new vscode.Position(0, 0), testCode);
+
+    const success = await vscode.workspace.applyEdit(edit);
+
+    if (success) {
+      const doc = await vscode.workspace.openTextDocument(testFileUri);
+      await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
+      vscode.window.showInformationMessage(
+        `Test file created: ${testFileName}`
+      );
+    } else {
+      vscode.window.showErrorMessage(&apos;Failed to create test file&apos;);
+    }
+  }
+}
+</codeblock>
+    <section><title>Refactor Command</title></section>
+    <codeblock outputclass="language-typescript">// src/commands/refactor.ts
+import * as vscode from &apos;vscode&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+export class RefactorCommand {
+  readonly id = &apos;ollamaCode.refactor&apos;;
+
+  constructor(private aiClient: AIClient) {}
+
+  async execute(): Promise&lt;void&gt; {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+
+    const selection = editor.selection;
+    const selectedText = editor.document.getText(selection);
+
+    if (!selectedText) {
+      vscode.window.showErrorMessage(&apos;No code selected&apos;);
+      return;
+    }
+
+    // Ask user for refactoring goal
+    const goal = await vscode.window.showInputBox({
+      prompt: &apos;What would you like to refactor?&apos;,
+      placeHolder: &apos;e.g., Extract function, simplify logic, improve performance&apos;
+    });
+
+    if (!goal) {
+      return;
+    }
+
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: &apos;Refactoring code...&apos;,
+        cancellable: true
+      },
+      async (progress, token) =&gt; {
+        try {
+          const languageId = editor.document.languageId;
+
+          const response = await this.aiClient.complete({
+            prompt: `Refactor the following ${languageId} code to: ${goal}
+
+Original code:
+${selectedText}
+
+Return ONLY the refactored code, maintaining the same functionality.`,
+            temperature: 0.3,
+            maxTokens: 4096
+          });
+
+          // Show diff and ask for confirmation
+          await this.showRefactoringDiff(
+            editor,
+            selection,
+            selectedText,
+            response.content
+          );
+        } catch (error) {
+          if (token.isCancellationRequested) {
+            return;
+          }
+          vscode.window.showErrorMessage(
+            `Failed to refactor: ${error.message}`
+          );
+        }
+      }
+    );
+  }
+
+  private async showRefactoringDiff(
+    editor: vscode.TextEditor,
+    range: vscode.Range,
+    originalCode: string,
+    refactoredCode: string
+  ): Promise&lt;void&gt; {
+    // Clean up AI response
+    let cleanedCode = refactoredCode.trim();
+    if (cleanedCode.startsWith(&apos;```&apos;)) {
+      const lines = cleanedCode.split(&apos;\n&apos;);
+      lines.shift();
+      if (lines[lines.length - 1].trim() === &apos;```&apos;) {
+        lines.pop();
+      }
+      cleanedCode = lines.join(&apos;\n&apos;);
+    }
+
+    // Create temporary documents for diff
+    const originalUri = vscode.Uri.parse(
+      `untitled:Original ${path.basename(editor.document.fileName)}`
+    );
+    const refactoredUri = vscode.Uri.parse(
+      `untitled:Refactored ${path.basename(editor.document.fileName)}`
+    );
+
+    await vscode.workspace.fs.writeFile(
+      originalUri,
+      Buffer.from(originalCode)
+    );
+    await vscode.workspace.fs.writeFile(
+      refactoredUri,
+      Buffer.from(cleanedCode)
+    );
+
+    // Show diff
+    await vscode.commands.executeCommand(
+      &apos;vscode.diff&apos;,
+      originalUri,
+      refactoredUri,
+      &apos;Original ↔ Refactored&apos;
+    );
+
+    // Ask for confirmation
+    const choice = await vscode.window.showInformationMessage(
+      &apos;Apply refactoring?&apos;,
+      &apos;Apply&apos;,
+      &apos;Cancel&apos;
+    );
+
+    if (choice === &apos;Apply&apos;) {
+      const success = await editor.edit((editBuilder) =&gt; {
+        editBuilder.replace(range, cleanedCode);
+      });
+
+      if (success) {
+        vscode.window.showInformationMessage(&apos;Refactoring applied&apos;);
+      }
+    }
+
+    // Clean up temporary files
+    await vscode.workspace.fs.delete(originalUri);
+    await vscode.workspace.fs.delete(refactoredUri);
+  }
+}
+</codeblock>
+    <section><title>14.5: IntelliSense and Inline Completions</title></section>
+    <section><title>Inline Completion Provider (Copilot-style)</title></section>
+    <codeblock outputclass="language-typescript">// src/providers/inlineCompletions.ts
+import * as vscode from &apos;vscode&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+export class InlineCompletionProvider
+  implements vscode.InlineCompletionItemProvider
+{
+  private debounceTimer: NodeJS.Timeout | null = null;
+  private readonly DEBOUNCE_MS = 300;
+  private lastCompletionRequest: string | null = null;
+
+  constructor(private aiClient: AIClient) {}
+
+  async provideInlineCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    context: vscode.InlineCompletionContext,
+    token: vscode.CancellationToken
+  ): Promise&lt;vscode.InlineCompletionItem[] | vscode.InlineCompletionList&gt; {
+    // Don&apos;t provide completions if user is deleting or in specific contexts
+    if (
+      context.triggerKind ===
+        vscode.InlineCompletionTriggerKind.Automatic &amp;&amp;
+      !this.shouldProvideCompletion(document, position)
+    ) {
+      return [];
+    }
+
+    // Debounce to avoid excessive API calls
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    return new Promise((resolve) =&gt; {
+      this.debounceTimer = setTimeout(async () =&gt; {
+        try {
+          const completion = await this.generateCompletion(
+            document,
+            position,
+            token
+          );
+
+          if (completion) {
+            resolve([
+              new vscode.InlineCompletionItem(
+                completion,
+                new vscode.Range(position, position)
+              )
+            ]);
+          } else {
+            resolve([]);
+          }
+        } catch (error) {
+          console.error(&apos;Inline completion error:&apos;, error);
+          resolve([]);
+        }
+      }, this.DEBOUNCE_MS);
+    });
+  }
+
+  private shouldProvideCompletion(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ): boolean {
+    // Don&apos;t complete in strings or comments (simplified check)
+    const lineText = document.lineAt(position.line).text;
+    const textBeforeCursor = lineText.substring(0, position.character);
+
+    // Skip if in string literal
+    const stringMatches = textBeforeCursor.match(/[&quot;&apos;`]/g);
+    if (stringMatches &amp;&amp; stringMatches.length % 2 !== 0) {
+      return false;
+    }
+
+    // Skip if in comment
+    if (textBeforeCursor.trim().startsWith(&apos;//&apos;)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private async generateCompletion(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): Promise&lt;string | null&gt; {
+    // Get context before cursor
+    const prefixRange = new vscode.Range(
+      new vscode.Position(Math.max(0, position.line - 20), 0),
+      position
+    );
+    const prefix = document.getText(prefixRange);
+
+    // Get context after cursor (for fill-in-the-middle models)
+    const suffixRange = new vscode.Range(
+      position,
+      new vscode.Position(
+        Math.min(document.lineCount - 1, position.line + 5),
+        Number.MAX_SAFE_INTEGER
+      )
+    );
+    const suffix = document.getText(suffixRange);
+
+    // Avoid duplicate requests
+    const requestKey = `${prefix}|||${suffix}`;
+    if (requestKey === this.lastCompletionRequest) {
+      return null;
+    }
+    this.lastCompletionRequest = requestKey;
+
+    const languageId = document.languageId;
+
+    try {
+      // Use streaming for faster perceived performance
+      let completion = &apos;&apos;;
+      let firstChunk = true;
+
+      for await (const chunk of this.aiClient.streamComplete({
+        prompt: `Complete the following ${languageId} code:
+
+${prefix}&lt;CURSOR&gt;${suffix}
+
+Continue from &lt;CURSOR&gt;. Return ONLY the code completion, no explanation.`,
+        temperature: 0.4,
+        maxTokens: 256,
+        stopSequences: [&apos;\n\n&apos;, &apos;```&apos;, &apos;&lt;CURSOR&gt;&apos;]
+      })) {
+        if (token.isCancellationRequested) {
+          return null;
+        }
+
+        completion += chunk;
+
+        // Return first chunk immediately for faster UX
+        if (firstChunk) {
+          firstChunk = false;
+          return completion;
+        }
+      }
+
+      return completion.trim();
+    } catch (error) {
+      console.error(&apos;Completion generation error:&apos;, error);
+      return null;
+    }
+  }
+}
+</codeblock>
+    <section><title>14.6: Code Actions and Quick Fixes</title></section>
+    <section><title>Code Action Provider</title></section>
+    <codeblock outputclass="language-typescript">// src/providers/codeActions.ts
+import * as vscode from &apos;vscode&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+export class CodeActionProvider implements vscode.CodeActionProvider {
+  constructor(private aiClient: AIClient) {}
+
+  async provideCodeActions(
+    document: vscode.TextDocument,
+    range: vscode.Range | vscode.Selection,
+    context: vscode.CodeActionContext,
+    token: vscode.CancellationToken
+  ): Promise&lt;vscode.CodeAction[]&gt; {
+    const actions: vscode.CodeAction[] = [];
+
+    // Quick Fix: Fix errors/warnings with AI
+    if (context.diagnostics.length &gt; 0) {
+      const fixAction = new vscode.CodeAction(
+        &apos;✨ Fix with AI&apos;,
+        vscode.CodeActionKind.QuickFix
+      );
+      fixAction.command = {
+        command: &apos;ollamaCode.fixError&apos;,
+        title: &apos;Fix with AI&apos;
+      };
+      fixAction.isPreferred = true;
+      actions.push(fixAction);
+    }
+
+    // Refactor: Only show if there&apos;s selected code
+    if (!range.isEmpty) {
+      // Refactor: Extract function
+      const extractFunctionAction = new vscode.CodeAction(
+        &apos;✨ Extract Function&apos;,
+        vscode.CodeActionKind.Refactor
+      );
+      extractFunctionAction.command = {
+        command: &apos;ollamaCode.refactorExtractFunction&apos;,
+        title: &apos;Extract Function&apos;,
+        arguments: [document, range]
+      };
+      actions.push(extractFunctionAction);
+
+      // Refactor: Simplify
+      const simplifyAction = new vscode.CodeAction(
+        &apos;✨ Simplify Code&apos;,
+        vscode.CodeActionKind.Refactor
+      );
+      simplifyAction.command = {
+        command: &apos;ollamaCode.refactorSimplify&apos;,
+        title: &apos;Simplify Code&apos;,
+        arguments: [document, range]
+      };
+      actions.push(simplifyAction);
+
+      // Refactor: Add error handling
+      const addErrorHandlingAction = new vscode.CodeAction(
+        &apos;✨ Add Error Handling&apos;,
+        vscode.CodeActionKind.Refactor
+      );
+      addErrorHandlingAction.command = {
+        command: &apos;ollamaCode.addErrorHandling&apos;,
+        title: &apos;Add Error Handling&apos;,
+        arguments: [document, range]
+      };
+      actions.push(addErrorHandlingAction);
+
+      // Refactor: Optimize performance
+      const optimizeAction = new vscode.CodeAction(
+        &apos;✨ Optimize Performance&apos;,
+        vscode.CodeActionKind.Refactor
+      );
+      optimizeAction.command = {
+        command: &apos;ollamaCode.optimizePerformance&apos;,
+        title: &apos;Optimize Performance&apos;,
+        arguments: [document, range]
+      };
+      actions.push(optimizeAction);
+    }
+
+    return actions;
+  }
+}
+
+// Additional refactoring command handlers
+export function registerRefactoringCommands(
+  context: vscode.ExtensionContext,
+  aiClient: AIClient
+): void {
+  // Extract Function
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      &apos;ollamaCode.refactorExtractFunction&apos;,
+      async (document: vscode.TextDocument, range: vscode.Range) =&gt; {
+        await refactorWithGoal(aiClient, document, range, &apos;extract a reusable function&apos;);
+      }
+    )
+  );
+
+  // Simplify
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      &apos;ollamaCode.refactorSimplify&apos;,
+      async (document: vscode.TextDocument, range: vscode.Range) =&gt; {
+        await refactorWithGoal(aiClient, document, range, &apos;simplify the logic&apos;);
+      }
+    )
+  );
+
+  // Add Error Handling
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      &apos;ollamaCode.addErrorHandling&apos;,
+      async (document: vscode.TextDocument, range: vscode.Range) =&gt; {
+        await refactorWithGoal(
+          aiClient,
+          document,
+          range,
+          &apos;add comprehensive error handling&apos;
+        );
+      }
+    )
+  );
+
+  // Optimize Performance
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      &apos;ollamaCode.optimizePerformance&apos;,
+      async (document: vscode.TextDocument, range: vscode.Range) =&gt; {
+        await refactorWithGoal(
+          aiClient,
+          document,
+          range,
+          &apos;optimize for better performance&apos;
+        );
+      }
+    )
+  );
+}
+
+async function refactorWithGoal(
+  aiClient: AIClient,
+  document: vscode.TextDocument,
+  range: vscode.Range,
+  goal: string
+): Promise&lt;void&gt; {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
+
+  const selectedText = document.getText(range);
+  const languageId = document.languageId;
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Refactoring: ${goal}...`,
+      cancellable: true
+    },
+    async (progress, token) =&gt; {
+      try {
+        const response = await aiClient.complete({
+          prompt: `Refactor the following ${languageId} code to ${goal}:
+
+${selectedText}
+
+Return ONLY the refactored code, maintaining functionality.`,
+          temperature: 0.3
+        });
+
+        // Clean and apply
+        let cleanedCode = response.content.trim();
+        if (cleanedCode.startsWith(&apos;```&apos;)) {
+          const lines = cleanedCode.split(&apos;\n&apos;);
+          lines.shift();
+          if (lines[lines.length - 1].trim() === &apos;```&apos;) {
+            lines.pop();
+          }
+          cleanedCode = lines.join(&apos;\n&apos;);
+        }
+
+        const success = await editor.edit((editBuilder) =&gt; {
+          editBuilder.replace(range, cleanedCode);
+        });
+
+        if (success) {
+          vscode.window.showInformationMessage(&apos;Refactoring applied&apos;);
+        }
+      } catch (error) {
+        if (!token.isCancellationRequested) {
+          vscode.window.showErrorMessage(`Refactoring failed: ${error.message}`);
+        }
+      }
+    }
+  );
+}
+</codeblock>
+    <section><title>14.7: Language Server Protocol (LSP) Integration</title></section>
+    <p>For more advanced integrations, you can build a Language Server that communicates via LSP.</p>
+    <section><title>Why LSP?</title></section>
+    <ul>
+      <li>
+        <b>IDE agnostic</b>
+        - Works with VS Code, IntelliJ, Vim, Emacs, etc.
+      </li>
+      <li>
+        <b>Standardized protocol</b>
+        - One implementation, many editors
+      </li>
+      <li>
+        <b>Advanced features</b>
+        - Hover, go-to-definition, find references, etc.
+      </li>
+    </ul>
+    <section><title>Language Server Architecture</title></section>
+    <codeblock>┌─────────────────────────────────────────┐
+│         IDE/Editor                      │
+│  ┌────────────────────────────────┐    │
+│  │  Language Client Extension     │    │
+│  │  (VS Code, IntelliJ, etc.)     │    │
+│  └────────────┬───────────────────┘    │
+└───────────────┼────────────────────────┘
+                │ JSON-RPC over stdio/socket
+                │
+┌───────────────▼────────────────────────┐
+│      Language Server (Node.js)         │
+│  ┌────────────────────────────────┐   │
+│  │  LSP Handler                   │   │
+│  │  - textDocument/completion     │   │
+│  │  - textDocument/hover          │   │
+│  │  - textDocument/codeAction     │   │
+│  └────────────┬───────────────────┘   │
+│               │                        │
+│  ┌────────────▼───────────────────┐   │
+│  │  AI Client                     │   │
+│  │  (connects to Ollama)          │   │
+│  └────────────────────────────────┘   │
+└────────────────────────────────────────┘
+</codeblock>
+    <section><title>Language Server Implementation</title></section>
+    <codeblock outputclass="language-typescript">// src/server/server.ts
+import {
+  createConnection,
+  TextDocuments,
+  ProposedFeatures,
+  InitializeParams,
+  CompletionItem,
+  CompletionItemKind,
+  TextDocumentPositionParams,
+  TextDocumentSyncKind,
+  Hover,
+  CodeAction,
+  CodeActionKind,
+  CodeActionParams
+} from &apos;vscode-languageserver/node&apos;;
+
+import { TextDocument } from &apos;vscode-languageserver-textdocument&apos;;
+import { AIClient } from &apos;../client&apos;;
+
+// Create LSP connection
+const connection = createConnection(ProposedFeatures.all);
+
+// Create document manager
+const documents: TextDocuments&lt;TextDocument&gt; = new TextDocuments(TextDocument);
+
+// Initialize AI client
+let aiClient: AIClient;
+
+connection.onInitialize((params: InitializeParams) =&gt; {
+  aiClient = new AIClient({
+    apiUrl: params.initializationOptions?.apiUrl || &apos;http://localhost:11434&apos;,
+    model: params.initializationOptions?.model || &apos;codellama:7b&apos;,
+    maxTokens: 2048
+  });
+
+  return {
+    capabilities: {
+      textDocumentSync: TextDocumentSyncKind.Incremental,
+      completionProvider: {
+        resolveProvider: true,
+        triggerCharacters: [&apos;.&apos;, &apos;(&apos;, &apos;&lt;&apos;, &apos;&quot;&apos;, &quot;&apos;&quot;]
+      },
+      hoverProvider: true,
+      codeActionProvider: {
+        codeActionKinds: [CodeActionKind.QuickFix, CodeActionKind.Refactor]
+      }
+    }
+  };
+});
+
+// Completion handler
+connection.onCompletion(
+  async (params: TextDocumentPositionParams): Promise&lt;CompletionItem[]&gt; =&gt; {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+      return [];
+    }
+
+    const position = params.position;
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+
+    // Get context before cursor
+    const prefix = text.substring(Math.max(0, offset - 1000), offset);
+
+    try {
+      const response = await aiClient.complete({
+        prompt: `Complete the following code:\n${prefix}`,
+        temperature: 0.4,
+        maxTokens: 128
+      });
+
+      return [
+        {
+          label: response.content,
+          kind: CompletionItemKind.Snippet,
+          insertText: response.content,
+          documentation: &apos;AI-generated completion&apos;
+        }
+      ];
+    } catch (error) {
+      connection.console.error(`Completion error: ${error.message}`);
+      return [];
+    }
+  }
+);
+
+// Hover handler (show AI explanation on hover)
+connection.onHover(
+  async (params: TextDocumentPositionParams): Promise&lt;Hover | null&gt; =&gt; {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+      return null;
+    }
+
+    const position = params.position;
+    const wordRange = getWordRangeAtPosition(document, position);
+    if (!wordRange) {
+      return null;
+    }
+
+    const word = document.getText(wordRange);
+
+    try {
+      const response = await aiClient.complete({
+        prompt: `Explain what &quot;${word}&quot; does in this code context.`,
+        temperature: 0.3,
+        maxTokens: 256
+      });
+
+      return {
+        contents: {
+          kind: &apos;markdown&apos;,
+          value: response.content
+        },
+        range: wordRange
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+);
+
+// Code Action handler
+connection.onCodeAction(
+  async (params: CodeActionParams): Promise&lt;CodeAction[]&gt; =&gt; {
+    const document = documents.get(params.textDocument.uri);
+    if (!document) {
+      return [];
+    }
+
+    const actions: CodeAction[] = [];
+
+    // If there are diagnostics, offer AI fix
+    if (params.context.diagnostics.length &gt; 0) {
+      actions.push({
+        title: &apos;✨ Fix with AI&apos;,
+        kind: CodeActionKind.QuickFix,
+        command: {
+          command: &apos;ollamaCode.fixError&apos;,
+          title: &apos;Fix with AI&apos;
+        }
+      });
+    }
+
+    return actions;
+  }
+);
+
+// Helper function to get word range at position
+function getWordRangeAtPosition(
+  document: TextDocument,
+  position: { line: number; character: number }
+): { start: { line: number; character: number }; end: { line: number; character: number } } | null {
+  const lineText = document.getText({
+    start: { line: position.line, character: 0 },
+    end: { line: position.line + 1, character: 0 }
+  });
+
+  const wordPattern = /\b\w+\b/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = wordPattern.exec(lineText)) !== null) {
+    const startChar = match.index;
+    const endChar = startChar + match[0].length;
+
+    if (startChar &lt;= position.character &amp;&amp; position.character &lt;= endChar) {
+      return {
+        start: { line: position.line, character: startChar },
+        end: { line: position.line, character: endChar }
+      };
+    }
+  }
+
+  return null;
+}
+
+// Make the text document manager listen on the connection
+documents.listen(connection);
+
+// Start listening
+connection.listen();
+</codeblock>
+    <section><title>Language Client (VS Code Extension)</title></section>
+    <codeblock outputclass="language-typescript">// src/client/extension.ts
+import * as path from &apos;path&apos;;
+import { workspace, ExtensionContext } from &apos;vscode&apos;;
+import {
+  LanguageClient,
+  LanguageClientOptions,
+  ServerOptions,
+  TransportKind
+} from &apos;vscode-languageclient/node&apos;;
+
+let client: LanguageClient;
+
+export function activate(context: ExtensionContext) {
+  // Path to language server module
+  const serverModule = context.asAbsolutePath(
+    path.join(&apos;dist&apos;, &apos;server&apos;, &apos;server.js&apos;)
+  );
+
+  // Server options
+  const serverOptions: ServerOptions = {
+    run: {
+      module: serverModule,
+      transport: TransportKind.ipc
+    },
+    debug: {
+      module: serverModule,
+      transport: TransportKind.ipc,
+      options: { execArgv: [&apos;--nolazy&apos;, &apos;--inspect=6009&apos;] }
+    }
+  };
+
+  // Client options
+  const clientOptions: LanguageClientOptions = {
+    documentSelector: [
+      { scheme: &apos;file&apos;, language: &apos;typescript&apos; },
+      { scheme: &apos;file&apos;, language: &apos;javascript&apos; },
+      { scheme: &apos;file&apos;, language: &apos;python&apos; },
+      { scheme: &apos;file&apos;, language: &apos;go&apos; },
+      { scheme: &apos;file&apos;, language: &apos;rust&apos; }
+    ],
+    synchronize: {
+      fileEvents: workspace.createFileSystemWatcher(&apos;**/.clientrc&apos;)
+    },
+    initializationOptions: {
+      apiUrl: workspace.getConfiguration(&apos;ollamaCode&apos;).get(&apos;apiUrl&apos;),
+      model: workspace.getConfiguration(&apos;ollamaCode&apos;).get(&apos;model&apos;)
+    }
+  };
+
+  // Create and start client
+  client = new LanguageClient(
+    &apos;ollamaCodeLanguageServer&apos;,
+    &apos;Ollama Code Language Server&apos;,
+    serverOptions,
+    clientOptions
+  );
+
+  client.start();
+}
+
+export function deactivate(): Thenable&lt;void&gt; | undefined {
+  if (!client) {
+    return undefined;
+  }
+  return client.stop();
+}
+</codeblock>
+    <section><title>14.8: Testing Your Extension</title></section>
+    <section><title>Extension Tests</title></section>
+    <codeblock outputclass="language-typescript">// src/test/suite/extension.test.ts
+import * as assert from &apos;assert&apos;;
+import * as vscode from &apos;vscode&apos;;
+import * as sinon from &apos;sinon&apos;;
+import { AIClient } from &apos;../../client&apos;;
+
+suite(&apos;Extension Test Suite&apos;, () =&gt; {
+  vscode.window.showInformationMessage(&apos;Start extension tests.&apos;);
+
+  test(&apos;Extension should be present&apos;, () =&gt; {
+    assert.ok(vscode.extensions.getExtension(&apos;your-publisher.ollama-code-vscode&apos;));
+  });
+
+  test(&apos;Extension should activate&apos;, async () =&gt; {
+    const ext = vscode.extensions.getExtension(&apos;your-publisher.ollama-code-vscode&apos;);
+    await ext?.activate();
+    assert.strictEqual(ext?.isActive, true);
+  });
+
+  test(&apos;Commands should be registered&apos;, async () =&gt; {
+    const commands = await vscode.commands.getCommands(true);
+    assert.ok(commands.includes(&apos;ollamaCode.explainCode&apos;));
+    assert.ok(commands.includes(&apos;ollamaCode.fixError&apos;));
+    assert.ok(commands.includes(&apos;ollamaCode.generateTests&apos;));
+    assert.ok(commands.includes(&apos;ollamaCode.refactor&apos;));
+  });
+});
+
+suite(&apos;AIClient Test Suite&apos;, () =&gt; {
+  let aiClient: AIClient;
+  let sandbox: sinon.SinonSandbox;
+
+  setup(() =&gt; {
+    sandbox = sinon.createSandbox();
+    aiClient = new AIClient({
+      apiUrl: &apos;http://localhost:11434&apos;,
+      model: &apos;codellama:7b&apos;,
+      maxTokens: 2048
+    });
+  });
+
+  teardown(() =&gt; {
+    sandbox.restore();
+  });
+
+  test(&apos;Should complete code&apos;, async () =&gt; {
+    // Mock HTTP response
+    sandbox.stub(aiClient as any, &apos;httpClient&apos;).value({
+      post: async () =&gt; ({
+        data: {
+          response: &apos;console.log(&quot;Hello, World!&quot;);&apos;,
+          prompt_eval_count: 10,
+          eval_count: 15
+        }
+      })
+    });
+
+    const response = await aiClient.complete({
+      prompt: &apos;Write a hello world program in JavaScript&apos;
+    });
+
+    assert.ok(response.content);
+    assert.ok(response.usage.inputTokens &gt; 0);
+    assert.ok(response.usage.outputTokens &gt; 0);
+  });
+
+  test(&apos;Should handle errors gracefully&apos;, async () =&gt; {
+    sandbox.stub(aiClient as any, &apos;httpClient&apos;).value({
+      post: async () =&gt; {
+        throw new Error(&apos;Network error&apos;);
+      }
+    });
+
+    await assert.rejects(
+      async () =&gt; {
+        await aiClient.complete({ prompt: &apos;test&apos; });
+      },
+      /AI completion failed/
+    );
+  });
+});
+</codeblock>
+    <section><title>Integration Tests</title></section>
+    <codeblock outputclass="language-typescript">// src/test/suite/integration.test.ts
+import * as assert from &apos;assert&apos;;
+import * as vscode from &apos;vscode&apos;;
+import * as path from &apos;path&apos;;
+
+suite(&apos;Integration Test Suite&apos;, () =&gt; {
+  test(&apos;Explain Code command should work&apos;, async () =&gt; {
+    // Create test document
+    const content = `
+function add(a: number, b: number): number {
+  return a + b;
+}
+`;
+
+    const doc = await vscode.workspace.openTextDocument({
+      language: &apos;typescript&apos;,
+      content
+    });
+
+    const editor = await vscode.window.showTextDocument(doc);
+
+    // Select the function
+    editor.selection = new vscode.Selection(
+      new vscode.Position(1, 0),
+      new vscode.Position(3, 1)
+    );
+
+    // Execute command
+    await vscode.commands.executeCommand(&apos;ollamaCode.explainCode&apos;);
+
+    // Verify webview panel was created
+    // (In real tests, you&apos;d mock the webview and verify content)
+    await new Promise((resolve) =&gt; setTimeout(resolve, 1000));
+  });
+
+  test(&apos;Fix Error command should work&apos;, async () =&gt; {
+    const content = `
+const x: number = &quot;not a number&quot;; // Type error
+`;
+
+    const doc = await vscode.workspace.openTextDocument({
+      language: &apos;typescript&apos;,
+      content
+    });
+
+    const editor = await vscode.window.showTextDocument(doc);
+
+    // Position cursor on error
+    editor.selection = new vscode.Selection(
+      new vscode.Position(1, 6),
+      new vscode.Position(1, 6)
+    );
+
+    // Execute command
+    await vscode.commands.executeCommand(&apos;ollamaCode.fixError&apos;);
+
+    // Verify fix was applied
+    await new Promise((resolve) =&gt; setTimeout(resolve, 2000));
+    const fixedContent = editor.document.getText();
+
+    // Should have fixed the type error
+    assert.ok(!fixedContent.includes(&apos;&quot;not a number&quot;&apos;));
+  });
+});
+</codeblock>
+    <section><title>14.9: Publishing Your Extension</title></section>
+    <section><title>Prepare for Publishing</title></section>
+    <ol>
+      <li>
+        <b>Update package.json</b>
+      </li>
+    </ol>
+    <codeblock outputclass="language-json">{
+  &quot;name&quot;: &quot;ollama-code-vscode&quot;,
+  &quot;displayName&quot;: &quot;Ollama Code AI Assistant&quot;,
+  &quot;description&quot;: &quot;AI coding assistant powered by Ollama Code&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;publisher&quot;: &quot;your-publisher-id&quot;,
+  &quot;icon&quot;: &quot;images/icon.png&quot;,
+  &quot;repository&quot;: {
+    &quot;type&quot;: &quot;git&quot;,
+    &quot;url&quot;: &quot;https://github.com/your-username/ollama-code-vscode&quot;
+  },
+  &quot;homepage&quot;: &quot;https://github.com/your-username/ollama-code-vscode#readme&quot;,
+  &quot;bugs&quot;: {
+    &quot;url&quot;: &quot;https://github.com/your-username/ollama-code-vscode/issues&quot;
+  },
+  &quot;license&quot;: &quot;MIT&quot;,
+  &quot;keywords&quot;: [
+    &quot;ai&quot;,
+    &quot;code-assistant&quot;,
+    &quot;ollama&quot;,
+    &quot;copilot&quot;,
+    &quot;autocomplete&quot;
+  ]
+}
+</codeblock>
+    <ol>
+      <li>
+        <b>Add README.md</b>
+      </li>
+    </ol>
+    <codeblock outputclass="language-markdown"># Ollama Code AI Assistant
+
+AI-powered coding assistant that runs locally with Ollama.
+
+## Features
+
+- **Explain Code**: Get AI-powered explanations of selected code
+- **Fix Errors**: Automatically fix errors with AI suggestions
+- **Generate Tests**: Create comprehensive unit tests
+- **Refactor Code**: Improve code quality with AI refactoring
+- **Inline Completions**: GitHub Copilot-style autocomplete
+
+## Requirements
+
+- [Ollama](https://ollama.ai/) installed and running
+- CodeLlama model: `ollama pull codellama:7b`
+
+## Extension Settings
+
+- `ollamaCode.model`: AI model to use (default: `codellama:7b`)
+- `ollamaCode.apiUrl`: Ollama API URL (default: `http://localhost:11434`)
+- `ollamaCode.maxTokens`: Maximum tokens for completions (default: 2048)
+- `ollamaCode.enableInlineCompletions`: Enable inline completions (default: true)
+
+## Usage
+
+### Explain Code
+1. Select code
+2. Right-click → &quot;Explain Code&quot; (or Cmd+Shift+E)
+3. View explanation in side panel
+
+### Fix Errors
+1. Position cursor on error
+2. Press Cmd+. → &quot;Fix with AI&quot;
+3. Apply suggested fix
+
+### Generate Tests
+1. Select function/class
+2. Command Palette → &quot;Ollama Code: Generate Tests&quot;
+3. Test file created automatically
+
+## Privacy
+
+All AI processing happens locally on your machine. No code is sent to external servers.
+
+## License
+
+MIT
+</codeblock>
+    <ol>
+      <li>
+        <b>Add CHANGELOG.md</b>
+      </li>
+    </ol>
+    <codeblock outputclass="language-markdown"># Change Log
+
+## [1.0.0] - 2024-01-15
+
+### Added
+- Initial release
+- Explain Code command
+- Fix Error command with Quick Fixes
+- Generate Tests command
+- Refactor command
+- Inline completions provider
+- Code actions provider
+</codeblock>
+    <ol>
+      <li>
+        <b>Build and Package</b>
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash"># Install vsce (Visual Studio Code Extension tool)
+yarn global add @vscode/vsce
+
+# Build extension
+yarn run compile
+
+# Package extension
+vsce package
+
+# This creates: ollama-code-vscode-1.0.0.vsix
+</codeblock>
+    <ol>
+      <li>
+        <b>Publish to Marketplace</b>
+      </li>
+    </ol>
+    <codeblock outputclass="language-bash"># Create publisher account at:
+# https://marketplace.visualstudio.com/manage
+
+# Get Personal Access Token from Azure DevOps
+
+# Login
+vsce login your-publisher-id
+
+# Publish
+vsce publish
+</codeblock>
+    <section><title>Local Installation (for testing)</title></section>
+    <codeblock outputclass="language-bash"># Install .vsix file
+code --install-extension ollama-code-vscode-1.0.0.vsix
+</codeblock>
+    <section><title>14.10: IDE-Agnostic Patterns</title></section>
+    <section><title>Supporting Multiple IDEs</title></section>
+    <p>Your Language Server (LSP) implementation can work with multiple editors:</p>
+    <section><title>IntelliJ IDEA / JetBrains IDEs</title></section>
+    <codeblock outputclass="language-kotlin">// IntelliJ plugin (Kotlin/Java)
+import com.intellij.openapi.project.Project
+import org.eclipse.lsp4j.launch.LSPLauncher
+import java.io.InputStream
+import java.io.OutputStream
+
+class OllamaCodeLanguageServer(private val project: Project) {
+    fun start() {
+        val serverProcess = ProcessBuilder()
+            .command(&quot;node&quot;, &quot;/path/to/language-server.js&quot;)
+            .start()
+
+        val launcher = LSPLauncher.createClientLauncher(
+            this,
+            serverProcess.inputStream,
+            serverProcess.outputStream
+        )
+
+        launcher.startListening()
+    }
+}
+</codeblock>
+    <section><title>Vim/Neovim</title></section>
+    <codeblock outputclass="language-lua">-- Neovim config (Lua)
+local lspconfig = require(&apos;lspconfig&apos;)
+local configs = require(&apos;lspconfig.configs&apos;)
+
+-- Define custom LSP
+configs.ollama_code = {
+  default_config = {
+    cmd = {&apos;node&apos;, &apos;/path/to/language-server.js&apos;, &apos;--stdio&apos;},
+    filetypes = {&apos;typescript&apos;, &apos;javascript&apos;, &apos;python&apos;, &apos;go&apos;},
+    root_dir = lspconfig.util.root_pattern(&apos;.git&apos;),
+    settings = {
+      ollamaCode = {
+        model = &apos;codellama:7b&apos;,
+        apiUrl = &apos;http://localhost:11434&apos;
+      }
+    }
+  }
+}
+
+-- Activate
+lspconfig.ollama_code.setup{}
+</codeblock>
+    <section><title>Emacs</title></section>
+    <codeblock outputclass="language-elisp">;; Emacs config (elisp)
+(use-package lsp-mode
+  :config
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection
+                     &apos;(&quot;node&quot; &quot;/path/to/language-server.js&quot; &quot;--stdio&quot;))
+    :major-modes &apos;(typescript-mode javascript-mode python-mode go-mode)
+    :server-id &apos;ollama-code
+    :initialization-options
+    &apos;((model . &quot;codellama:7b&quot;)
+      (apiUrl . &quot;http://localhost:11434&quot;)))))
+
+(add-hook &apos;typescript-mode-hook #&apos;lsp)
+(add-hook &apos;javascript-mode-hook #&apos;lsp)
+</codeblock>
+    <section><title>Universal CLI Integration</title></section>
+    <p>For editors without LSP support, provide a CLI:</p>
+    <codeblock outputclass="language-bash"># Explain code via CLI (works in any editor)
+cat file.ts | ollama-code explain
+
+# Fix errors
+cat file.ts | ollama-code fix &gt; file.fixed.ts
+
+# Generate tests
+ollama-code generate-tests file.ts &gt; file.test.ts
+</codeblock>
+    <p>Then editors can call these commands:</p>
+    <codeblock outputclass="language-vim">&quot; Vim command to explain selection
+vnoremap &lt;leader&gt;e :!ollama-code explain&lt;CR&gt;
+
+&quot; Fix current file
+nnoremap &lt;leader&gt;f :%!ollama-code fix&lt;CR&gt;
+</codeblock>
+    <section><title>14.11: Performance Optimization for IDE</title></section>
+    <section><title>Caching Completions</title></section>
+    <codeblock outputclass="language-typescript">// src/cache/completionCache.ts
+export class CompletionCache {
+  private cache = new Map&lt;string, CacheEntry&gt;();
+  private readonly MAX_CACHE_SIZE = 1000;
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  set(key: string, value: string): void {
+    // Evict oldest if cache is full
+    if (this.cache.size &gt;= this.MAX_CACHE_SIZE) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+
+    this.cache.set(key, {
+      value,
+      timestamp: Date.now()
+    });
+  }
+
+  get(key: string): string | null {
+    const entry = this.cache.get(key);
+    if (!entry) {
+      return null;
+    }
+
+    // Check if expired
+    if (Date.now() - entry.timestamp &gt; this.CACHE_TTL_MS) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.value;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+interface CacheEntry {
+  value: string;
+  timestamp: number;
+}
+</codeblock>
+    <section><title>Request Deduplication</title></section>
+    <codeblock outputclass="language-typescript">// src/utils/requestDedup.ts
+export class RequestDeduplicator {
+  private pending = new Map&lt;string, Promise&lt;any&gt;&gt;();
+
+  async deduplicate&lt;T&gt;(key: string, fn: () =&gt; Promise&lt;T&gt;): Promise&lt;T&gt; {
+    // If request is already pending, return existing promise
+    if (this.pending.has(key)) {
+      return this.pending.get(key)!;
+    }
+
+    // Start new request
+    const promise = fn().finally(() =&gt; {
+      this.pending.delete(key);
+    });
+
+    this.pending.set(key, promise);
+    return promise;
+  }
+}
+</codeblock>
+    <section><title>Lazy Loading</title></section>
+    <codeblock outputclass="language-typescript">// Lazy load AI client only when needed
+let aiClientInstance: AIClient | null = null;
+
+function getAIClient(): AIClient {
+  if (!aiClientInstance) {
+    const config = vscode.workspace.getConfiguration(&apos;ollamaCode&apos;);
+    aiClientInstance = new AIClient({
+      apiUrl: config.get(&apos;apiUrl&apos;) || &apos;http://localhost:11434&apos;,
+      model: config.get(&apos;model&apos;) || &apos;codellama:7b&apos;,
+      maxTokens: 2048
+    });
+  }
+  return aiClientInstance;
+}
+</codeblock>
+    <section><title>14.12: Best Practices</title></section>
+    <section><title>1. Respect User Settings</title></section>
+    <codeblock outputclass="language-typescript">// Always check if feature is enabled
+const config = vscode.workspace.getConfiguration(&apos;ollamaCode&apos;);
+if (config.get(&apos;enableInlineCompletions&apos;)) {
+  // Provide inline completions
+}
+</codeblock>
+    <section><title>2. Handle Errors Gracefully</title></section>
+    <codeblock outputclass="language-typescript">try {
+  const completion = await aiClient.complete(request);
+  return completion.content;
+} catch (error) {
+  // Don&apos;t show error to user for every failed completion
+  // Log silently and return empty
+  console.error(&apos;Completion failed:&apos;, error);
+  return null;
+}
+</codeblock>
+    <section><title>3. Provide Feedback</title></section>
+    <codeblock outputclass="language-typescript">// Show progress for long operations
+await vscode.window.withProgress(
+  {
+    location: vscode.ProgressLocation.Notification,
+    title: &apos;Generating tests...&apos;,
+    cancellable: true
+  },
+  async (progress, token) =&gt; {
+    // Long operation
+  }
+);
+</codeblock>
+    <section><title>4. Optimize for Performance</title></section>
+    <codeblock outputclass="language-typescript">// Debounce inline completions
+private debounce&lt;T extends (...args: any[]) =&gt; any&gt;(
+  fn: T,
+  delay: number
+): (...args: Parameters&lt;T&gt;) =&gt; void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters&lt;T&gt;) =&gt; {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() =&gt; fn(...args), delay);
+  };
+}
+</codeblock>
+    <section><title>5. Test Thoroughly</title></section>
+    <codeblock outputclass="language-bash"># Run extension tests
+yarn test
+
+# Test in development mode
+yarn watch  # Terminal 1
+F5          # VS Code: Start debugging
+</codeblock>
+    <section><title>Summary</title></section>
+    <p>In this chapter, you learned how to integrate your AI coding assistant into IDEs:</p>
+    <p>✅ <b>VS Code Extension Architecture</b> - Structure, manifest, commands, providers
+✅ <b>AI Client Integration</b> - Connecting to Ollama Code backend
+✅ <b>Command Implementations</b> - Explain, fix, generate tests, refactor
+✅ <b>Inline Completions</b> - Copilot-style autocomplete
+✅ <b>Code Actions &amp; Quick Fixes</b> - Context-aware AI suggestions
+✅ <b>Language Server Protocol</b> - IDE-agnostic LSP implementation
+✅ <b>Testing &amp; Publishing</b> - Extension tests, marketplace publishing
+✅ <b>Multi-IDE Support</b> - IntelliJ, Vim, Emacs integration patterns
+✅ <b>Performance Optimization</b> - Caching, deduplication, lazy loading</p>
+    <p><b>Impact:</b>
+- ⬇️ 80% reduction in context switching
+- ⬆️ 10x faster fixes (10-30 seconds vs 2-5 minutes)
+- ⬆️ Native IDE experience
+- ⬆️ Developer satisfaction and productivity</p>
+    <section><title>Exercises</title></section>
+    <section><title>Exercise 1: Add Hover Provider</title></section>
+    <p><b>Goal:</b> Show AI-powered documentation on hover.</p>
+    <p><b>Requirements:</b>
+1. Implement <codeph>HoverProvider</codeph> interface
+2. On hover over a function/variable, get AI explanation
+3. Display in hover tooltip
+4. Cache results to avoid redundant API calls</p>
+    <p><b>Hints:</b></p>
+    <codeblock outputclass="language-typescript">class AIHoverProvider implements vscode.HoverProvider {
+  async provideHover(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): Promise&lt;vscode.Hover | null&gt; {
+    // Get symbol at position
+    // Ask AI for explanation
+    // Return hover with markdown content
+  }
+}
+</codeblock>
+    <p><b>Bonus:</b> Support hovering over:
+- Function names → Show function signature + description
+- Variables → Show type + usage
+- Import statements → Show package documentation</p>
+    <section><title>Exercise 2: Add Signature Help</title></section>
+    <p><b>Goal:</b> Show AI-powered parameter hints while typing function calls.</p>
+    <p><b>Requirements:</b>
+1. Implement <codeph>SignatureHelpProvider</codeph>
+2. Trigger on <codeph>(</codeph> and <codeph>,</codeph>
+3. Use AI to generate parameter descriptions
+4. Show inline as user types</p>
+    <p><b>Example:</b></p>
+    <codeblock outputclass="language-typescript">// User types: calculateDiscount(
+// Show: calculateDiscount(price: number, discountPercent: number): number
+//       Calculates discounted price. price: The original price...
+</codeblock>
+    <p><b>Hints:</b></p>
+    <codeblock outputclass="language-typescript">class AISignatureHelpProvider implements vscode.SignatureHelpProvider {
+  async provideSignatureHelp(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken,
+    context: vscode.SignatureHelpContext
+  ): Promise&lt;vscode.SignatureHelp | null&gt; {
+    // Find function being called
+    // Get AI to explain parameters
+    // Return SignatureHelp
+  }
+}
+</codeblock>
+    <section><title>Exercise 3: Build IntelliJ Plugin</title></section>
+    <p><b>Goal:</b> Port your VS Code extension to IntelliJ IDEA.</p>
+    <p><b>Requirements:</b>
+1. Create IntelliJ plugin project (Kotlin/Java)
+2. Integrate with your Language Server via LSP4J
+3. Add menu actions for Explain, Fix, Generate Tests
+4. Add inline completions
+5. Publish to JetBrains Marketplace</p>
+    <p><b>Resources:</b>
+- IntelliJ Platform SDK: https://plugins.jetbrains.com/docs/intellij/welcome.html
+- LSP4J library: https://github.com/eclipse/lsp4j</p>
+    <p><b>Bonus:</b> Support multiple JetBrains IDEs (PyCharm, WebStorm, GoLand, etc.)</p>
+    <section><title>Next Steps</title></section>
+    <p>In <b>Chapter 15: Building Your Own AI Coding Assistant →</b>, you&apos;ll put everything together to build specialized AI coding assistants for specific domains:</p>
+    <ul>
+      <li>
+        DevOps Assistant (Docker, Kubernetes, Terraform)
+      </li>
+      <li>
+        Data Science Assistant (Pandas, NumPy, ML)
+      </li>
+      <li>
+        Web Development Assistant (React, Next.js, Tailwind)
+      </li>
+      <li>
+        Security Assistant (Code scanning, vulnerability detection)
+      </li>
+    </ul>
+    <p>You&apos;ll learn:
+- How to plan and scope specialized assistants
+- Plugin composition strategies
+- Deployment and monetization
+- Building a community around your assistant</p>
+    <p><b>You&apos;ve built the platform. Now build the ecosystem!</b></p>
+    <p><i>Chapter 14 | IDE Integration and Developer Experience | 65-75 pages</i></p>
+  </body>
+</topic>

@@ -1,0 +1,1895 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_10">
+  <title>Chapter 10: Testing AI Systems</title>
+  <body>
+    <section><title>Table of Contents</title></section>
+    <ul>
+      <li>
+        10.1 Testing Challenges for AI Systems
+      </li>
+      <li>
+        10.2 Unit Testing Strategy
+      </li>
+      <li>
+        10.3 Mock AI Providers
+      </li>
+      <li>
+        10.4 Integration Testing
+      </li>
+      <li>
+        10.5 Synthetic Test Generation
+      </li>
+      <li>
+        10.6 Performance Testing
+      </li>
+      <li>
+        10.7 Quality-Based Assertions
+      </li>
+      <li>
+        10.8 Regression Detection
+      </li>
+      <li>
+        Exercises
+      </li>
+      <li>
+        Summary
+      </li>
+    </ul>
+    <section><title>10.1 Testing Challenges for AI Systems</title></section>
+    <p>Testing AI systems is fundamentally different from testing traditional software. AI outputs are non-deterministic, models change over time, and correctness is often subjective.</p>
+    <section><title>Traditional vs AI Testing</title></section>
+    <codeblock outputclass="language-typescript">// Traditional: Deterministic
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+test(&apos;add function&apos;, () =&gt; {
+  expect(add(2, 2)).toBe(4); // ✓ Always passes
+  expect(add(0, 0)).toBe(0); // ✓ Always passes
+  expect(add(-1, 1)).toBe(0); // ✓ Always passes
+});
+
+// AI: Non-deterministic
+async function generateCode(prompt: string): Promise&lt;string&gt; {
+  return ai.complete(prompt);
+}
+
+test(&apos;generate code&apos;, async () =&gt; {
+  const code = await generateCode(&apos;Write a function to add numbers&apos;);
+
+  // ❌ This fails - output varies every time
+  expect(code).toBe(&apos;function add(a, b) { return a + b; }&apos;);
+
+  // ❓ How do you test this?
+});
+</codeblock>
+    <section><title>Key Challenges</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Challenges in testing AI systems
+ */
+export enum AITestingChallenge {
+  /** Outputs vary between runs */
+  NON_DETERMINISTIC = &apos;non_deterministic&apos;,
+
+  /** No single &quot;correct&quot; answer */
+  SUBJECTIVE_QUALITY = &apos;subjective_quality&apos;,
+
+  /** Models update, behavior changes */
+  MODEL_DRIFT = &apos;model_drift&apos;,
+
+  /** Slow, expensive API calls */
+  SLOW_EXPENSIVE = &apos;slow_expensive&apos;,
+
+  /** Hard to test edge cases */
+  EDGE_CASE_COVERAGE = &apos;edge_case_coverage&apos;,
+
+  /** Difficult to isolate failures */
+  DEBUGGING = &apos;debugging&apos;
+}
+
+/**
+ * Solutions to AI testing challenges
+ */
+export const AI_TESTING_SOLUTIONS = {
+  [AITestingChallenge.NON_DETERMINISTIC]: [
+    &apos;Use quality-based assertions instead of exact matching&apos;,
+    &apos;Test properties and patterns, not exact output&apos;,
+    &apos;Use semantic similarity for comparison&apos;
+  ],
+
+  [AITestingChallenge.SUBJECTIVE_QUALITY]: [
+    &apos;Define measurable quality criteria&apos;,
+    &apos;Use automated quality checks (linting, parsing)&apos;,
+    &apos;Create rubrics for evaluation&apos;
+  ],
+
+  [AITestingChallenge.MODEL_DRIFT]: [
+    &apos;Version lock models in tests&apos;,
+    &apos;Monitor quality metrics over time&apos;,
+    &apos;Use regression test suites&apos;
+  ],
+
+  [AITestingChallenge.SLOW_EXPENSIVE]: [
+    &apos;Mock AI providers for unit tests&apos;,
+    &apos;Cache responses for deterministic tests&apos;,
+    &apos;Use smaller/faster models for testing&apos;
+  ],
+
+  [AITestingChallenge.EDGE_CASE_COVERAGE]: [
+    &apos;Generate synthetic test cases&apos;,
+    &apos;Use property-based testing&apos;,
+    &apos;Collect real failure cases&apos;
+  ],
+
+  [AITestingChallenge.DEBUGGING]: [
+    &apos;Log full context (prompt, response, metadata)&apos;,
+    &apos;Capture intermediate steps&apos;,
+    &apos;Use replay testing&apos;
+  ]
+};
+</codeblock>
+    <section><title>Testing Strategy</title></section>
+    <codeblock>┌─────────────────────────────────────────────────────────────┐
+│                   Testing Pyramid for AI                     │
+└─────────────────────────────────────────────────────────────┘
+
+                    ▲
+                   ╱ ╲
+                  ╱   ╲  E2E Tests (Few)
+                 ╱     ╲  - Real AI providers
+                ╱       ╲ - End-to-end workflows
+               ╱─────────╲ - Slow but comprehensive
+              ╱           ╲
+             ╱             ╲
+            ╱               ╲ Integration Tests (Some)
+           ╱                 ╲ - Mock AI providers
+          ╱                   ╲ - Component integration
+         ╱                     ╲ - Fast, deterministic
+        ╱───────────────────────╲
+       ╱                         ╲
+      ╱                           ╲
+     ╱                             ╲ Unit Tests (Many)
+    ╱                               ╲ - Pure functions
+   ╱                                 ╲ - No AI calls
+  ╱                                   ╲ - Very fast
+ ╱─────────────────────────────────────╲
+</codeblock>
+    <section><title>10.2 Unit Testing Strategy</title></section>
+    <p>Unit tests should be fast, deterministic, and test individual components without AI dependencies.</p>
+    <section><title>Testing Pure Functions</title></section>
+    <codeblock outputclass="language-typescript">import { describe, test, expect } from &apos;vitest&apos;;
+
+/**
+ * Test pure functions without AI dependencies
+ */
+
+// Example: Token counting
+describe(&apos;TokenCounter&apos;, () =&gt; {
+  test(&apos;counts tokens accurately&apos;, () =&gt; {
+    const counter = new TokenCounter();
+
+    expect(counter.count(&apos;hello world&apos;)).toBe(2);
+    expect(counter.count(&apos;The quick brown fox&apos;)).toBe(4);
+    expect(counter.count(&apos;&apos;)).toBe(0);
+  });
+
+  test(&apos;handles special characters&apos;, () =&gt; {
+    const counter = new TokenCounter();
+
+    expect(counter.count(&apos;hello, world!&apos;)).toBe(3);
+    expect(counter.count(&apos;foo-bar_baz&apos;)).toBe(3);
+  });
+});
+
+// Example: Message formatting
+describe(&apos;MessageFormatter&apos;, () =&gt; {
+  test(&apos;formats user message&apos;, () =&gt; {
+    const formatter = new MessageFormatter();
+
+    const formatted = formatter.format({
+      role: MessageRole.USER,
+      content: &apos;Hello, AI!&apos;
+    });
+
+    expect(formatted).toHaveProperty(&apos;role&apos;, &apos;user&apos;);
+    expect(formatted).toHaveProperty(&apos;content&apos;, &apos;Hello, AI!&apos;);
+  });
+
+  test(&apos;formats system message&apos;, () =&gt; {
+    const formatter = new MessageFormatter();
+
+    const formatted = formatter.format({
+      role: MessageRole.SYSTEM,
+      content: &apos;You are a helpful assistant&apos;
+    });
+
+    expect(formatted).toHaveProperty(&apos;role&apos;, &apos;system&apos;);
+    expect(formatted.content).toContain(&apos;helpful assistant&apos;);
+  });
+});
+
+// Example: Context window management
+describe(&apos;ContextWindowManager&apos;, () =&gt; {
+  test(&apos;selects recent messages within limit&apos;, () =&gt; {
+    const manager = new ContextWindowManager({
+      maxTokens: 100,
+      strategy: ContextWindowStrategy.RECENT
+    });
+
+    const messages = [
+      { role: MessageRole.USER, content: &apos;Message 1&apos;, tokens: 30 },
+      { role: MessageRole.ASSISTANT, content: &apos;Response 1&apos;, tokens: 40 },
+      { role: MessageRole.USER, content: &apos;Message 2&apos;, tokens: 35 },
+      { role: MessageRole.ASSISTANT, content: &apos;Response 2&apos;, tokens: 45 }
+    ];
+
+    const selected = manager.selectMessages(messages);
+
+    // Should select most recent that fit
+    expect(selected.length).toBe(2);
+    expect(selected[0].content).toBe(&apos;Message 2&apos;);
+    expect(selected[1].content).toBe(&apos;Response 2&apos;);
+  });
+
+  test(&apos;always includes system messages&apos;, () =&gt; {
+    const manager = new ContextWindowManager({
+      maxTokens: 50,
+      strategy: ContextWindowStrategy.RECENT
+    });
+
+    const messages = [
+      { role: MessageRole.SYSTEM, content: &apos;System prompt&apos;, tokens: 20 },
+      { role: MessageRole.USER, content: &apos;User message&apos;, tokens: 40 }
+    ];
+
+    const selected = manager.selectMessages(messages);
+
+    expect(selected.length).toBe(2);
+    expect(selected[0].role).toBe(MessageRole.SYSTEM);
+  });
+});
+</codeblock>
+    <section><title>Testing Tools (Without Execution)</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;FileTool&apos;, () =&gt; {
+  test(&apos;validates parameters&apos;, () =&gt; {
+    const tool = new FileTool();
+
+    const valid = tool.validateParameters({
+      path: &apos;src/index.ts&apos;,
+      operation: &apos;read&apos;
+    });
+
+    expect(valid.valid).toBe(true);
+  });
+
+  test(&apos;rejects invalid paths&apos;, () =&gt; {
+    const tool = new FileTool();
+
+    const invalid = tool.validateParameters({
+      path: &apos;../../../etc/passwd&apos;,
+      operation: &apos;read&apos;
+    });
+
+    expect(invalid.valid).toBe(false);
+    expect(invalid.errors[0].message).toContain(&apos;Invalid path&apos;);
+  });
+
+  test(&apos;requires path parameter&apos;, () =&gt; {
+    const tool = new FileTool();
+
+    const invalid = tool.validateParameters({
+      operation: &apos;read&apos;
+    });
+
+    expect(invalid.valid).toBe(false);
+    expect(invalid.errors).toContainEqual(
+      expect.objectContaining({ parameter: &apos;path&apos; })
+    );
+  });
+});
+
+describe(&apos;DependencyGraph&apos;, () =&gt; {
+  test(&apos;detects cycles&apos;, () =&gt; {
+    const graph = new DependencyGraph();
+
+    graph.addNode(&apos;A&apos;);
+    graph.addNode(&apos;B&apos;);
+    graph.addNode(&apos;C&apos;);
+    graph.addEdge(&apos;A&apos;, &apos;B&apos;);
+    graph.addEdge(&apos;B&apos;, &apos;C&apos;);
+    graph.addEdge(&apos;C&apos;, &apos;A&apos;); // Cycle!
+
+    const cycle = graph.detectCycle();
+
+    expect(cycle).not.toBeNull();
+    expect(cycle).toContain(&apos;A&apos;);
+    expect(cycle).toContain(&apos;B&apos;);
+    expect(cycle).toContain(&apos;C&apos;);
+  });
+
+  test(&apos;topological sort&apos;, () =&gt; {
+    const graph = new DependencyGraph();
+
+    graph.addNode(&apos;A&apos;);
+    graph.addNode(&apos;B&apos;);
+    graph.addNode(&apos;C&apos;);
+    graph.addEdge(&apos;A&apos;, &apos;B&apos;); // A depends on B
+    graph.addEdge(&apos;B&apos;, &apos;C&apos;); // B depends on C
+
+    const sorted = graph.topologicalSort();
+
+    // C should come before B, B before A
+    expect(sorted.indexOf(&apos;C&apos;)).toBeLessThan(sorted.indexOf(&apos;B&apos;));
+    expect(sorted.indexOf(&apos;B&apos;)).toBeLessThan(sorted.indexOf(&apos;A&apos;));
+  });
+});
+</codeblock>
+    <section><title>Testing Configuration and Validation</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;SandboxConfig&apos;, () =&gt; {
+  test(&apos;validates allowed paths&apos;, () =&gt; {
+    const validator = new SandboxValidator({
+      allowedPaths: [&apos;src/**/*&apos;, &apos;test/**/*&apos;],
+      blockedPaths: [&apos;**/*.env&apos;]
+    });
+
+    expect(validator.isPathAllowed(&apos;src/index.ts&apos;).allowed).toBe(true);
+    expect(validator.isPathAllowed(&apos;test/unit.test.ts&apos;).allowed).toBe(true);
+    expect(validator.isPathAllowed(&apos;secrets.env&apos;).allowed).toBe(false);
+    expect(validator.isPathAllowed(&apos;../etc/passwd&apos;).allowed).toBe(false);
+  });
+
+  test(&apos;blocked paths take precedence&apos;, () =&gt; {
+    const validator = new SandboxValidator({
+      allowedPaths: [&apos;**/*&apos;],
+      blockedPaths: [&apos;**/*.key&apos;]
+    });
+
+    expect(validator.isPathAllowed(&apos;src/index.ts&apos;).allowed).toBe(true);
+    expect(validator.isPathAllowed(&apos;src/private.key&apos;).allowed).toBe(false);
+  });
+});
+
+describe(&apos;InputValidator&apos;, () =&gt; {
+  test(&apos;detects API keys&apos;, () =&gt; {
+    const validator = new InputValidator(logger);
+
+    const result = validator.validate(&apos;My key is sk-ant-api03-xyz123&apos;);
+
+    expect(result.valid).toBe(false);
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({ type: &apos;sensitive_data&apos; })
+    );
+  });
+
+  test(&apos;detects injection attempts&apos;, () =&gt; {
+    const validator = new InputValidator(logger);
+
+    const result = validator.validate(&apos;Run: rm -rf /&apos;);
+
+    expect(result.valid).toBe(false);
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({ type: &apos;injection_attempt&apos; })
+    );
+  });
+});
+</codeblock>
+    <section><title>10.3 Mock AI Providers</title></section>
+    <p>Mock AI providers enable fast, deterministic testing without real API calls.</p>
+    <section><title>Mock Provider Implementation</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Mock AI provider for testing
+ */
+export class MockAIProvider implements AIProvider {
+  private responses: Map&lt;string, string&gt; = new Map();
+  private callCount = 0;
+  private calls: CompletionRequest[] = [];
+
+  /**
+   * Set canned response for specific prompt
+   */
+  setResponse(promptPattern: string | RegExp, response: string): void {
+    const key = promptPattern instanceof RegExp
+      ? promptPattern.source
+      : promptPattern;
+
+    this.responses.set(key, response);
+  }
+
+  /**
+   * Set default response for all prompts
+   */
+  setDefaultResponse(response: string): void {
+    this.responses.set(&apos;*&apos;, response);
+  }
+
+  /**
+   * Complete with mocked response
+   */
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    this.callCount++;
+    this.calls.push(request);
+
+    // Get last user message
+    const userMessage = request.messages
+      .filter(m =&gt; m.role === MessageRole.USER)
+      .pop();
+
+    if (!userMessage) {
+      throw new Error(&apos;No user message in request&apos;);
+    }
+
+    // Find matching response
+    const response = this.findResponse(userMessage.content);
+
+    if (!response) {
+      throw new Error(`No mocked response for: ${userMessage.content}`);
+    }
+
+    return {
+      content: response,
+      role: MessageRole.ASSISTANT,
+      model: &apos;mock-model&apos;,
+      usage: {
+        inputTokens: this.estimateTokens(request.messages),
+        outputTokens: this.estimateTokens([{ role: MessageRole.ASSISTANT, content: response }]),
+        totalTokens: 0
+      },
+      metadata: {
+        provider: &apos;mock&apos;,
+        latency: 10
+      }
+    };
+  }
+
+  /**
+   * Find response matching prompt
+   */
+  private findResponse(prompt: string): string | null {
+    // Try exact match
+    if (this.responses.has(prompt)) {
+      return this.responses.get(prompt)!;
+    }
+
+    // Try regex patterns
+    for (const [pattern, response] of this.responses.entries()) {
+      if (pattern === &apos;*&apos;) continue; // Skip default
+
+      const regex = new RegExp(pattern);
+      if (regex.test(prompt)) {
+        return response;
+      }
+    }
+
+    // Use default
+    return this.responses.get(&apos;*&apos;) || null;
+  }
+
+  /**
+   * Get number of times complete() was called
+   */
+  getCallCount(): number {
+    return this.callCount;
+  }
+
+  /**
+   * Get all completion requests
+   */
+  getCalls(): CompletionRequest[] {
+    return this.calls;
+  }
+
+  /**
+   * Reset mock state
+   */
+  reset(): void {
+    this.responses.clear();
+    this.callCount = 0;
+    this.calls = [];
+  }
+
+  /**
+   * Estimate tokens (simple word count)
+   */
+  private estimateTokens(messages: Message[]): number {
+    return messages.reduce((total, msg) =&gt; {
+      return total + msg.content.split(/\s+/).length;
+    }, 0);
+  }
+
+  // Implement other AIProvider methods
+  async stream(request: CompletionRequest): Promise&lt;AsyncIterableIterator&lt;StreamEvent&gt;&gt; {
+    throw new Error(&apos;Stream not implemented in mock&apos;);
+  }
+
+  async healthCheck(): Promise&lt;HealthStatus&gt; {
+    return { healthy: true, latency: 1 };
+  }
+
+  getMetrics(): ProviderMetrics {
+    return {
+      requestCount: this.callCount,
+      errorCount: 0,
+      totalCost: 0,
+      totalTokens: 0
+    };
+  }
+}
+</codeblock>
+    <section><title>Using Mock Providers in Tests</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;CommitMessageGenerator&apos;, () =&gt; {
+  let mockAI: MockAIProvider;
+  let generator: CommitMessageGenerator;
+
+  beforeEach(() =&gt; {
+    mockAI = new MockAIProvider();
+    generator = new CommitMessageGenerator(mockAI);
+  });
+
+  afterEach(() =&gt; {
+    mockAI.reset();
+  });
+
+  test(&apos;generates conventional commit message&apos;, async () =&gt; {
+    // Mock AI response
+    mockAI.setDefaultResponse(
+      &apos;fix(auth): resolve token refresh race condition\n\n&apos; +
+      &apos;Add mutex lock to prevent concurrent token refreshes&apos;
+    );
+
+    const diff: GitDiff = {
+      files: [
+        {
+          path: &apos;src/auth/token.ts&apos;,
+          additions: 10,
+          deletions: 2,
+          changes: 12
+        }
+      ],
+      additions: 10,
+      deletions: 2
+    };
+
+    const message = await generator.generate(diff);
+
+    expect(message.message).toMatch(/^fix\(auth\):/);
+    expect(message.message).toContain(&apos;token refresh&apos;);
+    expect(mockAI.getCallCount()).toBe(1);
+  });
+
+  test(&apos;uses scope from context&apos;, async () =&gt; {
+    mockAI.setDefaultResponse(&apos;feat(api): add user endpoint&apos;);
+
+    const diff: GitDiff = {
+      files: [{ path: &apos;src/api/users.ts&apos;, additions: 50, deletions: 0, changes: 50 }],
+      additions: 50,
+      deletions: 0
+    };
+
+    const message = await generator.generate(diff, {
+      scope: &apos;api&apos;
+    });
+
+    expect(message.message).toMatch(/^feat\(api\):/);
+
+    // Verify AI was called with scope in prompt
+    const calls = mockAI.getCalls();
+    expect(calls[0].messages[1].content).toContain(&apos;scope: api&apos;);
+  });
+});
+
+describe(&apos;NaturalLanguageRouter&apos;, () =&gt; {
+  let mockAI: MockAIProvider;
+  let router: NaturalLanguageRouter;
+
+  beforeEach(() =&gt; {
+    mockAI = new MockAIProvider();
+    router = new NaturalLanguageRouter(mockAI, commandRegistry, logger);
+  });
+
+  test(&apos;routes commit intent&apos;, async () =&gt; {
+    // Mock intent classification response
+    mockAI.setResponse(
+      /classify/i,
+      JSON.stringify([{
+        intent: &apos;COMMIT&apos;,
+        confidence: 0.95,
+        extractedParams: {},
+        missingParams: []
+      }])
+    );
+
+    const result = await router.route(&apos;commit my changes&apos;, context);
+
+    expect(result.success).toBe(true);
+    expect(result.commands).toHaveLength(1);
+    expect(result.commands![0].command.name).toBe(&apos;commit&apos;);
+  });
+
+  test(&apos;handles unknown intent&apos;, async () =&gt; {
+    mockAI.setResponse(/classify/i, JSON.stringify([]));
+
+    const result = await router.route(&apos;do something weird&apos;, context);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain(&apos;Could not understand intent&apos;);
+  });
+});
+</codeblock>
+    <section><title>Advanced Mock Patterns</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Mock provider with simulated latency
+ */
+export class RealisticMockProvider extends MockAIProvider {
+  constructor(private latencyMs: number = 100) {
+    super();
+  }
+
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    // Simulate network latency
+    await new Promise(resolve =&gt; setTimeout(resolve, this.latencyMs));
+
+    return super.complete(request);
+  }
+}
+
+/**
+ * Mock provider with failure simulation
+ */
+export class FlakeyMockProvider extends MockAIProvider {
+  constructor(private failureRate: number = 0.1) {
+    super();
+  }
+
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    // Randomly fail
+    if (Math.random() &lt; this.failureRate) {
+      throw new Error(&apos;Simulated API failure&apos;);
+    }
+
+    return super.complete(request);
+  }
+}
+
+/**
+ * Mock provider with quota simulation
+ */
+export class QuotaMockProvider extends MockAIProvider {
+  private requestsRemaining: number;
+
+  constructor(private quota: number) {
+    super();
+    this.requestsRemaining = quota;
+  }
+
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    if (this.requestsRemaining &lt;= 0) {
+      throw new Error(&apos;Rate limit exceeded&apos;);
+    }
+
+    this.requestsRemaining--;
+
+    return super.complete(request);
+  }
+
+  resetQuota(): void {
+    this.requestsRemaining = this.quota;
+  }
+}
+</codeblock>
+    <section><title>Testing with Advanced Mocks</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;ProviderRouter with failures&apos;, () =&gt; {
+  test(&apos;falls back on provider failure&apos;, async () =&gt; {
+    const primary = new FlakeyMockProvider(1.0); // Always fails
+    const fallback = new MockAIProvider();
+
+    primary.setDefaultResponse(&apos;Response from primary&apos;);
+    fallback.setDefaultResponse(&apos;Response from fallback&apos;);
+
+    const router = new ProviderRouter({
+      providers: [primary, fallback],
+      strategy: RoutingStrategy.FALLBACK
+    });
+
+    const response = await router.complete(request);
+
+    expect(response.content).toBe(&apos;Response from fallback&apos;);
+    expect(response.metadata.provider).toBe(&apos;mock&apos;);
+  });
+});
+
+describe(&apos;RateLimiter&apos;, () =&gt; {
+  test(&apos;blocks when quota exceeded&apos;, async () =&gt; {
+    const provider = new QuotaMockProvider(5);
+    provider.setDefaultResponse(&apos;Response&apos;);
+
+    // Make 5 requests (should succeed)
+    for (let i = 0; i &lt; 5; i++) {
+      await provider.complete(request);
+    }
+
+    // 6th request should fail
+    await expect(provider.complete(request)).rejects.toThrow(&apos;Rate limit exceeded&apos;);
+  });
+});
+</codeblock>
+    <section><title>10.4 Integration Testing</title></section>
+    <p>Integration tests verify that components work together correctly, still using mocked AI but testing real integration.</p>
+    <section><title>Testing Tool Orchestration</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;ToolOrchestrator Integration&apos;, () =&gt; {
+  let mockAI: MockAIProvider;
+  let orchestrator: ToolOrchestrator;
+  let fileSystem: InMemoryFileSystem; // Test file system
+
+  beforeEach(() =&gt; {
+    mockAI = new MockAIProvider();
+    fileSystem = new InMemoryFileSystem();
+    orchestrator = new ToolOrchestrator(mockAI, {
+      fileSystem,
+      logger
+    });
+
+    // Register tools
+    orchestrator.registerTool(new ReadFileTool(fileSystem));
+    orchestrator.registerTool(new WriteFileTool(fileSystem));
+    orchestrator.registerTool(new SearchTool(fileSystem));
+  });
+
+  test(&apos;executes tools in dependency order&apos;, async () =&gt; {
+    // Setup test files
+    fileSystem.writeFile(&apos;/project/src/index.ts&apos;, &apos;export const foo = 1;&apos;);
+
+    // Mock AI to request tool calls
+    mockAI.setDefaultResponse(JSON.stringify({
+      toolCalls: [
+        {
+          tool: &apos;read_file&apos;,
+          parameters: { path: &apos;/project/src/index.ts&apos; }
+        },
+        {
+          tool: &apos;search_code&apos;,
+          parameters: { pattern: &apos;foo&apos;, path: &apos;/project/src&apos; },
+          dependencies: [&apos;read_file&apos;] // Depends on read_file
+        }
+      ]
+    }));
+
+    const result = await orchestrator.execute(&apos;Read and search code&apos;);
+
+    expect(result.success).toBe(true);
+    expect(result.toolResults).toHaveLength(2);
+
+    // Verify execution order
+    expect(result.toolResults[0].tool).toBe(&apos;read_file&apos;);
+    expect(result.toolResults[1].tool).toBe(&apos;search_code&apos;);
+  });
+
+  test(&apos;handles tool errors gracefully&apos;, async () =&gt; {
+    mockAI.setDefaultResponse(JSON.stringify({
+      toolCalls: [
+        {
+          tool: &apos;read_file&apos;,
+          parameters: { path: &apos;/nonexistent.ts&apos; }
+        }
+      ]
+    }));
+
+    const result = await orchestrator.execute(&apos;Read nonexistent file&apos;);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain(&apos;File not found&apos;);
+  });
+
+  test(&apos;uses result caching&apos;, async () =&gt; {
+    fileSystem.writeFile(&apos;/project/test.ts&apos;, &apos;test content&apos;);
+
+    mockAI.setDefaultResponse(JSON.stringify({
+      toolCalls: [
+        {
+          tool: &apos;read_file&apos;,
+          parameters: { path: &apos;/project/test.ts&apos; }
+        }
+      ]
+    }));
+
+    // First execution
+    const result1 = await orchestrator.execute(&apos;Read file&apos;);
+    expect(result1.fromCache).toBe(false);
+
+    // Second execution (should use cache)
+    const result2 = await orchestrator.execute(&apos;Read file&apos;);
+    expect(result2.fromCache).toBe(true);
+    expect(result2.toolResults[0].result).toBe(result1.toolResults[0].result);
+  });
+});
+</codeblock>
+    <section><title>Testing Conversation Flow</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;ConversationManager Integration&apos;, () =&gt; {
+  let mockAI: MockAIProvider;
+  let conversationManager: ConversationManager;
+
+  beforeEach(() =&gt; {
+    mockAI = new MockAIProvider();
+    conversationManager = new ConversationManager(mockAI, {
+      maxTokens: 1000,
+      strategy: ContextWindowStrategy.RECENT
+    });
+  });
+
+  test(&apos;maintains conversation context&apos;, async () =&gt; {
+    // User asks question
+    mockAI.setResponse(
+      /What.*JavaScript/i,
+      &apos;JavaScript is a programming language for the web.&apos;
+    );
+
+    const response1 = await conversationManager.sendMessage(
+      &apos;What is JavaScript?&apos;
+    );
+
+    expect(response1).toContain(&apos;programming language&apos;);
+
+    // Follow-up question (requires context)
+    mockAI.setResponse(
+      /invented/i,
+      &apos;It was created by Brendan Eich in 1995.&apos;
+    );
+
+    const response2 = await conversationManager.sendMessage(
+      &apos;Who invented it?&apos;
+    );
+
+    expect(response2).toContain(&apos;Brendan Eich&apos;);
+
+    // Verify conversation history was sent
+    const calls = mockAI.getCalls();
+    expect(calls[1].messages).toContainEqual(
+      expect.objectContaining({ content: &apos;What is JavaScript?&apos; })
+    );
+  });
+
+  test(&apos;respects token limits&apos;, async () =&gt; {
+    conversationManager = new ConversationManager(mockAI, {
+      maxTokens: 100, // Very small limit
+      strategy: ContextWindowStrategy.RECENT
+    });
+
+    // Add many messages
+    for (let i = 0; i &lt; 10; i++) {
+      mockAI.setDefaultResponse(&apos;Response&apos;);
+      await conversationManager.sendMessage(`Message ${i}`);
+    }
+
+    // Get messages for AI
+    const messages = conversationManager.getMessagesForAI();
+
+    // Should only include recent messages that fit
+    const totalTokens = messages.reduce((sum, msg) =&gt; sum + msg.tokens, 0);
+    expect(totalTokens).toBeLessThanOrEqual(100);
+  });
+});
+</codeblock>
+    <section><title>Testing VCS Intelligence</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;CommitWorkflow Integration&apos;, () =&gt; {
+  let mockAI: MockAIProvider;
+  let mockGit: MockGitService;
+  let workflow: CommitWorkflow;
+
+  beforeEach(() =&gt; {
+    mockAI = new MockAIProvider();
+    mockGit = new MockGitService();
+    workflow = new CommitWorkflow(mockAI, mockGit);
+  });
+
+  test(&apos;complete commit workflow&apos;, async () =&gt; {
+    // Setup git state
+    mockGit.setStatus({
+      branch: &apos;feature/auth&apos;,
+      files: [
+        { path: &apos;src/auth/login.ts&apos;, status: &apos;modified&apos;, staged: false },
+        { path: &apos;src/auth/token.ts&apos;, status: &apos;modified&apos;, staged: false }
+      ]
+    });
+
+    mockGit.setDiff({
+      files: [
+        { path: &apos;src/auth/login.ts&apos;, additions: 10, deletions: 2, changes: 12 },
+        { path: &apos;src/auth/token.ts&apos;, additions: 5, deletions: 1, changes: 6 }
+      ],
+      additions: 15,
+      deletions: 3
+    });
+
+    // Mock AI to generate commit message
+    mockAI.setDefaultResponse(
+      &apos;feat(auth): implement token-based authentication\n\n&apos; +
+      &apos;Add JWT token generation and validation&apos;
+    );
+
+    // Execute workflow
+    const result = await workflow.execute({
+      scope: &apos;auth&apos;,
+      autoStage: true
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.commitHash).toBeDefined();
+
+    // Verify git operations
+    expect(mockGit.wasCalledWith(&apos;add&apos;, [&apos;src/auth/login.ts&apos;, &apos;src/auth/token.ts&apos;])).toBe(true);
+    expect(mockGit.wasCalledWith(&apos;commit&apos;)).toBe(true);
+  });
+});
+</codeblock>
+    <section><title>10.5 Synthetic Test Generation</title></section>
+    <p>Generate test cases automatically to improve coverage and find edge cases.</p>
+    <section><title>Synthetic Test Generator</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Generates synthetic test cases for AI systems
+ */
+export class SyntheticTestGenerator {
+  constructor(private aiProvider: AIProvider) {}
+
+  /**
+   * Generate test cases for a function
+   */
+  async generateTests(
+    functionCode: string,
+    options: GenerateTestsOptions = {}
+  ): Promise&lt;GeneratedTest[]&gt; {
+    const prompt = this.buildGenerationPrompt(functionCode, options);
+
+    const response = await this.aiProvider.complete({
+      messages: [
+        {
+          role: MessageRole.SYSTEM,
+          content: &apos;You generate comprehensive test cases for code.&apos;
+        },
+        {
+          role: MessageRole.USER,
+          content: prompt
+        }
+      ],
+      temperature: 0.7 // Higher temperature for diverse tests
+    });
+
+    return this.parseGeneratedTests(response.content);
+  }
+
+  /**
+   * Build prompt for test generation
+   */
+  private buildGenerationPrompt(
+    functionCode: string,
+    options: GenerateTestsOptions
+  ): string {
+    return `
+Generate comprehensive test cases for the following function:
+
+\`\`\`typescript
+${functionCode}
+\`\`\`
+
+Requirements:
+- Test happy path scenarios
+- Test edge cases (empty input, null, undefined, boundary values)
+- Test error cases
+- Test integration scenarios${options.includePerformance ? &apos;\n- Test performance characteristics&apos; : &apos;&apos;}
+
+Generate ${options.count || 10} test cases covering different scenarios.
+
+Output format (JSON):
+\`\`\`json
+[
+  {
+    &quot;description&quot;: &quot;Test description&quot;,
+    &quot;input&quot;: {...},
+    &quot;expectedOutput&quot;: {...},
+    &quot;expectedError&quot;: null | &quot;error message&quot;,
+    &quot;category&quot;: &quot;happy_path&quot; | &quot;edge_case&quot; | &quot;error_case&quot; | &quot;integration&quot;
+  }
+]
+\`\`\`
+    `.trim();
+  }
+
+  /**
+   * Parse generated test cases
+   */
+  private parseGeneratedTests(response: string): GeneratedTest[] {
+    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
+    const json = jsonMatch ? jsonMatch[1] : response;
+
+    return JSON.parse(json);
+  }
+
+  /**
+   * Generate edge cases for input type
+   */
+  async generateEdgeCases(inputType: string): Promise&lt;any[]&gt; {
+    const edgeCases: Record&lt;string, any[]&gt; = {
+      string: [&apos;&apos;, &apos; &apos;, &apos;\n&apos;, &apos;a&apos;.repeat(10000), &apos;🚀&apos;, &apos;null&apos;, &apos;undefined&apos;],
+      number: [0, -1, 1, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, NaN, Infinity, -Infinity],
+      boolean: [true, false],
+      array: [[], [1], Array(1000).fill(0)],
+      object: [{}, { key: &apos;value&apos; }, null]
+    };
+
+    return edgeCases[inputType] || [];
+  }
+}
+
+export interface GenerateTestsOptions {
+  count?: number;
+  includePerformance?: boolean;
+  includeIntegration?: boolean;
+}
+
+export interface GeneratedTest {
+  description: string;
+  input: any;
+  expectedOutput?: any;
+  expectedError?: string;
+  category: &apos;happy_path&apos; | &apos;edge_case&apos; | &apos;error_case&apos; | &apos;integration&apos;;
+}
+</codeblock>
+    <section><title>Using Synthetic Tests</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;Synthetic Tests&apos;, () =&gt; {
+  let generator: SyntheticTestGenerator;
+
+  beforeAll(async () =&gt; {
+    // Use real AI for generation (run once, cache results)
+    const ai = new AnthropicProvider({ apiKey: process.env.ANTHROPIC_API_KEY! });
+    generator = new SyntheticTestGenerator(ai);
+  });
+
+  test(&apos;run generated tests for TokenCounter&apos;, async () =&gt; {
+    const functionCode = `
+    export class TokenCounter {
+      count(text: string): number {
+        return text.split(/\\s+/).filter(word =&gt; word.length &gt; 0).length;
+      }
+    }
+    `;
+
+    // Generate tests (do this once, save results)
+    const generatedTests = await generator.generateTests(functionCode, {
+      count: 20
+    });
+
+    // Save to file for later use
+    fs.writeFileSync(
+      &apos;./tests/generated/token-counter.json&apos;,
+      JSON.stringify(generatedTests, null, 2)
+    );
+
+    // Run generated tests
+    const counter = new TokenCounter();
+
+    for (const test of generatedTests) {
+      if (test.expectedError) {
+        expect(() =&gt; counter.count(test.input.text)).toThrow(test.expectedError);
+      } else {
+        const result = counter.count(test.input.text);
+        expect(result).toBe(test.expectedOutput);
+      }
+    }
+  });
+});
+</codeblock>
+    <section><title>Property-Based Testing</title></section>
+    <codeblock outputclass="language-typescript">import { fc, test as fcTest } from &apos;fast-check&apos;;
+
+describe(&apos;Property-Based Tests&apos;, () =&gt; {
+  fcTest.prop([fc.string()])(&apos;TokenCounter count is non-negative&apos;, (text) =&gt; {
+    const counter = new TokenCounter();
+    const count = counter.count(text);
+
+    expect(count).toBeGreaterThanOrEqual(0);
+  });
+
+  fcTest.prop([fc.array(fc.string())])(&apos;Joining and counting matches array length&apos;, (words) =&gt; {
+    const counter = new TokenCounter();
+    const text = words.join(&apos; &apos;);
+    const count = counter.count(text);
+
+    // Count should match number of non-empty words
+    const nonEmptyWords = words.filter(w =&gt; w.trim().length &gt; 0);
+    expect(count).toBe(nonEmptyWords.length);
+  });
+
+  fcTest.prop([fc.string(), fc.string()])(&apos;Count is additive&apos;, (text1, text2) =&gt; {
+    const counter = new TokenCounter();
+
+    const count1 = counter.count(text1);
+    const count2 = counter.count(text2);
+    const combinedCount = counter.count(text1 + &apos; &apos; + text2);
+
+    // Combined count should equal sum (plus separator handling)
+    expect(combinedCount).toBeGreaterThanOrEqual(count1 + count2);
+  });
+});
+</codeblock>
+    <section><title>10.6 Performance Testing</title></section>
+    <p>Test performance characteristics and ensure they meet requirements.</p>
+    <section><title>Performance Test Framework</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Performance test utilities
+ */
+export class PerformanceTest {
+  /**
+   * Measure execution time
+   */
+  static async measure&lt;T&gt;(
+    name: string,
+    fn: () =&gt; Promise&lt;T&gt;
+  ): Promise&lt;{ result: T; duration: number }&gt; {
+    const start = performance.now();
+
+    const result = await fn();
+
+    const duration = performance.now() - start;
+
+    console.log(`${name}: ${duration.toFixed(2)}ms`);
+
+    return { result, duration };
+  }
+
+  /**
+   * Run benchmark with multiple iterations
+   */
+  static async benchmark(
+    name: string,
+    fn: () =&gt; Promise&lt;void&gt;,
+    iterations: number = 100
+  ): Promise&lt;BenchmarkResult&gt; {
+    const durations: number[] = [];
+
+    for (let i = 0; i &lt; iterations; i++) {
+      const start = performance.now();
+      await fn();
+      durations.push(performance.now() - start);
+    }
+
+    const sorted = durations.sort((a, b) =&gt; a - b);
+
+    const result = {
+      name,
+      iterations,
+      mean: durations.reduce((a, b) =&gt; a + b) / iterations,
+      median: sorted[Math.floor(iterations / 2)],
+      min: sorted[0],
+      max: sorted[sorted.length - 1],
+      p95: sorted[Math.floor(iterations * 0.95)],
+      p99: sorted[Math.floor(iterations * 0.99)]
+    };
+
+    console.table(result);
+
+    return result;
+  }
+
+  /**
+   * Assert performance requirement
+   */
+  static assertPerformance(
+    duration: number,
+    maxMs: number,
+    operation: string
+  ): void {
+    if (duration &gt; maxMs) {
+      throw new Error(
+        `Performance requirement failed: ${operation} took ${duration.toFixed(2)}ms (max: ${maxMs}ms)`
+      );
+    }
+  }
+}
+
+export interface BenchmarkResult {
+  name: string;
+  iterations: number;
+  mean: number;
+  median: number;
+  min: number;
+  max: number;
+  p95: number;
+  p99: number;
+}
+</codeblock>
+    <section><title>Performance Tests</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;Performance Tests&apos;, () =&gt; {
+  test(&apos;ConversationManager.getMessagesForAI completes within 50ms&apos;, async () =&gt; {
+    const manager = new ConversationManager(mockAI, {
+      maxTokens: 10000,
+      strategy: ContextWindowStrategy.RECENT
+    });
+
+    // Add 100 messages
+    for (let i = 0; i &lt; 100; i++) {
+      manager.addMessage({
+        role: i % 2 === 0 ? MessageRole.USER : MessageRole.ASSISTANT,
+        content: `Message ${i}`,
+        tokens: 10
+      });
+    }
+
+    const { duration } = await PerformanceTest.measure(
+      &apos;getMessagesForAI&apos;,
+      async () =&gt; manager.getMessagesForAI()
+    );
+
+    PerformanceTest.assertPerformance(duration, 50, &apos;getMessagesForAI&apos;);
+  });
+
+  test(&apos;DependencyGraph.topologicalSort scales linearly&apos;, async () =&gt; {
+    const sizes = [10, 100, 1000];
+    const results: BenchmarkResult[] = [];
+
+    for (const size of sizes) {
+      const graph = new DependencyGraph();
+
+      // Create chain: 0 -&gt; 1 -&gt; 2 -&gt; ... -&gt; size
+      for (let i = 0; i &lt; size; i++) {
+        graph.addNode(`node_${i}`);
+        if (i &gt; 0) {
+          graph.addEdge(`node_${i}`, `node_${i - 1}`);
+        }
+      }
+
+      const result = await PerformanceTest.benchmark(
+        `topologicalSort (n=${size})`,
+        async () =&gt; { graph.topologicalSort(); },
+        100
+      );
+
+      results.push(result);
+    }
+
+    // Verify linear scaling (mean should scale linearly with size)
+    const ratio1 = results[1].mean / results[0].mean;
+    const ratio2 = results[2].mean / results[1].mean;
+
+    // Ratios should be approximately equal for linear scaling
+    expect(Math.abs(ratio1 - ratio2)).toBeLessThan(5);
+  });
+
+  test(&apos;Cache hit vs miss performance&apos;, async () =&gt; {
+    const cache = new ResultCache({ maxSize: 1000, ttl: 60000 });
+
+    const value = { data: &apos;test&apos;.repeat(100) };
+
+    // Benchmark cache miss
+    const miss = await PerformanceTest.benchmark(
+      &apos;cache miss&apos;,
+      async () =&gt; {
+        cache.get(&apos;nonexistent&apos;);
+      },
+      10000
+    );
+
+    // Benchmark cache hit
+    cache.set(&apos;key&apos;, value);
+
+    const hit = await PerformanceTest.benchmark(
+      &apos;cache hit&apos;,
+      async () =&gt; {
+        cache.get(&apos;key&apos;);
+      },
+      10000
+    );
+
+    // Cache hit should be faster
+    expect(hit.mean).toBeLessThan(miss.mean);
+
+    // Both should be very fast (&lt;1ms)
+    expect(hit.mean).toBeLessThan(1);
+    expect(miss.mean).toBeLessThan(1);
+  });
+});
+</codeblock>
+    <section><title>Load Testing</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;Load Tests&apos;, () =&gt; {
+  test(&apos;handles concurrent requests&apos;, async () =&gt; {
+    const mockAI = new MockAIProvider();
+    mockAI.setDefaultResponse(&apos;Response&apos;);
+
+    const manager = new ConversationManager(mockAI);
+
+    // Send 100 concurrent requests
+    const promises = Array.from({ length: 100 }, (_, i) =&gt;
+      manager.sendMessage(`Message ${i}`)
+    );
+
+    const start = performance.now();
+    await Promise.all(promises);
+    const duration = performance.now() - start;
+
+    console.log(`100 concurrent requests: ${duration.toFixed(2)}ms`);
+
+    // Should handle all requests
+    expect(mockAI.getCallCount()).toBe(100);
+
+    // Should complete reasonably fast
+    PerformanceTest.assertPerformance(duration, 5000, &apos;100 concurrent requests&apos;);
+  });
+
+  test(&apos;memory usage remains stable under load&apos;, async () =&gt; {
+    const manager = new ConversationManager(mockAI);
+
+    const initialMemory = process.memoryUsage().heapUsed;
+
+    // Add 10,000 messages
+    for (let i = 0; i &lt; 10000; i++) {
+      manager.addMessage({
+        role: i % 2 === 0 ? MessageRole.USER : MessageRole.ASSISTANT,
+        content: `Message ${i}`,
+        tokens: 10
+      });
+    }
+
+    const finalMemory = process.memoryUsage().heapUsed;
+    const memoryIncreaseMB = (finalMemory - initialMemory) / 1024 / 1024;
+
+    console.log(`Memory increase: ${memoryIncreaseMB.toFixed(2)}MB`);
+
+    // Memory increase should be reasonable
+    expect(memoryIncreaseMB).toBeLessThan(100);
+  });
+});
+</codeblock>
+    <section><title>10.7 Quality-Based Assertions</title></section>
+    <p>Since AI outputs are non-deterministic, use quality-based assertions instead of exact matching.</p>
+    <section><title>Quality Assertion Library</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Quality-based assertions for AI outputs
+ */
+export class AIAssertions {
+  /**
+   * Assert response contains code
+   */
+  static containsCode(response: string): void {
+    const codeBlockPattern = /```[\s\S]*?```/;
+
+    if (!codeBlockPattern.test(response)) {
+      throw new Error(&apos;Response does not contain code block&apos;);
+    }
+  }
+
+  /**
+   * Assert code is valid TypeScript
+   */
+  static async isValidTypeScript(code: string): Promise&lt;void&gt; {
+    const ts = await import(&apos;typescript&apos;);
+
+    const result = ts.transpileModule(code, {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2020,
+        module: ts.ModuleKind.ESNext
+      }
+    });
+
+    if (result.diagnostics &amp;&amp; result.diagnostics.length &gt; 0) {
+      const errors = result.diagnostics.map(d =&gt; d.messageText).join(&apos;\n&apos;);
+      throw new Error(`TypeScript compilation errors:\n${errors}`);
+    }
+  }
+
+  /**
+   * Assert code passes linting
+   */
+  static async passesLint(code: string): Promise&lt;void&gt; {
+    const { ESLint } = await import(&apos;eslint&apos;);
+
+    const eslint = new ESLint({
+      useEslintrc: false,
+      baseConfig: {
+        extends: [&apos;eslint:recommended&apos;],
+        parserOptions: {
+          ecmaVersion: 2020,
+          sourceType: &apos;module&apos;
+        }
+      }
+    });
+
+    const results = await eslint.lintText(code);
+
+    const errors = results[0].messages.filter(m =&gt; m.severity === 2);
+
+    if (errors.length &gt; 0) {
+      const errorMessages = errors.map(e =&gt; e.message).join(&apos;\n&apos;);
+      throw new Error(`Linting errors:\n${errorMessages}`);
+    }
+  }
+
+  /**
+   * Assert code implements specific functionality
+   */
+  static implementsFunction(code: string, functionName: string): void {
+    const functionPattern = new RegExp(
+      `(function\\s+${functionName}|const\\s+${functionName}\\s*=|${functionName}\\s*:\\s*function)`
+    );
+
+    if (!functionPattern.test(code)) {
+      throw new Error(`Code does not implement function: ${functionName}`);
+    }
+  }
+
+  /**
+   * Assert response has minimum quality score
+   */
+  static async hasMinimumQuality(
+    response: string,
+    minScore: number,
+    criteria: QualityCriteria
+  ): Promise&lt;void&gt; {
+    const score = await this.calculateQualityScore(response, criteria);
+
+    if (score &lt; minScore) {
+      throw new Error(
+        `Quality score ${score.toFixed(2)} below minimum ${minScore}`
+      );
+    }
+  }
+
+  /**
+   * Calculate quality score based on criteria
+   */
+  private static async calculateQualityScore(
+    response: string,
+    criteria: QualityCriteria
+  ): Promise&lt;number&gt; {
+    let score = 0;
+    let totalWeight = 0;
+
+    if (criteria.hasCode) {
+      totalWeight += criteria.hasCode;
+      if (/```[\s\S]*?```/.test(response)) {
+        score += criteria.hasCode;
+      }
+    }
+
+    if (criteria.hasExplanation) {
+      totalWeight += criteria.hasExplanation;
+      // Check for explanation text (not in code blocks)
+      const textOutsideCode = response.replace(/```[\s\S]*?```/g, &apos;&apos;);
+      if (textOutsideCode.trim().length &gt; 50) {
+        score += criteria.hasExplanation;
+      }
+    }
+
+    if (criteria.isValid) {
+      totalWeight += criteria.isValid;
+      const codeMatch = response.match(/```(?:typescript|javascript)?\n([\s\S]*?)```/);
+      if (codeMatch) {
+        try {
+          await this.isValidTypeScript(codeMatch[1]);
+          score += criteria.isValid;
+        } catch (error) {
+          // Not valid
+        }
+      }
+    }
+
+    return totalWeight &gt; 0 ? (score / totalWeight) * 100 : 0;
+  }
+
+  /**
+   * Assert semantic similarity to expected output
+   */
+  static async semanticallySimilar(
+    actual: string,
+    expected: string,
+    minSimilarity: number = 0.7
+  ): Promise&lt;void&gt; {
+    // Use Levenshtein distance for simple similarity
+    const similarity = this.calculateSimilarity(actual, expected);
+
+    if (similarity &lt; minSimilarity) {
+      throw new Error(
+        `Semantic similarity ${similarity.toFixed(2)} below minimum ${minSimilarity}`
+      );
+    }
+  }
+
+  /**
+   * Calculate similarity using Levenshtein distance
+   */
+  private static calculateSimilarity(str1: string, str2: string): number {
+    const len1 = str1.length;
+    const len2 = str2.length;
+
+    const matrix: number[][] = [];
+
+    for (let i = 0; i &lt;= len1; i++) {
+      matrix[i] = [i];
+    }
+
+    for (let j = 0; j &lt;= len2; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i &lt;= len1; i++) {
+      for (let j = 1; j &lt;= len2; j++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,     // deletion
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j - 1] + cost // substitution
+        );
+      }
+    }
+
+    const distance = matrix[len1][len2];
+    const maxLen = Math.max(len1, len2);
+
+    return 1 - (distance / maxLen);
+  }
+}
+
+export interface QualityCriteria {
+  hasCode?: number;        // Weight for containing code
+  hasExplanation?: number; // Weight for containing explanation
+  isValid?: number;        // Weight for valid syntax
+  passesLint?: number;     // Weight for passing linting
+}
+</codeblock>
+    <section><title>Using Quality Assertions</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;Code Generation Quality&apos;, () =&gt; {
+  let ai: AIProvider;
+
+  beforeAll(() =&gt; {
+    ai = new AnthropicProvider({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  });
+
+  test(&apos;generates valid code with explanation&apos;, async () =&gt; {
+    const response = await ai.complete({
+      messages: [{
+        role: MessageRole.USER,
+        content: &apos;Write a TypeScript function to calculate fibonacci numbers&apos;
+      }]
+    });
+
+    // Quality-based assertions
+    AIAssertions.containsCode(response.content);
+
+    const codeMatch = response.content.match(/```typescript\n([\s\S]*?)```/);
+    expect(codeMatch).not.toBeNull();
+
+    const code = codeMatch![1];
+
+    // Assert valid TypeScript
+    await AIAssertions.isValidTypeScript(code);
+
+    // Assert implements fibonacci
+    AIAssertions.implementsFunction(code, &apos;fibonacci&apos;);
+
+    // Assert passes linting
+    await AIAssertions.passesLint(code);
+
+    // Assert minimum quality
+    await AIAssertions.hasMinimumQuality(response.content, 80, {
+      hasCode: 30,
+      hasExplanation: 30,
+      isValid: 40
+    });
+  });
+
+  test(&apos;generates semantically similar responses&apos;, async () =&gt; {
+    const response1 = await ai.complete({
+      messages: [{
+        role: MessageRole.USER,
+        content: &apos;Explain dependency injection&apos;
+      }],
+      temperature: 0.7
+    });
+
+    const response2 = await ai.complete({
+      messages: [{
+        role: MessageRole.USER,
+        content: &apos;Explain dependency injection&apos;
+      }],
+      temperature: 0.7
+    });
+
+    // Responses should be semantically similar even if not identical
+    await AIAssertions.semanticallySimilar(
+      response1.content,
+      response2.content,
+      0.6 // 60% similarity threshold
+    );
+  });
+});
+</codeblock>
+    <section><title>10.8 Regression Detection</title></section>
+    <p>Detect when changes degrade AI output quality.</p>
+    <section><title>Regression Test Suite</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Regression testing for AI outputs
+ */
+export class RegressionTestSuite {
+  private baseline: Map&lt;string, BaselineResponse&gt; = new Map();
+
+  constructor(private baselinePath: string) {}
+
+  /**
+   * Load baseline responses
+   */
+  async loadBaseline(): Promise&lt;void&gt; {
+    const data = await fs.readFile(this.baselinePath, &apos;utf-8&apos;);
+    const baseline = JSON.parse(data);
+
+    for (const [key, value] of Object.entries(baseline)) {
+      this.baseline.set(key, value as BaselineResponse);
+    }
+  }
+
+  /**
+   * Save baseline responses
+   */
+  async saveBaseline(): Promise&lt;void&gt; {
+    const baseline = Object.fromEntries(this.baseline);
+    await fs.writeFile(
+      this.baselinePath,
+      JSON.stringify(baseline, null, 2)
+    );
+  }
+
+  /**
+   * Test against baseline
+   */
+  async testAgainstBaseline(
+    key: string,
+    currentResponse: string,
+    qualityCriteria: QualityCriteria
+  ): Promise&lt;RegressionResult&gt; {
+    const baseline = this.baseline.get(key);
+
+    if (!baseline) {
+      // No baseline - create one
+      this.baseline.set(key, {
+        response: currentResponse,
+        qualityScore: await AIAssertions[&apos;calculateQualityScore&apos;](
+          currentResponse,
+          qualityCriteria
+        ),
+        timestamp: new Date().toISOString()
+      });
+
+      return {
+        status: &apos;new&apos;,
+        message: &apos;New baseline created&apos;
+      };
+    }
+
+    // Calculate current quality score
+    const currentScore = await AIAssertions[&apos;calculateQualityScore&apos;](
+      currentResponse,
+      qualityCriteria
+    );
+
+    // Compare with baseline
+    const scoreDiff = currentScore - baseline.qualityScore;
+
+    if (scoreDiff &lt; -10) {
+      // Significant regression
+      return {
+        status: &apos;regression&apos;,
+        message: `Quality dropped by ${Math.abs(scoreDiff).toFixed(2)} points`,
+        baselineScore: baseline.qualityScore,
+        currentScore,
+        diff: scoreDiff
+      };
+    } else if (scoreDiff &gt; 10) {
+      // Significant improvement - update baseline
+      this.baseline.set(key, {
+        response: currentResponse,
+        qualityScore: currentScore,
+        timestamp: new Date().toISOString()
+      });
+
+      return {
+        status: &apos;improvement&apos;,
+        message: `Quality improved by ${scoreDiff.toFixed(2)} points`,
+        baselineScore: baseline.qualityScore,
+        currentScore,
+        diff: scoreDiff
+      };
+    } else {
+      // No significant change
+      return {
+        status: &apos;passed&apos;,
+        message: &apos;Quality within acceptable range&apos;,
+        baselineScore: baseline.qualityScore,
+        currentScore,
+        diff: scoreDiff
+      };
+    }
+  }
+}
+
+interface BaselineResponse {
+  response: string;
+  qualityScore: number;
+  timestamp: string;
+}
+
+interface RegressionResult {
+  status: &apos;new&apos; | &apos;passed&apos; | &apos;regression&apos; | &apos;improvement&apos;;
+  message: string;
+  baselineScore?: number;
+  currentScore?: number;
+  diff?: number;
+}
+</codeblock>
+    <section><title>Regression Tests</title></section>
+    <codeblock outputclass="language-typescript">describe(&apos;Regression Tests&apos;, () =&gt; {
+  let ai: AIProvider;
+  let regressionSuite: RegressionTestSuite;
+
+  beforeAll(async () =&gt; {
+    ai = new AnthropicProvider({ apiKey: process.env.ANTHROPIC_API_KEY! });
+    regressionSuite = new RegressionTestSuite(&apos;./tests/baseline.json&apos;);
+    await regressionSuite.loadBaseline();
+  });
+
+  afterAll(async () =&gt; {
+    await regressionSuite.saveBaseline();
+  });
+
+  test(&apos;code generation quality&apos;, async () =&gt; {
+    const response = await ai.complete({
+      messages: [{
+        role: MessageRole.USER,
+        content: &apos;Write a TypeScript function to reverse a string&apos;
+      }]
+    });
+
+    const result = await regressionSuite.testAgainstBaseline(
+      &apos;reverse_string&apos;,
+      response.content,
+      {
+        hasCode: 30,
+        hasExplanation: 20,
+        isValid: 50
+      }
+    );
+
+    if (result.status === &apos;regression&apos;) {
+      throw new Error(result.message);
+    }
+
+    expect(result.status).not.toBe(&apos;regression&apos;);
+  });
+
+  test(&apos;commit message quality&apos;, async () =&gt; {
+    const generator = new CommitMessageGenerator(ai);
+
+    const diff: GitDiff = {
+      files: [
+        { path: &apos;src/auth/login.ts&apos;, additions: 15, deletions: 3, changes: 18 }
+      ],
+      additions: 15,
+      deletions: 3
+    };
+
+    const message = await generator.generate(diff, { scope: &apos;auth&apos; });
+
+    const result = await regressionSuite.testAgainstBaseline(
+      &apos;commit_message_auth&apos;,
+      message.message,
+      {
+        hasExplanation: 100 // Commit messages should be explanatory
+      }
+    );
+
+    expect(result.status).not.toBe(&apos;regression&apos;);
+  });
+});
+</codeblock>
+    <section><title>Exercises</title></section>
+    <section><title>Exercise 1: Build a Test Factory</title></section>
+    <p><b>Goal:</b> Create a factory that generates test data for different scenarios.</p>
+    <p><b>Requirements:</b>
+1. Generate realistic conversation histories
+2. Generate git diffs with various patterns
+3. Generate file structures
+4. Support different complexity levels</p>
+    <p><b>Starter Code:</b></p>
+    <codeblock outputclass="language-typescript">export class TestDataFactory {
+  generateConversation(length: number): Message[] {
+    // TODO: Generate realistic conversation
+  }
+
+  generateGitDiff(fileCount: number, complexity: &apos;simple&apos; | &apos;complex&apos;): GitDiff {
+    // TODO: Generate git diff
+  }
+
+  generateFileStructure(depth: number, filesPerDir: number): FileTree {
+    // TODO: Generate file tree
+  }
+}
+</codeblock>
+    <section><title>Exercise 2: Implement Snapshot Testing</title></section>
+    <p><b>Goal:</b> Add snapshot testing for AI outputs to detect unexpected changes.</p>
+    <p><b>Requirements:</b>
+1. Capture AI response snapshots
+2. Compare new responses with snapshots
+3. Support updating snapshots
+4. Show clear diffs</p>
+    <p><b>Hints:</b>
+- Use JSON serialization for snapshots
+- Store snapshots in <codeph>__snapshots__</codeph> directory
+- Implement <codeph>toMatchSnapshot()</codeph> matcher</p>
+    <section><title>Exercise 3: Build a CI/CD Pipeline</title></section>
+    <p><b>Goal:</b> Create a GitHub Actions workflow that runs all tests.</p>
+    <p><b>Requirements:</b>
+1. Run unit tests (fast, no AI)
+2. Run integration tests with mocks
+3. Run regression tests (nightly, with real AI)
+4. Publish coverage reports
+5. Fail on regression</p>
+    <section><title>Summary</title></section>
+    <p>In this chapter, you built comprehensive testing strategies for AI systems.</p>
+    <section><title>Key Concepts</title></section>
+    <ol>
+      <li>
+        <b>Quality-Based Assertions</b>
+        - Test properties, not exact outputs
+      </li>
+      <li>
+        <b>Mock AI Providers</b>
+        - Fast, deterministic unit tests
+      </li>
+      <li>
+        <b>Integration Testing</b>
+        - Test components working together
+      </li>
+      <li>
+        <b>Synthetic Test Generation</b>
+        - AI-generated test cases
+      </li>
+      <li>
+        <b>Performance Testing</b>
+        - Ensure speed and scalability
+      </li>
+      <li>
+        <b>Regression Detection</b>
+        - Prevent quality degradation
+      </li>
+    </ol>
+    <section><title>Testing Strategy Summary</title></section>
+    <codeblock>Unit Tests (Fast, Many)
+├─ Pure functions
+├─ Validation logic
+├─ Data transformations
+└─ No AI dependencies
+
+Integration Tests (Medium Speed, Some)
+├─ Mock AI providers
+├─ Component integration
+├─ Tool orchestration
+└─ Conversation flow
+
+E2E Tests (Slow, Few)
+├─ Real AI providers
+├─ Full workflows
+├─ Regression detection
+└─ Quality validation
+</codeblock>
+    <section><title>Real-World Impact</title></section>
+    <p><b>Before Testing:</b>
+- Manual verification only
+- Regressions slip into production
+- Slow development (fear of breaking things)
+- No confidence in refactoring</p>
+    <p><b>After Testing:</b>
+- 80% code coverage
+- Automated regression detection
+- Fast CI/CD (&lt; 5 minutes)
+- Confident refactoring</p>
+    <section><title>Next Steps</title></section>
+    <p>In <b>Chapter 11: Performance Optimization →</b>, you&apos;ll learn how to make your AI assistant blazing fast with intelligent caching, parallel execution, and optimization techniques.</p>
+    <p><i>Chapter 10 | Testing AI Systems | Complete</i></p>
+  </body>
+</topic>
