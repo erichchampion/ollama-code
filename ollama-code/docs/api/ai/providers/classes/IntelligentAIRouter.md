@@ -6,7 +6,7 @@
 
 # Class: IntelligentAIRouter
 
-Defined in: [ai/providers/intelligent-router.ts:84](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L84)
+Defined in: [ai/providers/intelligent-router.ts:84](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L84)
 
 Intelligent AI Router
 
@@ -20,7 +20,7 @@ Intelligent AI Router
 
 > **new IntelligentAIRouter**(`config`): `IntelligentAIRouter`
 
-Defined in: [ai/providers/intelligent-router.ts:94](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L94)
+Defined in: [ai/providers/intelligent-router.ts:94](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L94)
 
 #### Parameters
 
@@ -42,7 +42,7 @@ Defined in: [ai/providers/intelligent-router.ts:94](https://github.com/erichcham
 
 > **registerProvider**(`provider`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/intelligent-router.ts:116](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L116)
+Defined in: [ai/providers/intelligent-router.ts:116](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L116)
 
 Register a provider with the router
 
@@ -62,7 +62,7 @@ Register a provider with the router
 
 > **unregisterProvider**(`providerName`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/intelligent-router.ts:147](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L147)
+Defined in: [ai/providers/intelligent-router.ts:147](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L147)
 
 Unregister a provider
 
@@ -82,7 +82,7 @@ Unregister a provider
 
 > **route**(`prompt`, `options`, `context`): `Promise`\<[`AICompletionResponse`](../interfaces/AICompletionResponse.md)\>
 
-Defined in: [ai/providers/intelligent-router.ts:166](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L166)
+Defined in: [ai/providers/intelligent-router.ts:166](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L166)
 
 Route a completion request to the optimal provider
 
@@ -110,7 +110,7 @@ Route a completion request to the optimal provider
 
 > **routeStream**(`prompt`, `options`, `onEvent`, `context`, `abortSignal?`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/intelligent-router.ts:214](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L214)
+Defined in: [ai/providers/intelligent-router.ts:214](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L214)
 
 Route a streaming completion request
 
@@ -146,7 +146,7 @@ Route a streaming completion request
 
 > **getBestProvider**(`context`): `Promise`\<`null` \| [`BaseAIProvider`](BaseAIProvider.md)\>
 
-Defined in: [ai/providers/intelligent-router.ts:258](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L258)
+Defined in: [ai/providers/intelligent-router.ts:258](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L258)
 
 Get the best provider for specific capabilities
 
@@ -166,7 +166,7 @@ Get the best provider for specific capabilities
 
 > **getAllModels**(): `Promise`\<[`AIModel`](../interfaces/AIModel.md)[]\>
 
-Defined in: [ai/providers/intelligent-router.ts:270](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L270)
+Defined in: [ai/providers/intelligent-router.ts:270](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L270)
 
 List all available models across all providers
 
@@ -180,7 +180,7 @@ List all available models across all providers
 
 > **getMetrics**(): [`RouterMetrics`](../interfaces/RouterMetrics.md)
 
-Defined in: [ai/providers/intelligent-router.ts:288](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L288)
+Defined in: [ai/providers/intelligent-router.ts:288](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L288)
 
 Get router metrics
 
@@ -194,7 +194,7 @@ Get router metrics
 
 > **getProviderStatus**(): `Record`\<`string`, `any`\>
 
-Defined in: [ai/providers/intelligent-router.ts:295](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L295)
+Defined in: [ai/providers/intelligent-router.ts:295](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L295)
 
 Get provider status summary
 
@@ -208,7 +208,7 @@ Get provider status summary
 
 > **cleanup**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/intelligent-router.ts:322](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/intelligent-router.ts#L322)
+Defined in: [ai/providers/intelligent-router.ts:322](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/intelligent-router.ts#L322)
 
 Cleanup router resources
 

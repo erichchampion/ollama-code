@@ -202,14 +202,7 @@ Each chapter includes:
 ### GitHub Repository
 - Complete ollama-code source code
 - All book code examples
-- Exercise solutions
 - Additional resources
-
-### Online Resources
-- Video tutorials for complex topics
-- Interactive code playgrounds
-- Community forum for discussions
-- Updates and errata
 
 ### Tools
 - Debugging utilities

@@ -6,7 +6,7 @@
 
 # Class: LocalFineTuningManager
 
-Defined in: [ai/providers/local-fine-tuning.ts:124](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L124)
+Defined in: [ai/providers/local-fine-tuning.ts:124](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L124)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:124](https://github.com/erichcham
 
 > **new LocalFineTuningManager**(`workspaceDir`): `LocalFineTuningManager`
 
-Defined in: [ai/providers/local-fine-tuning.ts:133](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L133)
+Defined in: [ai/providers/local-fine-tuning.ts:133](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L133)
 
 #### Parameters
 
@@ -40,7 +40,7 @@ Defined in: [ai/providers/local-fine-tuning.ts:133](https://github.com/erichcham
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:143](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L143)
+Defined in: [ai/providers/local-fine-tuning.ts:143](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L143)
 
 Initialize the fine-tuning workspace
 
@@ -54,7 +54,7 @@ Initialize the fine-tuning workspace
 
 > **createDataset**(`name`, `description`, `type`, `sourceFiles`, `options`): `Promise`\<[`FineTuningDataset`](../interfaces/FineTuningDataset.md)\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:157](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L157)
+Defined in: [ai/providers/local-fine-tuning.ts:157](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L157)
 
 Create a new dataset from files
 
@@ -108,7 +108,7 @@ Create a new dataset from files
 
 > **startFineTuning**(`name`, `baseModel`, `datasetId`, `config`): `Promise`\<[`FineTuningJob`](../interfaces/FineTuningJob.md)\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:219](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L219)
+Defined in: [ai/providers/local-fine-tuning.ts:219](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L219)
 
 Start a fine-tuning job
 
@@ -140,7 +140,7 @@ Start a fine-tuning job
 
 > **getJob**(`jobId`): `undefined` \| [`FineTuningJob`](../interfaces/FineTuningJob.md)
 
-Defined in: [ai/providers/local-fine-tuning.ts:267](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L267)
+Defined in: [ai/providers/local-fine-tuning.ts:267](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L267)
 
 Monitor a fine-tuning job
 
@@ -160,7 +160,7 @@ Monitor a fine-tuning job
 
 > **listJobs**(): [`FineTuningJob`](../interfaces/FineTuningJob.md)[]
 
-Defined in: [ai/providers/local-fine-tuning.ts:274](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L274)
+Defined in: [ai/providers/local-fine-tuning.ts:274](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L274)
 
 List all jobs
 
@@ -174,7 +174,7 @@ List all jobs
 
 > **cancelJob**(`jobId`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:281](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L281)
+Defined in: [ai/providers/local-fine-tuning.ts:281](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L281)
 
 Cancel a running job
 
@@ -194,7 +194,7 @@ Cancel a running job
 
 > **deployModel**(`name`, `modelPath`, `options`): `Promise`\<[`ModelDeployment`](../interfaces/ModelDeployment.md)\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:305](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L305)
+Defined in: [ai/providers/local-fine-tuning.ts:305](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L305)
 
 Deploy a fine-tuned model
 
@@ -240,7 +240,7 @@ Deploy a fine-tuned model
 
 > **listDatasets**(): [`FineTuningDataset`](../interfaces/FineTuningDataset.md)[]
 
-Defined in: [ai/providers/local-fine-tuning.ts:356](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L356)
+Defined in: [ai/providers/local-fine-tuning.ts:356](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L356)
 
 List all datasets
 
@@ -254,7 +254,7 @@ List all datasets
 
 > **listDeployments**(): [`ModelDeployment`](../interfaces/ModelDeployment.md)[]
 
-Defined in: [ai/providers/local-fine-tuning.ts:363](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L363)
+Defined in: [ai/providers/local-fine-tuning.ts:363](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L363)
 
 List all deployments
 
@@ -268,7 +268,7 @@ List all deployments
 
 > **getDeployment**(`deploymentId`): `undefined` \| [`ModelDeployment`](../interfaces/ModelDeployment.md)
 
-Defined in: [ai/providers/local-fine-tuning.ts:370](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L370)
+Defined in: [ai/providers/local-fine-tuning.ts:370](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L370)
 
 Get deployment status
 
@@ -288,7 +288,7 @@ Get deployment status
 
 > **stopDeployment**(`deploymentId`): `Promise`\<`void`\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:377](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L377)
+Defined in: [ai/providers/local-fine-tuning.ts:377](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L377)
 
 Stop a model deployment
 
@@ -308,7 +308,7 @@ Stop a model deployment
 
 > **cleanup**(): `Promise`\<`void`\>
 
-Defined in: [ai/providers/local-fine-tuning.ts:391](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/local-fine-tuning.ts#L391)
+Defined in: [ai/providers/local-fine-tuning.ts:391](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/local-fine-tuning.ts#L391)
 
 Cleanup resources
 

@@ -6,7 +6,7 @@
 
 # Interface: SpinnerInstance
 
-Defined in: [terminal/types.ts:50](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L50)
+Defined in: [terminal/types.ts:50](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L50)
 
 Spinner instance for progress indicators
 
@@ -16,7 +16,7 @@ Spinner instance for progress indicators
 
 > **update**(`text`): `SpinnerInstance`
 
-Defined in: [terminal/types.ts:59](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L59)
+Defined in: [terminal/types.ts:59](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L59)
 
 Update spinner text
 
@@ -36,7 +36,7 @@ Update spinner text
 
 > **succeed**(`text?`): `SpinnerInstance`
 
-Defined in: [terminal/types.ts:64](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L64)
+Defined in: [terminal/types.ts:64](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L64)
 
 Mark spinner as successful and stop
 
@@ -56,7 +56,7 @@ Mark spinner as successful and stop
 
 > **fail**(`text?`): `SpinnerInstance`
 
-Defined in: [terminal/types.ts:69](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L69)
+Defined in: [terminal/types.ts:69](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L69)
 
 Mark spinner as failed and stop
 
@@ -76,7 +76,7 @@ Mark spinner as failed and stop
 
 > **warn**(`text?`): `SpinnerInstance`
 
-Defined in: [terminal/types.ts:74](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L74)
+Defined in: [terminal/types.ts:74](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L74)
 
 Mark spinner with warning and stop
 
@@ -96,7 +96,7 @@ Mark spinner with warning and stop
 
 > **info**(`text?`): `SpinnerInstance`
 
-Defined in: [terminal/types.ts:79](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L79)
+Defined in: [terminal/types.ts:79](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L79)
 
 Mark spinner with info and stop
 
@@ -116,7 +116,7 @@ Mark spinner with info and stop
 
 > **stop**(): `SpinnerInstance`
 
-Defined in: [terminal/types.ts:84](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L84)
+Defined in: [terminal/types.ts:84](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L84)
 
 Stop spinner without any indicator
 
@@ -130,6 +130,6 @@ Stop spinner without any indicator
 
 > **id**: `string`
 
-Defined in: [terminal/types.ts:54](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L54)
+Defined in: [terminal/types.ts:54](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L54)
 
 Spinner identifier

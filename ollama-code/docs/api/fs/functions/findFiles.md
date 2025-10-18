@@ -8,7 +8,7 @@
 
 > **findFiles**(`directory`, `options`): `Promise`\<`string`[]\>
 
-Defined in: [fs/operations.ts:399](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/fs/operations.ts#L399)
+Defined in: [fs/operations.ts:399](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/fs/operations.ts#L399)
 
 Find files matching a pattern
 

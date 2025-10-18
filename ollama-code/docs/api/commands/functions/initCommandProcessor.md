@@ -8,7 +8,7 @@
 
 > **initCommandProcessor**(`config`, `dependencies`): `Promise`\<`CommandProcessor`\>
 
-Defined in: [commands/index.ts:509](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/commands/index.ts#L509)
+Defined in: [commands/index.ts:509](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/commands/index.ts#L509)
 
 Initialize the command processor
 

@@ -6,7 +6,7 @@
 
 # Interface: FusionStrategy
 
-Defined in: [ai/providers/response-fusion.ts:14](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L14)
+Defined in: [ai/providers/response-fusion.ts:14](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L14)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/response-fusion.ts:14](https://github.com/erichchampio
 
 > **name**: `string`
 
-Defined in: [ai/providers/response-fusion.ts:15](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L15)
+Defined in: [ai/providers/response-fusion.ts:15](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L15)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/response-fusion.ts:15](https://github.com/erichchampio
 
 > **description**: `string`
 
-Defined in: [ai/providers/response-fusion.ts:16](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L16)
+Defined in: [ai/providers/response-fusion.ts:16](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L16)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/response-fusion.ts:16](https://github.com/erichchampio
 
 > **minProviders**: `number`
 
-Defined in: [ai/providers/response-fusion.ts:17](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L17)
+Defined in: [ai/providers/response-fusion.ts:17](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L17)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/response-fusion.ts:17](https://github.com/erichchampio
 
 > **maxProviders**: `number`
 
-Defined in: [ai/providers/response-fusion.ts:18](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L18)
+Defined in: [ai/providers/response-fusion.ts:18](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L18)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [ai/providers/response-fusion.ts:18](https://github.com/erichchampio
 
 > **weightingScheme**: `"quality_based"` \| `"expert_based"` \| `"equal"` \| `"dynamic"` \| `"consensus"`
 
-Defined in: [ai/providers/response-fusion.ts:19](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L19)
+Defined in: [ai/providers/response-fusion.ts:19](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L19)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [ai/providers/response-fusion.ts:19](https://github.com/erichchampio
 
 > **validationRequired**: `boolean`
 
-Defined in: [ai/providers/response-fusion.ts:20](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L20)
+Defined in: [ai/providers/response-fusion.ts:20](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L20)
 
 ***
 
@@ -62,4 +62,4 @@ Defined in: [ai/providers/response-fusion.ts:20](https://github.com/erichchampio
 
 > **synthesisMethod**: `"voting"` \| `"weighted_average"` \| `"merging"` \| `"ranking"` \| `"llm_synthesis"`
 
-Defined in: [ai/providers/response-fusion.ts:21](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/response-fusion.ts#L21)
+Defined in: [ai/providers/response-fusion.ts:21](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/response-fusion.ts#L21)

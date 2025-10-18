@@ -6,7 +6,7 @@
 
 # Interface: AICompletionResponse
 
-Defined in: [ai/providers/base-provider.ts:31](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L31)
+Defined in: [ai/providers/base-provider.ts:31](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/base-provider.ts#L31)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [ai/providers/base-provider.ts:31](https://github.com/erichchampion/
 
 > **content**: `string`
 
-Defined in: [ai/providers/base-provider.ts:32](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L32)
+Defined in: [ai/providers/base-provider.ts:32](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/base-provider.ts#L32)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [ai/providers/base-provider.ts:32](https://github.com/erichchampion/
 
 > **model**: `string`
 
-Defined in: [ai/providers/base-provider.ts:33](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L33)
+Defined in: [ai/providers/base-provider.ts:33](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/base-provider.ts#L33)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [ai/providers/base-provider.ts:33](https://github.com/erichchampion/
 
 > **finishReason**: `"length"` \| `"error"` \| `"stop"` \| `"content_filter"` \| `"function_call"`
 
-Defined in: [ai/providers/base-provider.ts:34](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L34)
+Defined in: [ai/providers/base-provider.ts:34](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/base-provider.ts#L34)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [ai/providers/base-provider.ts:34](https://github.com/erichchampion/
 
 > **usage**: `object`
 
-Defined in: [ai/providers/base-provider.ts:35](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L35)
+Defined in: [ai/providers/base-provider.ts:35](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/base-provider.ts#L35)
 
 #### promptTokens
 
@@ -58,7 +58,7 @@ Defined in: [ai/providers/base-provider.ts:35](https://github.com/erichchampion/
 
 > **metadata**: `object`
 
-Defined in: [ai/providers/base-provider.ts:40](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/ai/providers/base-provider.ts#L40)
+Defined in: [ai/providers/base-provider.ts:40](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/ai/providers/base-provider.ts#L40)
 
 #### requestId
 

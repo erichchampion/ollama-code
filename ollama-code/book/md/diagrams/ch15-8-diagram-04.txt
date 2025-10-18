@@ -13,7 +13,6 @@ Week -2: Beta Launch
 Week 0: Public Launch
 ├─ Post on Hacker News
 ├─ Post on Reddit (r/devops, r/kubernetes)
-├─ Tweet announcement
 ├─ Email tech influencers
 └─ Publish blog post
 

@@ -6,7 +6,7 @@
 
 # Interface: TerminalConfig
 
-Defined in: [terminal/types.ts:15](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L15)
+Defined in: [terminal/types.ts:15](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L15)
 
 Terminal configuration
 
@@ -16,7 +16,7 @@ Terminal configuration
 
 > **theme**: [`TerminalTheme`](../type-aliases/TerminalTheme.md)
 
-Defined in: [terminal/types.ts:19](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L19)
+Defined in: [terminal/types.ts:19](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L19)
 
 Terminal color theme
 
@@ -26,7 +26,7 @@ Terminal color theme
 
 > **useColors**: `boolean`
 
-Defined in: [terminal/types.ts:24](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L24)
+Defined in: [terminal/types.ts:24](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L24)
 
 Whether to use colors in output
 
@@ -36,7 +36,7 @@ Whether to use colors in output
 
 > **showProgressIndicators**: `boolean`
 
-Defined in: [terminal/types.ts:29](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L29)
+Defined in: [terminal/types.ts:29](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L29)
 
 Whether to show progress indicators
 
@@ -46,7 +46,7 @@ Whether to show progress indicators
 
 > **codeHighlighting**: `boolean`
 
-Defined in: [terminal/types.ts:34](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L34)
+Defined in: [terminal/types.ts:34](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L34)
 
 Whether to enable syntax highlighting for code
 
@@ -56,7 +56,7 @@ Whether to enable syntax highlighting for code
 
 > `optional` **maxHeight**: `number`
 
-Defined in: [terminal/types.ts:39](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L39)
+Defined in: [terminal/types.ts:39](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L39)
 
 Maximum terminal height (rows)
 
@@ -66,6 +66,6 @@ Maximum terminal height (rows)
 
 > `optional` **maxWidth**: `number`
 
-Defined in: [terminal/types.ts:44](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/terminal/types.ts#L44)
+Defined in: [terminal/types.ts:44](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/terminal/types.ts#L44)
 
 Maximum terminal width (columns)

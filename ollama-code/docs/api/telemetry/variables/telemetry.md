@@ -8,4 +8,4 @@
 
 > `const` **telemetry**: `TelemetryManager`
 
-Defined in: [telemetry/index.ts:467](https://github.com/erichchampion/ollama-code/blob/d3714fddada0e31a207f4ac11b8476937193173b/ollama-code/src/telemetry/index.ts#L467)
+Defined in: [telemetry/index.ts:467](https://github.com/erichchampion/ollama-code/blob/78170438060c778413879e5a38e477096b574d9c/ollama-code/src/telemetry/index.ts#L467)
