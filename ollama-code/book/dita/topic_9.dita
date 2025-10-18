@@ -1,33 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic id="topic_9">
-  <title>Chapter 9: Security, Privacy, and Sandboxing</title>
+  <title>Chapter 8: Interactive Modes and Natural Language Routing</title>
   <body>
     <section><title>Table of Contents</title></section>
     <ul>
       <li>
-        9.1 Security Overview
+        8.1 Why Natural Language Routing?
       </li>
       <li>
-        9.2 Sandboxed Execution
+        8.2 Interactive Mode Architecture
       </li>
       <li>
-        9.3 Credential Management
+        8.3 Intent Classification
       </li>
       <li>
-        9.4 Input Validation and Sanitization
+        8.4 Command Routing System
       </li>
       <li>
-        9.5 Rate Limiting and Quotas
+        8.5 Context-Aware Parameter Inference
       </li>
       <li>
-        9.6 Privacy-Preserving AI Interactions
+        8.6 Lazy Loading and Performance
       </li>
       <li>
-        9.7 Audit Logging and Compliance
-      </li>
-      <li>
-        9.8 Security Best Practices
+        8.7 Multi-Step Workflow Orchestration
       </li>
       <li>
         Exercises
@@ -36,2427 +33,2169 @@
         Summary
       </li>
     </ul>
-    <section><title>9.1 Security Overview</title></section>
-    <p>AI coding assistants have significant power over your codebase and infrastructure. Without proper security controls, they can:</p>
-    <ul>
-      <li>
-        Execute arbitrary commands
-      </li>
-      <li>
-        Access sensitive files and credentials
-      </li>
-      <li>
-        Modify or delete critical code
-      </li>
-      <li>
-        Expose private data to AI providers
-      </li>
-      <li>
-        Exceed budget limits
-      </li>
-      <li>
-        Violate compliance requirements
-      </li>
-    </ul>
-    <p>This chapter builds comprehensive security controls to make your AI assistant safe for production use.</p>
-    <section><title>Threat Model</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Security threats for AI coding assistants
- */
-export enum ThreatCategory {
-  /** Unauthorized access to files, credentials, or systems */
-  UNAUTHORIZED_ACCESS = &apos;unauthorized_access&apos;,
+    <section><title>8.1 Why Natural Language Routing?</title></section>
+    <p>Traditional CLI tools require users to memorize specific commands, flags, and syntax. Natural language routing eliminates this friction by understanding user intent and routing to the appropriate command automatically.</p>
+    <section><title>The Problem with Traditional CLIs</title></section>
+    <codeblock outputclass="language-bash"># Traditional approach - must memorize exact syntax
+$ myapp commit --message &quot;fix bug&quot; --files src/ --no-verify
+$ myapp review --pr 123 --depth full --output json
+$ myapp analyze --type complexity --threshold 10 --exclude tests/
 
-  /** Execution of destructive operations */
-  DESTRUCTIVE_OPERATIONS = &apos;destructive_operations&apos;,
-
-  /** Data leakage to AI providers or logs */
-  DATA_LEAKAGE = &apos;data_leakage&apos;,
-
-  /** Resource exhaustion (API calls, disk, memory) */
-  RESOURCE_EXHAUSTION = &apos;resource_exhaustion&apos;,
-
-  /** Injection attacks through prompts or parameters */
-  INJECTION_ATTACKS = &apos;injection_attacks&apos;,
-
-  /** Privilege escalation */
-  PRIVILEGE_ESCALATION = &apos;privilege_escalation&apos;
-}
-
-export interface Threat {
-  category: ThreatCategory;
-  description: string;
-  severity: &apos;critical&apos; | &apos;high&apos; | &apos;medium&apos; | &apos;low&apos;;
-  mitigation: string[];
-  examples: string[];
-}
+# What users actually want to say
+$ myapp &quot;commit my changes with a good message&quot;
+$ myapp &quot;review that PR we discussed&quot;
+$ myapp &quot;check code complexity&quot;
 </codeblock>
-    <section><title>Common Threats</title></section>
-    <codeblock outputclass="language-typescript">const threats: Threat[] = [
-  {
-    category: ThreatCategory.DESTRUCTIVE_OPERATIONS,
-    description: &apos;AI executes commands that delete or corrupt data&apos;,
-    severity: &apos;critical&apos;,
-    mitigation: [
-      &apos;Require approval for destructive operations&apos;,
-      &apos;Implement sandboxing&apos;,
-      &apos;Use read-only mode by default&apos;,
-      &apos;Maintain audit trail&apos;
-    ],
-    examples: [
-      &apos;DROP DATABASE production&apos;,
-      &apos;rm -rf /&apos;,
-      &apos;git push --force origin main&apos;,
-      &apos;DELETE FROM users&apos;
-    ]
-  },
-  {
-    category: ThreatCategory.DATA_LEAKAGE,
-    description: &apos;Sensitive data sent to AI providers or logged&apos;,
-    severity: &apos;critical&apos;,
-    mitigation: [
-      &apos;Filter sensitive patterns before AI calls&apos;,
-      &apos;Encrypt credentials at rest&apos;,
-      &apos;Redact logs&apos;,
-      &apos;Use private AI deployments for sensitive data&apos;
-    ],
-    examples: [
-      &apos;API keys in code review&apos;,
-      &apos;Database passwords in logs&apos;,
-      &apos;Customer PII in prompts&apos;,
-      &apos;Private tokens in conversation history&apos;
-    ]
-  },
-  {
-    category: ThreatCategory.UNAUTHORIZED_ACCESS,
-    description: &apos;Access to files or systems outside allowed scope&apos;,
-    severity: &apos;high&apos;,
-    mitigation: [
-      &apos;Implement path allowlist/blocklist&apos;,
-      &apos;Use principle of least privilege&apos;,
-      &apos;Sandbox file system access&apos;,
-      &apos;Validate all paths&apos;
-    ],
-    examples: [
-      &apos;Reading /etc/shadow&apos;,
-      &apos;Accessing ~/.ssh/id_rsa&apos;,
-      &apos;Reading .env files&apos;,
-      &apos;Accessing parent directories&apos;
-    ]
-  },
-  {
-    category: ThreatCategory.RESOURCE_EXHAUSTION,
-    description: &apos;Excessive API calls or resource usage&apos;,
-    severity: &apos;medium&apos;,
-    mitigation: [
-      &apos;Implement rate limiting&apos;,
-      &apos;Set budget caps&apos;,
-      &apos;Monitor usage&apos;,
-      &apos;Use request queuing&apos;
-    ],
-    examples: [
-      &apos;Infinite loop calling AI&apos;,
-      &apos;Processing entire codebase repeatedly&apos;,
-      &apos;Exhausting API quotas&apos;,
-      &apos;Memory leaks from large conversations&apos;
-    ]
-  }
-];
+    <section><title>Real-World Impact</title></section>
+    <p><b>Before Natural Language Routing:</b>
+- Users spend 5-10 minutes reading documentation per command
+- 40% of commands fail due to syntax errors
+- New users have steep learning curve
+- Context switching breaks flow</p>
+    <p><b>After Natural Language Routing:</b>
+- Commands execute in 5-10 seconds (no docs needed)
+- 95% first-try success rate
+- New users productive immediately
+- Natural conversation maintains flow</p>
+    <section><title>Performance Comparison</title></section>
+    <codeblock outputclass="language-typescript">// Traditional CLI: 7 steps
+// 1. User types: &quot;how do I commit?&quot;
+// 2. Opens documentation
+// 3. Searches for &quot;commit&quot;
+// 4. Reads syntax
+// 5. Constructs command
+// 6. Types command
+// 7. Executes
+// Total time: 300-600 seconds
+
+// Natural Language: 2 steps
+// 1. User types: &quot;commit my auth changes&quot;
+// 2. AI routes and executes
+// Total time: 5-10 seconds
+// 60x faster! 🚀
 </codeblock>
-    <section><title>Security Architecture</title></section>
+    <section><title>What You&apos;ll Build</title></section>
+    <p>In this chapter, you&apos;ll build a complete natural language routing system:</p>
+    <codeblock outputclass="language-typescript">User: &quot;commit my authentication changes&quot;
+↓
+[Intent Classifier]
+↓
+Intent: COMMIT
+Confidence: 0.95
+Parameters: { scope: &quot;authentication&quot;, infer_files: true }
+↓
+[Command Router]
+↓
+Routes to: CommitCommand
+↓
+[Parameter Inference]
+↓
+Infers: { files: [&quot;src/auth/&quot;], message_style: &quot;conventional&quot; }
+↓
+[Execution]
+↓
+✓ Committed: &quot;fix(auth): resolve token refresh race condition&quot;
+</codeblock>
+    <section><title>8.2 Interactive Mode Architecture</title></section>
+    <p>Natural language routing requires a layered architecture that separates intent classification, routing, parameter inference, and execution.</p>
+    <section><title>Architecture Overview</title></section>
     <codeblock>┌─────────────────────────────────────────────────────────────┐
-│                      User Input                              │
-│           &quot;Delete old database backups&quot;                      │
+│                    Natural Language Input                    │
+│          &quot;commit my auth changes and run tests&quot;             │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                   Input Validation                           │
-│  • Sanitize input                                            │
-│  • Detect injection attempts                                 │
-│  • Check against allowed patterns                            │
+│                   Intent Classifier                          │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ AI-Powered Classification                             │  │
+│  │ • Analyze input semantics                            │  │
+│  │ • Match to known intents                             │  │
+│  │ • Extract parameters                                 │  │
+│  │ • Calculate confidence                               │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  Result: [{ intent: &quot;COMMIT&quot;, confidence: 0.95 },          │
+│           { intent: &quot;TEST&quot;, confidence: 0.92 }]            │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                  Privacy Filter                              │
-│  • Redact secrets (API keys, passwords)                      │
-│  • Remove PII                                                │
-│  • Filter sensitive paths                                    │
+│                      Command Router                          │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Routes intents to commands                           │  │
+│  │ • Load command lazily                                │  │
+│  │ • Validate route exists                              │  │
+│  │ • Handle multi-step workflows                        │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  Result: [CommitCommand, TestCommand]                      │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                   AI Processing                              │
-│  [Safe to send to AI provider]                              │
+│                  Parameter Inference Engine                  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Infers missing parameters from context              │  │
+│  │ • File system analysis                               │  │
+│  │ • Git status                                         │  │
+│  │ • Conversation history                               │  │
+│  │ • Project structure                                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  Result: { files: [&quot;src/auth/&quot;], tests: &quot;npm test&quot; }      │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              Operation Classification                        │
-│  Classify: READ | WRITE | DELETE | EXECUTE                  │
-│  Risk level: SAFE | LOW | MEDIUM | HIGH | CRITICAL          │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                 Approval Gate                                │
-│  • Auto-approve: SAFE, LOW risk operations                  │
-│  • Require approval: MEDIUM+ risk                            │
-│  • Require 2FA: CRITICAL risk                                │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                Sandboxed Execution                           │
-│  • Path restrictions (allowlist/blocklist)                   │
-│  • Resource limits (CPU, memory, time)                       │
-│  • Network isolation (optional)                              │
-│  • Capability restrictions                                   │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Audit Logging                              │
-│  • Log all operations                                        │
-│  • Redact sensitive data                                     │
-│  • Include context and outcome                               │
-│  • Enable forensics                                          │
+│                    Command Execution                         │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Execute commands in sequence                         │  │
+│  │ • Dependency resolution                              │  │
+│  │ • Progress tracking                                  │  │
+│  │ • Error handling                                     │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  Result: ✓ Committed and tests passed                     │
 └─────────────────────────────────────────────────────────────┘
 </codeblock>
-    <section><title>9.2 Sandboxed Execution</title></section>
-    <p>Sandboxing restricts what operations the AI can perform, preventing unauthorized access and destructive actions.</p>
-    <section><title>Sandbox Configuration</title></section>
+    <section><title>Core Components</title></section>
+    <section><title>1. Intent Definition</title></section>
     <codeblock outputclass="language-typescript">/**
- * Sandbox configuration for execution environment
+ * Represents a user intent that can be routed to a command
  */
-export interface SandboxConfig {
-  /** Allowed file paths (glob patterns) */
-  allowedPaths?: string[];
+export interface Intent {
+  /** Unique intent identifier (e.g., &quot;COMMIT&quot;, &quot;REVIEW&quot;, &quot;ANALYZE&quot;) */
+  readonly name: string;
 
-  /** Blocked file paths (glob patterns) - takes precedence */
-  blockedPaths?: string[];
+  /** Human-readable description */
+  readonly description: string;
 
-  /** Allowed commands to execute */
-  allowedCommands?: string[];
+  /** Example phrases that trigger this intent */
+  readonly examples: string[];
 
-  /** Maximum execution time per operation (ms) */
-  maxExecutionTime?: number;
+  /** Required parameters for this intent */
+  readonly requiredParams: string[];
 
-  /** Maximum memory usage (bytes) */
-  maxMemory?: number;
+  /** Optional parameters */
+  readonly optionalParams: string[];
 
-  /** Maximum disk space usage (bytes) */
-  maxDiskUsage?: number;
-
-  /** Network access allowed */
-  allowNetwork?: boolean;
-
-  /** Environment variables to expose */
-  allowedEnvVars?: string[];
-
-  /** Working directory restriction */
-  workingDirectory?: string;
-
-  /** Read-only mode (no writes allowed) */
-  readOnly?: boolean;
+  /** Command class to route to */
+  readonly commandClass: string;
 }
 
 /**
- * Default secure sandbox configuration
+ * Result of intent classification
  */
-export const DEFAULT_SANDBOX_CONFIG: SandboxConfig = {
-  allowedPaths: [
-    &apos;src/**/*&apos;,
-    &apos;test/**/*&apos;,
-    &apos;lib/**/*&apos;,
-    &apos;docs/**/*&apos;,
-    &apos;package.json&apos;,
-    &apos;tsconfig.json&apos;,
-    &apos;README.md&apos;
-  ],
-  blockedPaths: [
-    &apos;.env&apos;,
-    &apos;.env.*&apos;,
-    &apos;**/.env&apos;,
-    &apos;**/*.key&apos;,
-    &apos;**/*.pem&apos;,
-    &apos;**/*.p12&apos;,
-    &apos;**/id_rsa&apos;,
-    &apos;**/id_dsa&apos;,
-    &apos;**/*_key&apos;,
-    &apos;**/credentials.*&apos;,
-    &apos;**/secrets.*&apos;,
-    &apos;.git/config&apos;,
-    &apos;.ssh/**/*&apos;,
-    &apos;/etc/**/*&apos;,
-    &apos;/var/**/*&apos;,
-    &apos;/usr/**/*&apos;,
-    &apos;/home/*/.ssh/**/*&apos;,
-    &apos;node_modules/**/*&apos;
-  ],
-  allowedCommands: [
-    &apos;git status&apos;,
-    &apos;git diff&apos;,
-    &apos;git log&apos;,
-    &apos;npm test&apos;,
-    &apos;npm run test&apos;,
-    &apos;yarn test&apos;,
-    &apos;ls&apos;,
-    &apos;cat&apos;,
-    &apos;grep&apos;
-  ],
-  maxExecutionTime: 30000, // 30 seconds
-  maxMemory: 512 * 1024 * 1024, // 512 MB
-  maxDiskUsage: 100 * 1024 * 1024, // 100 MB
-  allowNetwork: false,
-  allowedEnvVars: [&apos;NODE_ENV&apos;, &apos;PATH&apos;],
-  readOnly: false
-};
-</codeblock>
-    <section><title>Sandbox Validator</title></section>
-    <codeblock outputclass="language-typescript">import { minimatch } from &apos;minimatch&apos;;
-import path from &apos;path&apos;;
+export interface IntentMatch {
+  /** Matched intent */
+  intent: Intent;
 
-/**
- * Validates operations against sandbox rules
- */
-export class SandboxValidator {
-  constructor(private config: SandboxConfig) {}
+  /** Confidence score (0-1) */
+  confidence: number;
 
-  /**
-   * Check if file path is allowed
-   */
-  isPathAllowed(filePath: string): ValidationResult {
-    const normalizedPath = path.normalize(filePath);
+  /** Extracted parameters from input */
+  extractedParams: Record&lt;string, any&gt;;
 
-    // Check if path escapes working directory
-    if (this.config.workingDirectory) {
-      const resolved = path.resolve(this.config.workingDirectory, normalizedPath);
-      if (!resolved.startsWith(this.config.workingDirectory)) {
-        return {
-          allowed: false,
-          reason: &apos;Path escapes working directory&apos;,
-          severity: &apos;critical&apos;
-        };
-      }
-    }
-
-    // Check blocked paths first (takes precedence)
-    if (this.config.blockedPaths) {
-      for (const pattern of this.config.blockedPaths) {
-        if (minimatch(normalizedPath, pattern)) {
-          return {
-            allowed: false,
-            reason: `Path matches blocked pattern: ${pattern}`,
-            severity: &apos;high&apos;
-          };
-        }
-      }
-    }
-
-    // Check allowed paths
-    if (this.config.allowedPaths) {
-      let matched = false;
-
-      for (const pattern of this.config.allowedPaths) {
-        if (minimatch(normalizedPath, pattern)) {
-          matched = true;
-          break;
-        }
-      }
-
-      if (!matched) {
-        return {
-          allowed: false,
-          reason: &apos;Path not in allowed list&apos;,
-          severity: &apos;medium&apos;
-        };
-      }
-    }
-
-    return { allowed: true };
-  }
-
-  /**
-   * Check if command is allowed
-   */
-  isCommandAllowed(command: string): ValidationResult {
-    if (!this.config.allowedCommands) {
-      // If no allowlist, reject all commands
-      return {
-        allowed: false,
-        reason: &apos;Command execution not allowed&apos;,
-        severity: &apos;high&apos;
-      };
-    }
-
-    // Extract base command (first word)
-    const baseCommand = command.trim().split(/\s+/)[0];
-
-    // Check if command is in allowlist
-    const allowed = this.config.allowedCommands.some(allowedCmd =&gt; {
-      // Exact match
-      if (command === allowedCmd) return true;
-
-      // Prefix match (e.g., &quot;git&quot; allows &quot;git status&quot;)
-      if (command.startsWith(allowedCmd + &apos; &apos;)) return true;
-
-      // Base command match
-      if (baseCommand === allowedCmd) return true;
-
-      return false;
-    });
-
-    if (!allowed) {
-      return {
-        allowed: false,
-        reason: `Command not in allowed list: ${baseCommand}`,
-        severity: &apos;high&apos;
-      };
-    }
-
-    // Check for dangerous patterns
-    const dangerousPatterns = [
-      /rm\s+-rf/,
-      /dd\s+if=/,
-      /mkfs/,
-      /:\(\)\{.*\}:/,  // Fork bomb
-      /&gt;\s*\/dev\/sd/,
-      /curl.*\|\s*sh/,
-      /wget.*\|\s*sh/,
-      /sudo/,
-      /chmod\s+777/
-    ];
-
-    for (const pattern of dangerousPatterns) {
-      if (pattern.test(command)) {
-        return {
-          allowed: false,
-          reason: &apos;Command contains dangerous pattern&apos;,
-          severity: &apos;critical&apos;
-        };
-      }
-    }
-
-    return { allowed: true };
-  }
-
-  /**
-   * Check if operation is allowed in read-only mode
-   */
-  isWriteAllowed(operation: &apos;create&apos; | &apos;update&apos; | &apos;delete&apos;): ValidationResult {
-    if (this.config.readOnly) {
-      return {
-        allowed: false,
-        reason: &apos;Sandbox is in read-only mode&apos;,
-        severity: &apos;medium&apos;
-      };
-    }
-
-    return { allowed: true };
-  }
-
-  /**
-   * Check if network access is allowed
-   */
-  isNetworkAllowed(url: string): ValidationResult {
-    if (!this.config.allowNetwork) {
-      return {
-        allowed: false,
-        reason: &apos;Network access not allowed&apos;,
-        severity: &apos;medium&apos;
-      };
-    }
-
-    return { allowed: true };
-  }
-}
-
-export interface ValidationResult {
-  allowed: boolean;
-  reason?: string;
-  severity?: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;;
+  /** Missing required parameters */
+  missingParams: string[];
 }
 </codeblock>
-    <section><title>Sandboxed File System</title></section>
-    <codeblock outputclass="language-typescript">import fs from &apos;fs/promises&apos;;
-
-/**
- * Sandboxed file system operations
+    <section><title>2. Command Interface</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Base interface for all routable commands
  */
-export class SandboxedFileSystem {
-  private validator: SandboxValidator;
+export interface RoutableCommand {
+  /** Command name */
+  readonly name: string;
+
+  /** Command description */
+  readonly description: string;
+
+  /** Parameter schema */
+  readonly parameters: CommandParameters;
+
+  /**
+   * Execute the command
+   * @param params - Command parameters (may be incomplete)
+   * @param context - Execution context
+   */
+  execute(
+    params: Record&lt;string, any&gt;,
+    context: CommandContext
+  ): Promise&lt;CommandResult&gt;;
+
+  /**
+   * Infer missing parameters from context
+   * @param params - Provided parameters
+   * @param context - Inference context
+   */
+  inferParameters?(
+    params: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt;;
+
+  /**
+   * Validate parameters before execution
+   * @param params - Parameters to validate
+   */
+  validateParameters(params: Record&lt;string, any&gt;): ValidationResult;
+}
+
+export interface CommandParameters {
+  [key: string]: {
+    type: &apos;string&apos; | &apos;number&apos; | &apos;boolean&apos; | &apos;array&apos; | &apos;object&apos;;
+    description: string;
+    required: boolean;
+    default?: any;
+    enum?: any[];
+  };
+}
+
+export interface CommandContext {
+  workingDirectory: string;
+  conversationHistory: Message[];
+  gitStatus?: GitStatus;
+  projectStructure?: ProjectStructure;
+  aiProvider: AIProvider;
+  cancellationToken: CancellationToken;
+}
+
+export interface InferenceContext extends CommandContext {
+  userInput: string;
+  extractedParams: Record&lt;string, any&gt;;
+}
+</codeblock>
+    <section><title>3. Natural Language Router</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Routes natural language input to appropriate commands
+ */
+export class NaturalLanguageRouter {
+  private intentClassifier: IntentClassifier;
+  private commandRegistry: CommandRegistry;
+  private parameterInferenceEngine: ParameterInferenceEngine;
   private logger: Logger;
 
   constructor(
-    config: SandboxConfig,
+    aiProvider: AIProvider,
+    commandRegistry: CommandRegistry,
     logger: Logger
   ) {
-    this.validator = new SandboxValidator(config);
+    this.intentClassifier = new IntentClassifier(aiProvider);
+    this.commandRegistry = commandRegistry;
+    this.parameterInferenceEngine = new ParameterInferenceEngine(aiProvider);
     this.logger = logger;
   }
 
   /**
-   * Read file with sandbox validation
+   * Route natural language input to command(s)
    */
-  async readFile(filePath: string): Promise&lt;string&gt; {
-    // Validate path
-    const validation = this.validator.isPathAllowed(filePath);
+  async route(
+    input: string,
+    context: CommandContext
+  ): Promise&lt;RoutingResult&gt; {
+    this.logger.debug(&apos;Routing input:&apos;, input);
 
-    if (!validation.allowed) {
-      this.logger.warn(&apos;Blocked file read:&apos;, {
-        path: filePath,
-        reason: validation.reason
-      });
+    // Step 1: Classify intent(s)
+    const matches = await this.intentClassifier.classify(input, context);
 
-      throw new SecurityError(
-        `Access denied: ${validation.reason}`,
-        validation.severity || &apos;medium&apos;
-      );
+    if (matches.length === 0) {
+      return {
+        success: false,
+        error: &apos;Could not understand intent. Please rephrase or use specific command.&apos;
+      };
     }
 
-    try {
-      const content = await fs.readFile(filePath, &apos;utf-8&apos;);
+    // Step 2: Route to commands
+    const commands: Array&lt;{
+      command: RoutableCommand;
+      params: Record&lt;string, any&gt;;
+    }&gt; = [];
 
-      this.logger.debug(&apos;File read:&apos;, { path: filePath, size: content.length });
+    for (const match of matches) {
+      // Get command from registry
+      const command = await this.commandRegistry.get(match.intent.commandClass);
 
-      return content;
-
-    } catch (error) {
-      this.logger.error(&apos;File read error:&apos;, { path: filePath, error });
-      throw error;
-    }
-  }
-
-  /**
-   * Write file with sandbox validation
-   */
-  async writeFile(filePath: string, content: string): Promise&lt;void&gt; {
-    // Validate write allowed
-    const writeValidation = this.validator.isWriteAllowed(&apos;create&apos;);
-
-    if (!writeValidation.allowed) {
-      throw new SecurityError(
-        `Write denied: ${writeValidation.reason}`,
-        writeValidation.severity || &apos;medium&apos;
-      );
-    }
-
-    // Validate path
-    const pathValidation = this.validator.isPathAllowed(filePath);
-
-    if (!pathValidation.allowed) {
-      this.logger.warn(&apos;Blocked file write:&apos;, {
-        path: filePath,
-        reason: pathValidation.reason
-      });
-
-      throw new SecurityError(
-        `Access denied: ${pathValidation.reason}`,
-        pathValidation.severity || &apos;medium&apos;
-      );
-    }
-
-    try {
-      await fs.writeFile(filePath, content, &apos;utf-8&apos;);
-
-      this.logger.info(&apos;File written:&apos;, {
-        path: filePath,
-        size: content.length
-      });
-
-    } catch (error) {
-      this.logger.error(&apos;File write error:&apos;, { path: filePath, error });
-      throw error;
-    }
-  }
-
-  /**
-   * Delete file with sandbox validation
-   */
-  async deleteFile(filePath: string): Promise&lt;void&gt; {
-    // Validate write allowed
-    const writeValidation = this.validator.isWriteAllowed(&apos;delete&apos;);
-
-    if (!writeValidation.allowed) {
-      throw new SecurityError(
-        `Delete denied: ${writeValidation.reason}`,
-        writeValidation.severity || &apos;medium&apos;
-      );
-    }
-
-    // Validate path
-    const pathValidation = this.validator.isPathAllowed(filePath);
-
-    if (!pathValidation.allowed) {
-      this.logger.warn(&apos;Blocked file delete:&apos;, {
-        path: filePath,
-        reason: pathValidation.reason
-      });
-
-      throw new SecurityError(
-        `Access denied: ${pathValidation.reason}`,
-        pathValidation.severity || &apos;medium&apos;
-      );
-    }
-
-    try {
-      await fs.unlink(filePath);
-
-      this.logger.warn(&apos;File deleted:&apos;, { path: filePath });
-
-    } catch (error) {
-      this.logger.error(&apos;File delete error:&apos;, { path: filePath, error });
-      throw error;
-    }
-  }
-
-  /**
-   * List directory with sandbox validation
-   */
-  async listDirectory(dirPath: string): Promise&lt;string[]&gt; {
-    const validation = this.validator.isPathAllowed(dirPath);
-
-    if (!validation.allowed) {
-      throw new SecurityError(
-        `Access denied: ${validation.reason}`,
-        validation.severity || &apos;medium&apos;
-      );
-    }
-
-    const entries = await fs.readdir(dirPath);
-
-    // Filter entries by sandbox rules
-    const allowed: string[] = [];
-
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry);
-      const entryValidation = this.validator.isPathAllowed(fullPath);
-
-      if (entryValidation.allowed) {
-        allowed.push(entry);
+      if (!command) {
+        this.logger.warn(`No command found for intent: ${match.intent.name}`);
+        continue;
       }
-    }
 
-    return allowed;
-  }
-}
+      // Step 3: Infer missing parameters
+      let params = match.extractedParams;
 
-export class SecurityError extends Error {
-  constructor(
-    message: string,
-    public severity: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;
-  ) {
-    super(message);
-    this.name = &apos;SecurityError&apos;;
-  }
-}
-</codeblock>
-    <section><title>Sandboxed Command Execution</title></section>
-    <codeblock outputclass="language-typescript">import { spawn } from &apos;child_process&apos;;
+      if (match.missingParams.length &gt; 0 &amp;&amp; command.inferParameters) {
+        const inferred = await command.inferParameters(params, {
+          ...context,
+          userInput: input,
+          extractedParams: params
+        });
 
-/**
- * Sandboxed command execution with resource limits
- */
-export class SandboxedExecutor {
-  private validator: SandboxValidator;
-  private logger: Logger;
+        params = { ...params, ...inferred };
+      }
 
-  constructor(
-    private config: SandboxConfig,
-    logger: Logger
-  ) {
-    this.validator = new SandboxValidator(config);
-    this.logger = logger;
-  }
+      // Step 4: Validate parameters
+      const validation = command.validateParameters(params);
 
-  /**
-   * Execute command with sandbox restrictions
-   */
-  async execute(command: string, cwd?: string): Promise&lt;ExecutionResult&gt; {
-    // Validate command
-    const validation = this.validator.isCommandAllowed(command);
-
-    if (!validation.allowed) {
-      this.logger.warn(&apos;Blocked command execution:&apos;, {
-        command,
-        reason: validation.reason
-      });
-
-      throw new SecurityError(
-        `Command denied: ${validation.reason}`,
-        validation.severity || &apos;high&apos;
-      );
-    }
-
-    // Validate working directory
-    if (cwd) {
-      const cwdValidation = this.validator.isPathAllowed(cwd);
-
-      if (!cwdValidation.allowed) {
-        throw new SecurityError(
-          `Working directory denied: ${cwdValidation.reason}`,
-          cwdValidation.severity || &apos;medium&apos;
+      if (!validation.valid) {
+        // Try to fix validation errors through user interaction
+        params = await this.fixValidationErrors(
+          command,
+          params,
+          validation.errors,
+          context
         );
       }
+
+      commands.push({ command, params });
     }
-
-    this.logger.info(&apos;Executing command:&apos;, { command, cwd });
-
-    const startTime = Date.now();
-
-    return new Promise((resolve, reject) =&gt; {
-      // Parse command
-      const args = command.split(/\s+/);
-      const cmd = args[0];
-      const cmdArgs = args.slice(1);
-
-      // Spawn process
-      const proc = spawn(cmd, cmdArgs, {
-        cwd: cwd || this.config.workingDirectory,
-        env: this.getFilteredEnv(),
-        timeout: this.config.maxExecutionTime,
-        maxBuffer: this.config.maxMemory
-      });
-
-      let stdout = &apos;&apos;;
-      let stderr = &apos;&apos;;
-
-      proc.stdout.on(&apos;data&apos;, data =&gt; {
-        stdout += data.toString();
-      });
-
-      proc.stderr.on(&apos;data&apos;, data =&gt; {
-        stderr += data.toString();
-      });
-
-      proc.on(&apos;error&apos;, error =&gt; {
-        this.logger.error(&apos;Command execution error:&apos;, {
-          command,
-          error
-        });
-
-        reject(new SecurityError(
-          `Execution failed: ${error.message}`,
-          &apos;medium&apos;
-        ));
-      });
-
-      proc.on(&apos;exit&apos;, (code, signal) =&gt; {
-        const duration = Date.now() - startTime;
-
-        this.logger.info(&apos;Command completed:&apos;, {
-          command,
-          code,
-          signal,
-          duration
-        });
-
-        resolve({
-          success: code === 0,
-          exitCode: code || 0,
-          stdout,
-          stderr,
-          duration
-        });
-      });
-
-      // Timeout handler
-      if (this.config.maxExecutionTime) {
-        setTimeout(() =&gt; {
-          proc.kill(&apos;SIGTERM&apos;);
-
-          setTimeout(() =&gt; {
-            proc.kill(&apos;SIGKILL&apos;);
-          }, 5000); // Force kill after 5s
-
-        }, this.config.maxExecutionTime);
-      }
-    });
-  }
-
-  /**
-   * Get filtered environment variables
-   */
-  private getFilteredEnv(): NodeJS.ProcessEnv {
-    if (!this.config.allowedEnvVars) {
-      return {};
-    }
-
-    const filtered: NodeJS.ProcessEnv = {};
-
-    for (const key of this.config.allowedEnvVars) {
-      if (process.env[key] !== undefined) {
-        filtered[key] = process.env[key];
-      }
-    }
-
-    return filtered;
-  }
-}
-
-export interface ExecutionResult {
-  success: boolean;
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-  duration: number;
-}
-</codeblock>
-    <section><title>9.3 Credential Management</title></section>
-    <p>Secure storage and handling of API keys, passwords, and other credentials is critical.</p>
-    <section><title>Credential Encryption</title></section>
-    <codeblock outputclass="language-typescript">import crypto from &apos;crypto&apos;;
-
-/**
- * Encrypts and decrypts credentials using AES-256-GCM
- */
-export class CredentialEncryption {
-  private algorithm = &apos;aes-256-gcm&apos;;
-  private keyLength = 32; // 256 bits
-
-  /**
-   * Derive encryption key from password using PBKDF2
-   */
-  private async deriveKey(password: string, salt: Buffer): Promise&lt;Buffer&gt; {
-    return new Promise((resolve, reject) =&gt; {
-      crypto.pbkdf2(
-        password,
-        salt,
-        100000, // iterations
-        this.keyLength,
-        &apos;sha256&apos;,
-        (err, key) =&gt; {
-          if (err) reject(err);
-          else resolve(key);
-        }
-      );
-    });
-  }
-
-  /**
-   * Encrypt credential
-   */
-  async encrypt(
-    credential: string,
-    password: string
-  ): Promise&lt;EncryptedCredential&gt; {
-    // Generate random salt and IV
-    const salt = crypto.randomBytes(16);
-    const iv = crypto.randomBytes(16);
-
-    // Derive key from password
-    const key = await this.deriveKey(password, salt);
-
-    // Create cipher
-    const cipher = crypto.createCipheriv(this.algorithm, key, iv);
-
-    // Encrypt
-    let encrypted = cipher.update(credential, &apos;utf8&apos;, &apos;hex&apos;);
-    encrypted += cipher.final(&apos;hex&apos;);
-
-    // Get auth tag
-    const authTag = cipher.getAuthTag();
 
     return {
-      encrypted,
-      salt: salt.toString(&apos;hex&apos;),
-      iv: iv.toString(&apos;hex&apos;),
-      authTag: authTag.toString(&apos;hex&apos;),
-      algorithm: this.algorithm
+      success: true,
+      commands,
+      matches
     };
   }
 
   /**
-   * Decrypt credential
+   * Attempt to fix validation errors through user interaction
    */
-  async decrypt(
-    encryptedCredential: EncryptedCredential,
-    password: string
-  ): Promise&lt;string&gt; {
-    // Convert from hex
-    const salt = Buffer.from(encryptedCredential.salt, &apos;hex&apos;);
-    const iv = Buffer.from(encryptedCredential.iv, &apos;hex&apos;);
-    const authTag = Buffer.from(encryptedCredential.authTag, &apos;hex&apos;);
+  private async fixValidationErrors(
+    command: RoutableCommand,
+    params: Record&lt;string, any&gt;,
+    errors: ValidationError[],
+    context: CommandContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const fixed = { ...params };
 
-    // Derive key
-    const key = await this.deriveKey(password, salt);
+    for (const error of errors) {
+      const paramDef = command.parameters[error.parameter];
 
-    // Create decipher
-    const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
-    decipher.setAuthTag(authTag);
+      if (!paramDef) continue;
 
-    // Decrypt
-    let decrypted = decipher.update(encryptedCredential.encrypted, &apos;hex&apos;, &apos;utf8&apos;);
-    decrypted += decipher.final(&apos;utf8&apos;);
+      // Ask user for missing/invalid parameter
+      console.log(`\n❓ ${paramDef.description}`);
 
-    return decrypted;
+      if (paramDef.enum) {
+        console.log(`   Options: ${paramDef.enum.join(&apos;, &apos;)}`);
+      }
+
+      const readline = await import(&apos;readline&apos;);
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+
+      const answer = await new Promise&lt;string&gt;(resolve =&gt; {
+        rl.question(`   &gt; `, resolve);
+      });
+
+      rl.close();
+
+      // Parse answer based on type
+      fixed[error.parameter] = this.parseParameter(answer, paramDef.type);
+    }
+
+    return fixed;
+  }
+
+  private parseParameter(value: string, type: string): any {
+    switch (type) {
+      case &apos;number&apos;:
+        return Number(value);
+      case &apos;boolean&apos;:
+        return value.toLowerCase() === &apos;true&apos; || value === &apos;1&apos;;
+      case &apos;array&apos;:
+        return value.split(&apos;,&apos;).map(s =&gt; s.trim());
+      case &apos;object&apos;:
+        return JSON.parse(value);
+      default:
+        return value;
+    }
   }
 }
 
-export interface EncryptedCredential {
-  encrypted: string;
-  salt: string;
-  iv: string;
-  authTag: string;
-  algorithm: string;
+export interface RoutingResult {
+  success: boolean;
+  commands?: Array&lt;{
+    command: RoutableCommand;
+    params: Record&lt;string, any&gt;;
+  }&gt;;
+  matches?: IntentMatch[];
+  error?: string;
 }
 </codeblock>
-    <section><title>Credential Store</title></section>
-    <codeblock outputclass="language-typescript">import fs from &apos;fs/promises&apos;;
-import os from &apos;os&apos;;
+    <section><title>Example Usage</title></section>
+    <codeblock outputclass="language-typescript">// Initialize router
+const router = new NaturalLanguageRouter(
+  aiProvider,
+  commandRegistry,
+  logger
+);
 
-/**
- * Secure credential storage
+// Route natural language input
+const result = await router.route(
+  &quot;commit my authentication changes and run tests&quot;,
+  {
+    workingDirectory: process.cwd(),
+    conversationHistory: [],
+    gitStatus: await getGitStatus(),
+    projectStructure: await analyzeProject(),
+    aiProvider,
+    cancellationToken: new CancellationToken()
+  }
+);
+
+if (result.success) {
+  // Execute commands in sequence
+  for (const { command, params } of result.commands) {
+    console.log(`\n▶️  ${command.name}`);
+
+    const commandResult = await command.execute(params, context);
+
+    if (!commandResult.success) {
+      console.error(`❌ ${commandResult.error}`);
+      break;
+    }
+
+    console.log(`✓ ${commandResult.message}`);
+  }
+} else {
+  console.error(`❌ ${result.error}`);
+}
+</codeblock>
+    <section><title>8.3 Intent Classification</title></section>
+    <p>Intent classification is the process of determining what the user wants to do from their natural language input. This is the foundation of natural language routing.</p>
+    <section><title>Intent Classification Strategies</title></section>
+    <p>There are three main approaches:</p>
+    <ol>
+      <li>
+        <b>Rule-Based Classification</b>
+        - Fast but limited
+      </li>
+      <li>
+        <b>Embedding-Based Classification</b>
+        - Semantic matching
+      </li>
+      <li>
+        <b>AI-Powered Classification</b>
+        - Most flexible (recommended)
+      </li>
+    </ol>
+    <section><title>AI-Powered Intent Classifier</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Classifies user input into intents using AI
  */
-export class CredentialStore {
-  private encryption: CredentialEncryption;
-  private storePath: string;
-  private masterPassword: string;
-  private cache: Map&lt;string, string&gt; = new Map();
+export class IntentClassifier {
+  private aiProvider: AIProvider;
+  private intents: Map&lt;string, Intent&gt; = new Map();
+  private cache: LRUCache&lt;string, IntentMatch[]&gt;;
 
-  constructor(
-    storePath?: string,
-    masterPassword?: string
-  ) {
-    this.encryption = new CredentialEncryption();
-    this.storePath = storePath || path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;credentials.enc&apos;);
-    this.masterPassword = masterPassword || this.getMasterPassword();
+  constructor(aiProvider: AIProvider) {
+    this.aiProvider = aiProvider;
+    this.cache = new LRUCache({ max: 1000, ttl: 1000 * 60 * 60 }); // 1 hour
   }
 
   /**
-   * Get master password from environment or keychain
+   * Register an intent
    */
-  private getMasterPassword(): string {
-    // Try environment variable first
-    const envPassword = process.env.OLLAMA_CODE_MASTER_PASSWORD;
-    if (envPassword) {
-      return envPassword;
-    }
-
-    // TODO: Integrate with OS keychain
-    // - macOS: Keychain Access
-    // - Windows: Credential Manager
-    // - Linux: Secret Service API
-
-    throw new Error(
-      &apos;Master password not set. Set OLLAMA_CODE_MASTER_PASSWORD environment variable.&apos;
-    );
+  registerIntent(intent: Intent): void {
+    this.intents.set(intent.name, intent);
   }
 
   /**
-   * Store credential
+   * Classify user input into intent(s)
    */
-  async set(key: string, value: string): Promise&lt;void&gt; {
-    // Encrypt credential
-    const encrypted = await this.encryption.encrypt(value, this.masterPassword);
-
-    // Load existing store
-    const store = await this.load();
-
-    // Add encrypted credential
-    store[key] = encrypted;
-
-    // Save store
-    await this.save(store);
-
-    // Update cache
-    this.cache.set(key, value);
-  }
-
-  /**
-   * Get credential
-   */
-  async get(key: string): Promise&lt;string | null&gt; {
+  async classify(
+    input: string,
+    context: CommandContext
+  ): Promise&lt;IntentMatch[]&gt; {
     // Check cache
-    if (this.cache.has(key)) {
-      return this.cache.get(key)!;
+    const cached = this.cache.get(input);
+    if (cached) {
+      return cached;
     }
 
-    // Load store
-    const store = await this.load();
+    // Build classification prompt
+    const prompt = this.buildClassificationPrompt(input, context);
 
-    // Get encrypted credential
-    const encrypted = store[key];
+    // Get classification from AI
+    const response = await this.aiProvider.complete({
+      messages: [
+        {
+          role: MessageRole.SYSTEM,
+          content: this.getSystemPrompt()
+        },
+        {
+          role: MessageRole.USER,
+          content: prompt
+        }
+      ],
+      temperature: 0.1, // Low temperature for consistent classification
+      maxTokens: 1000
+    });
 
-    if (!encrypted) {
+    // Parse response
+    const matches = this.parseClassificationResponse(response.content);
+
+    // Cache result
+    this.cache.set(input, matches);
+
+    return matches;
+  }
+
+  /**
+   * Build classification prompt
+   */
+  private buildClassificationPrompt(
+    input: string,
+    context: CommandContext
+  ): string {
+    const intentDescriptions = Array.from(this.intents.values())
+      .map(intent =&gt; {
+        return `
+**${intent.name}**
+Description: ${intent.description}
+Examples:
+${intent.examples.map(ex =&gt; `  - &quot;${ex}&quot;`).join(&apos;\n&apos;)}
+Required params: ${intent.requiredParams.join(&apos;, &apos;) || &apos;none&apos;}
+Optional params: ${intent.optionalParams.join(&apos;, &apos;) || &apos;none&apos;}
+        `.trim();
+      })
+      .join(&apos;\n\n&apos;);
+
+    return `
+Classify the following user input into one or more intents and extract parameters.
+
+# User Input
+&quot;${input}&quot;
+
+# Available Intents
+${intentDescriptions}
+
+# Context
+Working directory: ${context.workingDirectory}
+${context.gitStatus ? `Git status: ${context.gitStatus.branch}, ${context.gitStatus.files.length} changed files` : &apos;&apos;}
+${context.conversationHistory.length &gt; 0 ? `Recent conversation: ${this.summarizeConversation(context.conversationHistory)}` : &apos;&apos;}
+
+# Task
+1. Identify which intent(s) match the user input (can be multiple for compound requests)
+2. For each intent, extract parameter values mentioned in the input
+3. Identify any required parameters that are missing
+4. Calculate confidence score (0-1) for each match
+
+# Output Format
+Return a JSON array of matches:
+
+\`\`\`json
+[
+  {
+    &quot;intent&quot;: &quot;INTENT_NAME&quot;,
+    &quot;confidence&quot;: 0.95,
+    &quot;extractedParams&quot;: {
+      &quot;param1&quot;: &quot;value1&quot;,
+      &quot;param2&quot;: &quot;value2&quot;
+    },
+    &quot;missingParams&quot;: [&quot;param3&quot;]
+  }
+]
+\`\`\`
+
+Only include matches with confidence &gt;= 0.7. Order by confidence descending.
+    `.trim();
+  }
+
+  /**
+   * Get system prompt for classification
+   */
+  private getSystemPrompt(): string {
+    return `
+You are an intent classification system for a natural language CLI tool.
+Your job is to understand what the user wants to do and map it to registered intents.
+
+Key principles:
+- Be generous with interpretation (users may be vague)
+- Extract as many parameters as possible from the input
+- Handle compound requests (multiple intents in one input)
+- Use context to disambiguate
+- Return high confidence only when you&apos;re certain
+- For ambiguous cases, return multiple possibilities
+
+You must ALWAYS respond with valid JSON only, no other text.
+    `.trim();
+  }
+
+  /**
+   * Parse AI classification response
+   */
+  private parseClassificationResponse(response: string): IntentMatch[] {
+    try {
+      // Extract JSON from response
+      const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
+      const json = jsonMatch ? jsonMatch[1] : response;
+
+      const parsed = JSON.parse(json);
+
+      // Validate and convert to IntentMatch[]
+      const matches: IntentMatch[] = [];
+
+      for (const item of parsed) {
+        const intent = this.intents.get(item.intent);
+
+        if (!intent) {
+          continue; // Skip unknown intents
+        }
+
+        matches.push({
+          intent,
+          confidence: item.confidence,
+          extractedParams: item.extractedParams || {},
+          missingParams: item.missingParams || []
+        });
+      }
+
+      return matches;
+
+    } catch (error) {
+      throw new Error(`Failed to parse classification response: ${error.message}`);
+    }
+  }
+
+  /**
+   * Summarize conversation history for context
+   */
+  private summarizeConversation(messages: Message[]): string {
+    // Take last 3 messages
+    const recent = messages.slice(-3);
+
+    return recent
+      .map(msg =&gt; `${msg.role}: ${msg.content.substring(0, 100)}`)
+      .join(&apos;; &apos;);
+  }
+}
+</codeblock>
+    <section><title>Registering Intents</title></section>
+    <codeblock outputclass="language-typescript">// Register commit intent
+classifier.registerIntent({
+  name: &apos;COMMIT&apos;,
+  description: &apos;Create a git commit with staged changes&apos;,
+  examples: [
+    &apos;commit my changes&apos;,
+    &apos;commit with message &quot;fix bug&quot;&apos;,
+    &apos;create a commit for the auth files&apos;,
+    &apos;commit the authentication changes&apos;
+  ],
+  requiredParams: [],
+  optionalParams: [&apos;message&apos;, &apos;files&apos;, &apos;scope&apos;],
+  commandClass: &apos;CommitCommand&apos;
+});
+
+// Register review intent
+classifier.registerIntent({
+  name: &apos;REVIEW&apos;,
+  description: &apos;Review code or pull request&apos;,
+  examples: [
+    &apos;review PR 123&apos;,
+    &apos;review my changes&apos;,
+    &apos;code review the authentication module&apos;,
+    &apos;review that pull request we discussed&apos;
+  ],
+  requiredParams: [],
+  optionalParams: [&apos;pr&apos;, &apos;files&apos;, &apos;depth&apos;],
+  commandClass: &apos;ReviewCommand&apos;
+});
+
+// Register analyze intent
+classifier.registerIntent({
+  name: &apos;ANALYZE&apos;,
+  description: &apos;Analyze code quality, complexity, or other metrics&apos;,
+  examples: [
+    &apos;analyze code complexity&apos;,
+    &apos;check code quality&apos;,
+    &apos;analyze the auth module&apos;,
+    &apos;measure test coverage&apos;
+  ],
+  requiredParams: [],
+  optionalParams: [&apos;type&apos;, &apos;files&apos;, &apos;threshold&apos;],
+  commandClass: &apos;AnalyzeCommand&apos;
+});
+
+// Register test intent
+classifier.registerIntent({
+  name: &apos;TEST&apos;,
+  description: &apos;Run tests&apos;,
+  examples: [
+    &apos;run tests&apos;,
+    &apos;test the auth module&apos;,
+    &apos;run unit tests&apos;,
+    &apos;execute test suite&apos;
+  ],
+  requiredParams: [],
+  optionalParams: [&apos;files&apos;, &apos;type&apos;, &apos;watch&apos;],
+  commandClass: &apos;TestCommand&apos;
+});
+</codeblock>
+    <section><title>Classification Examples</title></section>
+    <codeblock outputclass="language-typescript">// Example 1: Simple single intent
+const input1 = &quot;commit my changes&quot;;
+const matches1 = await classifier.classify(input1, context);
+/*
+[
+  {
+    intent: { name: &apos;COMMIT&apos;, ... },
+    confidence: 0.98,
+    extractedParams: {},
+    missingParams: []
+  }
+]
+*/
+
+// Example 2: Intent with parameters
+const input2 = &quot;review PR 123 with full depth&quot;;
+const matches2 = await classifier.classify(input2, context);
+/*
+[
+  {
+    intent: { name: &apos;REVIEW&apos;, ... },
+    confidence: 0.95,
+    extractedParams: {
+      pr: 123,
+      depth: &apos;full&apos;
+    },
+    missingParams: []
+  }
+]
+*/
+
+// Example 3: Compound request (multiple intents)
+const input3 = &quot;commit my auth changes and run tests&quot;;
+const matches3 = await classifier.classify(input3, context);
+/*
+[
+  {
+    intent: { name: &apos;COMMIT&apos;, ... },
+    confidence: 0.96,
+    extractedParams: {
+      scope: &apos;auth&apos;
+    },
+    missingParams: []
+  },
+  {
+    intent: { name: &apos;TEST&apos;, ... },
+    confidence: 0.94,
+    extractedParams: {},
+    missingParams: []
+  }
+]
+*/
+
+// Example 4: Context-dependent
+const input4 = &quot;review the changes&quot;;
+const contextWithPR = {
+  ...context,
+  conversationHistory: [
+    {
+      role: MessageRole.USER,
+      content: &quot;I just created PR 456&quot;
+    }
+  ]
+};
+const matches4 = await classifier.classify(input4, contextWithPR);
+/*
+[
+  {
+    intent: { name: &apos;REVIEW&apos;, ... },
+    confidence: 0.92,
+    extractedParams: {
+      pr: 456  // Inferred from conversation!
+    },
+    missingParams: []
+  }
+]
+*/
+</codeblock>
+    <section><title>8.4 Command Routing System</title></section>
+    <p>The command routing system maps classified intents to actual command implementations and manages command lifecycle.</p>
+    <section><title>Command Registry</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Registry of all routable commands
+ */
+export class CommandRegistry {
+  private commands: Map&lt;string, CommandRegistration&gt; = new Map();
+  private logger: Logger;
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Register a command
+   */
+  register(registration: CommandRegistration): void {
+    this.commands.set(registration.className, registration);
+    this.logger.debug(`Registered command: ${registration.className}`);
+  }
+
+  /**
+   * Get command by class name (lazy load)
+   */
+  async get(className: string): Promise&lt;RoutableCommand | null&gt; {
+    const registration = this.commands.get(className);
+
+    if (!registration) {
+      this.logger.warn(`Command not found: ${className}`);
       return null;
     }
 
-    // Decrypt
-    const decrypted = await this.encryption.decrypt(encrypted, this.masterPassword);
+    // Lazy load if not yet loaded
+    if (!registration.instance) {
+      this.logger.debug(`Lazy loading command: ${className}`);
 
-    // Cache
-    this.cache.set(key, decrypted);
+      try {
+        const CommandClass = await registration.loader();
+        registration.instance = new CommandClass(registration.dependencies);
+      } catch (error) {
+        this.logger.error(`Failed to load command ${className}:`, error);
+        return null;
+      }
+    }
 
-    return decrypted;
+    return registration.instance;
   }
 
   /**
-   * Delete credential
+   * Get all registered command names
    */
-  async delete(key: string): Promise&lt;void&gt; {
-    // Load store
-    const store = await this.load();
-
-    // Remove credential
-    delete store[key];
-
-    // Save
-    await this.save(store);
-
-    // Clear cache
-    this.cache.delete(key);
+  getCommandNames(): string[] {
+    return Array.from(this.commands.keys());
   }
 
   /**
-   * List credential keys (not values)
+   * Check if command exists
    */
-  async list(): Promise&lt;string[]&gt; {
-    const store = await this.load();
-    return Object.keys(store);
+  has(className: string): boolean {
+    return this.commands.has(className);
   }
+}
 
-  /**
-   * Load credential store from disk
-   */
-  private async load(): Promise&lt;Record&lt;string, EncryptedCredential&gt;&gt; {
+export interface CommandRegistration {
+  /** Command class name */
+  className: string;
+
+  /** Lazy loader function */
+  loader: () =&gt; Promise&lt;new (deps: any) =&gt; RoutableCommand&gt;;
+
+  /** Dependencies to inject */
+  dependencies: any;
+
+  /** Cached instance (lazy loaded) */
+  instance?: RoutableCommand;
+}
+</codeblock>
+    <section><title>Registering Commands</title></section>
+    <codeblock outputclass="language-typescript">// Register commands with lazy loading
+commandRegistry.register({
+  className: &apos;CommitCommand&apos;,
+  loader: async () =&gt; {
+    const { CommitCommand } = await import(&apos;./commands/commit.js&apos;);
+    return CommitCommand;
+  },
+  dependencies: {
+    gitService,
+    aiProvider,
+    logger
+  }
+});
+
+commandRegistry.register({
+  className: &apos;ReviewCommand&apos;,
+  loader: async () =&gt; {
+    const { ReviewCommand } = await import(&apos;./commands/review.js&apos;);
+    return ReviewCommand;
+  },
+  dependencies: {
+    gitService,
+    githubService,
+    aiProvider,
+    logger
+  }
+});
+
+commandRegistry.register({
+  className: &apos;AnalyzeCommand&apos;,
+  loader: async () =&gt; {
+    const { AnalyzeCommand } = await import(&apos;./commands/analyze.js&apos;);
+    return AnalyzeCommand;
+  },
+  dependencies: {
+    codeAnalyzer,
+    logger
+  }
+});
+</codeblock>
+    <section><title>Example Command Implementation</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Commit command - creates git commits with AI-generated messages
+ */
+export class CommitCommand implements RoutableCommand {
+  readonly name = &apos;commit&apos;;
+  readonly description = &apos;Create a git commit with AI-generated message&apos;;
+
+  readonly parameters: CommandParameters = {
+    files: {
+      type: &apos;array&apos;,
+      description: &apos;Files to commit (default: all staged)&apos;,
+      required: false
+    },
+    message: {
+      type: &apos;string&apos;,
+      description: &apos;Commit message (default: AI-generated)&apos;,
+      required: false
+    },
+    scope: {
+      type: &apos;string&apos;,
+      description: &apos;Commit scope (e.g., &quot;auth&quot;, &quot;api&quot;)&apos;,
+      required: false
+    },
+    noVerify: {
+      type: &apos;boolean&apos;,
+      description: &apos;Skip git hooks&apos;,
+      required: false,
+      default: false
+    }
+  };
+
+  constructor(
+    private gitService: GitService,
+    private aiProvider: AIProvider,
+    private logger: Logger
+  ) {}
+
+  async execute(
+    params: Record&lt;string, any&gt;,
+    context: CommandContext
+  ): Promise&lt;CommandResult&gt; {
     try {
-      const data = await fs.readFile(this.storePath, &apos;utf-8&apos;);
-      return JSON.parse(data);
+      // Stage files if specified
+      if (params.files &amp;&amp; params.files.length &gt; 0) {
+        await this.gitService.add(params.files);
+      }
+
+      // Get diff
+      const diff = await this.gitService.diff({ staged: true });
+
+      if (diff.files.length === 0) {
+        return {
+          success: false,
+          error: &apos;No changes to commit&apos;
+        };
+      }
+
+      // Generate message if not provided
+      let message = params.message;
+
+      if (!message) {
+        this.logger.info(&apos;Generating commit message...&apos;);
+
+        const generator = new CommitMessageGenerator(this.aiProvider);
+        const generated = await generator.generate(diff, {
+          scope: params.scope,
+          conversationHistory: context.conversationHistory
+        });
+
+        message = generated.message;
+
+        console.log(`\n📝 Generated commit message:\n${message}\n`);
+      }
+
+      // Create commit
+      await this.gitService.commit({
+        message,
+        noVerify: params.noVerify
+      });
+
+      return {
+        success: true,
+        message: `Committed: ${message.split(&apos;\n&apos;)[0]}`
+      };
+
     } catch (error) {
-      // Store doesn&apos;t exist yet
+      return {
+        success: false,
+        error: `Commit failed: ${error.message}`
+      };
+    }
+  }
+
+  async inferParameters(
+    params: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const inferred: Record&lt;string, any&gt; = {};
+
+    // Infer files from scope if mentioned
+    if (params.scope &amp;&amp; !params.files) {
+      const gitStatus = context.gitStatus || await this.gitService.status();
+
+      // Find files matching scope
+      const scopeFiles = gitStatus.files.filter(file =&gt;
+        file.path.includes(params.scope)
+      );
+
+      if (scopeFiles.length &gt; 0) {
+        inferred.files = scopeFiles.map(f =&gt; f.path);
+      }
+    }
+
+    // Infer scope from files if not specified
+    if (!params.scope &amp;&amp; params.files &amp;&amp; params.files.length &gt; 0) {
+      // Try to infer scope from common path
+      const paths = params.files.map((f: string) =&gt; f.split(&apos;/&apos;));
+
+      // Find common directory
+      if (paths.length &gt; 0 &amp;&amp; paths[0].length &gt; 1) {
+        const commonDir = paths[0][paths[0].length - 2]; // Parent directory
+        inferred.scope = commonDir;
+      }
+    }
+
+    return inferred;
+  }
+
+  validateParameters(params: Record&lt;string, any&gt;): ValidationResult {
+    const errors: ValidationError[] = [];
+
+    // Validate files array
+    if (params.files) {
+      if (!Array.isArray(params.files)) {
+        errors.push({
+          parameter: &apos;files&apos;,
+          message: &apos;Files must be an array&apos;
+        });
+      }
+    }
+
+    // Validate message format
+    if (params.message) {
+      if (typeof params.message !== &apos;string&apos;) {
+        errors.push({
+          parameter: &apos;message&apos;,
+          message: &apos;Message must be a string&apos;
+        });
+      } else if (params.message.length === 0) {
+        errors.push({
+          parameter: &apos;message&apos;,
+          message: &apos;Message cannot be empty&apos;
+        });
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+}
+
+export interface CommandResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  data?: any;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+}
+
+export interface ValidationError {
+  parameter: string;
+  message: string;
+}
+</codeblock>
+    <section><title>8.5 Context-Aware Parameter Inference</title></section>
+    <p>Parameter inference uses context to fill in missing command parameters automatically. This is what makes natural language routing feel magical.</p>
+    <section><title>Parameter Inference Engine</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Infers missing command parameters from context
+ */
+export class ParameterInferenceEngine {
+  private aiProvider: AIProvider;
+  private logger: Logger;
+
+  constructor(aiProvider: AIProvider, logger: Logger) {
+    this.aiProvider = aiProvider;
+    this.logger = logger;
+  }
+
+  /**
+   * Infer parameters using multiple strategies
+   */
+  async infer(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const inferred: Record&lt;string, any&gt; = {};
+
+    // Strategy 1: Command-specific inference
+    if (command.inferParameters) {
+      const commandInferred = await command.inferParameters(providedParams, context);
+      Object.assign(inferred, commandInferred);
+    }
+
+    // Strategy 2: File system analysis
+    const fsInferred = await this.inferFromFileSystem(
+      command,
+      providedParams,
+      context
+    );
+    Object.assign(inferred, fsInferred);
+
+    // Strategy 3: Git analysis
+    const gitInferred = await this.inferFromGit(
+      command,
+      providedParams,
+      context
+    );
+    Object.assign(inferred, gitInferred);
+
+    // Strategy 4: Conversation history
+    const conversationInferred = await this.inferFromConversation(
+      command,
+      providedParams,
+      context
+    );
+    Object.assign(inferred, conversationInferred);
+
+    // Strategy 5: Project structure
+    const projectInferred = await this.inferFromProject(
+      command,
+      providedParams,
+      context
+    );
+    Object.assign(inferred, projectInferred);
+
+    // Strategy 6: AI-powered inference (last resort)
+    const aiInferred = await this.inferWithAI(
+      command,
+      providedParams,
+      context,
+      inferred
+    );
+    Object.assign(inferred, aiInferred);
+
+    this.logger.debug(&apos;Parameter inference results:&apos;, inferred);
+
+    return inferred;
+  }
+
+  /**
+   * Infer from file system
+   */
+  private async inferFromFileSystem(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const inferred: Record&lt;string, any&gt; = {};
+
+    // Example: Infer test files for test command
+    if (command.name === &apos;test&apos; &amp;&amp; !providedParams.files) {
+      const fs = await import(&apos;fs/promises&apos;);
+      const path = await import(&apos;path&apos;);
+
+      try {
+        // Look for test directories
+        const entries = await fs.readdir(context.workingDirectory, {
+          withFileTypes: true
+        });
+
+        const testDirs = entries
+          .filter(e =&gt; e.isDirectory())
+          .filter(e =&gt; e.name === &apos;test&apos; || e.name === &apos;tests&apos; || e.name === &apos;__tests__&apos;)
+          .map(e =&gt; e.name);
+
+        if (testDirs.length &gt; 0) {
+          inferred.files = testDirs;
+        }
+      } catch (error) {
+        // Ignore errors
+      }
+    }
+
+    return inferred;
+  }
+
+  /**
+   * Infer from git status
+   */
+  private async inferFromGit(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const inferred: Record&lt;string, any&gt; = {};
+
+    if (!context.gitStatus) {
+      return inferred;
+    }
+
+    // Example: Infer files for commit command
+    if (command.name === &apos;commit&apos; &amp;&amp; !providedParams.files) {
+      const stagedFiles = context.gitStatus.files
+        .filter(f =&gt; f.staged)
+        .map(f =&gt; f.path);
+
+      if (stagedFiles.length &gt; 0) {
+        inferred.files = stagedFiles;
+      }
+    }
+
+    // Example: Infer branch for review command
+    if (command.name === &apos;review&apos; &amp;&amp; !providedParams.branch) {
+      inferred.branch = context.gitStatus.branch;
+    }
+
+    return inferred;
+  }
+
+  /**
+   * Infer from conversation history
+   */
+  private async inferFromConversation(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const inferred: Record&lt;string, any&gt; = {};
+
+    if (context.conversationHistory.length === 0) {
+      return inferred;
+    }
+
+    // Look for mentions in recent messages
+    const recentMessages = context.conversationHistory.slice(-5);
+
+    for (const message of recentMessages) {
+      // Extract PR numbers
+      const prMatch = message.content.match(/PR\s*#?(\d+)/i);
+      if (prMatch &amp;&amp; !providedParams.pr) {
+        inferred.pr = parseInt(prMatch[1]);
+      }
+
+      // Extract file paths
+      const fileMatches = message.content.match(/(?:src|test|lib)\/[\w\/.]+/g);
+      if (fileMatches &amp;&amp; !providedParams.files) {
+        inferred.files = fileMatches;
+      }
+
+      // Extract scope/module names
+      const scopeMatch = message.content.match(/(?:auth|api|ui|core|utils|database)\b/i);
+      if (scopeMatch &amp;&amp; !providedParams.scope) {
+        inferred.scope = scopeMatch[0].toLowerCase();
+      }
+    }
+
+    return inferred;
+  }
+
+  /**
+   * Infer from project structure
+   */
+  private async inferFromProject(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const inferred: Record&lt;string, any&gt; = {};
+
+    if (!context.projectStructure) {
+      return inferred;
+    }
+
+    // Example: Infer test command from package.json
+    if (command.name === &apos;test&apos; &amp;&amp; !providedParams.command) {
+      const packageJson = context.projectStructure.packageJson;
+
+      if (packageJson?.scripts?.test) {
+        inferred.command = `npm test`;
+      } else if (packageJson?.scripts?.[&apos;test:unit&apos;]) {
+        inferred.command = `npm run test:unit`;
+      }
+    }
+
+    // Example: Infer source directories
+    if (!providedParams.files) {
+      const srcDirs = context.projectStructure.directories.filter(
+        d =&gt; d.name === &apos;src&apos; || d.name === &apos;lib&apos;
+      );
+
+      if (srcDirs.length &gt; 0) {
+        inferred.sourceDir = srcDirs[0].path;
+      }
+    }
+
+    return inferred;
+  }
+
+  /**
+   * Infer using AI (last resort for complex cases)
+   */
+  private async inferWithAI(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    context: InferenceContext,
+    alreadyInferred: Record&lt;string, any&gt;
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    // Only use AI if we still have missing required parameters
+    const missingParams = this.getMissingRequiredParams(
+      command,
+      { ...providedParams, ...alreadyInferred }
+    );
+
+    if (missingParams.length === 0) {
+      return {};
+    }
+
+    this.logger.debug(&apos;Using AI to infer missing params:&apos;, missingParams);
+
+    const prompt = this.buildInferencePrompt(
+      command,
+      providedParams,
+      alreadyInferred,
+      missingParams,
+      context
+    );
+
+    const response = await this.aiProvider.complete({
+      messages: [
+        {
+          role: MessageRole.SYSTEM,
+          content: &apos;You infer missing command parameters from context. Respond with JSON only.&apos;
+        },
+        {
+          role: MessageRole.USER,
+          content: prompt
+        }
+      ],
+      temperature: 0.1,
+      maxTokens: 500
+    });
+
+    try {
+      const jsonMatch = response.content.match(/```json\n([\s\S]*?)\n```/);
+      const json = jsonMatch ? jsonMatch[1] : response.content;
+
+      return JSON.parse(json);
+    } catch (error) {
+      this.logger.warn(&apos;Failed to parse AI inference response:&apos;, error);
       return {};
     }
   }
 
-  /**
-   * Save credential store to disk
-   */
-  private async save(store: Record&lt;string, EncryptedCredential&gt;): Promise&lt;void&gt; {
-    // Ensure directory exists
-    const dir = path.dirname(this.storePath);
-    await fs.mkdir(dir, { recursive: true });
+  private buildInferencePrompt(
+    command: RoutableCommand,
+    providedParams: Record&lt;string, any&gt;,
+    alreadyInferred: Record&lt;string, any&gt;,
+    missingParams: string[],
+    context: InferenceContext
+  ): string {
+    return `
+Infer the following missing parameters for the &quot;${command.name}&quot; command.
 
-    // Write with restrictive permissions
-    await fs.writeFile(
-      this.storePath,
-      JSON.stringify(store, null, 2),
-      { mode: 0o600 } // Owner read/write only
-    );
+# User Input
+&quot;${context.userInput}&quot;
+
+# Command Description
+${command.description}
+
+# Parameters Already Provided
+${JSON.stringify({ ...providedParams, ...alreadyInferred }, null, 2)}
+
+# Missing Parameters
+${missingParams.map(p =&gt; {
+  const def = command.parameters[p];
+  return `- ${p}: ${def.description} (type: ${def.type})`;
+}).join(&apos;\n&apos;)}
+
+# Context
+Working directory: ${context.workingDirectory}
+${context.gitStatus ? `Git: ${context.gitStatus.files.length} changed files` : &apos;&apos;}
+${context.conversationHistory.length &gt; 0 ? `Recent conversation: ${context.conversationHistory.slice(-2).map(m =&gt; m.content.substring(0, 50)).join(&apos;; &apos;)}` : &apos;&apos;}
+
+# Task
+Infer values for the missing parameters based on the user input and context.
+Only include parameters you can confidently infer.
+
+# Output
+\`\`\`json
+{
+  &quot;param1&quot;: &quot;inferred_value&quot;,
+  &quot;param2&quot;: &quot;inferred_value&quot;
+}
+\`\`\`
+    `.trim();
+  }
+
+  private getMissingRequiredParams(
+    command: RoutableCommand,
+    params: Record&lt;string, any&gt;
+  ): string[] {
+    return Object.entries(command.parameters)
+      .filter(([name, def]) =&gt; def.required &amp;&amp; !(name in params))
+      .map(([name]) =&gt; name);
+  }
+}
+
+export interface ProjectStructure {
+  packageJson?: any;
+  directories: Array&lt;{ name: string; path: string }&gt;;
+  files: string[];
+}
+</codeblock>
+    <section><title>Inference Examples</title></section>
+    <codeblock outputclass="language-typescript">// Example 1: Infer files from scope
+const context1 = {
+  workingDirectory: &apos;/project&apos;,
+  gitStatus: {
+    branch: &apos;main&apos;,
+    files: [
+      { path: &apos;src/auth/login.ts&apos;, staged: true },
+      { path: &apos;src/auth/token.ts&apos;, staged: true },
+      { path: &apos;src/api/users.ts&apos;, staged: false }
+    ]
+  },
+  conversationHistory: [],
+  aiProvider,
+  cancellationToken: new CancellationToken()
+};
+
+const inferred1 = await inferenceEngine.infer(
+  commitCommand,
+  { scope: &apos;auth&apos; },
+  { ...context1, userInput: &apos;commit auth changes&apos;, extractedParams: {} }
+);
+// Result: { files: [&apos;src/auth/login.ts&apos;, &apos;src/auth/token.ts&apos;] }
+
+// Example 2: Infer PR from conversation
+const context2 = {
+  ...context1,
+  conversationHistory: [
+    {
+      role: MessageRole.USER,
+      content: &apos;I just created PR #456 for the authentication feature&apos;
+    }
+  ]
+};
+
+const inferred2 = await inferenceEngine.infer(
+  reviewCommand,
+  {},
+  { ...context2, userInput: &apos;review that PR&apos;, extractedParams: {} }
+);
+// Result: { pr: 456, scope: &apos;authentication&apos; }
+
+// Example 3: Infer test command from package.json
+const context3 = {
+  ...context1,
+  projectStructure: {
+    packageJson: {
+      scripts: {
+        test: &apos;vitest&apos;,
+        &apos;test:unit&apos;: &apos;vitest run&apos;
+      }
+    },
+    directories: [
+      { name: &apos;src&apos;, path: &apos;src&apos; },
+      { name: &apos;test&apos;, path: &apos;test&apos; }
+    ],
+    files: []
+  }
+};
+
+const inferred3 = await inferenceEngine.infer(
+  testCommand,
+  {},
+  { ...context3, userInput: &apos;run tests&apos;, extractedParams: {} }
+);
+// Result: { command: &apos;npm test&apos;, files: [&apos;test&apos;] }
+</codeblock>
+    <section><title>8.6 Lazy Loading and Performance</title></section>
+    <p>Natural language routing can be slow if all commands are loaded upfront. Lazy loading ensures fast startup and minimal memory usage.</p>
+    <section><title>Lazy Loading Strategy</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Lazy-loading command loader
+ */
+export class LazyCommandLoader {
+  private loadedCommands = new Map&lt;string, RoutableCommand&gt;();
+  private loadPromises = new Map&lt;string, Promise&lt;RoutableCommand&gt;&gt;();
+  private logger: Logger;
+
+  constructor(
+    private registry: CommandRegistry,
+    logger: Logger
+  ) {
+    this.logger = logger;
   }
 
   /**
-   * Clear cache (for security)
+   * Load command (with deduplication)
+   */
+  async load(className: string): Promise&lt;RoutableCommand | null&gt; {
+    // Return cached instance
+    if (this.loadedCommands.has(className)) {
+      return this.loadedCommands.get(className)!;
+    }
+
+    // Return in-flight promise (prevents duplicate loads)
+    if (this.loadPromises.has(className)) {
+      return this.loadPromises.get(className)!;
+    }
+
+    // Start new load
+    const loadPromise = this.loadCommand(className);
+    this.loadPromises.set(className, loadPromise);
+
+    try {
+      const command = await loadPromise;
+
+      if (command) {
+        this.loadedCommands.set(className, command);
+      }
+
+      return command;
+
+    } finally {
+      this.loadPromises.delete(className);
+    }
+  }
+
+  private async loadCommand(className: string): Promise&lt;RoutableCommand | null&gt; {
+    const startTime = performance.now();
+
+    const command = await this.registry.get(className);
+
+    const loadTime = performance.now() - startTime;
+    this.logger.debug(`Loaded ${className} in ${loadTime.toFixed(2)}ms`);
+
+    return command;
+  }
+
+  /**
+   * Preload commonly used commands in background
+   */
+  async preloadCommon(classNames: string[]): Promise&lt;void&gt; {
+    const promises = classNames.map(name =&gt; this.load(name));
+    await Promise.allSettled(promises);
+  }
+
+  /**
+   * Clear cache (for testing)
    */
   clearCache(): void {
-    this.cache.clear();
+    this.loadedCommands.clear();
   }
 }
 </codeblock>
-    <section><title>Credential Usage</title></section>
+    <section><title>Performance Optimization</title></section>
     <codeblock outputclass="language-typescript">/**
- * Example: Storing and using API keys
+ * Performance-optimized router with caching
  */
+export class OptimizedNaturalLanguageRouter {
+  private router: NaturalLanguageRouter;
+  private loader: LazyCommandLoader;
+  private intentCache: LRUCache&lt;string, IntentMatch[]&gt;;
+  private routeCache: LRUCache&lt;string, RoutingResult&gt;;
 
-// Initialize credential store
-const credentialStore = new CredentialStore();
+  constructor(
+    aiProvider: AIProvider,
+    commandRegistry: CommandRegistry,
+    logger: Logger
+  ) {
+    this.router = new NaturalLanguageRouter(aiProvider, commandRegistry, logger);
+    this.loader = new LazyCommandLoader(commandRegistry, logger);
 
-// Store API keys (one-time setup)
-await credentialStore.set(&apos;anthropic_api_key&apos;, &apos;sk-ant-...&apos;);
-await credentialStore.set(&apos;openai_api_key&apos;, &apos;sk-...&apos;);
-await credentialStore.set(&apos;github_token&apos;, &apos;ghp_...&apos;);
+    // Cache classification results
+    this.intentCache = new LRUCache({ max: 1000, ttl: 1000 * 60 * 60 }); // 1 hour
 
-// Retrieve API key when needed
-const anthropicKey = await credentialStore.get(&apos;anthropic_api_key&apos;);
+    // Cache full routing results for exact matches
+    this.routeCache = new LRUCache({ max: 500, ttl: 1000 * 60 * 30 }); // 30 min
+  }
 
-// Use with AI provider
-const provider = new AnthropicProvider({
-  apiKey: anthropicKey!,
-  model: &apos;claude-3-5-sonnet-20241022&apos;
-});
+  /**
+   * Route with caching
+   */
+  async route(
+    input: string,
+    context: CommandContext
+  ): Promise&lt;RoutingResult&gt; {
+    // Check full route cache for exact input match
+    const cached = this.routeCache.get(input);
+    if (cached) {
+      return cached;
+    }
 
-// Delete credential
-await credentialStore.delete(&apos;old_api_key&apos;);
+    // Route normally
+    const result = await this.router.route(input, context);
 
-// List all stored credentials
-const keys = await credentialStore.list();
-console.log(&apos;Stored credentials:&apos;, keys);
-// Output: [&apos;anthropic_api_key&apos;, &apos;openai_api_key&apos;, &apos;github_token&apos;]
+    // Cache successful results
+    if (result.success) {
+      this.routeCache.set(input, result);
+    }
+
+    return result;
+  }
+
+  /**
+   * Warmup: preload common commands
+   */
+  async warmup(): Promise&lt;void&gt; {
+    const commonCommands = [
+      &apos;CommitCommand&apos;,
+      &apos;ReviewCommand&apos;,
+      &apos;AnalyzeCommand&apos;,
+      &apos;TestCommand&apos;
+    ];
+
+    await this.loader.preloadCommon(commonCommands);
+  }
+}
 </codeblock>
-    <section><title>9.4 Input Validation and Sanitization</title></section>
-    <p>Validate and sanitize all user input to prevent injection attacks and data leakage.</p>
-    <section><title>Input Validator</title></section>
+    <section><title>Performance Benchmarks</title></section>
+    <codeblock outputclass="language-typescript">// Benchmark: Cold start vs warm start
+
+// Cold start (no caching, lazy loading)
+console.time(&apos;cold-start&apos;);
+const result1 = await router.route(&apos;commit my changes&apos;, context);
+console.timeEnd(&apos;cold-start&apos;);
+// cold-start: 847ms (AI classification + command load)
+
+// Warm start (cached classification)
+console.time(&apos;warm-start-1&apos;);
+const result2 = await router.route(&apos;commit my changes&apos;, context);
+console.timeEnd(&apos;warm-start-1&apos;);
+// warm-start-1: 12ms (cache hit) - 70x faster!
+
+// Warm start (different input, same intent)
+console.time(&apos;warm-start-2&apos;);
+const result3 = await router.route(&apos;commit the auth files&apos;, context);
+console.timeEnd(&apos;warm-start-2&apos;);
+// warm-start-2: 134ms (AI classification, cached command) - 6x faster!
+
+// With preloading
+await router.warmup();
+
+console.time(&apos;preloaded&apos;);
+const result4 = await router.route(&apos;review PR 123&apos;, context);
+console.timeEnd(&apos;preloaded&apos;);
+// preloaded: 142ms (only AI classification needed)
+</codeblock>
+    <section><title>8.7 Multi-Step Workflow Orchestration</title></section>
+    <p>Some user requests require multiple commands executed in sequence. The workflow orchestrator manages this complexity.</p>
+    <section><title>Workflow Orchestrator</title></section>
     <codeblock outputclass="language-typescript">/**
- * Validates and sanitizes user input
+ * Orchestrates multi-step workflows
  */
-export class InputValidator {
+export class WorkflowOrchestrator {
+  private router: NaturalLanguageRouter;
   private logger: Logger;
 
-  // Patterns for sensitive data
-  private sensitivePatterns = [
-    // API keys
-    /sk-[a-zA-Z0-9]{20,}/g,
-    /sk-ant-[a-zA-Z0-9-_]{20,}/g,
-    /ghp_[a-zA-Z0-9]{36}/g,
-    /gho_[a-zA-Z0-9]{36}/g,
-
-    // AWS credentials
-    /AKIA[0-9A-Z]{16}/g,
-    /aws_secret_access_key[&quot;\s:=]+[a-zA-Z0-9/+=]{40}/gi,
-
-    // Private keys
-    /-----BEGIN (RSA |DSA |EC )?PRIVATE KEY-----/g,
-
-    // Passwords
-    /password[&quot;\s:=]+[^\s&quot;]{8,}/gi,
-    /passwd[&quot;\s:=]+[^\s&quot;]{8,}/gi,
-
-    // Tokens
-    /token[&quot;\s:=]+[a-zA-Z0-9_-]{20,}/gi,
-    /bearer\s+[a-zA-Z0-9_-]{20,}/gi,
-
-    // Database connection strings
-    /mongodb(\+srv)?:\/\/[^:]+:[^@]+@/gi,
-    /postgres:\/\/[^:]+:[^@]+@/gi,
-    /mysql:\/\/[^:]+:[^@]+@/gi,
-
-    // Email addresses (PII)
-    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-
-    // Credit card numbers
-    /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
-
-    // SSN
-    /\b\d{3}-\d{2}-\d{4}\b/g
-  ];
-
-  // Patterns for injection attempts
-  private injectionPatterns = [
-    // Command injection
-    /;\s*(rm|dd|mkfs|kill|shutdown)/i,
-    /\|\s*(curl|wget).*\|\s*sh/i,
-    /`[^`]*`/g, // Backticks
-    /\$\([^)]*\)/g, // Command substitution
-
-    // SQL injection
-    /(union|select|insert|update|delete|drop|create|alter).*from/gi,
-    /(&apos;|&quot;)\s*(or|and)\s*(&apos;|&quot;)/gi,
-
-    // Path traversal
-    /\.\.[\/\\]/g,
-    /(\.\.\/){2,}/g,
-
-    // XSS
-    /&lt;script[^&gt;]*&gt;.*?&lt;\/script&gt;/gi,
-    /javascript:/gi,
-    /on\w+\s*=/gi // Event handlers
-  ];
-
-  constructor(logger: Logger) {
+  constructor(
+    router: NaturalLanguageRouter,
+    logger: Logger
+  ) {
+    this.router = router;
     this.logger = logger;
   }
 
   /**
-   * Validate input and detect issues
+   * Execute workflow from natural language input
    */
-  validate(input: string): ValidationResult {
-    const issues: ValidationIssue[] = [];
+  async execute(
+    input: string,
+    context: CommandContext
+  ): Promise&lt;WorkflowResult&gt; {
+    // Route input to commands
+    const routing = await this.router.route(input, context);
 
-    // Check for sensitive data
-    for (const pattern of this.sensitivePatterns) {
-      if (pattern.test(input)) {
-        issues.push({
-          type: &apos;sensitive_data&apos;,
-          severity: &apos;critical&apos;,
-          message: &apos;Input contains sensitive data (API key, password, etc.)&apos;,
-          pattern: pattern.toString()
-        });
-      }
-    }
-
-    // Check for injection attempts
-    for (const pattern of this.injectionPatterns) {
-      if (pattern.test(input)) {
-        issues.push({
-          type: &apos;injection_attempt&apos;,
-          severity: &apos;high&apos;,
-          message: &apos;Input contains potential injection pattern&apos;,
-          pattern: pattern.toString()
-        });
-      }
-    }
-
-    // Check length
-    if (input.length &gt; 50000) {
-      issues.push({
-        type: &apos;excessive_length&apos;,
-        severity: &apos;medium&apos;,
-        message: &apos;Input exceeds maximum length&apos;,
-        pattern: &apos;length &gt; 50000&apos;
-      });
-    }
-
-    const valid = issues.length === 0;
-
-    if (!valid) {
-      this.logger.warn(&apos;Input validation failed:&apos;, {
-        issues,
-        inputLength: input.length
-      });
-    }
-
-    return {
-      valid,
-      issues
-    };
-  }
-
-  /**
-   * Sanitize input by redacting sensitive data
-   */
-  sanitize(input: string): string {
-    let sanitized = input;
-
-    // Redact sensitive patterns
-    for (const pattern of this.sensitivePatterns) {
-      sanitized = sanitized.replace(pattern, &apos;[REDACTED]&apos;);
-    }
-
-    return sanitized;
-  }
-
-  /**
-   * Check if input is safe to send to AI
-   */
-  isSafeForAI(input: string): boolean {
-    const validation = this.validate(input);
-
-    // Block if contains sensitive data
-    const hasSensitiveData = validation.issues.some(
-      issue =&gt; issue.type === &apos;sensitive_data&apos;
-    );
-
-    return !hasSensitiveData;
-  }
-
-  /**
-   * Check if input is safe to execute
-   */
-  isSafeForExecution(input: string): boolean {
-    const validation = this.validate(input);
-
-    // Block if contains injection attempts
-    const hasInjection = validation.issues.some(
-      issue =&gt; issue.type === &apos;injection_attempt&apos;
-    );
-
-    return !hasInjection;
-  }
-}
-
-export interface ValidationIssue {
-  type: &apos;sensitive_data&apos; | &apos;injection_attempt&apos; | &apos;excessive_length&apos;;
-  severity: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;;
-  message: string;
-  pattern: string;
-}
-</codeblock>
-    <section><title>Privacy Filter</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Filters sensitive data before sending to AI
- */
-export class PrivacyFilter {
-  private validator: InputValidator;
-  private logger: Logger;
-
-  constructor(logger: Logger) {
-    this.validator = new InputValidator(logger);
-    this.logger = logger;
-  }
-
-  /**
-   * Filter input before sending to AI
-   */
-  async filterForAI(input: string): Promise&lt;FilterResult&gt; {
-    // Sanitize sensitive data
-    const sanitized = this.validator.sanitize(input);
-
-    // Check if safe
-    const safe = this.validator.isSafeForAI(input);
-
-    if (!safe) {
-      this.logger.warn(&apos;Input filtered for AI:&apos;, {
-        originalLength: input.length,
-        sanitizedLength: sanitized.length
-      });
-    }
-
-    return {
-      filtered: sanitized,
-      hadSensitiveData: !safe,
-      redactions: this.countRedactions(input, sanitized)
-    };
-  }
-
-  /**
-   * Filter file content before sending to AI
-   */
-  async filterFileContent(
-    filePath: string,
-    content: string
-  ): Promise&lt;FilterResult&gt; {
-    // Check if file should be entirely blocked
-    if (this.isBlockedFile(filePath)) {
-      this.logger.warn(&apos;Blocked file from AI:&apos;, { path: filePath });
-
+    if (!routing.success || !routing.commands) {
       return {
-        filtered: `[File ${filePath} contains sensitive data and was not sent to AI]`,
-        hadSensitiveData: true,
-        redactions: 1
+        success: false,
+        error: routing.error || &apos;Routing failed&apos;,
+        steps: []
       };
     }
 
-    // Filter content
-    return this.filterForAI(content);
+    // Build workflow
+    const workflow = this.buildWorkflow(routing.commands);
+
+    // Execute workflow
+    const steps: WorkflowStep[] = [];
+
+    for (let i = 0; i &lt; workflow.length; i++) {
+      const { command, params } = workflow[i];
+
+      const step: WorkflowStep = {
+        index: i,
+        command: command.name,
+        params,
+        status: &apos;pending&apos;
+      };
+
+      steps.push(step);
+
+      // Update status
+      step.status = &apos;running&apos;;
+      this.displayProgress(steps);
+
+      try {
+        // Execute command
+        const result = await command.execute(params, {
+          ...context,
+          // Add results from previous steps to context
+          previousSteps: steps.slice(0, i).map(s =&gt; ({
+            command: s.command,
+            result: s.result
+          }))
+        });
+
+        step.result = result;
+        step.status = result.success ? &apos;completed&apos; : &apos;failed&apos;;
+
+        this.displayProgress(steps);
+
+        // Stop on failure (unless command is optional)
+        if (!result.success &amp;&amp; !this.isOptional(command)) {
+          return {
+            success: false,
+            error: `Step ${i + 1} failed: ${result.error}`,
+            steps
+          };
+        }
+
+      } catch (error) {
+        step.status = &apos;failed&apos;;
+        step.error = error.message;
+
+        this.displayProgress(steps);
+
+        return {
+          success: false,
+          error: `Step ${i + 1} threw error: ${error.message}`,
+          steps
+        };
+      }
+    }
+
+    return {
+      success: true,
+      steps
+    };
   }
 
   /**
-   * Check if file is sensitive and should be blocked
+   * Build workflow from commands (resolve dependencies)
    */
-  private isBlockedFile(filePath: string): boolean {
-    const blockedPatterns = [
-      /\.env$/,
-      /\.env\./,
-      /credentials/i,
-      /secrets/i,
-      /\.key$/,
-      /\.pem$/,
-      /id_rsa$/,
-      /id_dsa$/
-    ];
-
-    return blockedPatterns.some(pattern =&gt; pattern.test(filePath));
+  private buildWorkflow(
+    commands: Array&lt;{
+      command: RoutableCommand;
+      params: Record&lt;string, any&gt;;
+    }&gt;
+  ): Array&lt;{
+    command: RoutableCommand;
+    params: Record&lt;string, any&gt;;
+  }&gt; {
+    // For now, execute in order
+    // Future: analyze dependencies and parallelize independent steps
+    return commands;
   }
 
   /**
-   * Count number of redactions made
+   * Check if command is optional (failure doesn&apos;t stop workflow)
    */
-  private countRedactions(original: string, filtered: string): number {
-    const redactionPattern = /\[REDACTED\]/g;
-    const matches = filtered.match(redactionPattern);
-    return matches ? matches.length : 0;
+  private isOptional(command: RoutableCommand): boolean {
+    // Could be metadata on command
+    return false;
+  }
+
+  /**
+   * Display workflow progress
+   */
+  private displayProgress(steps: WorkflowStep[]): void {
+    console.clear();
+    console.log(&apos;\n📋 Workflow Progress:\n&apos;);
+
+    for (const step of steps) {
+      const icon = this.getStatusIcon(step.status);
+      const name = step.command;
+
+      console.log(`${icon} Step ${step.index + 1}: ${name}`);
+
+      if (step.status === &apos;completed&apos; &amp;&amp; step.result?.message) {
+        console.log(`  ✓ ${step.result.message}`);
+      } else if (step.status === &apos;failed&apos;) {
+        console.log(`  ✗ ${step.result?.error || step.error}`);
+      }
+    }
+
+    console.log(&apos;&apos;);
+  }
+
+  private getStatusIcon(status: WorkflowStepStatus): string {
+    switch (status) {
+      case &apos;pending&apos;:
+        return &apos;⏳&apos;;
+      case &apos;running&apos;:
+        return &apos;▶️ &apos;;
+      case &apos;completed&apos;:
+        return &apos;✅&apos;;
+      case &apos;failed&apos;:
+        return &apos;❌&apos;;
+    }
   }
 }
 
-export interface FilterResult {
-  filtered: string;
-  hadSensitiveData: boolean;
-  redactions: number;
+export interface WorkflowResult {
+  success: boolean;
+  error?: string;
+  steps: WorkflowStep[];
 }
+
+export interface WorkflowStep {
+  index: number;
+  command: string;
+  params: Record&lt;string, any&gt;;
+  status: WorkflowStepStatus;
+  result?: CommandResult;
+  error?: string;
+}
+
+export type WorkflowStepStatus = &apos;pending&apos; | &apos;running&apos; | &apos;completed&apos; | &apos;failed&apos;;
 </codeblock>
-    <section><title>9.5 Rate Limiting and Quotas</title></section>
-    <p>Prevent resource exhaustion by limiting API calls and resource usage.</p>
-    <section><title>Rate Limiter</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Token bucket rate limiter
- */
-export class RateLimiter {
-  private tokens: number;
-  private lastRefill: number;
+    <section><title>Workflow Example</title></section>
+    <codeblock outputclass="language-typescript">// User input: &quot;commit my auth changes and run tests&quot;
+const result = await orchestrator.execute(
+  &quot;commit my auth changes and run tests&quot;,
+  context
+);
 
-  constructor(
-    private maxTokens: number,
-    private refillRate: number, // tokens per second
-    private logger: Logger
-  ) {
-    this.tokens = maxTokens;
-    this.lastRefill = Date.now();
+// Console output:
+/*
+📋 Workflow Progress:
+
+✅ Step 1: commit
+  ✓ Committed: fix(auth): resolve token refresh race condition
+
+▶️  Step 2: test
+  Running tests...
+
+// After tests complete:
+
+📋 Workflow Progress:
+
+✅ Step 1: commit
+  ✓ Committed: fix(auth): resolve token refresh race condition
+
+✅ Step 2: test
+  ✓ All tests passed (47 tests, 0 failures)
+*/
+</codeblock>
+    <section><title>Advanced: Parallel Execution</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Advanced orchestrator with parallel execution
+ */
+export class ParallelWorkflowOrchestrator extends WorkflowOrchestrator {
+  /**
+   * Build workflow with dependency analysis for parallel execution
+   */
+  protected buildWorkflow(
+    commands: Array&lt;{
+      command: RoutableCommand;
+      params: Record&lt;string, any&gt;;
+    }&gt;
+  ): WorkflowPlan {
+    // Build dependency graph
+    const graph = new DependencyGraph();
+
+    commands.forEach((cmd, index) =&gt; {
+      graph.addNode(`step_${index}`, {
+        command: cmd.command,
+        params: cmd.params
+      });
+    });
+
+    // Analyze dependencies
+    for (let i = 0; i &lt; commands.length; i++) {
+      for (let j = i + 1; j &lt; commands.length; j++) {
+        if (this.hasDependency(commands[i], commands[j])) {
+          graph.addEdge(`step_${i}`, `step_${j}`);
+        }
+      }
+    }
+
+    // Get execution levels (parallel groups)
+    const levels = graph.getExecutionLevels();
+
+    return {
+      levels: levels.map(level =&gt;
+        level.map(nodeId =&gt; {
+          const index = parseInt(nodeId.split(&apos;_&apos;)[1]);
+          return commands[index];
+        })
+      )
+    };
   }
 
   /**
-   * Try to consume tokens
-   * @returns true if tokens available, false if rate limited
+   * Check if cmdB depends on cmdA
    */
-  async tryConsume(tokensNeeded: number = 1): Promise&lt;boolean&gt; {
-    // Refill tokens based on time elapsed
-    this.refill();
-
-    if (this.tokens &gt;= tokensNeeded) {
-      this.tokens -= tokensNeeded;
+  private hasDependency(
+    cmdA: { command: RoutableCommand; params: any },
+    cmdB: { command: RoutableCommand; params: any }
+  ): boolean {
+    // Example: test depends on commit
+    if (cmdA.command.name === &apos;commit&apos; &amp;&amp; cmdB.command.name === &apos;test&apos;) {
       return true;
     }
 
-    this.logger.warn(&apos;Rate limit exceeded:&apos;, {
-      available: this.tokens,
-      needed: tokensNeeded
-    });
+    // Example: deploy depends on test
+    if (cmdA.command.name === &apos;test&apos; &amp;&amp; cmdB.command.name === &apos;deploy&apos;) {
+      return true;
+    }
+
+    // Could analyze parameter dependencies too
 
     return false;
   }
 
   /**
-   * Wait until tokens are available
+   * Execute workflow with parallel execution
    */
-  async consume(tokensNeeded: number = 1): Promise&lt;void&gt; {
-    while (true) {
-      if (await this.tryConsume(tokensNeeded)) {
-        return;
-      }
+  async execute(
+    input: string,
+    context: CommandContext
+  ): Promise&lt;WorkflowResult&gt; {
+    const routing = await this.router.route(input, context);
 
-      // Calculate wait time
-      const tokensToWait = tokensNeeded - this.tokens;
-      const waitMs = (tokensToWait / this.refillRate) * 1000;
-
-      // Wait
-      await new Promise(resolve =&gt; setTimeout(resolve, waitMs));
+    if (!routing.success || !routing.commands) {
+      return {
+        success: false,
+        error: routing.error || &apos;Routing failed&apos;,
+        steps: []
+      };
     }
-  }
 
-  /**
-   * Refill tokens based on elapsed time
-   */
-  private refill(): void {
-    const now = Date.now();
-    const elapsedMs = now - this.lastRefill;
-    const elapsedSeconds = elapsedMs / 1000;
+    const plan = this.buildWorkflow(routing.commands);
+    const steps: WorkflowStep[] = [];
+    let stepIndex = 0;
 
-    const tokensToAdd = elapsedSeconds * this.refillRate;
+    // Execute each level (levels can run in parallel)
+    for (const level of plan.levels) {
+      // Execute all commands in level in parallel
+      const promises = level.map(async ({ command, params }) =&gt; {
+        const index = stepIndex++;
 
-    this.tokens = Math.min(this.maxTokens, this.tokens + tokensToAdd);
-    this.lastRefill = now;
-  }
-
-  /**
-   * Get current token count
-   */
-  getAvailableTokens(): number {
-    this.refill();
-    return this.tokens;
-  }
-}
-</codeblock>
-    <section><title>Budget Manager</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Manages budget limits for AI API calls
- */
-export class BudgetManager {
-  private usage: UsageTracker;
-  private logger: Logger;
-
-  constructor(
-    private limits: BudgetLimits,
-    logger: Logger
-  ) {
-    this.usage = new UsageTracker();
-    this.logger = logger;
-  }
-
-  /**
-   * Check if request is within budget
-   */
-  async checkBudget(estimatedCost: number): Promise&lt;BudgetCheckResult&gt; {
-    const current = this.usage.getCurrentUsage();
-
-    // Check hourly limit
-    if (this.limits.hourlyLimit) {
-      const hourlyUsage = this.usage.getUsageInWindow(3600000); // 1 hour
-
-      if (hourlyUsage.cost + estimatedCost &gt; this.limits.hourlyLimit) {
-        return {
-          allowed: false,
-          reason: &apos;Hourly budget limit exceeded&apos;,
-          current: hourlyUsage.cost,
-          limit: this.limits.hourlyLimit
+        const step: WorkflowStep = {
+          index,
+          command: command.name,
+          params,
+          status: &apos;running&apos;
         };
-      }
-    }
 
-    // Check daily limit
-    if (this.limits.dailyLimit) {
-      const dailyUsage = this.usage.getUsageInWindow(86400000); // 24 hours
+        steps.push(step);
+        this.displayProgress(steps);
 
-      if (dailyUsage.cost + estimatedCost &gt; this.limits.dailyLimit) {
-        return {
-          allowed: false,
-          reason: &apos;Daily budget limit exceeded&apos;,
-          current: dailyUsage.cost,
-          limit: this.limits.dailyLimit
-        };
-      }
-    }
-
-    // Check monthly limit
-    if (this.limits.monthlyLimit) {
-      const monthlyUsage = this.usage.getUsageInWindow(2592000000); // 30 days
-
-      if (monthlyUsage.cost + estimatedCost &gt; this.limits.monthlyLimit) {
-        return {
-          allowed: false,
-          reason: &apos;Monthly budget limit exceeded&apos;,
-          current: monthlyUsage.cost,
-          limit: this.limits.monthlyLimit
-        };
-      }
-    }
-
-    return { allowed: true };
-  }
-
-  /**
-   * Record usage
-   */
-  async recordUsage(cost: number, tokens: number, provider: string): Promise&lt;void&gt; {
-    this.usage.record({
-      timestamp: Date.now(),
-      cost,
-      tokens,
-      provider
-    });
-
-    this.logger.info(&apos;API usage recorded:&apos;, { cost, tokens, provider });
-  }
-
-  /**
-   * Get current usage stats
-   */
-  getUsageStats(): UsageStats {
-    return {
-      hourly: this.usage.getUsageInWindow(3600000),
-      daily: this.usage.getUsageInWindow(86400000),
-      monthly: this.usage.getUsageInWindow(2592000000),
-      total: this.usage.getCurrentUsage()
-    };
-  }
-}
-
-export interface BudgetLimits {
-  hourlyLimit?: number;
-  dailyLimit?: number;
-  monthlyLimit?: number;
-}
-
-export interface BudgetCheckResult {
-  allowed: boolean;
-  reason?: string;
-  current?: number;
-  limit?: number;
-}
-
-export interface UsageStats {
-  hourly: { cost: number; tokens: number };
-  daily: { cost: number; tokens: number };
-  monthly: { cost: number; tokens: number };
-  total: { cost: number; tokens: number };
-}
-
-/**
- * Tracks API usage over time
- */
-class UsageTracker {
-  private records: UsageRecord[] = [];
-
-  record(record: UsageRecord): void {
-    this.records.push(record);
-
-    // Clean old records (older than 30 days)
-    const cutoff = Date.now() - 2592000000;
-    this.records = this.records.filter(r =&gt; r.timestamp &gt; cutoff);
-  }
-
-  getUsageInWindow(windowMs: number): { cost: number; tokens: number } {
-    const cutoff = Date.now() - windowMs;
-
-    const filtered = this.records.filter(r =&gt; r.timestamp &gt; cutoff);
-
-    return {
-      cost: filtered.reduce((sum, r) =&gt; sum + r.cost, 0),
-      tokens: filtered.reduce((sum, r) =&gt; sum + r.tokens, 0)
-    };
-  }
-
-  getCurrentUsage(): { cost: number; tokens: number } {
-    return {
-      cost: this.records.reduce((sum, r) =&gt; sum + r.cost, 0),
-      tokens: this.records.reduce((sum, r) =&gt; sum + r.tokens, 0)
-    };
-  }
-}
-
-interface UsageRecord {
-  timestamp: number;
-  cost: number;
-  tokens: number;
-  provider: string;
-}
-</codeblock>
-    <section><title>9.6 Privacy-Preserving AI Interactions</title></section>
-    <p>Minimize data exposure to AI providers while maintaining functionality.</p>
-    <section><title>Local-First Strategy</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Privacy-preserving AI interaction strategy
- */
-export class PrivacyPreservingAI {
-  private privacyFilter: PrivacyFilter;
-  private localProvider: AIProvider; // Ollama
-  private cloudProvider: AIProvider; // Anthropic/OpenAI
-  private logger: Logger;
-
-  constructor(
-    localProvider: AIProvider,
-    cloudProvider: AIProvider,
-    logger: Logger
-  ) {
-    this.privacyFilter = new PrivacyFilter(logger);
-    this.localProvider = localProvider;
-    this.cloudProvider = cloudProvider;
-    this.logger = logger;
-  }
-
-  /**
-   * Route request based on sensitivity
-   */
-  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
-    // Analyze sensitivity
-    const sensitivity = this.analyzeSensitivity(request);
-
-    this.logger.info(&apos;Privacy routing:&apos;, {
-      sensitivity: sensitivity.level,
-      reasons: sensitivity.reasons
-    });
-
-    // Route based on sensitivity
-    if (sensitivity.level === &apos;high&apos; || sensitivity.level === &apos;critical&apos;) {
-      // Use local provider for sensitive data
-      return this.localProvider.complete(request);
-
-    } else {
-      // Filter and use cloud provider for non-sensitive data
-      const filtered = await this.filterRequest(request);
-      return this.cloudProvider.complete(filtered);
-    }
-  }
-
-  /**
-   * Analyze sensitivity of request
-   */
-  private analyzeSensitivity(request: CompletionRequest): SensitivityAnalysis {
-    const reasons: string[] = [];
-    let level: SensitivityLevel = &apos;low&apos;;
-
-    // Check each message
-    for (const message of request.messages) {
-      const validation = new InputValidator(this.logger).validate(message.content);
-
-      for (const issue of validation.issues) {
-        if (issue.type === &apos;sensitive_data&apos;) {
-          level = &apos;critical&apos;;
-          reasons.push(`Message contains ${issue.message}`);
-        }
-      }
-    }
-
-    // Check for code files
-    const hasCodeFiles = request.messages.some(m =&gt;
-      m.content.includes(&apos;```&apos;) || m.content.length &gt; 5000
-    );
-
-    if (hasCodeFiles) {
-      if (level === &apos;low&apos;) level = &apos;medium&apos;;
-      reasons.push(&apos;Request contains code files&apos;);
-    }
-
-    return { level, reasons };
-  }
-
-  /**
-   * Filter request before sending to cloud
-   */
-  private async filterRequest(
-    request: CompletionRequest
-  ): Promise&lt;CompletionRequest&gt; {
-    const filteredMessages = await Promise.all(
-      request.messages.map(async msg =&gt; {
-        const result = await this.privacyFilter.filterForAI(msg.content);
-
-        return {
-          ...msg,
-          content: result.filtered
-        };
-      })
-    );
-
-    return {
-      ...request,
-      messages: filteredMessages
-    };
-  }
-}
-
-type SensitivityLevel = &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;;
-
-interface SensitivityAnalysis {
-  level: SensitivityLevel;
-  reasons: string[];
-}
-</codeblock>
-    <section><title>Anonymization</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Anonymizes code and data before sending to AI
- */
-export class CodeAnonymizer {
-  private identifierMap: Map&lt;string, string&gt; = new Map();
-  private counter = 0;
-
-  /**
-   * Anonymize code by replacing identifiers
-   */
-  anonymize(code: string, language: string): AnonymizedCode {
-    // Simple anonymization (production would use AST parsing)
-    let anonymized = code;
-
-    // Replace function names
-    anonymized = anonymized.replace(
-      /function\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
-      (match, name) =&gt; {
-        const anon = this.getAnonymousName(name);
-        return `function ${anon}`;
-      }
-    );
-
-    // Replace variable names
-    anonymized = anonymized.replace(
-      /(?:const|let|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
-      (match, name) =&gt; {
-        const anon = this.getAnonymousName(name);
-        return match.replace(name, anon);
-      }
-    );
-
-    // Replace class names
-    anonymized = anonymized.replace(
-      /class\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
-      (match, name) =&gt; {
-        const anon = this.getAnonymousName(name);
-        return `class ${anon}`;
-      }
-    );
-
-    return {
-      anonymized,
-      identifierMap: new Map(this.identifierMap)
-    };
-  }
-
-  /**
-   * Deanonymize response from AI
-   */
-  deanonymize(code: string): string {
-    let deanonymized = code;
-
-    // Reverse identifier mapping
-    for (const [original, anon] of this.identifierMap) {
-      deanonymized = deanonymized.replace(
-        new RegExp(`\\b${anon}\\b`, &apos;g&apos;),
-        original
-      );
-    }
-
-    return deanonymized;
-  }
-
-  /**
-   * Get or create anonymous name
-   */
-  private getAnonymousName(original: string): string {
-    if (this.identifierMap.has(original)) {
-      return this.identifierMap.get(original)!;
-    }
-
-    const anon = `var_${this.counter++}`;
-    this.identifierMap.set(original, anon);
-
-    return anon;
-  }
-
-  /**
-   * Clear mapping
-   */
-  reset(): void {
-    this.identifierMap.clear();
-    this.counter = 0;
-  }
-}
-
-interface AnonymizedCode {
-  anonymized: string;
-  identifierMap: Map&lt;string, string&gt;;
-}
-</codeblock>
-    <section><title>9.7 Audit Logging and Compliance</title></section>
-    <p>Comprehensive audit logging enables forensics and compliance.</p>
-    <section><title>Audit Logger</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Audit logger for security-relevant events
- */
-export class AuditLogger {
-  private logger: Logger;
-  private storage: AuditStorage;
-
-  constructor(logger: Logger, storage: AuditStorage) {
-    this.logger = logger;
-    this.storage = storage;
-  }
-
-  /**
-   * Log security event
-   */
-  async logSecurityEvent(event: SecurityEvent): Promise&lt;void&gt; {
-    // Add metadata
-    const auditEvent: AuditEvent = {
-      ...event,
-      timestamp: new Date(),
-      id: this.generateEventId()
-    };
-
-    // Redact sensitive data
-    const redacted = this.redactEvent(auditEvent);
-
-    // Write to logger
-    this.logger.info(&apos;Security event:&apos;, redacted);
-
-    // Store for audit
-    await this.storage.store(redacted);
-  }
-
-  /**
-   * Log file access
-   */
-  async logFileAccess(
-    operation: &apos;read&apos; | &apos;write&apos; | &apos;delete&apos;,
-    filePath: string,
-    success: boolean,
-    user?: string
-  ): Promise&lt;void&gt; {
-    await this.logSecurityEvent({
-      type: &apos;file_access&apos;,
-      operation,
-      resource: filePath,
-      success,
-      user,
-      metadata: {}
-    });
-  }
-
-  /**
-   * Log command execution
-   */
-  async logCommandExecution(
-    command: string,
-    success: boolean,
-    exitCode?: number,
-    user?: string
-  ): Promise&lt;void&gt; {
-    await this.logSecurityEvent({
-      type: &apos;command_execution&apos;,
-      operation: &apos;execute&apos;,
-      resource: command,
-      success,
-      user,
-      metadata: { exitCode }
-    });
-  }
-
-  /**
-   * Log credential access
-   */
-  async logCredentialAccess(
-    operation: &apos;get&apos; | &apos;set&apos; | &apos;delete&apos;,
-    key: string,
-    success: boolean,
-    user?: string
-  ): Promise&lt;void&gt; {
-    await this.logSecurityEvent({
-      type: &apos;credential_access&apos;,
-      operation,
-      resource: key,
-      success,
-      user,
-      metadata: {}
-    });
-  }
-
-  /**
-   * Log security violation
-   */
-  async logViolation(
-    violationType: string,
-    resource: string,
-    reason: string,
-    severity: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;,
-    user?: string
-  ): Promise&lt;void&gt; {
-    await this.logSecurityEvent({
-      type: &apos;security_violation&apos;,
-      operation: violationType,
-      resource,
-      success: false,
-      user,
-      metadata: { reason, severity }
-    });
-  }
-
-  /**
-   * Redact sensitive data from event
-   */
-  private redactEvent(event: AuditEvent): AuditEvent {
-    const redacted = { ...event };
-
-    // Redact resource if it contains sensitive data
-    if (redacted.resource) {
-      const validator = new InputValidator(this.logger);
-      redacted.resource = validator.sanitize(redacted.resource);
-    }
-
-    return redacted;
-  }
-
-  /**
-   * Generate unique event ID
-   */
-  private generateEventId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  }
-}
-
-export interface SecurityEvent {
-  type: string;
-  operation: string;
-  resource: string;
-  success: boolean;
-  user?: string;
-  metadata: Record&lt;string, any&gt;;
-}
-
-export interface AuditEvent extends SecurityEvent {
-  id: string;
-  timestamp: Date;
-}
-</codeblock>
-    <section><title>Audit Storage</title></section>
-    <codeblock outputclass="language-typescript">import fs from &apos;fs/promises&apos;;
-
-/**
- * Stores audit events for compliance
- */
-export class AuditStorage {
-  private logPath: string;
-  private rotateSize: number; // bytes
-  private maxFiles: number;
-
-  constructor(
-    logPath: string,
-    rotateSize: number = 10 * 1024 * 1024, // 10 MB
-    maxFiles: number = 10
-  ) {
-    this.logPath = logPath;
-    this.rotateSize = rotateSize;
-    this.maxFiles = maxFiles;
-  }
-
-  /**
-   * Store audit event
-   */
-  async store(event: AuditEvent): Promise&lt;void&gt; {
-    // Ensure directory exists
-    const dir = path.dirname(this.logPath);
-    await fs.mkdir(dir, { recursive: true });
-
-    // Append to log file
-    const line = JSON.stringify(event) + &apos;\n&apos;;
-    await fs.appendFile(this.logPath, line);
-
-    // Check if rotation needed
-    await this.rotateIfNeeded();
-  }
-
-  /**
-   * Query audit events
-   */
-  async query(filter: AuditFilter): Promise&lt;AuditEvent[]&gt; {
-    const events: AuditEvent[] = [];
-
-    // Read all log files
-    const files = await this.getLogFiles();
-
-    for (const file of files) {
-      const content = await fs.readFile(file, &apos;utf-8&apos;);
-      const lines = content.split(&apos;\n&apos;).filter(line =&gt; line.trim());
-
-      for (const line of lines) {
         try {
-          const event = JSON.parse(line);
+          const result = await command.execute(params, context);
 
-          if (this.matchesFilter(event, filter)) {
-            events.push(event);
-          }
+          step.result = result;
+          step.status = result.success ? &apos;completed&apos; : &apos;failed&apos;;
+
+          this.displayProgress(steps);
+
+          return { step, success: result.success };
+
         } catch (error) {
-          // Skip invalid lines
+          step.status = &apos;failed&apos;;
+          step.error = error.message;
+
+          this.displayProgress(steps);
+
+          return { step, success: false };
         }
+      });
+
+      const results = await Promise.all(promises);
+
+      // Stop if any command in level failed
+      const failed = results.find(r =&gt; !r.success);
+      if (failed) {
+        return {
+          success: false,
+          error: `Step ${failed.step.index + 1} failed`,
+          steps
+        };
       }
     }
-
-    return events;
-  }
-
-  /**
-   * Rotate log file if needed
-   */
-  private async rotateIfNeeded(): Promise&lt;void&gt; {
-    try {
-      const stats = await fs.stat(this.logPath);
-
-      if (stats.size &gt;= this.rotateSize) {
-        await this.rotate();
-      }
-    } catch (error) {
-      // File doesn&apos;t exist yet
-    }
-  }
-
-  /**
-   * Rotate log files
-   */
-  private async rotate(): Promise&lt;void&gt; {
-    // Move existing files
-    for (let i = this.maxFiles - 1; i &gt; 0; i--) {
-      const oldPath = `${this.logPath}.${i}`;
-      const newPath = `${this.logPath}.${i + 1}`;
-
-      try {
-        await fs.rename(oldPath, newPath);
-      } catch (error) {
-        // File doesn&apos;t exist
-      }
-    }
-
-    // Move current file to .1
-    await fs.rename(this.logPath, `${this.logPath}.1`);
-
-    // Delete oldest file if needed
-    const oldestPath = `${this.logPath}.${this.maxFiles + 1}`;
-    try {
-      await fs.unlink(oldestPath);
-    } catch (error) {
-      // File doesn&apos;t exist
-    }
-  }
-
-  /**
-   * Get all log files
-   */
-  private async getLogFiles(): Promise&lt;string[]&gt; {
-    const files = [this.logPath];
-
-    for (let i = 1; i &lt;= this.maxFiles; i++) {
-      const path = `${this.logPath}.${i}`;
-
-      try {
-        await fs.access(path);
-        files.push(path);
-      } catch (error) {
-        // File doesn&apos;t exist
-        break;
-      }
-    }
-
-    return files;
-  }
-
-  /**
-   * Check if event matches filter
-   */
-  private matchesFilter(event: AuditEvent, filter: AuditFilter): boolean {
-    if (filter.type &amp;&amp; event.type !== filter.type) {
-      return false;
-    }
-
-    if (filter.operation &amp;&amp; event.operation !== filter.operation) {
-      return false;
-    }
-
-    if (filter.user &amp;&amp; event.user !== filter.user) {
-      return false;
-    }
-
-    if (filter.startTime &amp;&amp; event.timestamp &lt; filter.startTime) {
-      return false;
-    }
-
-    if (filter.endTime &amp;&amp; event.timestamp &gt; filter.endTime) {
-      return false;
-    }
-
-    return true;
-  }
-}
-
-export interface AuditFilter {
-  type?: string;
-  operation?: string;
-  user?: string;
-  startTime?: Date;
-  endTime?: Date;
-}
-</codeblock>
-    <section><title>9.8 Security Best Practices</title></section>
-    <section><title>Security Checklist</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Security best practices checklist
- */
-export const SECURITY_CHECKLIST = {
-  authentication: [
-    &apos;Use encrypted credential storage (AES-256-GCM)&apos;,
-    &apos;Never store credentials in plaintext&apos;,
-    &apos;Use OS keychain when available&apos;,
-    &apos;Rotate credentials regularly&apos;,
-    &apos;Use principle of least privilege&apos;
-  ],
-
-  authorization: [
-    &apos;Implement sandbox for file access&apos;,
-    &apos;Require approval for destructive operations&apos;,
-    &apos;Use allowlists for paths and commands&apos;,
-    &apos;Validate all user input&apos;,
-    &apos;Implement read-only mode&apos;
-  ],
-
-  dataProtection: [
-    &apos;Filter sensitive data before sending to AI&apos;,
-    &apos;Use local AI for sensitive code&apos;,
-    &apos;Redact secrets in logs&apos;,
-    &apos;Anonymize code when possible&apos;,
-    &apos;Encrypt data at rest and in transit&apos;
-  ],
-
-  rateLimiting: [
-    &apos;Implement rate limiting for API calls&apos;,
-    &apos;Set budget caps (hourly, daily, monthly)&apos;,
-    &apos;Monitor usage patterns&apos;,
-    &apos;Alert on unusual activity&apos;,
-    &apos;Implement request queuing&apos;
-  ],
-
-  auditLogging: [
-    &apos;Log all security-relevant events&apos;,
-    &apos;Include context (user, timestamp, resource)&apos;,
-    &apos;Redact sensitive data in logs&apos;,
-    &apos;Rotate logs regularly&apos;,
-    &apos;Enable forensic analysis&apos;
-  ],
-
-  inputValidation: [
-    &apos;Validate all user input&apos;,
-    &apos;Sanitize before processing&apos;,
-    &apos;Detect injection attempts&apos;,
-    &apos;Limit input length&apos;,
-    &apos;Use type checking&apos;
-  ],
-
-  errorHandling: [
-    &apos;Never expose sensitive data in errors&apos;,
-    &apos;Log errors securely&apos;,
-    &apos;Fail securely (deny by default)&apos;,
-    &apos;Handle edge cases&apos;,
-    &apos;Provide user-friendly messages&apos;
-  ],
-
-  deployment: [
-    &apos;Run with least privilege&apos;,
-    &apos;Use environment variables for config&apos;,
-    &apos;Enable security headers&apos;,
-    &apos;Keep dependencies updated&apos;,
-    &apos;Regular security audits&apos;
-  ]
-};
-</codeblock>
-    <section><title>Secure Configuration</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Secure default configuration
- */
-export class SecureConfiguration {
-  /**
-   * Get production-ready security configuration
-   */
-  static getProductionConfig(): SecurityConfig {
-    return {
-      // Sandbox configuration
-      sandbox: {
-        ...DEFAULT_SANDBOX_CONFIG,
-        readOnly: false,
-        allowNetwork: false,
-        maxExecutionTime: 30000
-      },
-
-      // Credential configuration
-      credentials: {
-        storePath: path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;credentials.enc&apos;),
-        encryptionAlgorithm: &apos;aes-256-gcm&apos;,
-        keyDerivationIterations: 100000
-      },
-
-      // Rate limiting
-      rateLimits: {
-        requestsPerMinute: 60,
-        requestsPerHour: 1000,
-        requestsPerDay: 10000
-      },
-
-      // Budget limits
-      budget: {
-        hourlyLimit: 1.00, // $1/hour
-        dailyLimit: 10.00, // $10/day
-        monthlyLimit: 100.00 // $100/month
-      },
-
-      // Privacy
-      privacy: {
-        filterSensitiveData: true,
-        useLocalForSensitive: true,
-        anonymizeCode: false, // Optional
-        redactLogs: true
-      },
-
-      // Audit logging
-      audit: {
-        enabled: true,
-        logPath: path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;audit.log&apos;),
-        rotateSize: 10 * 1024 * 1024, // 10 MB
-        maxFiles: 10
-      },
-
-      // Approval requirements
-      approval: {
-        requireForWrite: true,
-        requireForDelete: true,
-        requireForExecute: true,
-        requireFor2FA: [&apos;delete&apos;, &apos;execute_dangerous&apos;]
-      }
-    };
-  }
-
-  /**
-   * Get development configuration (more permissive)
-   */
-  static getDevelopmentConfig(): SecurityConfig {
-    const prod = this.getProductionConfig();
 
     return {
-      ...prod,
-      sandbox: {
-        ...prod.sandbox,
-        allowNetwork: true,
-        maxExecutionTime: 60000
-      },
-      approval: {
-        ...prod.approval,
-        requireForWrite: false,
-        requireForExecute: false
-      }
+      success: true,
+      steps
     };
   }
 }
 
-export interface SecurityConfig {
-  sandbox: SandboxConfig;
-  credentials: CredentialConfig;
-  rateLimits: RateLimitConfig;
-  budget: BudgetLimits;
-  privacy: PrivacyConfig;
-  audit: AuditConfig;
-  approval: ApprovalConfig;
-}
-
-interface CredentialConfig {
-  storePath: string;
-  encryptionAlgorithm: string;
-  keyDerivationIterations: number;
-}
-
-interface RateLimitConfig {
-  requestsPerMinute: number;
-  requestsPerHour: number;
-  requestsPerDay: number;
-}
-
-interface PrivacyConfig {
-  filterSensitiveData: boolean;
-  useLocalForSensitive: boolean;
-  anonymizeCode: boolean;
-  redactLogs: boolean;
-}
-
-interface AuditConfig {
-  enabled: boolean;
-  logPath: string;
-  rotateSize: number;
-  maxFiles: number;
-}
-
-interface ApprovalConfig {
-  requireForWrite: boolean;
-  requireForDelete: boolean;
-  requireForExecute: boolean;
-  requireFor2FA: string[];
+interface WorkflowPlan {
+  levels: Array&lt;Array&lt;{
+    command: RoutableCommand;
+    params: Record&lt;string, any&gt;;
+  }&gt;&gt;;
 }
 </codeblock>
     <section><title>Exercises</title></section>
-    <section><title>Exercise 1: Implement Container-Based Sandboxing</title></section>
-    <p><b>Goal:</b> Enhance sandboxing by using Docker containers for complete isolation.</p>
+    <section><title>Exercise 1: Build a Custom Command</title></section>
+    <p><b>Goal:</b> Create a custom routable command for code formatting.</p>
     <p><b>Requirements:</b>
-1. Create <codeph>DockerSandbox</codeph> class that executes commands in containers
-2. Mount only allowed directories
-3. Limit CPU, memory, and network
-4. Collect output and cleanup containers
-5. Handle errors and timeouts</p>
+1. Implement <codeph>FormatCommand</codeph> that formats code using Prettier/ESLint
+2. Add parameter inference to detect formatter from package.json
+3. Infer files to format from git status or user input
+4. Handle both single file and directory formatting</p>
     <p><b>Starter Code:</b></p>
-    <codeblock outputclass="language-typescript">export class DockerSandbox {
-  async execute(command: string, config: SandboxConfig): Promise&lt;ExecutionResult&gt; {
-    // TODO: Create Docker container with restrictions
-    // TODO: Mount allowed directories as volumes
-    // TODO: Execute command
-    // TODO: Collect output
-    // TODO: Cleanup container
+    <codeblock outputclass="language-typescript">export class FormatCommand implements RoutableCommand {
+  readonly name = &apos;format&apos;;
+  readonly description = &apos;Format code using project formatters&apos;;
+
+  readonly parameters: CommandParameters = {
+    // TODO: Define parameters
+  };
+
+  async execute(
+    params: Record&lt;string, any&gt;,
+    context: CommandContext
+  ): Promise&lt;CommandResult&gt; {
+    // TODO: Implement formatting
+  }
+
+  async inferParameters(
+    params: Record&lt;string, any&gt;,
+    context: InferenceContext
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    // TODO: Implement inference
+  }
+
+  validateParameters(params: Record&lt;string, any&gt;): ValidationResult {
+    // TODO: Implement validation
   }
 }
 </codeblock>
-    <section><title>Exercise 2: Implement Security Incident Response</title></section>
-    <p><b>Goal:</b> Build incident detection and response system.</p>
+    <section><title>Exercise 2: Intent Classification with Embeddings</title></section>
+    <p><b>Goal:</b> Implement embedding-based intent classification as an alternative to AI classification.</p>
     <p><b>Requirements:</b>
-1. Detect security incidents (multiple failed attempts, unusual patterns)
-2. Classify severity
-3. Trigger alerts
-4. Implement automatic response (block user, require re-auth)
-5. Generate incident reports</p>
+1. Generate embeddings for each intent&apos;s examples
+2. Store embeddings in a vector database or in-memory
+3. For new input, generate embedding and find nearest intent
+4. Return matches with confidence scores based on cosine similarity</p>
     <p><b>Hints:</b>
-- Track failed operations per user/IP
-- Use sliding window for rate detection
-- Integration with notification systems (email, Slack)</p>
-    <section><title>Exercise 3: GDPR Compliance Features</title></section>
-    <p><b>Goal:</b> Add GDPR compliance features for handling user data.</p>
+- Use OpenAI&apos;s text-embedding-3-small or similar
+- Cosine similarity formula: <codeph>dot(a, b) / (norm(a) * norm(b))</codeph>
+- Threshold: only return matches with similarity &gt; 0.75</p>
+    <section><title>Exercise 3: Multi-Step Workflow with Rollback</title></section>
+    <p><b>Goal:</b> Extend the workflow orchestrator to support rollback on failure.</p>
     <p><b>Requirements:</b>
-1. Implement data export (all user data in JSON)
-2. Implement data deletion (right to be forgotten)
-3. Add consent management (track consents)
-4. Implement data retention policies (auto-delete old data)
-5. Generate compliance reports</p>
+1. Add <codeph>rollback()</codeph> method to <codeph>RoutableCommand</codeph> interface
+2. Track executed steps
+3. On failure, execute rollback for completed steps in reverse order
+4. Display rollback progress to user</p>
     <p><b>Example:</b></p>
-    <codeblock outputclass="language-typescript">export class GDPRCompliance {
-  async exportUserData(userId: string): Promise&lt;UserDataExport&gt; {
-    // Export all data for user
-  }
+    <codeblock outputclass="language-typescript">// Workflow: format -&gt; commit -&gt; push
+// If push fails, rollback commit (reset HEAD^)
 
-  async deleteUserData(userId: string): Promise&lt;void&gt; {
-    // Delete all user data
-  }
-
-  async trackConsent(userId: string, consentType: string): Promise&lt;void&gt; {
-    // Record consent
-  }
+interface RollbackableCommand extends RoutableCommand {
+  rollback?(
+    params: Record&lt;string, any&gt;,
+    context: CommandContext,
+    result: CommandResult
+  ): Promise&lt;void&gt;;
 }
 </codeblock>
     <section><title>Summary</title></section>
-    <p>In this chapter, you built comprehensive security controls for your AI coding assistant.</p>
+    <p>In this chapter, you built a complete natural language routing system that transforms user intent into executable commands.</p>
     <section><title>Key Concepts</title></section>
     <ol>
       <li>
-        <b>Sandboxed Execution</b>
-        - Restrict file access, commands, and resource usage
+        <b>Natural Language Routing</b>
+        - Understanding user intent and routing to commands
       </li>
       <li>
-        <b>Credential Management</b>
-        - Encrypted storage with AES-256-GCM
+        <b>Intent Classification</b>
+        - AI-powered detection of what user wants to do
       </li>
       <li>
-        <b>Input Validation</b>
-        - Detect and prevent injection attacks
+        <b>Command Registry</b>
+        - Lazy-loaded command management
       </li>
       <li>
-        <b>Rate Limiting</b>
-        - Prevent resource exhaustion with token bucket
+        <b>Parameter Inference</b>
+        - Context-aware filling of missing parameters
       </li>
       <li>
-        <b>Privacy Filtering</b>
-        - Remove sensitive data before AI processing
+        <b>Lazy Loading</b>
+        - Fast startup and minimal memory usage
       </li>
       <li>
-        <b>Audit Logging</b>
-        - Complete forensic trail of all operations
-      </li>
-      <li>
-        <b>Security Best Practices</b>
-        - Production-ready security checklist
+        <b>Workflow Orchestration</b>
+        - Multi-step command execution with dependencies
       </li>
     </ol>
-    <section><title>Security Layers</title></section>
-    <codeblock>User Input
-    ↓
-Input Validation (detect injection, sensitive data)
-    ↓
-Privacy Filter (redact secrets)
-    ↓
-Authorization (check permissions)
-    ↓
-Rate Limiting (check quotas)
-    ↓
-Sandboxed Execution (restricted environment)
-    ↓
-Audit Logging (record everything)
-</codeblock>
     <section><title>Real-World Impact</title></section>
-    <p><b>Before Security:</b></p>
-    <codeblock>User: &quot;Delete old database backups&quot;
-AI: [Executes: rm -rf /backups/*]
-Result: ❌ All backups deleted including production
-        ❌ No audit trail
-        ❌ No approval required
+    <p><b>Before:</b></p>
+    <codeblock>$ myapp --help
+$ myapp commit --help
+$ myapp commit --message &quot;fix bug&quot; --files src/auth/
+Time: 5-10 minutes (reading docs, constructing command)
+Success rate: 60% (syntax errors)
 </codeblock>
-    <p><b>After Security:</b></p>
-    <codeblock>User: &quot;Delete old database backups&quot;
-AI: [Security checks]
-    [Detects destructive operation]
-    ⚠️  This will delete files in /backups/
-    📋 Affected: 147 files (23 GB)
-    🔒 Requires approval
-
-User: [Types &apos;yes&apos;]
-AI: [Sandboxed execution]
-    [Only deletes files older than 90 days]
-    [Logs to audit trail]
-    ✓ Deleted 12 old backups (3.2 GB)
-    ✓ Kept 135 recent backups (19.8 GB)
+    <p><b>After:</b></p>
+    <codeblock>$ myapp &quot;commit my auth changes&quot;
+✓ Committed: fix(auth): resolve token refresh race condition
+Time: 5-10 seconds
+Success rate: 95%
 </codeblock>
-    <p><b>Security Metrics:</b>
-- 100% of destructive operations require approval
-- 0% sensitive data leakage to AI
-- Complete audit trail for compliance
-- Budget controls prevent cost overruns
-- Sandboxing prevents unauthorized access</p>
-    <section><title>Part III Complete!</title></section>
-    <p>You&apos;ve now completed all three chapters of Part III: Advanced Features:</p>
-    <ol>
-      <li>
-        ✅
-        <b>Chapter 7</b>
-        : VCS Intelligence - AI-powered git workflows
-      </li>
-      <li>
-        ✅
-        <b>Chapter 8</b>
-        : Interactive Modes - Natural language routing
-      </li>
-      <li>
-        ✅
-        <b>Chapter 9</b>
-        : Security - Complete security framework
-      </li>
-    </ol>
+    <p><b>Performance:</b>
+- 60x faster for users (no docs lookup)
+- 95% first-try success rate
+- Natural conversation flow
+- Context awareness across sessions</p>
+    <section><title>Architecture Summary</title></section>
+    <codeblock>Natural Language Input
+        ↓
+Intent Classifier (AI-powered, cached)
+        ↓
+Command Router (lazy-loaded)
+        ↓
+Parameter Inference (multi-strategy)
+        ↓
+Workflow Orchestrator (parallel-capable)
+        ↓
+Command Execution
+</codeblock>
     <section><title>Next Steps</title></section>
-    <p>In <b>Part IV: Production Readiness</b>, you&apos;ll learn how to test, optimize, and monitor your AI coding assistant for production deployment.</p>
-    <p><i>Chapter 9 | Security, Privacy, and Sandboxing | Complete</i></p>
+    <p>In <b>Chapter 9: Security, Privacy, and Sandboxing →</b>, you&apos;ll learn how to secure your AI coding assistant with:</p>
+    <ul>
+      <li>
+        Sandboxed execution environments
+      </li>
+      <li>
+        Credential management and encryption
+      </li>
+      <li>
+        Input validation and sanitization
+      </li>
+      <li>
+        Rate limiting and quotas
+      </li>
+      <li>
+        Privacy-preserving AI interactions
+      </li>
+      <li>
+        Audit logging for compliance
+      </li>
+    </ul>
+    <p>This ensures your powerful natural language routing system is also <b>safe</b> to use in production environments.</p>
+    <p><i>Chapter 8 | Interactive Modes and Natural Language Routing | Complete</i></p>
   </body>
 </topic>

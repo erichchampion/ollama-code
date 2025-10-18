@@ -1,0 +1,957 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_19">
+  <title>Appendix C: Troubleshooting</title>
+  <body>
+    <section><title>Overview</title></section>
+    <p>This appendix provides solutions to common problems you might encounter when building or using AI coding assistants. Issues are organized by category for quick reference.</p>
+    <p><b>Categories:</b>
+- Connection and Network Issues
+- AI Provider Issues
+- Tool Execution Issues
+- Performance Issues
+- Configuration Issues
+- Plugin Issues
+- Security Issues</p>
+    <section><title>Connection and Network Issues</title></section>
+    <section><title>Issue: Cannot Connect to Ollama</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: connect ECONNREFUSED 127.0.0.1:11434
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <b>Check if Ollama is running:</b>
+        ```bash
+        # macOS/Linux
+        ps aux | grep ollama
+      </li>
+    </ol>
+    <p># Or check with curl
+   curl http://localhost:11434/api/tags
+   ```</p>
+    <ol>
+      <li>
+        <b>Start Ollama:</b>
+        ```bash
+        # macOS
+        ollama serve
+      </li>
+    </ol>
+    <p># Linux (systemd)
+   systemctl start ollama</p>
+    <p># Docker
+   docker run -d -p 11434:11434 ollama/ollama
+   ```</p>
+    <ol>
+      <li>
+        <p><b>Check Ollama is listening on correct port:</b>
+<codeph>bash
+   # Should show port 11434
+   lsof -i :11434</codeph></p>
+      </li>
+      <li>
+        <p><b>Verify configuration:</b>
+   ```bash
+   # Check config
+   ollama-code config show | grep ollama</p>
+      </li>
+    </ol>
+    <p># Should match Ollama URL
+   export OLLAMA_BASE_URL=&quot;http://localhost:11434&quot;
+   ```</p>
+    <ol>
+      <li>
+        <b>Test connectivity:</b>
+        <codeph>bash
+   curl http://localhost:11434/api/tags
+   # Should return list of models</codeph>
+      </li>
+    </ol>
+    <section><title>Issue: Slow API Responses</title></section>
+    <p><b>Symptoms:</b>
+- Requests take &gt; 30 seconds
+- Frequent timeouts</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <b>Check network latency:</b>
+        ```bash
+        # For cloud providers
+        ping api.openai.com
+        ping api.anthropic.com
+      </li>
+    </ol>
+    <p># Should be &lt; 100ms
+   ```</p>
+    <ol>
+      <li>
+        <p><b>Increase timeout:</b>
+<codeph>json
+   {
+     &quot;providers&quot;: {
+       &quot;openai&quot;: {
+         &quot;timeout&quot;: 60000  // 60 seconds
+       }
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use local provider for faster responses:</b>
+<codeph>bash
+   ollama-code --provider ollama chat</codeph></p>
+      </li>
+      <li>
+        <p><b>Enable caching:</b>
+<codeph>json
+   {
+     &quot;performance&quot;: {
+       &quot;cacheEnabled&quot;: true,
+       &quot;cacheTTL&quot;: 300000
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Check system resources:</b>
+   ```bash
+   # CPU usage
+   top</p>
+      </li>
+    </ol>
+    <p># Memory usage
+   free -h</p>
+    <p># Disk I/O
+   iostat
+   ```</p>
+    <section><title>Issue: SSL/TLS Certificate Errors</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: self signed certificate in certificate chain
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>For development only, disable SSL verification:</b>
+<codeph>bash
+   export NODE_TLS_REJECT_UNAUTHORIZED=0</codeph>
+   ⚠️ <b>Warning:</b> Never use in production!</p>
+      </li>
+      <li>
+        <p><b>Install CA certificate:</b>
+   ```bash
+   # Add certificate to system trust store
+   # macOS
+   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ca-cert.pem</p>
+      </li>
+    </ol>
+    <p># Linux
+   sudo cp ca-cert.crt /usr/local/share/ca-certificates/
+   sudo update-ca-certificates
+   ```</p>
+    <ol>
+      <li>
+        <b>Use custom CA:</b>
+        <codeph>bash
+   export NODE_EXTRA_CA_CERTS=&quot;/path/to/ca-cert.pem&quot;</codeph>
+      </li>
+    </ol>
+    <section><title>AI Provider Issues</title></section>
+    <section><title>Issue: Model Not Found</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: model &apos;codellama:7b&apos; not found
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <b>List available models:</b>
+        ```bash
+        # Ollama
+        ollama list
+      </li>
+    </ol>
+    <p># ollama-code
+   ollama-code models list
+   ```</p>
+    <ol>
+      <li>
+        <b>Pull the model:</b>
+        ```bash
+        # Ollama
+        ollama pull codellama:7b
+      </li>
+    </ol>
+    <p># ollama-code
+   ollama-code models pull codellama:7b
+   ```</p>
+    <ol>
+      <li>
+        <b>Verify model name:</b>
+        ```bash
+        # Correct
+        codellama:7b
+      </li>
+    </ol>
+    <p># Incorrect
+   codellama  # Missing tag
+   code-llama:7b  # Wrong name
+   ```</p>
+    <ol>
+      <li>
+        <b>Check disk space:</b>
+        <codeph>bash
+   df -h
+   # Models can be 4-20 GB</codeph>
+      </li>
+    </ol>
+    <section><title>Issue: API Key Invalid</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: invalid API key
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Verify API key is set:</b>
+<codeph>bash
+   echo $OPENAI_API_KEY
+   echo $ANTHROPIC_API_KEY</codeph></p>
+      </li>
+      <li>
+        <p><b>Check for whitespace:</b>
+<codeph>bash
+   # Remove whitespace
+   export OPENAI_API_KEY=$(echo $OPENAI_API_KEY | tr -d &apos;[:space:]&apos;)</codeph></p>
+      </li>
+      <li>
+        <p><b>Test API key:</b>
+   ```bash
+   # OpenAI
+   curl https://api.openai.com/v1/models \
+     -H &quot;Authorization: Bearer $OPENAI_API_KEY&quot;</p>
+      </li>
+    </ol>
+    <p># Anthropic
+   curl https://api.anthropic.com/v1/messages \
+     -H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \
+     -H &quot;anthropic-version: 2023-06-01&quot;
+   ```</p>
+    <ol>
+      <li>
+        <b>Check API key permissions:</b>
+      </li>
+      <li>
+        Go to provider dashboard
+      </li>
+      <li>
+        Verify key has required permissions
+      </li>
+      <li>
+        <p>Check usage limits not exceeded</p>
+      </li>
+      <li>
+        <p><b>Regenerate API key:</b></p>
+      </li>
+      <li>
+        Create new key in provider dashboard
+      </li>
+      <li>
+        Update environment variable
+      </li>
+      <li>
+        Test again
+      </li>
+    </ol>
+    <section><title>Issue: Rate Limited</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: 429 Too Many Requests
+Retry-After: 60
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Wait and retry:</b>
+<codeph>typescript
+   // Automatic retry with backoff
+   {
+     &quot;tools&quot;: {
+       &quot;retry&quot;: {
+         &quot;enabled&quot;: true,
+         &quot;maxRetries&quot;: 3,
+         &quot;backoff&quot;: &quot;exponential&quot;
+       }
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Check usage:</b>
+<codeph>bash
+   # Get usage stats
+   ollama-code stats</codeph></p>
+      </li>
+      <li>
+        <p><b>Implement rate limiting:</b>
+<codeph>typescript
+   {
+     &quot;security&quot;: {
+       &quot;rateLimit&quot;: {
+         &quot;enabled&quot;: true,
+         &quot;requestsPerMinute&quot;: 20  // Lower limit
+       }
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use caching to reduce requests:</b>
+<codeph>typescript
+   {
+     &quot;performance&quot;: {
+       &quot;cacheEnabled&quot;: true,
+       &quot;cacheTTL&quot;: 600000  // 10 minutes
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Upgrade plan or contact provider</b></p>
+      </li>
+    </ol>
+    <section><title>Issue: Context Length Exceeded</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: This model&apos;s maximum context length is 8192 tokens
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Reduce context window:</b>
+<codeph>typescript
+   {
+     &quot;conversation&quot;: {
+       &quot;maxTokens&quot;: 4000  // Lower than model limit
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use conversation strategy:</b>
+<codeph>typescript
+   {
+     &quot;conversation&quot;: {
+       &quot;strategy&quot;: &quot;sliding-summary&quot;  // Summarize old messages
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use model with larger context:</b>
+   ```bash
+   # Instead of gpt-4 (8K)
+   ollama-code --model gpt-4-turbo chat  # 128K</p>
+      </li>
+    </ol>
+    <p># Or
+   ollama-code --model claude-3-sonnet chat  # 200K
+   ```</p>
+    <ol>
+      <li>
+        <b>Clear conversation history:</b>
+        <codeph>bash
+   ollama-code conversation clear</codeph>
+      </li>
+    </ol>
+    <section><title>Tool Execution Issues</title></section>
+    <section><title>Issue: Permission Denied</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: EACCES: permission denied, open &apos;/etc/hosts&apos;
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Check file permissions:</b>
+<codeph>bash
+   ls -la /path/to/file</codeph></p>
+      </li>
+      <li>
+        <p><b>Add path to allowed paths:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;allowedPaths&quot;: [
+         &quot;~/projects&quot;,
+         &quot;/path/to/file&quot;
+       ]
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Run with appropriate permissions:</b>
+<codeph>bash
+   # If needed (use with caution)
+   sudo ollama-code tool execute read-file \
+     --params &apos;{&quot;path&quot;:&quot;/etc/hosts&quot;}&apos;</codeph></p>
+      </li>
+      <li>
+        <p><b>Check sandbox settings:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;sandboxEnabled&quot;: true  // May need to disable
+     }
+   }</codeph></p>
+      </li>
+    </ol>
+    <section><title>Issue: Command Not Found</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: command not found: kubectl
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <b>Install missing command:</b>
+        ```bash
+        # kubectl
+        brew install kubectl  # macOS
+      </li>
+    </ol>
+    <p># npm
+   npm install -g npm
+   ```</p>
+    <ol>
+      <li>
+        <p><b>Add command to PATH:</b>
+<codeph>bash
+   export PATH=$PATH:/usr/local/bin</codeph></p>
+      </li>
+      <li>
+        <p><b>Add command to allowed commands:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;allowedCommands&quot;: [
+         &quot;kubectl&quot;,
+         &quot;docker&quot;,
+         &quot;git&quot;
+       ]
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use absolute path:</b>
+<codeph>bash
+   /usr/local/bin/kubectl version</codeph></p>
+      </li>
+    </ol>
+    <section><title>Issue: Tool Timeout</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: Tool execution timed out after 60000ms
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Increase timeout:</b>
+<codeph>json
+   {
+     &quot;tools&quot;: {
+       &quot;timeout&quot;: 120000  // 2 minutes
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Increase timeout for specific tool:</b>
+<codeph>typescript
+   class SlowTool implements Tool {
+     readonly metadata = {
+       name: &apos;slow-tool&apos;,
+       timeout: 300000  // 5 minutes
+     };
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Optimize tool implementation:</b>
+<codeph>typescript
+   // Use streaming for large outputs
+   async *executeStream(params) {
+     for (const chunk of largeData) {
+       yield chunk;
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Split into smaller operations:</b>
+   ```typescript
+   // Instead of one large operation
+   await processAllFiles();</p>
+      </li>
+    </ol>
+    <p>// Break into chunks
+   for (const batch of batches) {
+     await processBatch(batch);
+   }
+   ```</p>
+    <section><title>Performance Issues</title></section>
+    <section><title>Issue: High Memory Usage</title></section>
+    <p><b>Symptoms:</b>
+- Process using &gt; 2 GB RAM
+- System becomes sluggish</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Enable memory management:</b>
+<codeph>json
+   {
+     &quot;performance&quot;: {
+       &quot;memory&quot;: {
+         &quot;gcEnabled&quot;: true,
+         &quot;gcInterval&quot;: 30000,
+         &quot;maxMemory&quot;: 1073741824  // 1 GB
+       }
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Reduce cache size:</b>
+<codeph>json
+   {
+     &quot;performance&quot;: {
+       &quot;maxCacheSize&quot;: 100  // Down from 1000
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Reduce context window:</b>
+<codeph>json
+   {
+     &quot;conversation&quot;: {
+       &quot;maxTokens&quot;: 4000
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Monitor memory:</b>
+   ```bash
+   # Linux
+   ps aux | grep ollama-code</p>
+      </li>
+    </ol>
+    <p># macOS
+   top -pid $(pgrep ollama-code)
+   ```</p>
+    <ol>
+      <li>
+        <b>Restart periodically:</b>
+        <codeph>bash
+   # Restart after N requests
+   if [ &quot;$REQUEST_COUNT&quot; -gt 1000 ]; then
+     systemctl restart ollama-code
+   fi</codeph>
+      </li>
+    </ol>
+    <section><title>Issue: Slow Startup</title></section>
+    <p><b>Symptoms:</b>
+- Takes &gt; 10 seconds to start</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Enable lazy loading:</b>
+<codeph>json
+   {
+     &quot;plugins&quot;: {
+       &quot;lazyLoad&quot;: true
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Reduce plugins:</b>
+<codeph>json
+   {
+     &quot;plugins&quot;: {
+       &quot;enabled&quot;: [&quot;kubernetes&quot;]  // Only what you need
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Disable auto-update check:</b>
+<codeph>json
+   {
+     &quot;plugins&quot;: {
+       &quot;autoUpdate&quot;: false
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use faster model for initialization:</b>
+<codeph>json
+   {
+     &quot;providers&quot;: {
+       &quot;ollama&quot;: {
+         &quot;model&quot;: &quot;codellama:7b&quot;  // Faster than :34b
+       }
+     }
+   }</codeph></p>
+      </li>
+    </ol>
+    <section><title>Issue: Cache Not Working</title></section>
+    <p><b>Symptoms:</b>
+- Same request always takes same time
+- Cache hit rate 0%</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Verify cache enabled:</b>
+<codeph>json
+   {
+     &quot;performance&quot;: {
+       &quot;cacheEnabled&quot;: true
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Check cache stats:</b>
+<codeph>bash
+   ollama-code cache stats</codeph></p>
+      </li>
+      <li>
+        <p><b>Increase cache TTL:</b>
+<codeph>json
+   {
+     &quot;performance&quot;: {
+       &quot;cacheTTL&quot;: 600000  // 10 minutes
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Verify cache key generation:</b>
+<codeph>typescript
+   // Ensure consistent keys
+   const cacheKey = JSON.stringify({
+     model,
+     messages: messages.sort()  // Sort for consistency
+   });</codeph></p>
+      </li>
+      <li>
+        <p><b>Clear and rebuild cache:</b>
+<codeph>bash
+   ollama-code cache clear</codeph></p>
+      </li>
+    </ol>
+    <section><title>Configuration Issues</title></section>
+    <section><title>Issue: Configuration Not Loading</title></section>
+    <p><b>Symptoms:</b>
+- Changes to config file not applied</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Check config file location:</b>
+<codeph>bash
+   # Should be one of:
+   ~/.ollama-code/config.json
+   ./.ollama-code/config.json
+   /etc/ollama-code/config.json</codeph></p>
+      </li>
+      <li>
+        <p><b>Validate JSON syntax:</b>
+<codeph>bash
+   # Check for syntax errors
+   cat ~/.ollama-code/config.json | jq .</codeph></p>
+      </li>
+      <li>
+        <p><b>Check file permissions:</b>
+<codeph>bash
+   ls -la ~/.ollama-code/config.json
+   # Should be readable</codeph></p>
+      </li>
+      <li>
+        <p><b>Verify config priority:</b>
+<codeph>bash
+   ollama-code config show --sources
+   # Shows which config files are loaded</codeph></p>
+      </li>
+      <li>
+        <p><b>Use explicit config:</b>
+<codeph>bash
+   ollama-code --config ~/.ollama-code/config.json chat</codeph></p>
+      </li>
+    </ol>
+    <section><title>Issue: Environment Variables Not Working</title></section>
+    <p><b>Symptoms:</b>
+- Environment variables not overriding config</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <b>Check variable names:</b>
+        ```bash
+        # Correct
+        export OLLAMA_CODE_PROVIDER=&quot;openai&quot;
+      </li>
+    </ol>
+    <p># Incorrect
+   export PROVIDER=&quot;openai&quot;  # Missing prefix
+   ```</p>
+    <ol>
+      <li>
+        <p><b>Verify variables are set:</b>
+<codeph>bash
+   env | grep OLLAMA_CODE</codeph></p>
+      </li>
+      <li>
+        <p><b>Check variable priority:</b>
+<codeph>bash
+   # CLI flags &gt; env vars &gt; config file
+   ollama-code --provider ollama chat
+   # Uses ollama even if OLLAMA_CODE_PROVIDER=openai</codeph></p>
+      </li>
+      <li>
+        <p><b>Export variables:</b>
+   ```bash
+   # Won&apos;t work (not exported)
+   OLLAMA_CODE_PROVIDER=&quot;openai&quot;</p>
+      </li>
+    </ol>
+    <p># Works
+   export OLLAMA_CODE_PROVIDER=&quot;openai&quot;
+   ```</p>
+    <section><title>Plugin Issues</title></section>
+    <section><title>Issue: Plugin Won&apos;t Load</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: Failed to load plugin &apos;kubernetes&apos;
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Check plugin is installed:</b>
+<codeph>bash
+   ollama-code plugins list</codeph></p>
+      </li>
+      <li>
+        <p><b>Install plugin:</b>
+<codeph>bash
+   ollama-code plugins install kubernetes</codeph></p>
+      </li>
+      <li>
+        <p><b>Check dependencies:</b>
+<codeph>bash
+   ollama-code plugins info kubernetes
+   # Check dependency requirements</codeph></p>
+      </li>
+      <li>
+        <p><b>Verify plugin compatibility:</b>
+<codeph>json
+   // Plugin metadata
+   {
+     &quot;dependencies&quot;: {
+       &quot;platform&quot;: &quot;^1.0.0&quot;  // Must match
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Check error logs:</b>
+<codeph>bash
+   tail -f ~/.ollama-code/logs/app.log | grep kubernetes</codeph></p>
+      </li>
+    </ol>
+    <section><title>Issue: Plugin Version Conflict</title></section>
+    <p><b>Symptoms:</b></p>
+    <codeblock>Error: Plugin &apos;docker&apos; requires platform ^2.0.0 but ^1.0.0 is installed
+</codeblock>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Update platform:</b>
+<codeph>bash
+   npm install -g ollama-code@latest</codeph></p>
+      </li>
+      <li>
+        <p><b>Update plugin:</b>
+<codeph>bash
+   ollama-code plugins update docker</codeph></p>
+      </li>
+      <li>
+        <p><b>Use compatible version:</b>
+<codeph>bash
+   ollama-code plugins install docker@1.5.0</codeph></p>
+      </li>
+      <li>
+        <p><b>Check compatibility matrix:</b>
+<codeph>bash
+   ollama-code plugins compatibility docker</codeph></p>
+      </li>
+    </ol>
+    <section><title>Security Issues</title></section>
+    <section><title>Issue: API Keys Exposed in Logs</title></section>
+    <p><b>Symptoms:</b>
+- API keys visible in log files</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Enable log sanitization:</b>
+<codeph>json
+   {
+     &quot;logging&quot;: {
+       &quot;sanitize&quot;: true,
+       &quot;redactPatterns&quot;: [
+         &quot;sk-[a-zA-Z0-9]+&quot;,
+         &quot;Bearer [a-zA-Z0-9]+&quot;
+       ]
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Set log level to warn:</b>
+<codeph>json
+   {
+     &quot;logging&quot;: {
+       &quot;level&quot;: &quot;warn&quot;  // Don&apos;t log debug info
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Rotate logs:</b>
+<codeph>json
+   {
+     &quot;logging&quot;: {
+       &quot;rotation&quot;: {
+         &quot;maxSize&quot;: &quot;10m&quot;,
+         &quot;maxFiles&quot;: 3
+       }
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Use secret management:</b>
+<codeph>bash
+   # Use secret manager instead of env vars
+   export OPENAI_API_KEY=$(aws secretsmanager get-secret-value \
+     --secret-id openai-key --query SecretString --output text)</codeph></p>
+      </li>
+    </ol>
+    <section><title>Issue: Sandbox Bypass</title></section>
+    <p><b>Symptoms:</b>
+- Tools executing outside allowed paths</p>
+    <p><b>Solutions:</b></p>
+    <ol>
+      <li>
+        <p><b>Enable strict sandbox:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;sandboxEnabled&quot;: true,
+       &quot;strictMode&quot;: true
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Review allowed paths:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;allowedPaths&quot;: [
+         &quot;~/projects&quot;  // Only this directory
+       ]
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Add denied paths:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;deniedPaths&quot;: [
+         &quot;~/.ssh&quot;,
+         &quot;~/.aws&quot;,
+         &quot;/etc&quot;
+       ]
+     }
+   }</codeph></p>
+      </li>
+      <li>
+        <p><b>Enable audit logging:</b>
+<codeph>json
+   {
+     &quot;security&quot;: {
+       &quot;audit&quot;: {
+         &quot;enabled&quot;: true,
+         &quot;events&quot;: [&quot;file:read&quot;, &quot;file:write&quot;, &quot;command:execute&quot;]
+       }
+     }
+   }</codeph></p>
+      </li>
+    </ol>
+    <section><title>Debugging Tips</title></section>
+    <section><title>Enable Debug Logging</title></section>
+    <codeblock outputclass="language-bash"># Environment variable
+export OLLAMA_CODE_LOG_LEVEL=&quot;debug&quot;
+
+# CLI flag
+ollama-code --log-level debug chat
+
+# Configuration
+{
+  &quot;logging&quot;: {
+    &quot;level&quot;: &quot;debug&quot;
+  }
+}
+</codeblock>
+    <section><title>Trace Requests</title></section>
+    <codeblock outputclass="language-bash"># Enable request tracing
+export OLLAMA_CODE_TRACE=&quot;true&quot;
+
+# View traces
+ollama-code traces list
+ollama-code traces show &lt;trace-id&gt;
+</codeblock>
+    <section><title>Health Check</title></section>
+    <codeblock outputclass="language-bash"># Check system health
+ollama-code health
+
+# Check specific component
+ollama-code health --component providers
+ollama-code health --component tools
+ollama-code health --component plugins
+</codeblock>
+    <section><title>Collect Diagnostics</title></section>
+    <codeblock outputclass="language-bash"># Generate diagnostic report
+ollama-code diagnostics &gt; diagnostics.txt
+
+# Includes:
+# - System info
+# - Configuration
+# - Logs
+# - Health checks
+# - Resource usage
+</codeblock>
+    <section><title>Getting Help</title></section>
+    <section><title>Community Support</title></section>
+    <ul>
+      <li>
+        <b>GitHub Issues:</b>
+        https://github.com/ollama-code/ollama-code/issues
+      </li>
+      <li>
+        <b>Discord:</b>
+        https://discord.gg/ollama-code
+      </li>
+      <li>
+        <b>Stack Overflow:</b>
+        Tag
+        <codeph>ollama-code</codeph>
+      </li>
+    </ul>
+    <section><title>Commercial Support</title></section>
+    <ul>
+      <li>
+        <b>Email:</b>
+        support@ollama-code.dev
+      </li>
+      <li>
+        <b>Slack:</b>
+        Private Slack channel (Enterprise)
+      </li>
+      <li>
+        <b>SLA:</b>
+        24-hour response time (Enterprise)
+      </li>
+    </ul>
+    <section><title>Reporting Bugs</title></section>
+    <p>Include:
+1. <b>Version:</b> <codeph>ollama-code --version</codeph>
+2. <b>OS:</b> <codeph>uname -a</codeph>
+3. <b>Configuration:</b> <codeph>ollama-code config show</codeph>
+4. <b>Logs:</b> Last 100 lines of error logs
+5. <b>Steps to reproduce</b></p>
+    <p><i>Appendix C | Troubleshooting | 10-15 pages</i></p>
+  </body>
+</topic>

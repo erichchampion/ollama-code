@@ -1,0 +1,886 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_18">
+  <title>Appendix B: Configuration Guide</title>
+  <body>
+    <section><title>Overview</title></section>
+    <p>This appendix provides comprehensive configuration documentation for ollama-code. Learn how to configure AI providers, tools, plugins, security settings, and more.</p>
+    <p><b>Configuration Methods:</b>
+- Configuration files (<codeph>config.json</codeph>, <codeph>config.yaml</codeph>)
+- Environment variables
+- Programmatic configuration
+- CLI flags</p>
+    <section><title>Configuration Files</title></section>
+    <section><title>config.json</title></section>
+    <p>Default location: <codeph>~/.ollama-code/config.json</codeph></p>
+    <codeblock outputclass="language-json">{
+  &quot;providers&quot;: {
+    &quot;ollama&quot;: {
+      &quot;baseUrl&quot;: &quot;http://localhost:11434&quot;,
+      &quot;model&quot;: &quot;codellama:7b&quot;,
+      &quot;timeout&quot;: 30000,
+      &quot;keepAlive&quot;: &quot;5m&quot;
+    },
+    &quot;openai&quot;: {
+      &quot;apiKey&quot;: &quot;${OPENAI_API_KEY}&quot;,
+      &quot;model&quot;: &quot;gpt-4-turbo&quot;,
+      &quot;organization&quot;: &quot;${OPENAI_ORG}&quot;,
+      &quot;timeout&quot;: 30000
+    },
+    &quot;anthropic&quot;: {
+      &quot;apiKey&quot;: &quot;${ANTHROPIC_API_KEY}&quot;,
+      &quot;model&quot;: &quot;claude-3-sonnet-20240229&quot;,
+      &quot;maxTokens&quot;: 4096,
+      &quot;timeout&quot;: 30000
+    }
+  },
+  &quot;defaultProvider&quot;: &quot;ollama&quot;,
+  &quot;tools&quot;: {
+    &quot;maxConcurrency&quot;: 5,
+    &quot;timeout&quot;: 60000,
+    &quot;approvalRequired&quot;: true,
+    &quot;cache&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;ttl&quot;: 300000,
+      &quot;maxSize&quot;: 1000
+    }
+  },
+  &quot;conversation&quot;: {
+    &quot;maxTokens&quot;: 8000,
+    &quot;strategy&quot;: &quot;recent&quot;,
+    &quot;autoSave&quot;: true,
+    &quot;persistPath&quot;: &quot;~/.ollama-code/conversations&quot;
+  },
+  &quot;plugins&quot;: {
+    &quot;enabled&quot;: [&quot;kubernetes&quot;, &quot;docker&quot;, &quot;terraform&quot;],
+    &quot;autoUpdate&quot;: false,
+    &quot;config&quot;: {
+      &quot;kubernetes&quot;: {
+        &quot;kubectl&quot;: true,
+        &quot;helm&quot;: true
+      },
+      &quot;docker&quot;: {
+        &quot;socket&quot;: &quot;/var/run/docker.sock&quot;
+      }
+    }
+  },
+  &quot;security&quot;: {
+    &quot;sandboxEnabled&quot;: true,
+    &quot;allowedCommands&quot;: [&quot;git&quot;, &quot;npm&quot;, &quot;yarn&quot;, &quot;kubectl&quot;],
+    &quot;allowedPaths&quot;: [&quot;~/projects&quot;, &quot;/tmp&quot;],
+    &quot;deniedPaths&quot;: [&quot;~/.ssh&quot;, &quot;~/.aws&quot;],
+    &quot;maxFileSize&quot;: 10485760,
+    &quot;rateLimit&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;requestsPerMinute&quot;: 60
+    }
+  },
+  &quot;logging&quot;: {
+    &quot;level&quot;: &quot;info&quot;,
+    &quot;format&quot;: &quot;json&quot;,
+    &quot;destination&quot;: &quot;file&quot;,
+    &quot;filePath&quot;: &quot;~/.ollama-code/logs/app.log&quot;,
+    &quot;rotation&quot;: {
+      &quot;maxSize&quot;: &quot;10m&quot;,
+      &quot;maxFiles&quot;: 5
+    }
+  },
+  &quot;performance&quot;: {
+    &quot;cacheEnabled&quot;: true,
+    &quot;cacheTTL&quot;: 300000,
+    &quot;maxCacheSize&quot;: 1000,
+    &quot;connectionPooling&quot;: true,
+    &quot;maxConnections&quot;: 10
+  },
+  &quot;ui&quot;: {
+    &quot;theme&quot;: &quot;auto&quot;,
+    &quot;colorOutput&quot;: true,
+    &quot;progressBars&quot;: true,
+    &quot;confirmDestructive&quot;: true
+  }
+}
+</codeblock>
+    <section><title>config.yaml</title></section>
+    <p>Alternative YAML format:</p>
+    <codeblock outputclass="language-yaml">providers:
+  ollama:
+    baseUrl: http://localhost:11434
+    model: codellama:7b
+    timeout: 30000
+    keepAlive: 5m
+
+  openai:
+    apiKey: ${OPENAI_API_KEY}
+    model: gpt-4-turbo
+    timeout: 30000
+
+  anthropic:
+    apiKey: ${ANTHROPIC_API_KEY}
+    model: claude-3-sonnet-20240229
+    maxTokens: 4096
+
+defaultProvider: ollama
+
+tools:
+  maxConcurrency: 5
+  timeout: 60000
+  approvalRequired: true
+  cache:
+    enabled: true
+    ttl: 300000
+    maxSize: 1000
+
+conversation:
+  maxTokens: 8000
+  strategy: recent
+  autoSave: true
+  persistPath: ~/.ollama-code/conversations
+
+plugins:
+  enabled:
+    - kubernetes
+    - docker
+    - terraform
+  autoUpdate: false
+  config:
+    kubernetes:
+      kubectl: true
+      helm: true
+
+security:
+  sandboxEnabled: true
+  allowedCommands:
+    - git
+    - npm
+    - yarn
+    - kubectl
+  allowedPaths:
+    - ~/projects
+    - /tmp
+  deniedPaths:
+    - ~/.ssh
+    - ~/.aws
+  maxFileSize: 10485760
+
+logging:
+  level: info
+  format: json
+  destination: file
+  filePath: ~/.ollama-code/logs/app.log
+
+performance:
+  cacheEnabled: true
+  cacheTTL: 300000
+  maxCacheSize: 1000
+</codeblock>
+    <section><title>Environment Variables</title></section>
+    <section><title>AI Provider Configuration</title></section>
+    <codeblock outputclass="language-bash"># Ollama
+export OLLAMA_BASE_URL=&quot;http://localhost:11434&quot;
+export OLLAMA_MODEL=&quot;codellama:7b&quot;
+export OLLAMA_TIMEOUT=&quot;30000&quot;
+
+# OpenAI
+export OPENAI_API_KEY=&quot;sk-...&quot;
+export OPENAI_MODEL=&quot;gpt-4-turbo&quot;
+export OPENAI_ORG=&quot;org-...&quot;
+export OPENAI_BASE_URL=&quot;https://api.openai.com/v1&quot;  # For Azure OpenAI
+
+# Anthropic
+export ANTHROPIC_API_KEY=&quot;sk-ant-...&quot;
+export ANTHROPIC_MODEL=&quot;claude-3-sonnet-20240229&quot;
+
+# Google
+export GOOGLE_API_KEY=&quot;...&quot;
+export GOOGLE_MODEL=&quot;gemini-1.5-pro&quot;
+
+# Default provider
+export OLLAMA_CODE_PROVIDER=&quot;ollama&quot;
+</codeblock>
+    <section><title>Tool Configuration</title></section>
+    <codeblock outputclass="language-bash"># Tool settings
+export OLLAMA_CODE_MAX_CONCURRENCY=&quot;5&quot;
+export OLLAMA_CODE_TOOL_TIMEOUT=&quot;60000&quot;
+export OLLAMA_CODE_APPROVAL_REQUIRED=&quot;true&quot;
+
+# Cache settings
+export OLLAMA_CODE_CACHE_ENABLED=&quot;true&quot;
+export OLLAMA_CODE_CACHE_TTL=&quot;300000&quot;
+export OLLAMA_CODE_CACHE_MAX_SIZE=&quot;1000&quot;
+</codeblock>
+    <section><title>Security Configuration</title></section>
+    <codeblock outputclass="language-bash"># Sandbox
+export OLLAMA_CODE_SANDBOX_ENABLED=&quot;true&quot;
+
+# Allowed commands (comma-separated)
+export OLLAMA_CODE_ALLOWED_COMMANDS=&quot;git,npm,yarn,kubectl&quot;
+
+# Allowed paths (comma-separated)
+export OLLAMA_CODE_ALLOWED_PATHS=&quot;~/projects,/tmp&quot;
+
+# Denied paths (comma-separated)
+export OLLAMA_CODE_DENIED_PATHS=&quot;~/.ssh,~/.aws&quot;
+
+# Max file size (bytes)
+export OLLAMA_CODE_MAX_FILE_SIZE=&quot;10485760&quot;
+
+# Rate limiting
+export OLLAMA_CODE_RATE_LIMIT_ENABLED=&quot;true&quot;
+export OLLAMA_CODE_RATE_LIMIT_RPM=&quot;60&quot;
+</codeblock>
+    <section><title>Logging Configuration</title></section>
+    <codeblock outputclass="language-bash"># Log level
+export OLLAMA_CODE_LOG_LEVEL=&quot;info&quot;  # debug, info, warn, error
+
+# Log format
+export OLLAMA_CODE_LOG_FORMAT=&quot;json&quot;  # json, text
+
+# Log destination
+export OLLAMA_CODE_LOG_DESTINATION=&quot;file&quot;  # console, file
+
+# Log file path
+export OLLAMA_CODE_LOG_FILE=&quot;~/.ollama-code/logs/app.log&quot;
+</codeblock>
+    <section><title>Plugin Configuration</title></section>
+    <codeblock outputclass="language-bash"># Enabled plugins (comma-separated)
+export OLLAMA_CODE_PLUGINS=&quot;kubernetes,docker,terraform&quot;
+
+# Auto-update
+export OLLAMA_CODE_PLUGIN_AUTO_UPDATE=&quot;false&quot;
+
+# Plugin-specific config (JSON)
+export OLLAMA_CODE_KUBERNETES_CONFIG=&apos;{&quot;kubectl&quot;:true,&quot;helm&quot;:true}&apos;
+</codeblock>
+    <section><title>CLI Flags</title></section>
+    <section><title>Global Flags</title></section>
+    <codeblock outputclass="language-bash"># Set provider
+ollama-code --provider openai chat
+
+# Set model
+ollama-code --model gpt-4-turbo chat
+
+# Set configuration file
+ollama-code --config ~/custom-config.json chat
+
+# Set log level
+ollama-code --log-level debug chat
+
+# Disable cache
+ollama-code --no-cache chat
+
+# Disable approval
+ollama-code --no-approval chat
+</codeblock>
+    <section><title>Command-Specific Flags</title></section>
+    <codeblock outputclass="language-bash"># Chat command
+ollama-code chat \
+  --provider ollama \
+  --model codellama:34b \
+  --temperature 0.3 \
+  --max-tokens 4096
+
+# Generate command
+ollama-code generate \
+  --input prompt.txt \
+  --output result.txt \
+  --provider openai \
+  --stream
+
+# Tool command
+ollama-code tool execute read-file \
+  --params &apos;{&quot;path&quot;:&quot;src/index.ts&quot;}&apos; \
+  --no-approval
+</codeblock>
+    <section><title>Provider-Specific Configuration</title></section>
+    <section><title>Ollama Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;providers&quot;: {
+    &quot;ollama&quot;: {
+      // Required
+      &quot;baseUrl&quot;: &quot;http://localhost:11434&quot;,
+      &quot;model&quot;: &quot;codellama:7b&quot;,
+
+      // Optional
+      &quot;timeout&quot;: 30000,
+      &quot;keepAlive&quot;: &quot;5m&quot;,           // Keep model loaded
+
+      // Model-specific options
+      &quot;options&quot;: {
+        &quot;num_ctx&quot;: 8192,           // Context window
+        &quot;num_predict&quot;: 2048,       // Max output tokens
+        &quot;temperature&quot;: 0.7,
+        &quot;top_k&quot;: 40,
+        &quot;top_p&quot;: 0.9,
+        &quot;repeat_penalty&quot;: 1.1
+      }
+    }
+  }
+}
+</codeblock>
+    <p><b>Available Models:</b></p>
+    <codeblock>codellama:7b       - 4K context
+codellama:13b      - 4K context
+codellama:34b      - 8K context
+llama2:7b          - 4K context
+llama2:13b         - 4K context
+mistral:7b         - 8K context
+mixtral:8x7b       - 32K context
+</codeblock>
+    <section><title>OpenAI Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;providers&quot;: {
+    &quot;openai&quot;: {
+      // Required
+      &quot;apiKey&quot;: &quot;${OPENAI_API_KEY}&quot;,
+      &quot;model&quot;: &quot;gpt-4-turbo&quot;,
+
+      // Optional
+      &quot;organization&quot;: &quot;${OPENAI_ORG}&quot;,
+      &quot;timeout&quot;: 30000,
+      &quot;maxRetries&quot;: 3,
+
+      // Azure OpenAI
+      &quot;azure&quot;: {
+        &quot;enabled&quot;: true,
+        &quot;endpoint&quot;: &quot;https://your-resource.openai.azure.com/&quot;,
+        &quot;deployment&quot;: &quot;gpt-4-deployment-name&quot;,
+        &quot;apiVersion&quot;: &quot;2024-02-15-preview&quot;
+      },
+
+      // Model-specific options
+      &quot;defaultOptions&quot;: {
+        &quot;temperature&quot;: 0.7,
+        &quot;max_tokens&quot;: 2048,
+        &quot;top_p&quot;: 1.0,
+        &quot;frequency_penalty&quot;: 0.0,
+        &quot;presence_penalty&quot;: 0.0
+      }
+    }
+  }
+}
+</codeblock>
+    <p><b>Available Models:</b></p>
+    <codeblock>gpt-3.5-turbo      - 16K context
+gpt-4              - 8K context
+gpt-4-32k          - 32K context
+gpt-4-turbo        - 128K context
+gpt-4-vision       - 128K context (supports images)
+</codeblock>
+    <section><title>Anthropic Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;providers&quot;: {
+    &quot;anthropic&quot;: {
+      // Required
+      &quot;apiKey&quot;: &quot;${ANTHROPIC_API_KEY}&quot;,
+      &quot;model&quot;: &quot;claude-3-sonnet-20240229&quot;,
+
+      // Optional
+      &quot;maxTokens&quot;: 4096,
+      &quot;timeout&quot;: 30000,
+
+      // Model-specific options
+      &quot;defaultOptions&quot;: {
+        &quot;temperature&quot;: 0.7,
+        &quot;top_p&quot;: 1.0,
+        &quot;top_k&quot;: -1
+      }
+    }
+  }
+}
+</codeblock>
+    <p><b>Available Models:</b></p>
+    <codeblock>claude-3-haiku-20240307    - 200K context, fast
+claude-3-sonnet-20240229   - 200K context, balanced
+claude-3-opus-20240229     - 200K context, most capable
+</codeblock>
+    <section><title>Google Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;providers&quot;: {
+    &quot;google&quot;: {
+      // Required
+      &quot;apiKey&quot;: &quot;${GOOGLE_API_KEY}&quot;,
+      &quot;model&quot;: &quot;gemini-1.5-pro&quot;,
+
+      // Optional
+      &quot;timeout&quot;: 30000,
+
+      // Model-specific options
+      &quot;defaultOptions&quot;: {
+        &quot;temperature&quot;: 0.7,
+        &quot;maxOutputTokens&quot;: 2048,
+        &quot;topK&quot;: 40,
+        &quot;topP&quot;: 0.95
+      }
+    }
+  }
+}
+</codeblock>
+    <p><b>Available Models:</b></p>
+    <codeblock>gemini-1.0-pro      - 32K context
+gemini-1.5-pro      - 1M context
+gemini-1.5-flash    - 1M context, faster
+</codeblock>
+    <section><title>Tool Configuration</title></section>
+    <section><title>General Tool Settings</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;tools&quot;: {
+    // Concurrency
+    &quot;maxConcurrency&quot;: 5,
+
+    // Timeout (milliseconds)
+    &quot;timeout&quot;: 60000,
+
+    // Approval system
+    &quot;approvalRequired&quot;: true,
+    &quot;dangerousToolsRequireApproval&quot;: true,
+    &quot;autoApprovePatterns&quot;: [
+      &quot;read-file:src/**&quot;,
+      &quot;list-files:**&quot;
+    ],
+
+    // Cache
+    &quot;cache&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;ttl&quot;: 300000,            // 5 minutes
+      &quot;maxSize&quot;: 1000,
+      &quot;strategy&quot;: &quot;lru&quot;         // lru, lfu, fifo
+    },
+
+    // Retry
+    &quot;retry&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;maxRetries&quot;: 3,
+      &quot;backoff&quot;: &quot;exponential&quot;,
+      &quot;initialDelay&quot;: 1000
+    }
+  }
+}
+</codeblock>
+    <section><title>Tool-Specific Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;tools&quot;: {
+    &quot;config&quot;: {
+      // File system tools
+      &quot;filesystem&quot;: {
+        &quot;maxFileSize&quot;: 10485760,     // 10 MB
+        &quot;allowedExtensions&quot;: [&quot;.ts&quot;, &quot;.js&quot;, &quot;.json&quot;, &quot;.md&quot;],
+        &quot;encoding&quot;: &quot;utf-8&quot;
+      },
+
+      // Git tools
+      &quot;git&quot;: {
+        &quot;autoStage&quot;: false,
+        &quot;signCommits&quot;: true,
+        &quot;gpgKey&quot;: &quot;${GPG_KEY_ID}&quot;
+      },
+
+      // Code analysis tools
+      &quot;codeAnalysis&quot;: {
+        &quot;linter&quot;: &quot;eslint&quot;,
+        &quot;formatter&quot;: &quot;prettier&quot;,
+        &quot;typeChecker&quot;: &quot;tsc&quot;
+      },
+
+      // Network tools
+      &quot;network&quot;: {
+        &quot;allowedDomains&quot;: [&quot;github.com&quot;, &quot;npmjs.com&quot;],
+        &quot;timeout&quot;: 10000,
+        &quot;maxResponseSize&quot;: 5242880  // 5 MB
+      }
+    }
+  }
+}
+</codeblock>
+    <section><title>Conversation Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;conversation&quot;: {
+    // Context window
+    &quot;maxTokens&quot;: 8000,
+
+    // Context retention strategy
+    &quot;strategy&quot;: &quot;recent&quot;,  // recent, important, sliding-summary, relevant
+
+    // Strategy-specific settings
+    &quot;strategyConfig&quot;: {
+      &quot;recent&quot;: {
+        &quot;maxMessages&quot;: 10
+      },
+      &quot;important&quot;: {
+        &quot;minImportance&quot;: 0.7
+      },
+      &quot;slidingSummary&quot;: {
+        &quot;summaryInterval&quot;: 5,
+        &quot;summaryModel&quot;: &quot;gpt-3.5-turbo&quot;
+      },
+      &quot;relevant&quot;: {
+        &quot;similarityThreshold&quot;: 0.7,
+        &quot;embeddingModel&quot;: &quot;text-embedding-3-small&quot;
+      }
+    },
+
+    // Persistence
+    &quot;autoSave&quot;: true,
+    &quot;persistPath&quot;: &quot;~/.ollama-code/conversations&quot;,
+    &quot;saveInterval&quot;: 30000,        // Auto-save every 30s
+
+    // System prompt
+    &quot;systemPrompt&quot;: &quot;You are a helpful AI coding assistant...&quot;,
+
+    // Token estimation
+    &quot;tokenEstimator&quot;: &quot;tiktoken&quot;  // tiktoken, approximate
+  }
+}
+</codeblock>
+    <section><title>Plugin Configuration</title></section>
+    <section><title>General Plugin Settings</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;plugins&quot;: {
+    // Enabled plugins
+    &quot;enabled&quot;: [&quot;kubernetes&quot;, &quot;docker&quot;, &quot;terraform&quot;],
+
+    // Plugin sources
+    &quot;sources&quot;: [
+      &quot;npm&quot;,
+      &quot;filesystem:~/.ollama-code/plugins&quot;,
+      &quot;registry:https://plugins.ollama-code.dev&quot;
+    ],
+
+    // Auto-update
+    &quot;autoUpdate&quot;: false,
+    &quot;updateCheckInterval&quot;: 86400000,  // 24 hours
+
+    // Sandboxing
+    &quot;sandbox&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;isolate&quot;: true,
+      &quot;resourceLimits&quot;: {
+        &quot;maxMemory&quot;: 536870912,      // 512 MB
+        &quot;maxCpu&quot;: 80                 // 80% CPU
+      }
+    },
+
+    // Per-plugin configuration
+    &quot;config&quot;: {
+      &quot;kubernetes&quot;: {
+        &quot;kubectl&quot;: true,
+        &quot;helm&quot;: true,
+        &quot;kustomize&quot;: false,
+        &quot;context&quot;: &quot;default&quot;
+      },
+      &quot;docker&quot;: {
+        &quot;socket&quot;: &quot;/var/run/docker.sock&quot;,
+        &quot;registry&quot;: &quot;docker.io&quot;
+      },
+      &quot;terraform&quot;: {
+        &quot;terraform&quot;: true,
+        &quot;terragrunt&quot;: false,
+        &quot;backend&quot;: &quot;local&quot;
+      }
+    }
+  }
+}
+</codeblock>
+    <section><title>Security Configuration</title></section>
+    <section><title>Sandbox Settings</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;security&quot;: {
+    &quot;sandboxEnabled&quot;: true,
+
+    // Command whitelist
+    &quot;allowedCommands&quot;: [
+      &quot;git&quot;,
+      &quot;npm&quot;,
+      &quot;yarn&quot;,
+      &quot;kubectl&quot;,
+      &quot;docker&quot;
+    ],
+
+    // Path restrictions
+    &quot;allowedPaths&quot;: [
+      &quot;~/projects&quot;,
+      &quot;/tmp&quot;,
+      &quot;/var/tmp&quot;
+    ],
+    &quot;deniedPaths&quot;: [
+      &quot;~/.ssh&quot;,
+      &quot;~/.aws&quot;,
+      &quot;~/.kube/config&quot;,
+      &quot;/etc/passwd&quot;
+    ],
+
+    // File size limits
+    &quot;maxFileSize&quot;: 10485760,         // 10 MB
+    &quot;maxTotalSize&quot;: 104857600,       // 100 MB
+
+    // Rate limiting
+    &quot;rateLimit&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;requestsPerMinute&quot;: 60,
+      &quot;requestsPerHour&quot;: 1000,
+      &quot;requestsPerDay&quot;: 10000,
+      &quot;bypassTokens&quot;: [&quot;${BYPASS_TOKEN}&quot;]
+    },
+
+    // Credential encryption
+    &quot;encryption&quot;: {
+      &quot;algorithm&quot;: &quot;aes-256-gcm&quot;,
+      &quot;keyDerivation&quot;: &quot;pbkdf2&quot;,
+      &quot;iterations&quot;: 100000
+    }
+  }
+}
+</codeblock>
+    <section><title>Audit Logging</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;security&quot;: {
+    &quot;audit&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;logPath&quot;: &quot;~/.ollama-code/logs/audit.log&quot;,
+      &quot;events&quot;: [
+        &quot;auth:login&quot;,
+        &quot;auth:logout&quot;,
+        &quot;tool:execute&quot;,
+        &quot;file:read&quot;,
+        &quot;file:write&quot;,
+        &quot;command:execute&quot;,
+        &quot;config:change&quot;
+      ],
+      &quot;rotation&quot;: {
+        &quot;maxSize&quot;: &quot;50m&quot;,
+        &quot;maxFiles&quot;: 10,
+        &quot;compress&quot;: true
+      }
+    }
+  }
+}
+</codeblock>
+    <section><title>Performance Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;performance&quot;: {
+    // Caching
+    &quot;cacheEnabled&quot;: true,
+    &quot;cacheTTL&quot;: 300000,              // 5 minutes
+    &quot;maxCacheSize&quot;: 1000,
+    &quot;cacheStrategy&quot;: &quot;lru&quot;,
+
+    // Connection pooling
+    &quot;connectionPooling&quot;: true,
+    &quot;maxConnections&quot;: 10,
+    &quot;keepAlive&quot;: true,
+    &quot;keepAliveMsecs&quot;: 1000,
+
+    // Request batching
+    &quot;batching&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;maxBatchSize&quot;: 10,
+      &quot;batchTimeout&quot;: 100            // Wait 100ms for batch
+    },
+
+    // Streaming
+    &quot;streaming&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;bufferSize&quot;: 1024,
+      &quot;backpressureThreshold&quot;: 0.8
+    },
+
+    // Memory management
+    &quot;memory&quot;: {
+      &quot;gcEnabled&quot;: true,
+      &quot;gcInterval&quot;: 60000,           // Run GC every minute
+      &quot;maxMemory&quot;: 1073741824        // 1 GB
+    }
+  }
+}
+</codeblock>
+    <section><title>UI Configuration</title></section>
+    <codeblock outputclass="language-json">{
+  &quot;ui&quot;: {
+    // Theme
+    &quot;theme&quot;: &quot;auto&quot;,                 // auto, light, dark
+
+    // Colors
+    &quot;colorOutput&quot;: true,
+    &quot;colorScheme&quot;: {
+      &quot;primary&quot;: &quot;#007acc&quot;,
+      &quot;success&quot;: &quot;#28a745&quot;,
+      &quot;warning&quot;: &quot;#ffc107&quot;,
+      &quot;error&quot;: &quot;#dc3545&quot;,
+      &quot;info&quot;: &quot;#17a2b8&quot;
+    },
+
+    // Progress
+    &quot;progressBars&quot;: true,
+    &quot;progressStyle&quot;: &quot;bar&quot;,          // bar, spinner, dots
+
+    // Confirmations
+    &quot;confirmDestructive&quot;: true,
+    &quot;confirmExpensive&quot;: true,
+
+    // Output
+    &quot;verbose&quot;: false,
+    &quot;quiet&quot;: false,
+    &quot;timestamps&quot;: false,
+
+    // Formatting
+    &quot;prettyPrint&quot;: true,
+    &quot;maxLineLength&quot;: 120,
+    &quot;indentSize&quot;: 2
+  }
+}
+</codeblock>
+    <section><title>Configuration Priority</title></section>
+    <p>Configuration sources are merged in this order (later overrides earlier):</p>
+    <ol>
+      <li>
+        <b>Default values</b>
+        - Built-in defaults
+      </li>
+      <li>
+        <b>Global config file</b>
+        -
+        <codeph>/etc/ollama-code/config.json</codeph>
+      </li>
+      <li>
+        <b>User config file</b>
+        -
+        <codeph>~/.ollama-code/config.json</codeph>
+      </li>
+      <li>
+        <b>Project config file</b>
+        -
+        <codeph>./.ollama-code/config.json</codeph>
+      </li>
+      <li>
+        <b>Environment variables</b>
+        -
+        <codeph>OLLAMA_CODE_*</codeph>
+      </li>
+      <li>
+        <b>CLI flags</b>
+        - Command-line arguments
+      </li>
+    </ol>
+    <section><title>Example Override</title></section>
+    <codeblock outputclass="language-bash"># Default
+{
+  &quot;providers&quot;: {
+    &quot;ollama&quot;: {
+      &quot;model&quot;: &quot;codellama:7b&quot;
+    }
+  }
+}
+
+# Environment variable
+export OLLAMA_MODEL=&quot;codellama:34b&quot;
+
+# CLI flag
+ollama-code --model codellama:13b chat
+
+# Final result: codellama:13b (CLI flag wins)
+</codeblock>
+    <section><title>Configuration Validation</title></section>
+    <p>Validate your configuration:</p>
+    <codeblock outputclass="language-bash"># Validate config file
+ollama-code config validate
+
+# Validate config file (custom path)
+ollama-code config validate --file ~/my-config.json
+
+# Show effective configuration
+ollama-code config show
+
+# Show configuration with sources
+ollama-code config show --sources
+</codeblock>
+    <p>Output:</p>
+    <codeblock>✓ Configuration is valid
+
+Effective Configuration:
+  Provider: ollama (from: CLI flag)
+  Model: codellama:34b (from: environment variable)
+  Max Tokens: 8000 (from: config file)
+  ...
+</codeblock>
+    <section><title>Best Practices</title></section>
+    <section><title>1. Use Environment Variables for Secrets</title></section>
+    <codeblock outputclass="language-bash"># DON&apos;T: Store secrets in config file
+{
+  &quot;providers&quot;: {
+    &quot;openai&quot;: {
+      &quot;apiKey&quot;: &quot;sk-proj-abc123...&quot;
+    }
+  }
+}
+
+# DO: Use environment variables
+{
+  &quot;providers&quot;: {
+    &quot;openai&quot;: {
+      &quot;apiKey&quot;: &quot;${OPENAI_API_KEY}&quot;
+    }
+  }
+}
+</codeblock>
+    <section><title>2. Use Project-Specific Config</title></section>
+    <codeblock>my-project/
+├── .ollama-code/
+│   └── config.json        # Project-specific settings
+├── src/
+└── package.json
+</codeblock>
+    <section><title>3. Version Control Configuration</title></section>
+    <codeblock outputclass="language-bash"># .gitignore
+.ollama-code/config.local.json    # Local overrides (not committed)
+
+# config.json (committed)
+{
+  &quot;providers&quot;: {
+    &quot;ollama&quot;: {
+      &quot;model&quot;: &quot;codellama:7b&quot;
+    }
+  }
+}
+
+# config.local.json (not committed, overrides config.json)
+{
+  &quot;providers&quot;: {
+    &quot;ollama&quot;: {
+      &quot;model&quot;: &quot;codellama:34b&quot;
+    }
+  }
+}
+</codeblock>
+    <section><title>4. Use Profiles</title></section>
+    <codeblock outputclass="language-bash"># Development
+ollama-code --profile dev chat
+
+# Production
+ollama-code --profile prod chat
+
+# ~/.ollama-code/profiles/dev.json
+{
+  &quot;providers&quot;: {
+    &quot;ollama&quot;: {
+      &quot;model&quot;: &quot;codellama:7b&quot;
+    }
+  },
+  &quot;logging&quot;: {
+    &quot;level&quot;: &quot;debug&quot;
+  }
+}
+
+# ~/.ollama-code/profiles/prod.json
+{
+  &quot;providers&quot;: {
+    &quot;openai&quot;: {
+      &quot;model&quot;: &quot;gpt-4-turbo&quot;
+    }
+  },
+  &quot;logging&quot;: {
+    &quot;level&quot;: &quot;warn&quot;
+  }
+}
+</codeblock>
+    <p><i>Appendix B | Configuration Guide | 10-15 pages</i></p>
+  </body>
+</topic>

@@ -1,30 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic id="topic_13">
-  <title>Chapter 13: Plugin Architecture and Extension Points</title>
+  <title>Chapter 12: Monitoring, Observability, and Reliability</title>
   <body>
     <section><title>Table of Contents</title></section>
     <ul>
       <li>
-        13.1 Extension Points Design
+        12.1 Observability Overview
       </li>
       <li>
-        13.2 Plugin System Architecture
+        12.2 Structured Logging
       </li>
       <li>
-        13.3 Plugin Discovery and Loading
+        12.3 Distributed Tracing
       </li>
       <li>
-        13.4 Plugin Isolation and Security
+        12.4 Metrics Collection
       </li>
       <li>
-        13.5 Versioning and Compatibility
+        12.5 Error Tracking and Alerting
       </li>
       <li>
-        13.6 Building Your First Plugin
+        12.6 Health Checks
       </li>
       <li>
-        13.7 Plugin Marketplace
+        12.7 Reliability Patterns
+      </li>
+      <li>
+        12.8 Dashboards and Visualization
       </li>
       <li>
         Exercises
@@ -33,816 +36,395 @@
         Summary
       </li>
     </ul>
-    <section><title>13.1 Extension Points Design</title></section>
-    <p>Extension points are well-defined locations in your code where plugins can add functionality.</p>
-    <section><title>Core Extension Points</title></section>
+    <section><title>12.1 Observability Overview</title></section>
+    <p>Observability is the ability to understand what&apos;s happening inside your system by examining its outputs. For AI systems, this is critical because of non-deterministic behavior and complex failure modes.</p>
+    <section><title>The Three Pillars of Observability</title></section>
     <codeblock outputclass="language-typescript">/**
- * Extension point types
+ * The three pillars of observability
  */
-export enum ExtensionPointType {
-  /** Add custom tools */
-  TOOL = &apos;tool&apos;,
+export enum ObservabilityPillar {
+  /** Logs: Discrete events with context */
+  LOGS = &apos;logs&apos;,
 
-  /** Add custom commands */
-  COMMAND = &apos;command&apos;,
+  /** Metrics: Numerical measurements over time */
+  METRICS = &apos;metrics&apos;,
 
-  /** Add custom AI providers */
-  PROVIDER = &apos;provider&apos;,
-
-  /** Add custom middleware */
-  MIDDLEWARE = &apos;middleware&apos;,
-
-  /** Subscribe to events */
-  EVENT_HANDLER = &apos;event_handler&apos;,
-
-  /** Modify UI elements */
-  UI_COMPONENT = &apos;ui_component&apos;
+  /** Traces: Request flow through system */
+  TRACES = &apos;traces&apos;
 }
 
 /**
- * Extension point registry
+ * Observability requirements for AI systems
  */
-export class ExtensionPointRegistry {
-  private points = new Map&lt;string, ExtensionPoint&lt;any&gt;&gt;();
+export const OBSERVABILITY_REQUIREMENTS = {
+  logs: {
+    structured: true,        // Machine-parseable format
+    contextual: true,        // Include request/user context
+    searchable: true,        // Full-text search capability
+    retention: 30,           // Days to retain
+    sampling: false          // No sampling (capture all)
+  },
 
-  /**
-   * Register an extension point
-   */
-  register&lt;T&gt;(point: ExtensionPoint&lt;T&gt;): void {
-    this.points.set(point.name, point);
+  metrics: {
+    granularity: 60,         // Seconds between measurements
+    dimensions: [            // Metric dimensions
+      &apos;provider&apos;,
+      &apos;model&apos;,
+      &apos;operation&apos;,
+      &apos;status&apos;
+    ],
+    aggregations: [          // Aggregation types
+      &apos;sum&apos;,
+      &apos;avg&apos;,
+      &apos;p50&apos;,
+      &apos;p95&apos;,
+      &apos;p99&apos;
+    ]
+  },
+
+  traces: {
+    sampleRate: 1.0,         // 100% sampling in production
+    includeContext: true,    // Include full request context
+    maxSpans: 1000,          // Max spans per trace
+    retention: 7             // Days to retain
   }
-
-  /**
-   * Get extension point
-   */
-  get&lt;T&gt;(name: string): ExtensionPoint&lt;T&gt; | undefined {
-    return this.points.get(name);
-  }
-
-  /**
-   * List all extension points
-   */
-  list(): ExtensionPoint&lt;any&gt;[] {
-    return Array.from(this.points.values());
-  }
-}
-
-/**
- * Extension point for a specific type
- */
-export class ExtensionPoint&lt;T&gt; {
-  private extensions: T[] = [];
-
-  constructor(
-    public readonly name: string,
-    public readonly type: ExtensionPointType,
-    public readonly description: string
-  ) {}
-
-  /**
-   * Register an extension
-   */
-  register(extension: T): void {
-    this.extensions.push(extension);
-  }
-
-  /**
-   * Unregister an extension
-   */
-  unregister(extension: T): void {
-    const index = this.extensions.indexOf(extension);
-    if (index !== -1) {
-      this.extensions.splice(index, 1);
-    }
-  }
-
-  /**
-   * Get all extensions
-   */
-  getAll(): T[] {
-    return [...this.extensions];
-  }
-
-  /**
-   * Clear all extensions
-   */
-  clear(): void {
-    this.extensions = [];
-  }
-}
+};
 </codeblock>
-    <section><title>Defining Extension Points</title></section>
+    <section><title>Observability Goals</title></section>
     <codeblock outputclass="language-typescript">/**
- * Core system with extension points
+ * What we want to know about our AI system
  */
-export class ExtensibleAIAssistant {
-  // Extension points
-  public readonly toolExtensions: ExtensionPoint&lt;Tool&gt;;
-  public readonly commandExtensions: ExtensionPoint&lt;RoutableCommand&gt;;
-  public readonly providerExtensions: ExtensionPoint&lt;AIProvider&gt;;
-  public readonly middlewareExtensions: ExtensionPoint&lt;Middleware&gt;;
-
-  constructor() {
-    // Define extension points
-    this.toolExtensions = new ExtensionPoint(
-      &apos;tools&apos;,
-      ExtensionPointType.TOOL,
-      &apos;Custom tools for code operations&apos;
-    );
-
-    this.commandExtensions = new ExtensionPoint(
-      &apos;commands&apos;,
-      ExtensionPointType.COMMAND,
-      &apos;Custom commands for user interactions&apos;
-    );
-
-    this.providerExtensions = new ExtensionPoint(
-      &apos;providers&apos;,
-      ExtensionPointType.PROVIDER,
-      &apos;Custom AI providers&apos;
-    );
-
-    this.middlewareExtensions = new ExtensionPoint(
-      &apos;middleware&apos;,
-      ExtensionPointType.MIDDLEWARE,
-      &apos;Request/response middleware&apos;
-    );
-  }
-
-  /**
-   * Execute request with extensions
-   */
-  async execute(request: string): Promise&lt;string&gt; {
-    // Apply middleware
-    let processedRequest = request;
-    for (const middleware of this.middlewareExtensions.getAll()) {
-      processedRequest = await middleware.beforeRequest(processedRequest);
-    }
-
-    // Get tools (including extensions)
-    const allTools = [
-      ...this.getCorTools(),
-      ...this.toolExtensions.getAll()
-    ];
-
-    // Execute with all tools
-    const result = await this.executeWithTools(processedRequest, allTools);
-
-    // Apply middleware
-    let processedResult = result;
-    for (const middleware of this.middlewareExtensions.getAll()) {
-      processedResult = await middleware.afterResponse(processedResult);
-    }
-
-    return processedResult;
-  }
-
-  private getCoreTools(): Tool[] {
-    // Core built-in tools
-    return [
-      new ReadFileTool(),
-      new WriteFileTool(),
-      new GitTool()
-    ];
-  }
-
-  private async executeWithTools(request: string, tools: Tool[]): Promise&lt;string&gt; {
-    // Implementation
-    return &apos;result&apos;;
-  }
-}
-
-/**
- * Middleware interface
- */
-export interface Middleware {
-  beforeRequest(request: string): Promise&lt;string&gt;;
-  afterResponse(response: string): Promise&lt;string&gt;;
-}
-</codeblock>
-    <section><title>13.2 Plugin System Architecture</title></section>
-    <p>Build a complete plugin system that manages plugin lifecycle.</p>
-    <section><title>Plugin Interface</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Plugin interface - all plugins must implement this
- */
-export interface Plugin {
-  /** Plugin metadata */
-  readonly metadata: PluginMetadata;
-
-  /**
-   * Called when plugin is activated
-   */
-  activate(context: PluginContext): Promise&lt;void&gt;;
-
-  /**
-   * Called when plugin is deactivated
-   */
-  deactivate(): Promise&lt;void&gt;;
-}
-
-/**
- * Plugin metadata
- */
-export interface PluginMetadata {
-  /** Unique plugin identifier */
-  id: string;
-
-  /** Human-readable name */
-  name: string;
-
-  /** Plugin version (semver) */
-  version: string;
-
-  /** Description */
-  description: string;
-
-  /** Author information */
-  author: {
-    name: string;
-    email?: string;
-    url?: string;
+export interface ObservabilityGoals {
+  // Performance
+  howFast: {
+    firstTokenLatency: number;    // Time to first token
+    totalLatency: number;         // Total request time
+    cacheHitRate: number;         // Cache effectiveness
   };
 
-  /** Plugin dependencies */
-  dependencies?: {
-    /** Platform version requirement */
-    platform?: string;
-
-    /** Other plugin dependencies */
-    plugins?: Record&lt;string, string&gt;;
+  // Reliability
+  howReliable: {
+    errorRate: number;            // % of requests failing
+    availability: number;         // % uptime
+    successRate: number;          // % of successful requests
   };
 
-  /** Plugin capabilities */
-  capabilities?: string[];
+  // Cost
+  howExpensive: {
+    costPerRequest: number;       // Average cost
+    totalCost: number;            // Total spend
+    tokenUsage: number;           // Tokens consumed
+  };
 
-  /** Plugin keywords for discovery */
-  keywords?: string[];
+  // Quality
+  howGood: {
+    qualityScore: number;         // Output quality (0-100)
+    userSatisfaction: number;     // User feedback
+    regressionRate: number;       // % quality regressions
+  };
+
+  // Usage
+  whoAndWhat: {
+    activeUsers: number;          // Users in time period
+    requestsPerUser: number;      // Usage per user
+    topOperations: string[];      // Most common operations
+  };
+}
+</codeblock>
+    <section><title>Before vs After Observability</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Without observability
+ */
+function withoutObservability() {
+  // User reports issue
+  console.log(&apos;User: My request failed&apos;);
+
+  // You have no visibility
+  // - No logs to check
+  // - No metrics to analyze
+  // - No trace to follow
+  // - No error details
+
+  // Result: 60+ minutes debugging
+  // - Checking code
+  // - Adding console.log
+  // - Reproducing locally
+  // - Guessing root cause
 }
 
 /**
- * Plugin context - provided to plugins on activation
+ * With observability
  */
-export interface PluginContext {
-  /** Extension point registry */
-  extensions: ExtensionPointRegistry;
+async function withObservability() {
+  // User reports issue
+  console.log(&apos;User: My request failed at 14:32&apos;);
 
-  /** Logger scoped to this plugin */
-  logger: Logger;
+  // Check dashboard
+  const trace = await tracing.getTrace(&apos;req_abc123&apos;);
 
-  /** Configuration for this plugin */
-  config: PluginConfig;
+  console.log(`
+📊 Request Trace: req_abc123
+├─ User: user_456
+├─ Timestamp: 2024-01-15 14:32:15
+├─ Duration: 3,456ms
+├─ Status: FAILED
+├─
+├─ Spans:
+│  ├─ [200ms] Validate Input ✓
+│  ├─ [150ms] Check Cache ✓ (miss)
+│  ├─ [2,100ms] AI Provider: Anthropic
+│  │  ├─ Status: 429 Rate Limit
+│  │  └─ Error: Rate limit exceeded
+│  ├─ [890ms] Fallback: OpenAI ✓
+│  │  └─ Success
+│  └─ [116ms] Cache Result ✓
+├─
+├─ Root Cause: Anthropic rate limit
+├─ Resolution: Fallback succeeded
+└─ Action Taken: Increased rate limit
+  `);
 
-  /** Plugin storage directory */
-  storageDir: string;
-
-  /** Global storage (shared across plugins) */
-  globalStorage: Storage;
-
-  /** Event emitter for subscribing to events */
-  events: EventEmitter;
-}
-
-export interface PluginConfig {
-  get&lt;T&gt;(key: string, defaultValue?: T): T | undefined;
-  set&lt;T&gt;(key: string, value: T): Promise&lt;void&gt;;
+  // Result: 2 minutes to identify and resolve
 }
 </codeblock>
-    <section><title>Plugin Manager</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Manages plugin lifecycle
+    <section><title>12.2 Structured Logging</title></section>
+    <p>Structured logging uses machine-parseable formats (JSON) instead of plain text, enabling powerful querying and analysis.</p>
+    <section><title>Structured Logger</title></section>
+    <codeblock outputclass="language-typescript">import winston from &apos;winston&apos;;
+
+/**
+ * Structured logger with context
  */
-export class PluginManager {
-  private plugins = new Map&lt;string, LoadedPlugin&gt;();
-  private logger: Logger;
-  private extensionRegistry: ExtensionPointRegistry;
-
-  constructor(
-    logger: Logger,
-    extensionRegistry: ExtensionPointRegistry
-  ) {
-    this.logger = logger;
-    this.extensionRegistry = extensionRegistry;
-  }
-
-  /**
-   * Load and activate a plugin
-   */
-  async load(plugin: Plugin): Promise&lt;void&gt; {
-    const { id, version } = plugin.metadata;
-
-    this.logger.info(&apos;Loading plugin&apos;, { id, version });
-
-    // Validate plugin
-    this.validatePlugin(plugin);
-
-    // Check if already loaded
-    if (this.plugins.has(id)) {
-      throw new Error(`Plugin already loaded: ${id}`);
-    }
-
-    // Check dependencies
-    await this.checkDependencies(plugin);
-
-    // Create plugin context
-    const context = await this.createContext(plugin);
-
-    // Activate plugin
-    try {
-      await plugin.activate(context);
-
-      // Store loaded plugin
-      this.plugins.set(id, {
-        plugin,
-        context,
-        state: PluginState.ACTIVE
-      });
-
-      this.logger.info(&apos;Plugin loaded successfully&apos;, { id });
-
-    } catch (error) {
-      this.logger.error(&apos;Plugin activation failed&apos;, error as Error, { id });
-      throw new Error(`Failed to activate plugin ${id}: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * Unload and deactivate a plugin
-   */
-  async unload(pluginId: string): Promise&lt;void&gt; {
-    const loaded = this.plugins.get(pluginId);
-
-    if (!loaded) {
-      throw new Error(`Plugin not loaded: ${pluginId}`);
-    }
-
-    this.logger.info(&apos;Unloading plugin&apos;, { id: pluginId });
-
-    try {
-      // Deactivate plugin
-      await loaded.plugin.deactivate();
-
-      // Remove from loaded plugins
-      this.plugins.delete(pluginId);
-
-      this.logger.info(&apos;Plugin unloaded successfully&apos;, { id: pluginId });
-
-    } catch (error) {
-      this.logger.error(&apos;Plugin deactivation failed&apos;, error as Error, { id: pluginId });
-      throw error;
-    }
-  }
-
-  /**
-   * Reload a plugin
-   */
-  async reload(pluginId: string): Promise&lt;void&gt; {
-    const loaded = this.plugins.get(pluginId);
-
-    if (!loaded) {
-      throw new Error(`Plugin not loaded: ${pluginId}`);
-    }
-
-    const plugin = loaded.plugin;
-
-    await this.unload(pluginId);
-    await this.load(plugin);
-  }
-
-  /**
-   * Get loaded plugin
-   */
-  getPlugin(pluginId: string): Plugin | undefined {
-    return this.plugins.get(pluginId)?.plugin;
-  }
-
-  /**
-   * List all loaded plugins
-   */
-  listPlugins(): PluginInfo[] {
-    return Array.from(this.plugins.values()).map(({ plugin, state }) =&gt; ({
-      metadata: plugin.metadata,
-      state
-    }));
-  }
-
-  /**
-   * Validate plugin
-   */
-  private validatePlugin(plugin: Plugin): void {
-    const { id, version, name } = plugin.metadata;
-
-    if (!id || !version || !name) {
-      throw new Error(&apos;Plugin missing required metadata (id, version, name)&apos;);
-    }
-
-    // Validate version is semver
-    if (!this.isValidSemver(version)) {
-      throw new Error(`Invalid plugin version: ${version}`);
-    }
-  }
-
-  /**
-   * Check plugin dependencies
-   */
-  private async checkDependencies(plugin: Plugin): Promise&lt;void&gt; {
-    const deps = plugin.metadata.dependencies;
-
-    if (!deps) return;
-
-    // Check platform version
-    if (deps.platform) {
-      const platformVersion = this.getPlatformVersion();
-      if (!this.satisfiesVersion(platformVersion, deps.platform)) {
-        throw new Error(
-          `Plugin requires platform ${deps.platform}, but current version is ${platformVersion}`
-        );
-      }
-    }
-
-    // Check plugin dependencies
-    if (deps.plugins) {
-      for (const [pluginId, versionRange] of Object.entries(deps.plugins)) {
-        const depPlugin = this.plugins.get(pluginId);
-
-        if (!depPlugin) {
-          throw new Error(`Missing dependency: ${pluginId}`);
-        }
-
-        if (!this.satisfiesVersion(depPlugin.plugin.metadata.version, versionRange)) {
-          throw new Error(
-            `Plugin ${pluginId} version ${depPlugin.plugin.metadata.version} ` +
-            `does not satisfy requirement ${versionRange}`
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Create plugin context
-   */
-  private async createContext(plugin: Plugin): Promise&lt;PluginContext&gt; {
-    const storageDir = path.join(
-      os.homedir(),
-      &apos;.ollama-code&apos;,
-      &apos;plugins&apos;,
-      plugin.metadata.id
-    );
-
-    // Ensure storage directory exists
-    await fs.mkdir(storageDir, { recursive: true });
-
-    return {
-      extensions: this.extensionRegistry,
-      logger: this.logger.child({ plugin: plugin.metadata.id }),
-      config: new PluginConfigImpl(plugin.metadata.id),
-      storageDir,
-      globalStorage: new GlobalStorage(),
-      events: new EventEmitter()
-    };
-  }
-
-  private getPlatformVersion(): string {
-    return &apos;1.0.0&apos;; // Would get from package.json
-  }
-
-  private isValidSemver(version: string): boolean {
-    return /^\d+\.\d+\.\d+/.test(version);
-  }
-
-  private satisfiesVersion(version: string, range: string): boolean {
-    // Simple version check (would use semver package in production)
-    return version &gt;= range;
-  }
-}
-
-enum PluginState {
-  INACTIVE = &apos;inactive&apos;,
-  ACTIVE = &apos;active&apos;,
-  ERROR = &apos;error&apos;
-}
-
-interface LoadedPlugin {
-  plugin: Plugin;
-  context: PluginContext;
-  state: PluginState;
-}
-
-interface PluginInfo {
-  metadata: PluginMetadata;
-  state: PluginState;
-}
-</codeblock>
-    <section><title>13.3 Plugin Discovery and Loading</title></section>
-    <p>Discover and load plugins from various sources.</p>
-    <section><title>Plugin Loader</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Loads plugins from different sources
- */
-export class PluginLoader {
-  private logger: Logger;
-
-  constructor(logger: Logger) {
-    this.logger = logger;
-  }
-
-  /**
-   * Load plugin from npm package
-   */
-  async loadFromNpm(packageName: string): Promise&lt;Plugin&gt; {
-    this.logger.info(&apos;Loading plugin from npm&apos;, { package: packageName });
-
-    try {
-      // Import the package
-      const module = await import(packageName);
-
-      // Get plugin export
-      const PluginClass = module.default || module.Plugin;
-
-      if (!PluginClass) {
-        throw new Error(`Package ${packageName} does not export a plugin`);
-      }
-
-      // Instantiate plugin
-      const plugin = new PluginClass();
-
-      return plugin;
-
-    } catch (error) {
-      throw new Error(`Failed to load plugin from npm: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * Load plugin from file path
-   */
-  async loadFromPath(filePath: string): Promise&lt;Plugin&gt; {
-    this.logger.info(&apos;Loading plugin from path&apos;, { path: filePath });
-
-    try {
-      // Import the file
-      const module = await import(filePath);
-
-      const PluginClass = module.default || module.Plugin;
-
-      if (!PluginClass) {
-        throw new Error(`File ${filePath} does not export a plugin`);
-      }
-
-      const plugin = new PluginClass();
-
-      return plugin;
-
-    } catch (error) {
-      throw new Error(`Failed to load plugin from path: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * Discover plugins in directory
-   */
-  async discoverPlugins(directory: string): Promise&lt;Plugin[]&gt; {
-    this.logger.info(&apos;Discovering plugins&apos;, { directory });
-
-    const plugins: Plugin[] = [];
-
-    try {
-      const entries = await fs.readdir(directory, { withFileTypes: true });
-
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-
-        const pluginDir = path.join(directory, entry.name);
-        const packageJsonPath = path.join(pluginDir, &apos;package.json&apos;);
-
-        try {
-          // Check if it&apos;s a valid plugin
-          const packageJson = JSON.parse(
-            await fs.readFile(packageJsonPath, &apos;utf-8&apos;)
-          );
-
-          if (packageJson.ollamaCodePlugin) {
-            const plugin = await this.loadFromPath(pluginDir);
-            plugins.push(plugin);
-          }
-
-        } catch (error) {
-          // Not a valid plugin, skip
-          continue;
-        }
-      }
-
-      this.logger.info(&apos;Discovered plugins&apos;, { count: plugins.length });
-
-      return plugins;
-
-    } catch (error) {
-      this.logger.error(&apos;Plugin discovery failed&apos;, error as Error);
-      return [];
-    }
-  }
-
-  /**
-   * Install plugin from registry
-   */
-  async install(pluginId: string, version?: string): Promise&lt;Plugin&gt; {
-    this.logger.info(&apos;Installing plugin&apos;, { id: pluginId, version });
-
-    // Construct package name
-    const packageName = `@ollama-code/plugin-${pluginId}`;
-    const versionSpec = version ? `@${version}` : &apos;&apos;;
-
-    // Install using npm
-    const { exec } = await import(&apos;child_process&apos;);
-    const { promisify } = await import(&apos;util&apos;);
-    const execAsync = promisify(exec);
-
-    try {
-      await execAsync(`npm install ${packageName}${versionSpec}`);
-
-      // Load the installed plugin
-      return await this.loadFromNpm(packageName);
-
-    } catch (error) {
-      throw new Error(`Failed to install plugin: ${(error as Error).message}`);
-    }
-  }
-}
-</codeblock>
-    <section><title>Plugin Registry</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Plugin registry for discovering available plugins
- */
-export class PluginRegistry {
-  private apiUrl: string;
-
-  constructor(apiUrl: string = &apos;https://registry.ollama-code.dev&apos;) {
-    this.apiUrl = apiUrl;
-  }
-
-  /**
-   * Search for plugins
-   */
-  async search(query: string): Promise&lt;PluginSearchResult[]&gt; {
-    const response = await fetch(
-      `${this.apiUrl}/search?q=${encodeURIComponent(query)}`
-    );
-
-    if (!response.ok) {
-      throw new Error(&apos;Failed to search plugins&apos;);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * Get plugin details
-   */
-  async getPlugin(pluginId: string): Promise&lt;PluginDetails&gt; {
-    const response = await fetch(`${this.apiUrl}/plugins/${pluginId}`);
-
-    if (!response.ok) {
-      throw new Error(`Plugin not found: ${pluginId}`);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * List popular plugins
-   */
-  async getPopular(limit: number = 10): Promise&lt;PluginSearchResult[]&gt; {
-    const response = await fetch(`${this.apiUrl}/popular?limit=${limit}`);
-
-    if (!response.ok) {
-      throw new Error(&apos;Failed to fetch popular plugins&apos;);
-    }
-
-    return response.json();
-  }
-
-  /**
-   * Get plugins by category
-   */
-  async getByCategory(category: string): Promise&lt;PluginSearchResult[]&gt; {
-    const response = await fetch(`${this.apiUrl}/category/${category}`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch plugins for category: ${category}`);
-    }
-
-    return response.json();
-  }
-}
-
-interface PluginSearchResult {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  author: string;
-  downloads: number;
-  rating: number;
-  keywords: string[];
-}
-
-interface PluginDetails extends PluginSearchResult {
-  readme: string;
-  repository: string;
-  homepage: string;
-  versions: string[];
-  dependencies: Record&lt;string, string&gt;;
-}
-</codeblock>
-    <section><title>13.4 Plugin Isolation and Security</title></section>
-    <p>Ensure plugins can&apos;t harm the system or other plugins.</p>
-    <section><title>Plugin Sandbox</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Sandboxes plugin execution
- */
-export class PluginSandbox {
-  private allowedAPIs: Set&lt;string&gt;;
-
-  constructor(config: SandboxConfig) {
-    this.allowedAPIs = new Set(config.allowedAPIs || []);
-  }
-
-  /**
-   * Create sandboxed context for plugin
-   */
-  createContext(plugin: Plugin): PluginContext {
-    const sandbox = this;
-
-    return {
-      extensions: this.createProxyExtensions(),
-      logger: this.createProxyLogger(plugin.metadata.id),
-      config: this.createProxyConfig(plugin.metadata.id),
-      storageDir: this.getStorageDir(plugin.metadata.id),
-      globalStorage: this.createProxyStorage(),
-      events: this.createProxyEvents()
-    };
-  }
-
-  /**
-   * Create proxied extensions registry
-   */
-  private createProxyExtensions(): ExtensionPointRegistry {
-    // Return a proxy that validates all operations
-    return new Proxy(new ExtensionPointRegistry(), {
-      get: (target, prop) =&gt; {
-        // Intercept method calls to validate permissions
-        const value = (target as any)[prop];
-
-        if (typeof value === &apos;function&apos;) {
-          return (...args: any[]) =&gt; {
-            this.checkPermission(&apos;extensions&apos;);
-            return value.apply(target, args);
-          };
-        }
-
-        return value;
-      }
+export class StructuredLogger {
+  private logger: winston.Logger;
+
+  constructor(options: LoggerOptions = {}) {
+    this.logger = winston.createLogger({
+      level: options.level || &apos;info&apos;,
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        winston.format.json()
+      ),
+      defaultMeta: {
+        service: options.service || &apos;ollama-code&apos;,
+        environment: process.env.NODE_ENV || &apos;development&apos;,
+        version: options.version || &apos;1.0.0&apos;
+      },
+      transports: [
+        // Console (for development)
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.simple()
+          )
+        }),
+
+        // File (for production)
+        new winston.transports.File({
+          filename: &apos;logs/error.log&apos;,
+          level: &apos;error&apos;
+        }),
+        new winston.transports.File({
+          filename: &apos;logs/combined.log&apos;
+        })
+      ]
     });
   }
 
   /**
-   * Create proxied logger
+   * Log with context
    */
-  private createProxyLogger(pluginId: string): Logger {
-    // Return a logger that redacts sensitive data
+  info(message: string, context?: LogContext): void {
+    this.logger.info(message, this.enrichContext(context));
+  }
+
+  warn(message: string, context?: LogContext): void {
+    this.logger.warn(message, this.enrichContext(context));
+  }
+
+  error(message: string, error?: Error, context?: LogContext): void {
+    this.logger.error(message, {
+      ...this.enrichContext(context),
+      error: error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : undefined
+    });
+  }
+
+  debug(message: string, context?: LogContext): void {
+    this.logger.debug(message, this.enrichContext(context));
+  }
+
+  /**
+   * Enrich context with metadata
+   */
+  private enrichContext(context?: LogContext): Record&lt;string, any&gt; {
     return {
-      info: (message: string, context?: any) =&gt; {
-        const sanitized = this.sanitize(context);
-        // Log with plugin prefix
-        console.log(`[${pluginId}] ${message}`, sanitized);
-      },
-      error: (message: string, error?: Error, context?: any) =&gt; {
-        const sanitized = this.sanitize(context);
-        console.error(`[${pluginId}] ${message}`, error, sanitized);
-      },
-      // ... other methods
-    } as any;
+      ...context,
+      timestamp: new Date().toISOString(),
+      pid: process.pid,
+      hostname: require(&apos;os&apos;).hostname()
+    };
   }
 
   /**
-   * Check if plugin has permission
+   * Create child logger with fixed context
    */
-  private checkPermission(api: string): void {
-    if (!this.allowedAPIs.has(api)) {
-      throw new Error(`Plugin does not have permission to access: ${api}`);
-    }
+  child(context: LogContext): StructuredLogger {
+    const child = new StructuredLogger({
+      service: this.logger.defaultMeta?.service,
+      level: this.logger.level
+    });
+
+    // Add fixed context to all logs
+    child.logger.defaultMeta = {
+      ...child.logger.defaultMeta,
+      ...context
+    };
+
+    return child;
+  }
+}
+
+interface LoggerOptions {
+  service?: string;
+  level?: string;
+  version?: string;
+}
+
+interface LogContext {
+  requestId?: string;
+  userId?: string;
+  operation?: string;
+  duration?: number;
+  [key: string]: any;
+}
+</codeblock>
+    <section><title>Request Logger</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Logs AI requests with full context
+ */
+export class RequestLogger {
+  constructor(private logger: StructuredLogger) {}
+
+  /**
+   * Log AI request start
+   */
+  logRequestStart(request: CompletionRequest, context: RequestContext): void {
+    this.logger.info(&apos;AI request started&apos;, {
+      requestId: context.requestId,
+      userId: context.userId,
+      provider: request.model?.split(&apos;/&apos;)[0],
+      model: request.model,
+      messageCount: request.messages.length,
+      temperature: request.temperature,
+      maxTokens: request.maxTokens,
+      operation: context.operation
+    });
   }
 
   /**
-   * Sanitize context to remove sensitive data
+   * Log AI request completion
    */
-  private sanitize(context: any): any {
-    if (!context) return context;
+  logRequestComplete(
+    request: CompletionRequest,
+    response: CompletionResponse,
+    context: RequestContext,
+    duration: number
+  ): void {
+    this.logger.info(&apos;AI request completed&apos;, {
+      requestId: context.requestId,
+      userId: context.userId,
+      provider: response.metadata?.provider,
+      model: response.model,
+      duration,
+      inputTokens: response.usage?.inputTokens,
+      outputTokens: response.usage?.outputTokens,
+      totalTokens: response.usage?.totalTokens,
+      cost: this.calculateCost(response),
+      fromCache: response.metadata?.fromCache || false,
+      operation: context.operation
+    });
+  }
 
-    const sanitized = { ...context };
+  /**
+   * Log AI request error
+   */
+  logRequestError(
+    request: CompletionRequest,
+    error: Error,
+    context: RequestContext,
+    duration: number
+  ): void {
+    this.logger.error(&apos;AI request failed&apos;, error, {
+      requestId: context.requestId,
+      userId: context.userId,
+      model: request.model,
+      duration,
+      operation: context.operation,
+      errorType: error.name,
+      retryable: this.isRetryable(error)
+    });
+  }
 
-    // Remove sensitive fields
+  /**
+   * Log tool execution
+   */
+  logToolExecution(
+    tool: string,
+    params: Record&lt;string, any&gt;,
+    result: ToolResult,
+    duration: number,
+    context: RequestContext
+  ): void {
+    this.logger.info(&apos;Tool executed&apos;, {
+      requestId: context.requestId,
+      tool,
+      params: this.sanitizeParams(params),
+      success: result.success,
+      duration,
+      fromCache: result.fromCache || false,
+      operation: context.operation
+    });
+  }
+
+  /**
+   * Calculate request cost
+   */
+  private calculateCost(response: CompletionResponse): number {
+    if (!response.usage) return 0;
+
+    // Approximate costs (would use actual provider pricing)
+    const inputCost = response.usage.inputTokens * 0.00001;
+    const outputCost = response.usage.outputTokens * 0.00003;
+
+    return inputCost + outputCost;
+  }
+
+  /**
+   * Check if error is retryable
+   */
+  private isRetryable(error: Error): boolean {
+    const retryableErrors = [
+      &apos;RateLimitError&apos;,
+      &apos;TimeoutError&apos;,
+      &apos;NetworkError&apos;,
+      &apos;ServiceUnavailableError&apos;
+    ];
+
+    return retryableErrors.includes(error.name);
+  }
+
+  /**
+   * Sanitize sensitive parameters
+   */
+  private sanitizeParams(params: Record&lt;string, any&gt;): Record&lt;string, any&gt; {
+    const sanitized = { ...params };
+
+    // Redact sensitive fields
     const sensitiveFields = [&apos;apiKey&apos;, &apos;password&apos;, &apos;token&apos;, &apos;secret&apos;];
 
     for (const field of sensitiveFields) {
@@ -853,455 +435,1631 @@ export class PluginSandbox {
 
     return sanitized;
   }
-
-  private createProxyConfig(pluginId: string): PluginConfig {
-    // Implementation
-    return {} as any;
-  }
-
-  private getStorageDir(pluginId: string): string {
-    return path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;plugins&apos;, pluginId);
-  }
-
-  private createProxyStorage(): Storage {
-    // Implementation
-    return {} as any;
-  }
-
-  private createProxyEvents(): EventEmitter {
-    // Implementation
-    return {} as any;
-  }
 }
 
-interface SandboxConfig {
-  allowedAPIs?: string[];
-  maxMemory?: number;
-  maxCPU?: number;
-  timeout?: number;
-}
-
-interface Storage {
-  get(key: string): Promise&lt;any&gt;;
-  set(key: string, value: any): Promise&lt;void&gt;;
-  delete(key: string): Promise&lt;void&gt;;
+interface RequestContext {
+  requestId: string;
+  userId?: string;
+  operation: string;
 }
 </codeblock>
-    <section><title>13.5 Versioning and Compatibility</title></section>
-    <p>Manage plugin versions and ensure compatibility.</p>
-    <section><title>Version Manager</title></section>
+    <section><title>Log Querying</title></section>
     <codeblock outputclass="language-typescript">/**
- * Manages plugin versions and compatibility
+ * Query structured logs
  */
-export class PluginVersionManager {
-  /**
-   * Check if plugin version is compatible
-   */
-  isCompatible(
-    pluginVersion: string,
-    platformVersion: string,
-    requiredVersion?: string
-  ): boolean {
-    if (!requiredVersion) return true;
+export class LogQuery {
+  constructor(private logsPath: string) {}
 
-    return this.satisfiesVersion(platformVersion, requiredVersion);
+  /**
+   * Query logs by criteria
+   */
+  async query(criteria: QueryCriteria): Promise&lt;LogEntry[]&gt; {
+    const logs = await this.readLogs();
+
+    return logs.filter(log =&gt; {
+      // Filter by time range
+      if (criteria.startTime &amp;&amp; new Date(log.timestamp) &lt; criteria.startTime) {
+        return false;
+      }
+
+      if (criteria.endTime &amp;&amp; new Date(log.timestamp) &gt; criteria.endTime) {
+        return false;
+      }
+
+      // Filter by level
+      if (criteria.level &amp;&amp; log.level !== criteria.level) {
+        return false;
+      }
+
+      // Filter by service
+      if (criteria.service &amp;&amp; log.service !== criteria.service) {
+        return false;
+      }
+
+      // Filter by request ID
+      if (criteria.requestId &amp;&amp; log.requestId !== criteria.requestId) {
+        return false;
+      }
+
+      // Filter by user ID
+      if (criteria.userId &amp;&amp; log.userId !== criteria.userId) {
+        return false;
+      }
+
+      // Filter by operation
+      if (criteria.operation &amp;&amp; log.operation !== criteria.operation) {
+        return false;
+      }
+
+      return true;
+    });
   }
 
   /**
-   * Get migration path between versions
+   * Get error rate
    */
-  getMigrationPath(
-    fromVersion: string,
-    toVersion: string
-  ): string[] {
-    const migrations: string[] = [];
+  async getErrorRate(timeRange: TimeRange): Promise&lt;number&gt; {
+    const logs = await this.query({
+      startTime: timeRange.start,
+      endTime: timeRange.end
+    });
 
-    // Would return list of migration versions
-    // e.g., [&apos;1.0.0&apos;, &apos;1.1.0&apos;, &apos;2.0.0&apos;]
+    const errors = logs.filter(log =&gt; log.level === &apos;error&apos;).length;
+    const total = logs.length;
 
-    return migrations;
+    return total &gt; 0 ? errors / total : 0;
   }
 
   /**
-   * Check for breaking changes
+   * Get average duration
    */
-  hasBreakingChanges(fromVersion: string, toVersion: string): boolean {
-    const fromMajor = this.getMajorVersion(fromVersion);
-    const toMajor = this.getMajorVersion(toVersion);
+  async getAverageDuration(
+    operation: string,
+    timeRange: TimeRange
+  ): Promise&lt;number&gt; {
+    const logs = await this.query({
+      operation,
+      startTime: timeRange.start,
+      endTime: timeRange.end
+    });
 
-    return toMajor &gt; fromMajor;
+    const durations = logs
+      .filter(log =&gt; log.duration !== undefined)
+      .map(log =&gt; log.duration!);
+
+    if (durations.length === 0) return 0;
+
+    return durations.reduce((a, b) =&gt; a + b, 0) / durations.length;
   }
 
   /**
-   * Parse semver version
+   * Read logs from file
    */
-  parseVersion(version: string): {
-    major: number;
-    minor: number;
-    patch: number;
-  } {
-    const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
+  private async readLogs(): Promise&lt;LogEntry[]&gt; {
+    const content = await fs.readFile(this.logsPath, &apos;utf-8&apos;);
+    const lines = content.split(&apos;\n&apos;).filter(line =&gt; line.trim());
 
-    if (!match) {
-      throw new Error(`Invalid version: ${version}`);
-    }
+    return lines.map(line =&gt; JSON.parse(line));
+  }
+}
 
-    return {
-      major: parseInt(match[1]),
-      minor: parseInt(match[2]),
-      patch: parseInt(match[3])
+interface QueryCriteria {
+  startTime?: Date;
+  endTime?: Date;
+  level?: string;
+  service?: string;
+  requestId?: string;
+  userId?: string;
+  operation?: string;
+}
+
+interface TimeRange {
+  start: Date;
+  end: Date;
+}
+
+interface LogEntry {
+  timestamp: string;
+  level: string;
+  message: string;
+  service: string;
+  requestId?: string;
+  userId?: string;
+  operation?: string;
+  duration?: number;
+  [key: string]: any;
+}
+</codeblock>
+    <section><title>12.3 Distributed Tracing</title></section>
+    <p>Distributed tracing tracks requests as they flow through your system, showing the complete call graph.</p>
+    <section><title>Trace Context</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Trace context for distributed tracing
+ */
+export class TraceContext {
+  constructor(
+    public readonly traceId: string,
+    public readonly spanId: string,
+    public readonly parentSpanId?: string
+  ) {}
+
+  /**
+   * Create root trace context
+   */
+  static createRoot(): TraceContext {
+    return new TraceContext(
+      this.generateId(),
+      this.generateId()
+    );
+  }
+
+  /**
+   * Create child span
+   */
+  createChild(): TraceContext {
+    return new TraceContext(
+      this.traceId,
+      TraceContext.generateId(),
+      this.spanId
+    );
+  }
+
+  /**
+   * Generate unique ID
+   */
+  private static generateId(): string {
+    return crypto.randomBytes(16).toString(&apos;hex&apos;);
+  }
+}
+</codeblock>
+    <section><title>Tracer</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Distributed tracer
+ */
+export class Tracer {
+  private spans: Map&lt;string, Span&gt; = new Map();
+  private logger: StructuredLogger;
+
+  constructor(logger: StructuredLogger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Start a span
+   */
+  startSpan(
+    name: string,
+    context: TraceContext,
+    attributes?: Record&lt;string, any&gt;
+  ): Span {
+    const span: Span = {
+      traceId: context.traceId,
+      spanId: context.spanId,
+      parentSpanId: context.parentSpanId,
+      name,
+      startTime: Date.now(),
+      attributes: attributes || {},
+      events: [],
+      status: SpanStatus.UNSET
+    };
+
+    this.spans.set(span.spanId, span);
+
+    this.logger.debug(&apos;Span started&apos;, {
+      traceId: span.traceId,
+      spanId: span.spanId,
+      name: span.name
+    });
+
+    return span;
+  }
+
+  /**
+   * End a span
+   */
+  endSpan(span: Span, status: SpanStatus = SpanStatus.OK): void {
+    span.endTime = Date.now();
+    span.duration = span.endTime - span.startTime;
+    span.status = status;
+
+    this.logger.info(&apos;Span completed&apos;, {
+      traceId: span.traceId,
+      spanId: span.spanId,
+      name: span.name,
+      duration: span.duration,
+      status: span.status
+    });
+
+    // Export span to trace collector
+    this.exportSpan(span);
+  }
+
+  /**
+   * Add event to span
+   */
+  addEvent(span: Span, name: string, attributes?: Record&lt;string, any&gt;): void {
+    span.events.push({
+      name,
+      timestamp: Date.now(),
+      attributes: attributes || {}
+    });
+  }
+
+  /**
+   * Set span error
+   */
+  setError(span: Span, error: Error): void {
+    span.status = SpanStatus.ERROR;
+    span.attributes.error = {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
     };
   }
 
   /**
-   * Compare versions
+   * Get trace
    */
-  compareVersions(v1: string, v2: string): number {
-    const parsed1 = this.parseVersion(v1);
-    const parsed2 = this.parseVersion(v2);
+  async getTrace(traceId: string): Promise&lt;Trace&gt; {
+    const spans = Array.from(this.spans.values())
+      .filter(s =&gt; s.traceId === traceId)
+      .sort((a, b) =&gt; a.startTime - b.startTime);
 
-    if (parsed1.major !== parsed2.major) {
-      return parsed1.major - parsed2.major;
-    }
-
-    if (parsed1.minor !== parsed2.minor) {
-      return parsed1.minor - parsed2.minor;
-    }
-
-    return parsed1.patch - parsed2.patch;
+    return {
+      traceId,
+      spans,
+      duration: this.calculateTraceDuration(spans),
+      status: this.calculateTraceStatus(spans)
+    };
   }
-
-  private getMajorVersion(version: string): number {
-    return this.parseVersion(version).major;
-  }
-
-  private satisfiesVersion(version: string, range: string): boolean {
-    // Simple range check (would use semver package in production)
-    if (range.startsWith(&apos;^&apos;)) {
-      const requiredMajor = this.getMajorVersion(range.substring(1));
-      const actualMajor = this.getMajorVersion(version);
-      return actualMajor === requiredMajor;
-    }
-
-    if (range.startsWith(&apos;~&apos;)) {
-      const required = this.parseVersion(range.substring(1));
-      const actual = this.parseVersion(version);
-      return actual.major === required.major &amp;&amp; actual.minor === required.minor;
-    }
-
-    return this.compareVersions(version, range) &gt;= 0;
-  }
-}
-</codeblock>
-    <section><title>13.6 Building Your First Plugin</title></section>
-    <p>Step-by-step guide to creating a plugin.</p>
-    <section><title>Example: Docker Plugin</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Docker plugin - adds Docker support
- */
-export class DockerPlugin implements Plugin {
-  readonly metadata: PluginMetadata = {
-    id: &apos;docker&apos;,
-    name: &apos;Docker Plugin&apos;,
-    version: &apos;1.0.0&apos;,
-    description: &apos;Adds Docker container management tools&apos;,
-    author: {
-      name: &apos;Ollama Code Team&apos;,
-      email: &apos;team@ollama-code.dev&apos;
-    },
-    dependencies: {
-      platform: &apos;^1.0.0&apos;
-    },
-    capabilities: [&apos;containers&apos;, &apos;docker&apos;],
-    keywords: [&apos;docker&apos;, &apos;containers&apos;, &apos;devops&apos;]
-  };
-
-  private tools: Tool[] = [];
 
   /**
-   * Activate plugin
+   * Export span to trace collector
    */
-  async activate(context: PluginContext): Promise&lt;void&gt; {
-    context.logger.info(&apos;Activating Docker plugin&apos;);
+  private exportSpan(span: Span): void {
+    // Would export to OpenTelemetry, Jaeger, etc.
+    // For now, just log
+    this.logger.debug(&apos;Span exported&apos;, {
+      span: JSON.stringify(span)
+    });
+  }
 
-    // Create Docker tools
-    this.tools = [
-      new DockerListTool(context.logger),
-      new DockerRunTool(context.logger),
-      new DockerStopTool(context.logger),
-      new DockerBuildTool(context.logger)
-    ];
+  /**
+   * Calculate total trace duration
+   */
+  private calculateTraceDuration(spans: Span[]): number {
+    if (spans.length === 0) return 0;
 
-    // Register tools
-    const toolExtensions = context.extensions.get&lt;Tool&gt;(&apos;tools&apos;);
+    const start = Math.min(...spans.map(s =&gt; s.startTime));
+    const end = Math.max(...spans.map(s =&gt; s.endTime || s.startTime));
 
-    if (toolExtensions) {
-      for (const tool of this.tools) {
-        toolExtensions.register(tool);
-        context.logger.info(&apos;Registered tool&apos;, { tool: tool.name });
+    return end - start;
+  }
+
+  /**
+   * Calculate trace status
+   */
+  private calculateTraceStatus(spans: Span[]): SpanStatus {
+    if (spans.some(s =&gt; s.status === SpanStatus.ERROR)) {
+      return SpanStatus.ERROR;
+    }
+
+    return SpanStatus.OK;
+  }
+}
+
+interface Span {
+  traceId: string;
+  spanId: string;
+  parentSpanId?: string;
+  name: string;
+  startTime: number;
+  endTime?: number;
+  duration?: number;
+  attributes: Record&lt;string, any&gt;;
+  events: SpanEvent[];
+  status: SpanStatus;
+}
+
+interface SpanEvent {
+  name: string;
+  timestamp: number;
+  attributes: Record&lt;string, any&gt;;
+}
+
+enum SpanStatus {
+  UNSET = &apos;unset&apos;,
+  OK = &apos;ok&apos;,
+  ERROR = &apos;error&apos;
+}
+
+interface Trace {
+  traceId: string;
+  spans: Span[];
+  duration: number;
+  status: SpanStatus;
+}
+</codeblock>
+    <section><title>Traced AI Service</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * AI service with distributed tracing
+ */
+export class TracedAIService {
+  constructor(
+    private provider: AIProvider,
+    private tracer: Tracer,
+    private logger: StructuredLogger
+  ) {}
+
+  /**
+   * Complete with tracing
+   */
+  async complete(
+    request: CompletionRequest,
+    context: TraceContext
+  ): Promise&lt;CompletionResponse&gt; {
+    // Create span for AI request
+    const span = this.tracer.startSpan(&apos;ai.complete&apos;, context, {
+      provider: this.provider.constructor.name,
+      model: request.model,
+      messageCount: request.messages.length,
+      temperature: request.temperature
+    });
+
+    try {
+      // Add event for request start
+      this.tracer.addEvent(span, &apos;request.started&apos;, {
+        inputTokens: this.estimateTokens(request.messages)
+      });
+
+      // Call AI provider
+      const response = await this.provider.complete(request);
+
+      // Add event for response
+      this.tracer.addEvent(span, &apos;response.received&apos;, {
+        outputTokens: response.usage?.outputTokens,
+        fromCache: response.metadata?.fromCache
+      });
+
+      // Update span attributes
+      span.attributes.outputTokens = response.usage?.outputTokens;
+      span.attributes.totalTokens = response.usage?.totalTokens;
+      span.attributes.cost = this.calculateCost(response);
+
+      // End span successfully
+      this.tracer.endSpan(span, SpanStatus.OK);
+
+      return response;
+
+    } catch (error) {
+      // Record error in span
+      this.tracer.setError(span, error as Error);
+      this.tracer.endSpan(span, SpanStatus.ERROR);
+
+      throw error;
+    }
+  }
+
+  /**
+   * Execute tool with tracing
+   */
+  async executeTool(
+    tool: Tool,
+    params: Record&lt;string, any&gt;,
+    context: TraceContext
+  ): Promise&lt;ToolResult&gt; {
+    // Create child span for tool
+    const childContext = context.createChild();
+    const span = this.tracer.startSpan(`tool.${tool.name}`, childContext, {
+      tool: tool.name,
+      params: this.sanitizeParams(params)
+    });
+
+    try {
+      const result = await tool.execute(params, {
+        traceContext: childContext
+      });
+
+      span.attributes.success = result.success;
+      span.attributes.fromCache = result.fromCache || false;
+
+      this.tracer.endSpan(span, SpanStatus.OK);
+
+      return result;
+
+    } catch (error) {
+      this.tracer.setError(span, error as Error);
+      this.tracer.endSpan(span, SpanStatus.ERROR);
+
+      throw error;
+    }
+  }
+
+  private estimateTokens(messages: Message[]): number {
+    return messages.reduce((total, msg) =&gt; {
+      return total + msg.content.split(/\s+/).length;
+    }, 0);
+  }
+
+  private calculateCost(response: CompletionResponse): number {
+    if (!response.usage) return 0;
+
+    const inputCost = response.usage.inputTokens * 0.00001;
+    const outputCost = response.usage.outputTokens * 0.00003;
+
+    return inputCost + outputCost;
+  }
+
+  private sanitizeParams(params: Record&lt;string, any&gt;): Record&lt;string, any&gt; {
+    // Redact sensitive fields
+    const sanitized = { ...params };
+    const sensitiveFields = [&apos;apiKey&apos;, &apos;password&apos;, &apos;token&apos;];
+
+    for (const field of sensitiveFields) {
+      if (field in sanitized) {
+        sanitized[field] = &apos;[REDACTED]&apos;;
       }
     }
 
-    // Subscribe to events
-    context.events.on(&apos;before:execute&apos;, this.onBeforeExecute.bind(this));
+    return sanitized;
+  }
+}
+</codeblock>
+    <section><title>12.4 Metrics Collection</title></section>
+    <p>Collect numerical metrics over time to track performance, usage, and costs.</p>
+    <section><title>Metrics Collector</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Collects and aggregates metrics
+ */
+export class MetricsCollector {
+  private metrics: Map&lt;string, Metric[]&gt; = new Map();
+  private logger: StructuredLogger;
 
-    context.logger.info(&apos;Docker plugin activated&apos;);
+  constructor(logger: StructuredLogger) {
+    this.logger = logger;
   }
 
   /**
-   * Deactivate plugin
+   * Record a counter metric
    */
-  async deactivate(): Promise&lt;void&gt; {
-    // Cleanup resources
-    this.tools = [];
+  incrementCounter(
+    name: string,
+    value: number = 1,
+    tags?: Record&lt;string, string&gt;
+  ): void {
+    this.recordMetric({
+      name,
+      type: MetricType.COUNTER,
+      value,
+      tags: tags || {},
+      timestamp: Date.now()
+    });
   }
 
   /**
-   * Event handler
+   * Record a gauge metric
    */
-  private onBeforeExecute(event: any): void {
-    // Pre-process requests
+  setGauge(
+    name: string,
+    value: number,
+    tags?: Record&lt;string, string&gt;
+  ): void {
+    this.recordMetric({
+      name,
+      type: MetricType.GAUGE,
+      value,
+      tags: tags || {},
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Record a histogram metric
+   */
+  recordHistogram(
+    name: string,
+    value: number,
+    tags?: Record&lt;string, string&gt;
+  ): void {
+    this.recordMetric({
+      name,
+      type: MetricType.HISTOGRAM,
+      value,
+      tags: tags || {},
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Record a timing metric
+   */
+  recordTiming(
+    name: string,
+    durationMs: number,
+    tags?: Record&lt;string, string&gt;
+  ): void {
+    this.recordHistogram(name, durationMs, tags);
+  }
+
+  /**
+   * Store metric
+   */
+  private recordMetric(metric: Metric): void {
+    if (!this.metrics.has(metric.name)) {
+      this.metrics.set(metric.name, []);
+    }
+
+    this.metrics.get(metric.name)!.push(metric);
+
+    // Log metric
+    this.logger.debug(&apos;Metric recorded&apos;, {
+      metric: metric.name,
+      value: metric.value,
+      type: metric.type,
+      tags: metric.tags
+    });
+  }
+
+  /**
+   * Get metric statistics
+   */
+  getStats(
+    name: string,
+    timeRange: TimeRange
+  ): MetricStats | null {
+    const metrics = this.metrics.get(name);
+
+    if (!metrics) return null;
+
+    // Filter by time range
+    const filtered = metrics.filter(m =&gt;
+      m.timestamp &gt;= timeRange.start.getTime() &amp;&amp;
+      m.timestamp &lt;= timeRange.end.getTime()
+    );
+
+    if (filtered.length === 0) return null;
+
+    const values = filtered.map(m =&gt; m.value).sort((a, b) =&gt; a - b);
+
+    return {
+      count: filtered.length,
+      sum: values.reduce((a, b) =&gt; a + b, 0),
+      avg: values.reduce((a, b) =&gt; a + b, 0) / values.length,
+      min: values[0],
+      max: values[values.length - 1],
+      p50: values[Math.floor(values.length * 0.5)],
+      p95: values[Math.floor(values.length * 0.95)],
+      p99: values[Math.floor(values.length * 0.99)]
+    };
+  }
+
+  /**
+   * Export metrics to monitoring system
+   */
+  exportMetrics(): void {
+    // Would export to Prometheus, CloudWatch, etc.
+    for (const [name, metrics] of this.metrics.entries()) {
+      this.logger.info(&apos;Exporting metrics&apos;, {
+        metric: name,
+        count: metrics.length
+      });
+    }
+  }
+}
+
+enum MetricType {
+  COUNTER = &apos;counter&apos;,
+  GAUGE = &apos;gauge&apos;,
+  HISTOGRAM = &apos;histogram&apos;
+}
+
+interface Metric {
+  name: string;
+  type: MetricType;
+  value: number;
+  tags: Record&lt;string, string&gt;;
+  timestamp: number;
+}
+
+interface MetricStats {
+  count: number;
+  sum: number;
+  avg: number;
+  min: number;
+  max: number;
+  p50: number;
+  p95: number;
+  p99: number;
+}
+</codeblock>
+    <section><title>Key Metrics for AI Systems</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Tracks key metrics for AI systems
+ */
+export class AIMetrics {
+  constructor(private collector: MetricsCollector) {}
+
+  /**
+   * Record request metrics
+   */
+  recordRequest(
+    provider: string,
+    duration: number,
+    success: boolean,
+    cached: boolean
+  ): void {
+    // Request count
+    this.collector.incrementCounter(&apos;ai.requests.total&apos;, 1, {
+      provider,
+      status: success ? &apos;success&apos; : &apos;error&apos;,
+      cached: cached.toString()
+    });
+
+    // Request duration
+    this.collector.recordTiming(&apos;ai.requests.duration&apos;, duration, {
+      provider
+    });
+
+    // Cache hit rate
+    if (cached) {
+      this.collector.incrementCounter(&apos;ai.cache.hits&apos;, 1, { provider });
+    } else {
+      this.collector.incrementCounter(&apos;ai.cache.misses&apos;, 1, { provider });
+    }
+  }
+
+  /**
+   * Record token usage
+   */
+  recordTokens(
+    provider: string,
+    inputTokens: number,
+    outputTokens: number
+  ): void {
+    this.collector.incrementCounter(&apos;ai.tokens.input&apos;, inputTokens, {
+      provider
+    });
+
+    this.collector.incrementCounter(&apos;ai.tokens.output&apos;, outputTokens, {
+      provider
+    });
+  }
+
+  /**
+   * Record cost
+   */
+  recordCost(provider: string, cost: number): void {
+    this.collector.incrementCounter(&apos;ai.cost.total&apos;, cost, {
+      provider
+    });
+  }
+
+  /**
+   * Record error
+   */
+  recordError(provider: string, errorType: string): void {
+    this.collector.incrementCounter(&apos;ai.errors.total&apos;, 1, {
+      provider,
+      errorType
+    });
+  }
+
+  /**
+   * Record tool execution
+   */
+  recordToolExecution(
+    tool: string,
+    duration: number,
+    success: boolean
+  ): void {
+    this.collector.incrementCounter(&apos;tools.executions.total&apos;, 1, {
+      tool,
+      status: success ? &apos;success&apos; : &apos;error&apos;
+    });
+
+    this.collector.recordTiming(&apos;tools.executions.duration&apos;, duration, {
+      tool
+    });
+  }
+
+  /**
+   * Record memory usage
+   */
+  recordMemoryUsage(): void {
+    const usage = process.memoryUsage();
+
+    this.collector.setGauge(&apos;system.memory.heap_used&apos;, usage.heapUsed);
+    this.collector.setGauge(&apos;system.memory.heap_total&apos;, usage.heapTotal);
+    this.collector.setGauge(&apos;system.memory.external&apos;, usage.external);
+    this.collector.setGauge(&apos;system.memory.rss&apos;, usage.rss);
+  }
+}
+</codeblock>
+    <section><title>12.5 Error Tracking and Alerting</title></section>
+    <p>Track errors and send alerts when issues occur.</p>
+    <section><title>Error Tracker</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Tracks and categorizes errors
+ */
+export class ErrorTracker {
+  private errors: Map&lt;string, ErrorEntry[]&gt; = new Map();
+  private logger: StructuredLogger;
+  private alerting: AlertingService;
+
+  constructor(
+    logger: StructuredLogger,
+    alerting: AlertingService
+  ) {
+    this.logger = logger;
+    this.alerting = alerting;
+  }
+
+  /**
+   * Track error
+   */
+  async trackError(
+    error: Error,
+    context: ErrorContext
+  ): Promise&lt;void&gt; {
+    const entry: ErrorEntry = {
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      },
+      context,
+      timestamp: Date.now(),
+      fingerprint: this.generateFingerprint(error, context)
+    };
+
+    // Store error
+    if (!this.errors.has(entry.fingerprint)) {
+      this.errors.set(entry.fingerprint, []);
+    }
+
+    this.errors.get(entry.fingerprint)!.push(entry);
+
+    // Log error
+    this.logger.error(&apos;Error tracked&apos;, error, {
+      fingerprint: entry.fingerprint,
+      operation: context.operation,
+      requestId: context.requestId
+    });
+
+    // Check if alert needed
+    await this.checkAlerts(entry.fingerprint);
+  }
+
+  /**
+   * Generate error fingerprint for grouping
+   */
+  private generateFingerprint(error: Error, context: ErrorContext): string {
+    // Group errors by name, message pattern, and operation
+    const parts = [
+      error.name,
+      this.normalizeMessage(error.message),
+      context.operation
+    ];
+
+    return crypto
+      .createHash(&apos;sha256&apos;)
+      .update(parts.join(&apos;:&apos;))
+      .digest(&apos;hex&apos;)
+      .substring(0, 16);
+  }
+
+  /**
+   * Normalize error message to group similar errors
+   */
+  private normalizeMessage(message: string): string {
+    return message
+      .replace(/\d+/g, &apos;N&apos;)           // Numbers -&gt; N
+      .replace(/[a-f0-9-]{36}/g, &apos;UUID&apos;) // UUIDs -&gt; UUID
+      .replace(/&quot;[^&quot;]*&quot;/g, &apos;STR&apos;);    // Strings -&gt; STR
+  }
+
+  /**
+   * Check if alerts should be sent
+   */
+  private async checkAlerts(fingerprint: string): Promise&lt;void&gt; {
+    const errors = this.errors.get(fingerprint) || [];
+
+    // Alert on first occurrence
+    if (errors.length === 1) {
+      await this.alerting.send({
+        severity: AlertSeverity.INFO,
+        title: &apos;New error type detected&apos;,
+        message: `${errors[0].error.name}: ${errors[0].error.message}`,
+        context: errors[0].context
+      });
+    }
+
+    // Alert on spike (&gt;10 in last 5 minutes)
+    const recentErrors = errors.filter(
+      e =&gt; Date.now() - e.timestamp &lt; 5 * 60 * 1000
+    );
+
+    if (recentErrors.length &gt;= 10) {
+      await this.alerting.send({
+        severity: AlertSeverity.WARNING,
+        title: &apos;Error spike detected&apos;,
+        message: `${recentErrors.length} occurrences in 5 minutes`,
+        context: errors[0].context
+      });
+    }
+
+    // Alert on sustained high rate (&gt;50 in last hour)
+    const lastHourErrors = errors.filter(
+      e =&gt; Date.now() - e.timestamp &lt; 60 * 60 * 1000
+    );
+
+    if (lastHourErrors.length &gt;= 50) {
+      await this.alerting.send({
+        severity: AlertSeverity.CRITICAL,
+        title: &apos;High error rate&apos;,
+        message: `${lastHourErrors.length} occurrences in last hour`,
+        context: errors[0].context
+      });
+    }
+  }
+
+  /**
+   * Get error statistics
+   */
+  getStats(timeRange: TimeRange): ErrorStats {
+    let totalErrors = 0;
+    const errorsByType = new Map&lt;string, number&gt;();
+    const errorsByOperation = new Map&lt;string, number&gt;();
+
+    for (const [fingerprint, entries] of this.errors.entries()) {
+      const filtered = entries.filter(
+        e =&gt; e.timestamp &gt;= timeRange.start.getTime() &amp;&amp;
+             e.timestamp &lt;= timeRange.end.getTime()
+      );
+
+      totalErrors += filtered.length;
+
+      for (const entry of filtered) {
+        // Count by type
+        const type = entry.error.name;
+        errorsByType.set(type, (errorsByType.get(type) || 0) + 1);
+
+        // Count by operation
+        const op = entry.context.operation;
+        errorsByOperation.set(op, (errorsByOperation.get(op) || 0) + 1);
+      }
+    }
+
+    return {
+      totalErrors,
+      uniqueErrors: this.errors.size,
+      errorsByType: Object.fromEntries(errorsByType),
+      errorsByOperation: Object.fromEntries(errorsByOperation)
+    };
+  }
+}
+
+interface ErrorEntry {
+  error: {
+    name: string;
+    message: string;
+    stack?: string;
+  };
+  context: ErrorContext;
+  timestamp: number;
+  fingerprint: string;
+}
+
+interface ErrorContext {
+  requestId?: string;
+  userId?: string;
+  operation: string;
+  [key: string]: any;
+}
+
+interface ErrorStats {
+  totalErrors: number;
+  uniqueErrors: number;
+  errorsByType: Record&lt;string, number&gt;;
+  errorsByOperation: Record&lt;string, number&gt;;
+}
+</codeblock>
+    <section><title>Alerting Service</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Sends alerts via multiple channels
+ */
+export class AlertingService {
+  private channels: AlertChannel[] = [];
+  private logger: StructuredLogger;
+
+  constructor(logger: StructuredLogger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Add alert channel
+   */
+  addChannel(channel: AlertChannel): void {
+    this.channels.push(channel);
+  }
+
+  /**
+   * Send alert
+   */
+  async send(alert: Alert): Promise&lt;void&gt; {
+    this.logger.info(&apos;Sending alert&apos;, {
+      severity: alert.severity,
+      title: alert.title
+    });
+
+    // Send to all channels
+    await Promise.all(
+      this.channels.map(channel =&gt; channel.send(alert))
+    );
+  }
+}
+
+interface Alert {
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  context?: Record&lt;string, any&gt;;
+}
+
+enum AlertSeverity {
+  INFO = &apos;info&apos;,
+  WARNING = &apos;warning&apos;,
+  CRITICAL = &apos;critical&apos;
+}
+
+interface AlertChannel {
+  send(alert: Alert): Promise&lt;void&gt;;
+}
+
+/**
+ * Slack alert channel
+ */
+export class SlackAlertChannel implements AlertChannel {
+  constructor(private webhookUrl: string) {}
+
+  async send(alert: Alert): Promise&lt;void&gt; {
+    const color = {
+      [AlertSeverity.INFO]: &apos;#36a64f&apos;,
+      [AlertSeverity.WARNING]: &apos;#ff9900&apos;,
+      [AlertSeverity.CRITICAL]: &apos;#ff0000&apos;
+    }[alert.severity];
+
+    await fetch(this.webhookUrl, {
+      method: &apos;POST&apos;,
+      headers: { &apos;Content-Type&apos;: &apos;application/json&apos; },
+      body: JSON.stringify({
+        attachments: [{
+          color,
+          title: alert.title,
+          text: alert.message,
+          fields: alert.context ? Object.entries(alert.context).map(([key, value]) =&gt; ({
+            title: key,
+            value: String(value),
+            short: true
+          })) : []
+        }]
+      })
+    });
   }
 }
 
 /**
- * Docker list containers tool
+ * Email alert channel
  */
-class DockerListTool implements Tool {
-  readonly name = &apos;docker_list&apos;;
-  readonly description = &apos;List Docker containers&apos;;
-  readonly parameters = {
-    all: {
-      type: &apos;boolean&apos; as const,
-      description: &apos;Show all containers (default: running only)&apos;,
-      required: false
+export class EmailAlertChannel implements AlertChannel {
+  constructor(private emailService: any) {}
+
+  async send(alert: Alert): Promise&lt;void&gt; {
+    await this.emailService.send({
+      to: &apos;ops@example.com&apos;,
+      subject: `[${alert.severity.toUpperCase()}] ${alert.title}`,
+      body: alert.message
+    });
+  }
+}
+</codeblock>
+    <section><title>12.6 Health Checks</title></section>
+    <p>Health checks verify system components are working correctly.</p>
+    <section><title>Health Check System</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Health check system
+ */
+export class HealthCheckSystem {
+  private checks: Map&lt;string, HealthCheck&gt; = new Map();
+  private logger: StructuredLogger;
+
+  constructor(logger: StructuredLogger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Register health check
+   */
+  register(name: string, check: HealthCheck): void {
+    this.checks.set(name, check);
+  }
+
+  /**
+   * Run all health checks
+   */
+  async runAll(): Promise&lt;HealthReport&gt; {
+    const results: Record&lt;string, HealthCheckResult&gt; = {};
+
+    for (const [name, check] of this.checks.entries()) {
+      try {
+        const startTime = performance.now();
+
+        const result = await Promise.race([
+          check.check(),
+          this.timeout(5000) // 5 second timeout
+        ]);
+
+        const duration = performance.now() - startTime;
+
+        results[name] = {
+          status: result ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,
+          duration,
+          message: result ? &apos;OK&apos; : &apos;Failed&apos;
+        };
+
+      } catch (error) {
+        results[name] = {
+          status: HealthStatus.UNHEALTHY,
+          duration: 0,
+          message: (error as Error).message
+        };
+      }
     }
-  };
 
-  constructor(private logger: Logger) {}
+    const overallStatus = Object.values(results).every(
+      r =&gt; r.status === HealthStatus.HEALTHY
+    ) ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY;
 
-  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
-    this.logger.info(&apos;Listing Docker containers&apos;, { all: params.all });
+    return {
+      status: overallStatus,
+      checks: results,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Timeout helper
+   */
+  private timeout(ms: number): Promise&lt;never&gt; {
+    return new Promise((_, reject) =&gt;
+      setTimeout(() =&gt; reject(new Error(&apos;Health check timeout&apos;)), ms)
+    );
+  }
+}
+
+interface HealthCheck {
+  check(): Promise&lt;boolean&gt;;
+}
+
+interface HealthCheckResult {
+  status: HealthStatus;
+  duration: number;
+  message: string;
+}
+
+enum HealthStatus {
+  HEALTHY = &apos;healthy&apos;,
+  UNHEALTHY = &apos;unhealthy&apos;,
+  DEGRADED = &apos;degraded&apos;
+}
+
+interface HealthReport {
+  status: HealthStatus;
+  checks: Record&lt;string, HealthCheckResult&gt;;
+  timestamp: string;
+}
+</codeblock>
+    <section><title>Common Health Checks</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Database health check
+ */
+export class DatabaseHealthCheck implements HealthCheck {
+  constructor(private db: any) {}
+
+  async check(): Promise&lt;boolean&gt; {
+    try {
+      await this.db.query(&apos;SELECT 1&apos;);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+/**
+ * AI provider health check
+ */
+export class AIProviderHealthCheck implements HealthCheck {
+  constructor(private provider: AIProvider) {}
+
+  async check(): Promise&lt;boolean&gt; {
+    try {
+      const health = await this.provider.healthCheck();
+      return health.healthy;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+/**
+ * Disk space health check
+ */
+export class DiskSpaceHealthCheck implements HealthCheck {
+  constructor(private minFreeGB: number = 1) {}
+
+  async check(): Promise&lt;boolean&gt; {
+    const { available } = await import(&apos;fs&apos;).promises.statfs(&apos;/&apos;);
+    const freeGB = available / 1024 / 1024 / 1024;
+
+    return freeGB &gt;= this.minFreeGB;
+  }
+}
+
+/**
+ * Memory health check
+ */
+export class MemoryHealthCheck implements HealthCheck {
+  constructor(private maxUsagePercent: number = 80) {}
+
+  async check(): Promise&lt;boolean&gt; {
+    const usage = process.memoryUsage();
+    const usagePercent = (usage.heapUsed / usage.heapTotal) * 100;
+
+    return usagePercent &lt; this.maxUsagePercent;
+  }
+}
+</codeblock>
+    <section><title>12.7 Reliability Patterns</title></section>
+    <p>Implement patterns that improve system reliability.</p>
+    <section><title>Circuit Breaker</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Circuit breaker prevents cascading failures
+ */
+export class CircuitBreaker {
+  private state: CircuitState = CircuitState.CLOSED;
+  private failures = 0;
+  private lastFailureTime = 0;
+  private successCount = 0;
+
+  constructor(
+    private options: CircuitBreakerOptions,
+    private logger: StructuredLogger
+  ) {}
+
+  /**
+   * Execute function with circuit breaker
+   */
+  async execute&lt;T&gt;(fn: () =&gt; Promise&lt;T&gt;): Promise&lt;T&gt; {
+    // Check circuit state
+    if (this.state === CircuitState.OPEN) {
+      // Check if we should try again
+      if (Date.now() - this.lastFailureTime &gt;= this.options.resetTimeout) {
+        this.logger.info(&apos;Circuit breaker: Entering half-open state&apos;);
+        this.state = CircuitState.HALF_OPEN;
+      } else {
+        throw new Error(&apos;Circuit breaker is OPEN&apos;);
+      }
+    }
 
     try {
-      const { exec } = await import(&apos;child_process&apos;);
-      const { promisify } = await import(&apos;util&apos;);
-      const execAsync = promisify(exec);
+      const result = await fn();
 
-      const cmd = params.all ? &apos;docker ps -a&apos; : &apos;docker ps&apos;;
-      const { stdout } = await execAsync(cmd);
+      // Success
+      this.onSuccess();
 
-      return {
-        success: true,
-        output: stdout
-      };
+      return result;
 
     } catch (error) {
-      return {
-        success: false,
-        error: (error as Error).message
-      };
+      // Failure
+      this.onFailure();
+
+      throw error;
     }
   }
 
-  validateParameters(params: any): { valid: boolean; errors: any[] } {
-    return { valid: true, errors: [] };
-  }
-}
+  /**
+   * Handle success
+   */
+  private onSuccess(): void {
+    this.failures = 0;
 
-// Additional Docker tools...
-class DockerRunTool implements Tool {
-  readonly name = &apos;docker_run&apos;;
-  readonly description = &apos;Run a Docker container&apos;;
-  readonly parameters = {
-    image: {
-      type: &apos;string&apos; as const,
-      description: &apos;Docker image name&apos;,
-      required: true
-    },
-    command: {
-      type: &apos;string&apos; as const,
-      description: &apos;Command to run&apos;,
-      required: false
-    },
-    ports: {
-      type: &apos;array&apos; as const,
-      description: &apos;Port mappings (e.g., [&quot;8080:80&quot;])&apos;,
-      required: false
+    if (this.state === CircuitState.HALF_OPEN) {
+      this.successCount++;
+
+      if (this.successCount &gt;= this.options.successThreshold) {
+        this.logger.info(&apos;Circuit breaker: Closing circuit&apos;);
+        this.state = CircuitState.CLOSED;
+        this.successCount = 0;
+      }
     }
-  };
-
-  constructor(private logger: Logger) {}
-
-  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
-    // Implementation
-    return { success: true };
   }
 
-  validateParameters(params: any): { valid: boolean; errors: any[] } {
-    const errors = [];
+  /**
+   * Handle failure
+   */
+  private onFailure(): void {
+    this.failures++;
+    this.lastFailureTime = Date.now();
 
-    if (!params.image) {
-      errors.push({ parameter: &apos;image&apos;, message: &apos;Image is required&apos; });
+    if (this.failures &gt;= this.options.failureThreshold) {
+      this.logger.warn(&apos;Circuit breaker: Opening circuit&apos;, {
+        failures: this.failures
+      });
+
+      this.state = CircuitState.OPEN;
+    }
+  }
+
+  /**
+   * Get circuit state
+   */
+  getState(): CircuitState {
+    return this.state;
+  }
+}
+
+enum CircuitState {
+  CLOSED = &apos;closed&apos;,     // Normal operation
+  OPEN = &apos;open&apos;,         // Reject all requests
+  HALF_OPEN = &apos;half_open&apos; // Try limited requests
+}
+
+interface CircuitBreakerOptions {
+  failureThreshold: number;    // Failures before opening
+  successThreshold: number;    // Successes before closing
+  resetTimeout: number;        // ms before trying again
+}
+</codeblock>
+    <section><title>Retry with Exponential Backoff</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Retry failed operations with exponential backoff
+ */
+export class RetryPolicy {
+  constructor(
+    private options: RetryOptions,
+    private logger: StructuredLogger
+  ) {}
+
+  /**
+   * Execute with retry
+   */
+  async execute&lt;T&gt;(fn: () =&gt; Promise&lt;T&gt;): Promise&lt;T&gt; {
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt &lt; this.options.maxAttempts; attempt++) {
+      try {
+        return await fn();
+
+      } catch (error) {
+        lastError = error as Error;
+
+        // Check if retryable
+        if (!this.isRetryable(error as Error)) {
+          throw error;
+        }
+
+        // Last attempt - don&apos;t wait
+        if (attempt === this.options.maxAttempts - 1) {
+          break;
+        }
+
+        // Calculate backoff
+        const backoffMs = this.calculateBackoff(attempt);
+
+        this.logger.info(&apos;Retrying after error&apos;, {
+          attempt: attempt + 1,
+          maxAttempts: this.options.maxAttempts,
+          backoffMs,
+          error: (error as Error).message
+        });
+
+        // Wait before retry
+        await this.sleep(backoffMs);
+      }
     }
 
-    return { valid: errors.length === 0, errors };
+    throw lastError;
+  }
+
+  /**
+   * Check if error is retryable
+   */
+  private isRetryable(error: Error): boolean {
+    const retryableErrors = [
+      &apos;RateLimitError&apos;,
+      &apos;TimeoutError&apos;,
+      &apos;NetworkError&apos;,
+      &apos;ServiceUnavailableError&apos;
+    ];
+
+    return retryableErrors.includes(error.name);
+  }
+
+  /**
+   * Calculate exponential backoff
+   */
+  private calculateBackoff(attempt: number): number {
+    const baseDelay = this.options.baseDelayMs || 1000;
+    const maxDelay = this.options.maxDelayMs || 30000;
+
+    // Exponential: baseDelay * 2^attempt
+    let delay = baseDelay * Math.pow(2, attempt);
+
+    // Add jitter to prevent thundering herd
+    if (this.options.jitter) {
+      delay = delay * (0.5 + Math.random() * 0.5);
+    }
+
+    // Cap at max delay
+    return Math.min(delay, maxDelay);
+  }
+
+  private sleep(ms: number): Promise&lt;void&gt; {
+    return new Promise(resolve =&gt; setTimeout(resolve, ms));
   }
 }
 
-class DockerStopTool implements Tool {
-  // Implementation
-  readonly name = &apos;docker_stop&apos;;
-  readonly description = &apos;Stop a Docker container&apos;;
-  readonly parameters = {};
+interface RetryOptions {
+  maxAttempts: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+  jitter?: boolean;
+}
+</codeblock>
+    <section><title>12.8 Dashboards and Visualization</title></section>
+    <p>Create dashboards to visualize metrics and system health.</p>
+    <section><title>Dashboard Data Provider</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Provides data for dashboards
+ */
+export class DashboardDataProvider {
+  constructor(
+    private metrics: MetricsCollector,
+    private logs: LogQuery,
+    private tracer: Tracer
+  ) {}
 
-  constructor(private logger: Logger) {}
-
-  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
-    return { success: true };
+  /**
+   * Get overview metrics
+   */
+  async getOverview(timeRange: TimeRange): Promise&lt;DashboardOverview&gt; {
+    return {
+      requests: await this.getRequestMetrics(timeRange),
+      errors: await this.getErrorMetrics(timeRange),
+      performance: await this.getPerformanceMetrics(timeRange),
+      cost: await this.getCostMetrics(timeRange)
+    };
   }
 
-  validateParameters(params: any): { valid: boolean; errors: any[] } {
-    return { valid: true, errors: [] };
+  /**
+   * Get request metrics
+   */
+  private async getRequestMetrics(timeRange: TimeRange): Promise&lt;RequestMetrics&gt; {
+    const totalRequests = this.metrics.getStats(&apos;ai.requests.total&apos;, timeRange);
+    const successRate = await this.calculateSuccessRate(timeRange);
+    const cacheHitRate = await this.calculateCacheHitRate(timeRange);
+
+    return {
+      total: totalRequests?.count || 0,
+      successRate,
+      cacheHitRate
+    };
+  }
+
+  /**
+   * Get error metrics
+   */
+  private async getErrorMetrics(timeRange: TimeRange): Promise&lt;ErrorMetrics&gt; {
+    const errorRate = await this.logs.getErrorRate(timeRange);
+    const errorStats = await this.logs.query({
+      level: &apos;error&apos;,
+      startTime: timeRange.start,
+      endTime: timeRange.end
+    });
+
+    return {
+      rate: errorRate,
+      total: errorStats.length
+    };
+  }
+
+  /**
+   * Get performance metrics
+   */
+  private async getPerformanceMetrics(timeRange: TimeRange): Promise&lt;PerformanceMetrics&gt; {
+    const durationStats = this.metrics.getStats(&apos;ai.requests.duration&apos;, timeRange);
+
+    return {
+      avgLatency: durationStats?.avg || 0,
+      p95Latency: durationStats?.p95 || 0,
+      p99Latency: durationStats?.p99 || 0
+    };
+  }
+
+  /**
+   * Get cost metrics
+   */
+  private async getCostMetrics(timeRange: TimeRange): Promise&lt;CostMetrics&gt; {
+    const costStats = this.metrics.getStats(&apos;ai.cost.total&apos;, timeRange);
+    const tokenStats = this.metrics.getStats(&apos;ai.tokens.input&apos;, timeRange);
+
+    return {
+      total: costStats?.sum || 0,
+      avgPerRequest: costStats?.avg || 0,
+      totalTokens: tokenStats?.sum || 0
+    };
+  }
+
+  private async calculateSuccessRate(timeRange: TimeRange): Promise&lt;number&gt; {
+    // Implementation would query actual metrics
+    return 0.98; // 98% success rate
+  }
+
+  private async calculateCacheHitRate(timeRange: TimeRange): Promise&lt;number&gt; {
+    const hits = this.metrics.getStats(&apos;ai.cache.hits&apos;, timeRange);
+    const misses = this.metrics.getStats(&apos;ai.cache.misses&apos;, timeRange);
+
+    const totalHits = hits?.sum || 0;
+    const totalMisses = misses?.sum || 0;
+    const total = totalHits + totalMisses;
+
+    return total &gt; 0 ? totalHits / total : 0;
   }
 }
 
-class DockerBuildTool implements Tool {
-  // Implementation
-  readonly name = &apos;docker_build&apos;;
-  readonly description = &apos;Build a Docker image&apos;;
-  readonly parameters = {};
-
-  constructor(private logger: Logger) {}
-
-  async execute(params: any, context: any): Promise&lt;ToolResult&gt; {
-    return { success: true };
-  }
-
-  validateParameters(params: any): { valid: boolean; errors: any[] } {
-    return { valid: true, errors: [] };
-  }
+interface DashboardOverview {
+  requests: RequestMetrics;
+  errors: ErrorMetrics;
+  performance: PerformanceMetrics;
+  cost: CostMetrics;
 }
-</codeblock>
-    <section><title>Plugin Package Structure</title></section>
-    <codeblock>@ollama-code/plugin-docker/
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── index.ts          # Plugin entry point
-│   ├── tools/            # Docker tools
-│   │   ├── list.ts
-│   │   ├── run.ts
-│   │   ├── stop.ts
-│   │   └── build.ts
-│   └── types.ts          # Type definitions
-├── tests/                # Plugin tests
-│   └── plugin.test.ts
-└── README.md             # Plugin documentation
-</codeblock>
-    <codeblock outputclass="language-json">{
-  &quot;name&quot;: &quot;@ollama-code/plugin-docker&quot;,
-  &quot;version&quot;: &quot;1.0.0&quot;,
-  &quot;description&quot;: &quot;Docker plugin for Ollama Code&quot;,
-  &quot;main&quot;: &quot;dist/index.js&quot;,
-  &quot;types&quot;: &quot;dist/index.d.ts&quot;,
-  &quot;ollamaCodePlugin&quot;: true,
-  &quot;keywords&quot;: [&quot;ollama-code-plugin&quot;, &quot;docker&quot;, &quot;containers&quot;],
-  &quot;peerDependencies&quot;: {
-    &quot;@ollama-code/core&quot;: &quot;^1.0.0&quot;
-  }
+
+interface RequestMetrics {
+  total: number;
+  successRate: number;
+  cacheHitRate: number;
 }
-</codeblock>
-    <section><title>13.7 Plugin Marketplace</title></section>
-    <p>Build a marketplace for discovering and sharing plugins.</p>
-    <section><title>Publishing a Plugin</title></section>
-    <codeblock outputclass="language-bash"># 1. Build plugin
-npm run build
 
-# 2. Test plugin
-npm test
+interface ErrorMetrics {
+  rate: number;
+  total: number;
+}
 
-# 3. Publish to npm
-npm publish --access public
+interface PerformanceMetrics {
+  avgLatency: number;
+  p95Latency: number;
+  p99Latency: number;
+}
 
-# 4. Register with marketplace
-ollama-code plugin register @ollama-code/plugin-docker
-</codeblock>
-    <section><title>CLI Commands</title></section>
-    <codeblock outputclass="language-bash"># Search for plugins
-ollama-code plugin search docker
-
-# Install plugin
-ollama-code plugin install docker
-
-# List installed plugins
-ollama-code plugin list
-
-# Uninstall plugin
-ollama-code plugin uninstall docker
-
-# Update plugin
-ollama-code plugin update docker
+interface CostMetrics {
+  total: number;
+  avgPerRequest: number;
+  totalTokens: number;
+}
 </codeblock>
     <section><title>Exercises</title></section>
-    <section><title>Exercise 1: Create a Custom Plugin</title></section>
-    <p>Build a plugin that adds Kubernetes support.</p>
+    <section><title>Exercise 1: Build a Real-Time Dashboard</title></section>
+    <p><b>Goal:</b> Create a real-time dashboard showing system metrics.</p>
     <p><b>Requirements:</b>
-- Tool to list pods
-- Tool to describe resources
-- Tool to apply manifests
-- Proper error handling</p>
-    <section><title>Exercise 2: Build a Plugin Marketplace API</title></section>
-    <p>Create a REST API for plugin discovery.</p>
-    <p><b>Endpoints:</b>
-- <codeph>GET /plugins</codeph> - List all plugins
-- <codeph>GET /plugins/:id</codeph> - Get plugin details
-- <codeph>POST /plugins</codeph> - Publish plugin
-- <codeph>GET /search?q=...</codeph> - Search plugins</p>
-    <section><title>Exercise 3: Implement Plugin Hot Reload</title></section>
-    <p>Add ability to reload plugins without restarting.</p>
+1. Display key metrics (requests/sec, error rate, latency)
+2. Auto-refresh every 10 seconds
+3. Show trends (up/down arrows)
+4. Highlight anomalies
+5. Export to JSON</p>
+    <section><title>Exercise 2: Implement SLO Tracking</title></section>
+    <p><b>Goal:</b> Track Service Level Objectives (SLOs) and alert on violations.</p>
     <p><b>Requirements:</b>
-- Detect plugin file changes
-- Safely unload old version
-- Load new version
-- Preserve plugin state</p>
+1. Define SLOs (e.g., 99% requests &lt; 2s)
+2. Track error budgets
+3. Calculate SLO compliance
+4. Alert when SLO at risk
+5. Generate SLO reports</p>
+    <section><title>Exercise 3: Create Incident Response System</title></section>
+    <p><b>Goal:</b> Automate incident detection and response.</p>
+    <p><b>Requirements:</b>
+1. Detect incidents from metrics/logs
+2. Create incident record
+3. Send alerts to on-call
+4. Track MTTR (Mean Time To Resolution)
+5. Generate post-mortems</p>
     <section><title>Summary</title></section>
-    <p>You built a complete plugin architecture that enables extensibility.</p>
+    <p>In this chapter, you built comprehensive observability for your AI assistant.</p>
     <section><title>Key Concepts</title></section>
     <ol>
       <li>
-        <b>Extension Points</b>
-        - Well-defined customization locations
+        <b>Structured Logging</b>
+        - Machine-parseable logs with full context
       </li>
       <li>
-        <b>Plugin System</b>
-        - Complete lifecycle management
+        <b>Distributed Tracing</b>
+        - Track requests through entire system
       </li>
       <li>
-        <b>Plugin Discovery</b>
-        - npm, filesystem, registry
+        <b>Metrics Collection</b>
+        - Track performance, cost, and usage
       </li>
       <li>
-        <b>Isolation</b>
-        - Sandboxing for security
+        <b>Error Tracking</b>
+        - Categorize and alert on errors
       </li>
       <li>
-        <b>Versioning</b>
-        - Compatibility management
+        <b>Health Checks</b>
+        - Verify system components
       </li>
       <li>
-        <b>Marketplace</b>
-        - Ecosystem for sharing
+        <b>Reliability Patterns</b>
+        - Circuit breaker, retry, fallback
+      </li>
+      <li>
+        <b>Dashboards</b>
+        - Visualize system health
       </li>
     </ol>
-    <section><title>Platform Growth</title></section>
-    <codeblock>Week 0: No plugins
-Week 4: 5 core plugins
-Week 12: 20 community plugins
-Week 24: 50+ plugins
-Year 1: 100+ plugins, thriving ecosystem
+    <section><title>Observability Stack</title></section>
+    <codeblock>Logs (Structured JSON)
+├─ What happened
+├─ Full context
+└─ Searchable
+
+Metrics (Time Series)
+├─ How much/how fast
+├─ Trends over time
+└─ Alerting
+
+Traces (Request Flow)
+├─ Where time spent
+├─ Bottleneck identification
+└─ Error propagation
 </codeblock>
-    <p><b>Next:</b> Chapter 14: IDE Integration →</p>
-    <p><i>Chapter 13 | Plugin Architecture and Extension Points | Complete</i></p>
+    <section><title>Real-World Impact</title></section>
+    <p><b>Before Observability:</b>
+- 60+ minutes to debug issues
+- No visibility into performance
+- Reactive incident response
+- Unknown cost drivers</p>
+    <p><b>After Observability:</b>
+- 2 minutes to identify root cause
+- Real-time performance monitoring
+- Proactive issue detection
+- Complete cost visibility</p>
+    <section><title>Production Readiness Achieved!</title></section>
+    <p>With Parts I-IV complete, you now have a production-ready AI coding assistant:</p>
+    <ul>
+      <li>
+        ✅
+        <b>Part I</b>
+        : Multi-provider AI, DI, services
+      </li>
+      <li>
+        ✅
+        <b>Part II</b>
+        : Tools, streaming, conversations
+      </li>
+      <li>
+        ✅
+        <b>Part III</b>
+        : VCS, NL routing, security
+      </li>
+      <li>
+        ✅
+        <b>Part IV</b>
+        : Testing, performance, observability
+      </li>
+    </ul>
+    <section><title>Next Steps</title></section>
+    <p>In <b>Part V: Extensibility</b>, you&apos;ll learn how to extend your system with plugins, IDE integrations, and custom tools.</p>
+    <p><i>Chapter 12 | Monitoring, Observability, and Reliability | Complete</i>
+<i>Part IV | Production Readiness | Complete</i></p>
   </body>
 </topic>

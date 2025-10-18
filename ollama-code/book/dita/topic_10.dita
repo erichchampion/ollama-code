@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic id="topic_10">
-  <title>Chapter 10: Testing AI Systems</title>
+  <title>Chapter 9: Security, Privacy, and Sandboxing</title>
   <body>
     <section><title>Table of Contents</title></section>
     <ul>
       <li>
-        10.1 Testing Challenges for AI Systems
+        9.1 Security Overview
       </li>
       <li>
-        10.2 Unit Testing Strategy
+        9.2 Sandboxed Execution
       </li>
       <li>
-        10.3 Mock AI Providers
+        9.3 Credential Management
       </li>
       <li>
-        10.4 Integration Testing
+        9.4 Input Validation and Sanitization
       </li>
       <li>
-        10.5 Synthetic Test Generation
+        9.5 Rate Limiting and Quotas
       </li>
       <li>
-        10.6 Performance Testing
+        9.6 Privacy-Preserving AI Interactions
       </li>
       <li>
-        10.7 Quality-Based Assertions
+        9.7 Audit Logging and Compliance
       </li>
       <li>
-        10.8 Regression Detection
+        9.8 Security Best Practices
       </li>
       <li>
         Exercises
@@ -36,1860 +36,2427 @@
         Summary
       </li>
     </ul>
-    <section><title>10.1 Testing Challenges for AI Systems</title></section>
-    <p>Testing AI systems is fundamentally different from testing traditional software. AI outputs are non-deterministic, models change over time, and correctness is often subjective.</p>
-    <section><title>Traditional vs AI Testing</title></section>
-    <codeblock outputclass="language-typescript">// Traditional: Deterministic
-function add(a: number, b: number): number {
-  return a + b;
-}
-
-test(&apos;add function&apos;, () =&gt; {
-  expect(add(2, 2)).toBe(4); // ✓ Always passes
-  expect(add(0, 0)).toBe(0); // ✓ Always passes
-  expect(add(-1, 1)).toBe(0); // ✓ Always passes
-});
-
-// AI: Non-deterministic
-async function generateCode(prompt: string): Promise&lt;string&gt; {
-  return ai.complete(prompt);
-}
-
-test(&apos;generate code&apos;, async () =&gt; {
-  const code = await generateCode(&apos;Write a function to add numbers&apos;);
-
-  // ❌ This fails - output varies every time
-  expect(code).toBe(&apos;function add(a, b) { return a + b; }&apos;);
-
-  // ❓ How do you test this?
-});
-</codeblock>
-    <section><title>Key Challenges</title></section>
+    <section><title>9.1 Security Overview</title></section>
+    <p>AI coding assistants have significant power over your codebase and infrastructure. Without proper security controls, they can:</p>
+    <ul>
+      <li>
+        Execute arbitrary commands
+      </li>
+      <li>
+        Access sensitive files and credentials
+      </li>
+      <li>
+        Modify or delete critical code
+      </li>
+      <li>
+        Expose private data to AI providers
+      </li>
+      <li>
+        Exceed budget limits
+      </li>
+      <li>
+        Violate compliance requirements
+      </li>
+    </ul>
+    <p>This chapter builds comprehensive security controls to make your AI assistant safe for production use.</p>
+    <section><title>Threat Model</title></section>
     <codeblock outputclass="language-typescript">/**
- * Challenges in testing AI systems
+ * Security threats for AI coding assistants
  */
-export enum AITestingChallenge {
-  /** Outputs vary between runs */
-  NON_DETERMINISTIC = &apos;non_deterministic&apos;,
+export enum ThreatCategory {
+  /** Unauthorized access to files, credentials, or systems */
+  UNAUTHORIZED_ACCESS = &apos;unauthorized_access&apos;,
 
-  /** No single &quot;correct&quot; answer */
-  SUBJECTIVE_QUALITY = &apos;subjective_quality&apos;,
+  /** Execution of destructive operations */
+  DESTRUCTIVE_OPERATIONS = &apos;destructive_operations&apos;,
 
-  /** Models update, behavior changes */
-  MODEL_DRIFT = &apos;model_drift&apos;,
+  /** Data leakage to AI providers or logs */
+  DATA_LEAKAGE = &apos;data_leakage&apos;,
 
-  /** Slow, expensive API calls */
-  SLOW_EXPENSIVE = &apos;slow_expensive&apos;,
+  /** Resource exhaustion (API calls, disk, memory) */
+  RESOURCE_EXHAUSTION = &apos;resource_exhaustion&apos;,
 
-  /** Hard to test edge cases */
-  EDGE_CASE_COVERAGE = &apos;edge_case_coverage&apos;,
+  /** Injection attacks through prompts or parameters */
+  INJECTION_ATTACKS = &apos;injection_attacks&apos;,
 
-  /** Difficult to isolate failures */
-  DEBUGGING = &apos;debugging&apos;
+  /** Privilege escalation */
+  PRIVILEGE_ESCALATION = &apos;privilege_escalation&apos;
+}
+
+export interface Threat {
+  category: ThreatCategory;
+  description: string;
+  severity: &apos;critical&apos; | &apos;high&apos; | &apos;medium&apos; | &apos;low&apos;;
+  mitigation: string[];
+  examples: string[];
+}
+</codeblock>
+    <section><title>Common Threats</title></section>
+    <codeblock outputclass="language-typescript">const threats: Threat[] = [
+  {
+    category: ThreatCategory.DESTRUCTIVE_OPERATIONS,
+    description: &apos;AI executes commands that delete or corrupt data&apos;,
+    severity: &apos;critical&apos;,
+    mitigation: [
+      &apos;Require approval for destructive operations&apos;,
+      &apos;Implement sandboxing&apos;,
+      &apos;Use read-only mode by default&apos;,
+      &apos;Maintain audit trail&apos;
+    ],
+    examples: [
+      &apos;DROP DATABASE production&apos;,
+      &apos;rm -rf /&apos;,
+      &apos;git push --force origin main&apos;,
+      &apos;DELETE FROM users&apos;
+    ]
+  },
+  {
+    category: ThreatCategory.DATA_LEAKAGE,
+    description: &apos;Sensitive data sent to AI providers or logged&apos;,
+    severity: &apos;critical&apos;,
+    mitigation: [
+      &apos;Filter sensitive patterns before AI calls&apos;,
+      &apos;Encrypt credentials at rest&apos;,
+      &apos;Redact logs&apos;,
+      &apos;Use private AI deployments for sensitive data&apos;
+    ],
+    examples: [
+      &apos;API keys in code review&apos;,
+      &apos;Database passwords in logs&apos;,
+      &apos;Customer PII in prompts&apos;,
+      &apos;Private tokens in conversation history&apos;
+    ]
+  },
+  {
+    category: ThreatCategory.UNAUTHORIZED_ACCESS,
+    description: &apos;Access to files or systems outside allowed scope&apos;,
+    severity: &apos;high&apos;,
+    mitigation: [
+      &apos;Implement path allowlist/blocklist&apos;,
+      &apos;Use principle of least privilege&apos;,
+      &apos;Sandbox file system access&apos;,
+      &apos;Validate all paths&apos;
+    ],
+    examples: [
+      &apos;Reading /etc/shadow&apos;,
+      &apos;Accessing ~/.ssh/id_rsa&apos;,
+      &apos;Reading .env files&apos;,
+      &apos;Accessing parent directories&apos;
+    ]
+  },
+  {
+    category: ThreatCategory.RESOURCE_EXHAUSTION,
+    description: &apos;Excessive API calls or resource usage&apos;,
+    severity: &apos;medium&apos;,
+    mitigation: [
+      &apos;Implement rate limiting&apos;,
+      &apos;Set budget caps&apos;,
+      &apos;Monitor usage&apos;,
+      &apos;Use request queuing&apos;
+    ],
+    examples: [
+      &apos;Infinite loop calling AI&apos;,
+      &apos;Processing entire codebase repeatedly&apos;,
+      &apos;Exhausting API quotas&apos;,
+      &apos;Memory leaks from large conversations&apos;
+    ]
+  }
+];
+</codeblock>
+    <section><title>Security Architecture</title></section>
+    <codeblock>┌─────────────────────────────────────────────────────────────┐
+│                      User Input                              │
+│           &quot;Delete old database backups&quot;                      │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Input Validation                           │
+│  • Sanitize input                                            │
+│  • Detect injection attempts                                 │
+│  • Check against allowed patterns                            │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  Privacy Filter                              │
+│  • Redact secrets (API keys, passwords)                      │
+│  • Remove PII                                                │
+│  • Filter sensitive paths                                    │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   AI Processing                              │
+│  [Safe to send to AI provider]                              │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│              Operation Classification                        │
+│  Classify: READ | WRITE | DELETE | EXECUTE                  │
+│  Risk level: SAFE | LOW | MEDIUM | HIGH | CRITICAL          │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 Approval Gate                                │
+│  • Auto-approve: SAFE, LOW risk operations                  │
+│  • Require approval: MEDIUM+ risk                            │
+│  • Require 2FA: CRITICAL risk                                │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                Sandboxed Execution                           │
+│  • Path restrictions (allowlist/blocklist)                   │
+│  • Resource limits (CPU, memory, time)                       │
+│  • Network isolation (optional)                              │
+│  • Capability restrictions                                   │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Audit Logging                              │
+│  • Log all operations                                        │
+│  • Redact sensitive data                                     │
+│  • Include context and outcome                               │
+│  • Enable forensics                                          │
+└─────────────────────────────────────────────────────────────┘
+</codeblock>
+    <section><title>9.2 Sandboxed Execution</title></section>
+    <p>Sandboxing restricts what operations the AI can perform, preventing unauthorized access and destructive actions.</p>
+    <section><title>Sandbox Configuration</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Sandbox configuration for execution environment
+ */
+export interface SandboxConfig {
+  /** Allowed file paths (glob patterns) */
+  allowedPaths?: string[];
+
+  /** Blocked file paths (glob patterns) - takes precedence */
+  blockedPaths?: string[];
+
+  /** Allowed commands to execute */
+  allowedCommands?: string[];
+
+  /** Maximum execution time per operation (ms) */
+  maxExecutionTime?: number;
+
+  /** Maximum memory usage (bytes) */
+  maxMemory?: number;
+
+  /** Maximum disk space usage (bytes) */
+  maxDiskUsage?: number;
+
+  /** Network access allowed */
+  allowNetwork?: boolean;
+
+  /** Environment variables to expose */
+  allowedEnvVars?: string[];
+
+  /** Working directory restriction */
+  workingDirectory?: string;
+
+  /** Read-only mode (no writes allowed) */
+  readOnly?: boolean;
 }
 
 /**
- * Solutions to AI testing challenges
+ * Default secure sandbox configuration
  */
-export const AI_TESTING_SOLUTIONS = {
-  [AITestingChallenge.NON_DETERMINISTIC]: [
-    &apos;Use quality-based assertions instead of exact matching&apos;,
-    &apos;Test properties and patterns, not exact output&apos;,
-    &apos;Use semantic similarity for comparison&apos;
+export const DEFAULT_SANDBOX_CONFIG: SandboxConfig = {
+  allowedPaths: [
+    &apos;src/**/*&apos;,
+    &apos;test/**/*&apos;,
+    &apos;lib/**/*&apos;,
+    &apos;docs/**/*&apos;,
+    &apos;package.json&apos;,
+    &apos;tsconfig.json&apos;,
+    &apos;README.md&apos;
   ],
-
-  [AITestingChallenge.SUBJECTIVE_QUALITY]: [
-    &apos;Define measurable quality criteria&apos;,
-    &apos;Use automated quality checks (linting, parsing)&apos;,
-    &apos;Create rubrics for evaluation&apos;
+  blockedPaths: [
+    &apos;.env&apos;,
+    &apos;.env.*&apos;,
+    &apos;**/.env&apos;,
+    &apos;**/*.key&apos;,
+    &apos;**/*.pem&apos;,
+    &apos;**/*.p12&apos;,
+    &apos;**/id_rsa&apos;,
+    &apos;**/id_dsa&apos;,
+    &apos;**/*_key&apos;,
+    &apos;**/credentials.*&apos;,
+    &apos;**/secrets.*&apos;,
+    &apos;.git/config&apos;,
+    &apos;.ssh/**/*&apos;,
+    &apos;/etc/**/*&apos;,
+    &apos;/var/**/*&apos;,
+    &apos;/usr/**/*&apos;,
+    &apos;/home/*/.ssh/**/*&apos;,
+    &apos;node_modules/**/*&apos;
   ],
-
-  [AITestingChallenge.MODEL_DRIFT]: [
-    &apos;Version lock models in tests&apos;,
-    &apos;Monitor quality metrics over time&apos;,
-    &apos;Use regression test suites&apos;
+  allowedCommands: [
+    &apos;git status&apos;,
+    &apos;git diff&apos;,
+    &apos;git log&apos;,
+    &apos;npm test&apos;,
+    &apos;npm run test&apos;,
+    &apos;yarn test&apos;,
+    &apos;ls&apos;,
+    &apos;cat&apos;,
+    &apos;grep&apos;
   ],
-
-  [AITestingChallenge.SLOW_EXPENSIVE]: [
-    &apos;Mock AI providers for unit tests&apos;,
-    &apos;Cache responses for deterministic tests&apos;,
-    &apos;Use smaller/faster models for testing&apos;
-  ],
-
-  [AITestingChallenge.EDGE_CASE_COVERAGE]: [
-    &apos;Generate synthetic test cases&apos;,
-    &apos;Use property-based testing&apos;,
-    &apos;Collect real failure cases&apos;
-  ],
-
-  [AITestingChallenge.DEBUGGING]: [
-    &apos;Log full context (prompt, response, metadata)&apos;,
-    &apos;Capture intermediate steps&apos;,
-    &apos;Use replay testing&apos;
-  ]
+  maxExecutionTime: 30000, // 30 seconds
+  maxMemory: 512 * 1024 * 1024, // 512 MB
+  maxDiskUsage: 100 * 1024 * 1024, // 100 MB
+  allowNetwork: false,
+  allowedEnvVars: [&apos;NODE_ENV&apos;, &apos;PATH&apos;],
+  readOnly: false
 };
 </codeblock>
-    <section><title>Testing Strategy</title></section>
-    <codeblock>┌─────────────────────────────────────────────────────────────┐
-│                   Testing Pyramid for AI                     │
-└─────────────────────────────────────────────────────────────┘
-
-                    ▲
-                   ╱ ╲
-                  ╱   ╲  E2E Tests (Few)
-                 ╱     ╲  - Real AI providers
-                ╱       ╲ - End-to-end workflows
-               ╱─────────╲ - Slow but comprehensive
-              ╱           ╲
-             ╱             ╲
-            ╱               ╲ Integration Tests (Some)
-           ╱                 ╲ - Mock AI providers
-          ╱                   ╲ - Component integration
-         ╱                     ╲ - Fast, deterministic
-        ╱───────────────────────╲
-       ╱                         ╲
-      ╱                           ╲
-     ╱                             ╲ Unit Tests (Many)
-    ╱                               ╲ - Pure functions
-   ╱                                 ╲ - No AI calls
-  ╱                                   ╲ - Very fast
- ╱─────────────────────────────────────╲
-</codeblock>
-    <section><title>10.2 Unit Testing Strategy</title></section>
-    <p>Unit tests should be fast, deterministic, and test individual components without AI dependencies.</p>
-    <section><title>Testing Pure Functions</title></section>
-    <codeblock outputclass="language-typescript">import { describe, test, expect } from &apos;vitest&apos;;
+    <section><title>Sandbox Validator</title></section>
+    <codeblock outputclass="language-typescript">import { minimatch } from &apos;minimatch&apos;;
+import path from &apos;path&apos;;
 
 /**
- * Test pure functions without AI dependencies
+ * Validates operations against sandbox rules
  */
+export class SandboxValidator {
+  constructor(private config: SandboxConfig) {}
 
-// Example: Token counting
-describe(&apos;TokenCounter&apos;, () =&gt; {
-  test(&apos;counts tokens accurately&apos;, () =&gt; {
-    const counter = new TokenCounter();
+  /**
+   * Check if file path is allowed
+   */
+  isPathAllowed(filePath: string): ValidationResult {
+    const normalizedPath = path.normalize(filePath);
 
-    expect(counter.count(&apos;hello world&apos;)).toBe(2);
-    expect(counter.count(&apos;The quick brown fox&apos;)).toBe(4);
-    expect(counter.count(&apos;&apos;)).toBe(0);
-  });
+    // Check if path escapes working directory
+    if (this.config.workingDirectory) {
+      const resolved = path.resolve(this.config.workingDirectory, normalizedPath);
+      if (!resolved.startsWith(this.config.workingDirectory)) {
+        return {
+          allowed: false,
+          reason: &apos;Path escapes working directory&apos;,
+          severity: &apos;critical&apos;
+        };
+      }
+    }
 
-  test(&apos;handles special characters&apos;, () =&gt; {
-    const counter = new TokenCounter();
+    // Check blocked paths first (takes precedence)
+    if (this.config.blockedPaths) {
+      for (const pattern of this.config.blockedPaths) {
+        if (minimatch(normalizedPath, pattern)) {
+          return {
+            allowed: false,
+            reason: `Path matches blocked pattern: ${pattern}`,
+            severity: &apos;high&apos;
+          };
+        }
+      }
+    }
 
-    expect(counter.count(&apos;hello, world!&apos;)).toBe(3);
-    expect(counter.count(&apos;foo-bar_baz&apos;)).toBe(3);
-  });
-});
+    // Check allowed paths
+    if (this.config.allowedPaths) {
+      let matched = false;
 
-// Example: Message formatting
-describe(&apos;MessageFormatter&apos;, () =&gt; {
-  test(&apos;formats user message&apos;, () =&gt; {
-    const formatter = new MessageFormatter();
+      for (const pattern of this.config.allowedPaths) {
+        if (minimatch(normalizedPath, pattern)) {
+          matched = true;
+          break;
+        }
+      }
 
-    const formatted = formatter.format({
-      role: MessageRole.USER,
-      content: &apos;Hello, AI!&apos;
+      if (!matched) {
+        return {
+          allowed: false,
+          reason: &apos;Path not in allowed list&apos;,
+          severity: &apos;medium&apos;
+        };
+      }
+    }
+
+    return { allowed: true };
+  }
+
+  /**
+   * Check if command is allowed
+   */
+  isCommandAllowed(command: string): ValidationResult {
+    if (!this.config.allowedCommands) {
+      // If no allowlist, reject all commands
+      return {
+        allowed: false,
+        reason: &apos;Command execution not allowed&apos;,
+        severity: &apos;high&apos;
+      };
+    }
+
+    // Extract base command (first word)
+    const baseCommand = command.trim().split(/\s+/)[0];
+
+    // Check if command is in allowlist
+    const allowed = this.config.allowedCommands.some(allowedCmd =&gt; {
+      // Exact match
+      if (command === allowedCmd) return true;
+
+      // Prefix match (e.g., &quot;git&quot; allows &quot;git status&quot;)
+      if (command.startsWith(allowedCmd + &apos; &apos;)) return true;
+
+      // Base command match
+      if (baseCommand === allowedCmd) return true;
+
+      return false;
     });
 
-    expect(formatted).toHaveProperty(&apos;role&apos;, &apos;user&apos;);
-    expect(formatted).toHaveProperty(&apos;content&apos;, &apos;Hello, AI!&apos;);
-  });
+    if (!allowed) {
+      return {
+        allowed: false,
+        reason: `Command not in allowed list: ${baseCommand}`,
+        severity: &apos;high&apos;
+      };
+    }
 
-  test(&apos;formats system message&apos;, () =&gt; {
-    const formatter = new MessageFormatter();
-
-    const formatted = formatter.format({
-      role: MessageRole.SYSTEM,
-      content: &apos;You are a helpful assistant&apos;
-    });
-
-    expect(formatted).toHaveProperty(&apos;role&apos;, &apos;system&apos;);
-    expect(formatted.content).toContain(&apos;helpful assistant&apos;);
-  });
-});
-
-// Example: Context window management
-describe(&apos;ContextWindowManager&apos;, () =&gt; {
-  test(&apos;selects recent messages within limit&apos;, () =&gt; {
-    const manager = new ContextWindowManager({
-      maxTokens: 100,
-      strategy: ContextWindowStrategy.RECENT
-    });
-
-    const messages = [
-      { role: MessageRole.USER, content: &apos;Message 1&apos;, tokens: 30 },
-      { role: MessageRole.ASSISTANT, content: &apos;Response 1&apos;, tokens: 40 },
-      { role: MessageRole.USER, content: &apos;Message 2&apos;, tokens: 35 },
-      { role: MessageRole.ASSISTANT, content: &apos;Response 2&apos;, tokens: 45 }
+    // Check for dangerous patterns
+    const dangerousPatterns = [
+      /rm\s+-rf/,
+      /dd\s+if=/,
+      /mkfs/,
+      /:\(\)\{.*\}:/,  // Fork bomb
+      /&gt;\s*\/dev\/sd/,
+      /curl.*\|\s*sh/,
+      /wget.*\|\s*sh/,
+      /sudo/,
+      /chmod\s+777/
     ];
 
-    const selected = manager.selectMessages(messages);
-
-    // Should select most recent that fit
-    expect(selected.length).toBe(2);
-    expect(selected[0].content).toBe(&apos;Message 2&apos;);
-    expect(selected[1].content).toBe(&apos;Response 2&apos;);
-  });
-
-  test(&apos;always includes system messages&apos;, () =&gt; {
-    const manager = new ContextWindowManager({
-      maxTokens: 50,
-      strategy: ContextWindowStrategy.RECENT
-    });
-
-    const messages = [
-      { role: MessageRole.SYSTEM, content: &apos;System prompt&apos;, tokens: 20 },
-      { role: MessageRole.USER, content: &apos;User message&apos;, tokens: 40 }
-    ];
-
-    const selected = manager.selectMessages(messages);
-
-    expect(selected.length).toBe(2);
-    expect(selected[0].role).toBe(MessageRole.SYSTEM);
-  });
-});
-</codeblock>
-    <section><title>Testing Tools (Without Execution)</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;FileTool&apos;, () =&gt; {
-  test(&apos;validates parameters&apos;, () =&gt; {
-    const tool = new FileTool();
-
-    const valid = tool.validateParameters({
-      path: &apos;src/index.ts&apos;,
-      operation: &apos;read&apos;
-    });
-
-    expect(valid.valid).toBe(true);
-  });
-
-  test(&apos;rejects invalid paths&apos;, () =&gt; {
-    const tool = new FileTool();
-
-    const invalid = tool.validateParameters({
-      path: &apos;../../../etc/passwd&apos;,
-      operation: &apos;read&apos;
-    });
-
-    expect(invalid.valid).toBe(false);
-    expect(invalid.errors[0].message).toContain(&apos;Invalid path&apos;);
-  });
-
-  test(&apos;requires path parameter&apos;, () =&gt; {
-    const tool = new FileTool();
-
-    const invalid = tool.validateParameters({
-      operation: &apos;read&apos;
-    });
-
-    expect(invalid.valid).toBe(false);
-    expect(invalid.errors).toContainEqual(
-      expect.objectContaining({ parameter: &apos;path&apos; })
-    );
-  });
-});
-
-describe(&apos;DependencyGraph&apos;, () =&gt; {
-  test(&apos;detects cycles&apos;, () =&gt; {
-    const graph = new DependencyGraph();
-
-    graph.addNode(&apos;A&apos;);
-    graph.addNode(&apos;B&apos;);
-    graph.addNode(&apos;C&apos;);
-    graph.addEdge(&apos;A&apos;, &apos;B&apos;);
-    graph.addEdge(&apos;B&apos;, &apos;C&apos;);
-    graph.addEdge(&apos;C&apos;, &apos;A&apos;); // Cycle!
-
-    const cycle = graph.detectCycle();
-
-    expect(cycle).not.toBeNull();
-    expect(cycle).toContain(&apos;A&apos;);
-    expect(cycle).toContain(&apos;B&apos;);
-    expect(cycle).toContain(&apos;C&apos;);
-  });
-
-  test(&apos;topological sort&apos;, () =&gt; {
-    const graph = new DependencyGraph();
-
-    graph.addNode(&apos;A&apos;);
-    graph.addNode(&apos;B&apos;);
-    graph.addNode(&apos;C&apos;);
-    graph.addEdge(&apos;A&apos;, &apos;B&apos;); // A depends on B
-    graph.addEdge(&apos;B&apos;, &apos;C&apos;); // B depends on C
-
-    const sorted = graph.topologicalSort();
-
-    // C should come before B, B before A
-    expect(sorted.indexOf(&apos;C&apos;)).toBeLessThan(sorted.indexOf(&apos;B&apos;));
-    expect(sorted.indexOf(&apos;B&apos;)).toBeLessThan(sorted.indexOf(&apos;A&apos;));
-  });
-});
-</codeblock>
-    <section><title>Testing Configuration and Validation</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;SandboxConfig&apos;, () =&gt; {
-  test(&apos;validates allowed paths&apos;, () =&gt; {
-    const validator = new SandboxValidator({
-      allowedPaths: [&apos;src/**/*&apos;, &apos;test/**/*&apos;],
-      blockedPaths: [&apos;**/*.env&apos;]
-    });
-
-    expect(validator.isPathAllowed(&apos;src/index.ts&apos;).allowed).toBe(true);
-    expect(validator.isPathAllowed(&apos;test/unit.test.ts&apos;).allowed).toBe(true);
-    expect(validator.isPathAllowed(&apos;secrets.env&apos;).allowed).toBe(false);
-    expect(validator.isPathAllowed(&apos;../etc/passwd&apos;).allowed).toBe(false);
-  });
-
-  test(&apos;blocked paths take precedence&apos;, () =&gt; {
-    const validator = new SandboxValidator({
-      allowedPaths: [&apos;**/*&apos;],
-      blockedPaths: [&apos;**/*.key&apos;]
-    });
-
-    expect(validator.isPathAllowed(&apos;src/index.ts&apos;).allowed).toBe(true);
-    expect(validator.isPathAllowed(&apos;src/private.key&apos;).allowed).toBe(false);
-  });
-});
-
-describe(&apos;InputValidator&apos;, () =&gt; {
-  test(&apos;detects API keys&apos;, () =&gt; {
-    const validator = new InputValidator(logger);
-
-    const result = validator.validate(&apos;My key is sk-ant-api03-xyz123&apos;);
-
-    expect(result.valid).toBe(false);
-    expect(result.issues).toContainEqual(
-      expect.objectContaining({ type: &apos;sensitive_data&apos; })
-    );
-  });
-
-  test(&apos;detects injection attempts&apos;, () =&gt; {
-    const validator = new InputValidator(logger);
-
-    const result = validator.validate(&apos;Run: rm -rf /&apos;);
-
-    expect(result.valid).toBe(false);
-    expect(result.issues).toContainEqual(
-      expect.objectContaining({ type: &apos;injection_attempt&apos; })
-    );
-  });
-});
-</codeblock>
-    <section><title>10.3 Mock AI Providers</title></section>
-    <p>Mock AI providers enable fast, deterministic testing without real API calls.</p>
-    <section><title>Mock Provider Implementation</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Mock AI provider for testing
- */
-export class MockAIProvider implements AIProvider {
-  private responses: Map&lt;string, string&gt; = new Map();
-  private callCount = 0;
-  private calls: CompletionRequest[] = [];
-
-  /**
-   * Set canned response for specific prompt
-   */
-  setResponse(promptPattern: string | RegExp, response: string): void {
-    const key = promptPattern instanceof RegExp
-      ? promptPattern.source
-      : promptPattern;
-
-    this.responses.set(key, response);
-  }
-
-  /**
-   * Set default response for all prompts
-   */
-  setDefaultResponse(response: string): void {
-    this.responses.set(&apos;*&apos;, response);
-  }
-
-  /**
-   * Complete with mocked response
-   */
-  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
-    this.callCount++;
-    this.calls.push(request);
-
-    // Get last user message
-    const userMessage = request.messages
-      .filter(m =&gt; m.role === MessageRole.USER)
-      .pop();
-
-    if (!userMessage) {
-      throw new Error(&apos;No user message in request&apos;);
-    }
-
-    // Find matching response
-    const response = this.findResponse(userMessage.content);
-
-    if (!response) {
-      throw new Error(`No mocked response for: ${userMessage.content}`);
-    }
-
-    return {
-      content: response,
-      role: MessageRole.ASSISTANT,
-      model: &apos;mock-model&apos;,
-      usage: {
-        inputTokens: this.estimateTokens(request.messages),
-        outputTokens: this.estimateTokens([{ role: MessageRole.ASSISTANT, content: response }]),
-        totalTokens: 0
-      },
-      metadata: {
-        provider: &apos;mock&apos;,
-        latency: 10
-      }
-    };
-  }
-
-  /**
-   * Find response matching prompt
-   */
-  private findResponse(prompt: string): string | null {
-    // Try exact match
-    if (this.responses.has(prompt)) {
-      return this.responses.get(prompt)!;
-    }
-
-    // Try regex patterns
-    for (const [pattern, response] of this.responses.entries()) {
-      if (pattern === &apos;*&apos;) continue; // Skip default
-
-      const regex = new RegExp(pattern);
-      if (regex.test(prompt)) {
-        return response;
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(command)) {
+        return {
+          allowed: false,
+          reason: &apos;Command contains dangerous pattern&apos;,
+          severity: &apos;critical&apos;
+        };
       }
     }
 
-    // Use default
-    return this.responses.get(&apos;*&apos;) || null;
+    return { allowed: true };
   }
 
   /**
-   * Get number of times complete() was called
+   * Check if operation is allowed in read-only mode
    */
-  getCallCount(): number {
-    return this.callCount;
+  isWriteAllowed(operation: &apos;create&apos; | &apos;update&apos; | &apos;delete&apos;): ValidationResult {
+    if (this.config.readOnly) {
+      return {
+        allowed: false,
+        reason: &apos;Sandbox is in read-only mode&apos;,
+        severity: &apos;medium&apos;
+      };
+    }
+
+    return { allowed: true };
   }
 
   /**
-   * Get all completion requests
+   * Check if network access is allowed
    */
-  getCalls(): CompletionRequest[] {
-    return this.calls;
-  }
+  isNetworkAllowed(url: string): ValidationResult {
+    if (!this.config.allowNetwork) {
+      return {
+        allowed: false,
+        reason: &apos;Network access not allowed&apos;,
+        severity: &apos;medium&apos;
+      };
+    }
 
-  /**
-   * Reset mock state
-   */
-  reset(): void {
-    this.responses.clear();
-    this.callCount = 0;
-    this.calls = [];
-  }
-
-  /**
-   * Estimate tokens (simple word count)
-   */
-  private estimateTokens(messages: Message[]): number {
-    return messages.reduce((total, msg) =&gt; {
-      return total + msg.content.split(/\s+/).length;
-    }, 0);
-  }
-
-  // Implement other AIProvider methods
-  async stream(request: CompletionRequest): Promise&lt;AsyncIterableIterator&lt;StreamEvent&gt;&gt; {
-    throw new Error(&apos;Stream not implemented in mock&apos;);
-  }
-
-  async healthCheck(): Promise&lt;HealthStatus&gt; {
-    return { healthy: true, latency: 1 };
-  }
-
-  getMetrics(): ProviderMetrics {
-    return {
-      requestCount: this.callCount,
-      errorCount: 0,
-      totalCost: 0,
-      totalTokens: 0
-    };
+    return { allowed: true };
   }
 }
-</codeblock>
-    <section><title>Using Mock Providers in Tests</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;CommitMessageGenerator&apos;, () =&gt; {
-  let mockAI: MockAIProvider;
-  let generator: CommitMessageGenerator;
 
-  beforeEach(() =&gt; {
-    mockAI = new MockAIProvider();
-    generator = new CommitMessageGenerator(mockAI);
-  });
-
-  afterEach(() =&gt; {
-    mockAI.reset();
-  });
-
-  test(&apos;generates conventional commit message&apos;, async () =&gt; {
-    // Mock AI response
-    mockAI.setDefaultResponse(
-      &apos;fix(auth): resolve token refresh race condition\n\n&apos; +
-      &apos;Add mutex lock to prevent concurrent token refreshes&apos;
-    );
-
-    const diff: GitDiff = {
-      files: [
-        {
-          path: &apos;src/auth/token.ts&apos;,
-          additions: 10,
-          deletions: 2,
-          changes: 12
-        }
-      ],
-      additions: 10,
-      deletions: 2
-    };
-
-    const message = await generator.generate(diff);
-
-    expect(message.message).toMatch(/^fix\(auth\):/);
-    expect(message.message).toContain(&apos;token refresh&apos;);
-    expect(mockAI.getCallCount()).toBe(1);
-  });
-
-  test(&apos;uses scope from context&apos;, async () =&gt; {
-    mockAI.setDefaultResponse(&apos;feat(api): add user endpoint&apos;);
-
-    const diff: GitDiff = {
-      files: [{ path: &apos;src/api/users.ts&apos;, additions: 50, deletions: 0, changes: 50 }],
-      additions: 50,
-      deletions: 0
-    };
-
-    const message = await generator.generate(diff, {
-      scope: &apos;api&apos;
-    });
-
-    expect(message.message).toMatch(/^feat\(api\):/);
-
-    // Verify AI was called with scope in prompt
-    const calls = mockAI.getCalls();
-    expect(calls[0].messages[1].content).toContain(&apos;scope: api&apos;);
-  });
-});
-
-describe(&apos;NaturalLanguageRouter&apos;, () =&gt; {
-  let mockAI: MockAIProvider;
-  let router: NaturalLanguageRouter;
-
-  beforeEach(() =&gt; {
-    mockAI = new MockAIProvider();
-    router = new NaturalLanguageRouter(mockAI, commandRegistry, logger);
-  });
-
-  test(&apos;routes commit intent&apos;, async () =&gt; {
-    // Mock intent classification response
-    mockAI.setResponse(
-      /classify/i,
-      JSON.stringify([{
-        intent: &apos;COMMIT&apos;,
-        confidence: 0.95,
-        extractedParams: {},
-        missingParams: []
-      }])
-    );
-
-    const result = await router.route(&apos;commit my changes&apos;, context);
-
-    expect(result.success).toBe(true);
-    expect(result.commands).toHaveLength(1);
-    expect(result.commands![0].command.name).toBe(&apos;commit&apos;);
-  });
-
-  test(&apos;handles unknown intent&apos;, async () =&gt; {
-    mockAI.setResponse(/classify/i, JSON.stringify([]));
-
-    const result = await router.route(&apos;do something weird&apos;, context);
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain(&apos;Could not understand intent&apos;);
-  });
-});
-</codeblock>
-    <section><title>Advanced Mock Patterns</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Mock provider with simulated latency
- */
-export class RealisticMockProvider extends MockAIProvider {
-  constructor(private latencyMs: number = 100) {
-    super();
-  }
-
-  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
-    // Simulate network latency
-    await new Promise(resolve =&gt; setTimeout(resolve, this.latencyMs));
-
-    return super.complete(request);
-  }
+export interface ValidationResult {
+  allowed: boolean;
+  reason?: string;
+  severity?: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;;
 }
+</codeblock>
+    <section><title>Sandboxed File System</title></section>
+    <codeblock outputclass="language-typescript">import fs from &apos;fs/promises&apos;;
 
 /**
- * Mock provider with failure simulation
+ * Sandboxed file system operations
  */
-export class FlakeyMockProvider extends MockAIProvider {
-  constructor(private failureRate: number = 0.1) {
-    super();
+export class SandboxedFileSystem {
+  private validator: SandboxValidator;
+  private logger: Logger;
+
+  constructor(
+    config: SandboxConfig,
+    logger: Logger
+  ) {
+    this.validator = new SandboxValidator(config);
+    this.logger = logger;
   }
 
-  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
-    // Randomly fail
-    if (Math.random() &lt; this.failureRate) {
-      throw new Error(&apos;Simulated API failure&apos;);
+  /**
+   * Read file with sandbox validation
+   */
+  async readFile(filePath: string): Promise&lt;string&gt; {
+    // Validate path
+    const validation = this.validator.isPathAllowed(filePath);
+
+    if (!validation.allowed) {
+      this.logger.warn(&apos;Blocked file read:&apos;, {
+        path: filePath,
+        reason: validation.reason
+      });
+
+      throw new SecurityError(
+        `Access denied: ${validation.reason}`,
+        validation.severity || &apos;medium&apos;
+      );
     }
 
-    return super.complete(request);
+    try {
+      const content = await fs.readFile(filePath, &apos;utf-8&apos;);
+
+      this.logger.debug(&apos;File read:&apos;, { path: filePath, size: content.length });
+
+      return content;
+
+    } catch (error) {
+      this.logger.error(&apos;File read error:&apos;, { path: filePath, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Write file with sandbox validation
+   */
+  async writeFile(filePath: string, content: string): Promise&lt;void&gt; {
+    // Validate write allowed
+    const writeValidation = this.validator.isWriteAllowed(&apos;create&apos;);
+
+    if (!writeValidation.allowed) {
+      throw new SecurityError(
+        `Write denied: ${writeValidation.reason}`,
+        writeValidation.severity || &apos;medium&apos;
+      );
+    }
+
+    // Validate path
+    const pathValidation = this.validator.isPathAllowed(filePath);
+
+    if (!pathValidation.allowed) {
+      this.logger.warn(&apos;Blocked file write:&apos;, {
+        path: filePath,
+        reason: pathValidation.reason
+      });
+
+      throw new SecurityError(
+        `Access denied: ${pathValidation.reason}`,
+        pathValidation.severity || &apos;medium&apos;
+      );
+    }
+
+    try {
+      await fs.writeFile(filePath, content, &apos;utf-8&apos;);
+
+      this.logger.info(&apos;File written:&apos;, {
+        path: filePath,
+        size: content.length
+      });
+
+    } catch (error) {
+      this.logger.error(&apos;File write error:&apos;, { path: filePath, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete file with sandbox validation
+   */
+  async deleteFile(filePath: string): Promise&lt;void&gt; {
+    // Validate write allowed
+    const writeValidation = this.validator.isWriteAllowed(&apos;delete&apos;);
+
+    if (!writeValidation.allowed) {
+      throw new SecurityError(
+        `Delete denied: ${writeValidation.reason}`,
+        writeValidation.severity || &apos;medium&apos;
+      );
+    }
+
+    // Validate path
+    const pathValidation = this.validator.isPathAllowed(filePath);
+
+    if (!pathValidation.allowed) {
+      this.logger.warn(&apos;Blocked file delete:&apos;, {
+        path: filePath,
+        reason: pathValidation.reason
+      });
+
+      throw new SecurityError(
+        `Access denied: ${pathValidation.reason}`,
+        pathValidation.severity || &apos;medium&apos;
+      );
+    }
+
+    try {
+      await fs.unlink(filePath);
+
+      this.logger.warn(&apos;File deleted:&apos;, { path: filePath });
+
+    } catch (error) {
+      this.logger.error(&apos;File delete error:&apos;, { path: filePath, error });
+      throw error;
+    }
+  }
+
+  /**
+   * List directory with sandbox validation
+   */
+  async listDirectory(dirPath: string): Promise&lt;string[]&gt; {
+    const validation = this.validator.isPathAllowed(dirPath);
+
+    if (!validation.allowed) {
+      throw new SecurityError(
+        `Access denied: ${validation.reason}`,
+        validation.severity || &apos;medium&apos;
+      );
+    }
+
+    const entries = await fs.readdir(dirPath);
+
+    // Filter entries by sandbox rules
+    const allowed: string[] = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry);
+      const entryValidation = this.validator.isPathAllowed(fullPath);
+
+      if (entryValidation.allowed) {
+        allowed.push(entry);
+      }
+    }
+
+    return allowed;
   }
 }
+
+export class SecurityError extends Error {
+  constructor(
+    message: string,
+    public severity: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;
+  ) {
+    super(message);
+    this.name = &apos;SecurityError&apos;;
+  }
+}
+</codeblock>
+    <section><title>Sandboxed Command Execution</title></section>
+    <codeblock outputclass="language-typescript">import { spawn } from &apos;child_process&apos;;
 
 /**
- * Mock provider with quota simulation
+ * Sandboxed command execution with resource limits
  */
-export class QuotaMockProvider extends MockAIProvider {
-  private requestsRemaining: number;
+export class SandboxedExecutor {
+  private validator: SandboxValidator;
+  private logger: Logger;
 
-  constructor(private quota: number) {
-    super();
-    this.requestsRemaining = quota;
-  }
-
-  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
-    if (this.requestsRemaining &lt;= 0) {
-      throw new Error(&apos;Rate limit exceeded&apos;);
-    }
-
-    this.requestsRemaining--;
-
-    return super.complete(request);
-  }
-
-  resetQuota(): void {
-    this.requestsRemaining = this.quota;
-  }
-}
-</codeblock>
-    <section><title>Testing with Advanced Mocks</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;ProviderRouter with failures&apos;, () =&gt; {
-  test(&apos;falls back on provider failure&apos;, async () =&gt; {
-    const primary = new FlakeyMockProvider(1.0); // Always fails
-    const fallback = new MockAIProvider();
-
-    primary.setDefaultResponse(&apos;Response from primary&apos;);
-    fallback.setDefaultResponse(&apos;Response from fallback&apos;);
-
-    const router = new ProviderRouter({
-      providers: [primary, fallback],
-      strategy: RoutingStrategy.FALLBACK
-    });
-
-    const response = await router.complete(request);
-
-    expect(response.content).toBe(&apos;Response from fallback&apos;);
-    expect(response.metadata.provider).toBe(&apos;mock&apos;);
-  });
-});
-
-describe(&apos;RateLimiter&apos;, () =&gt; {
-  test(&apos;blocks when quota exceeded&apos;, async () =&gt; {
-    const provider = new QuotaMockProvider(5);
-    provider.setDefaultResponse(&apos;Response&apos;);
-
-    // Make 5 requests (should succeed)
-    for (let i = 0; i &lt; 5; i++) {
-      await provider.complete(request);
-    }
-
-    // 6th request should fail
-    await expect(provider.complete(request)).rejects.toThrow(&apos;Rate limit exceeded&apos;);
-  });
-});
-</codeblock>
-    <section><title>10.4 Integration Testing</title></section>
-    <p>Integration tests verify that components work together correctly, still using mocked AI but testing real integration.</p>
-    <section><title>Testing Tool Orchestration</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;ToolOrchestrator Integration&apos;, () =&gt; {
-  let mockAI: MockAIProvider;
-  let orchestrator: ToolOrchestrator;
-  let fileSystem: InMemoryFileSystem; // Test file system
-
-  beforeEach(() =&gt; {
-    mockAI = new MockAIProvider();
-    fileSystem = new InMemoryFileSystem();
-    orchestrator = new ToolOrchestrator(mockAI, {
-      fileSystem,
-      logger
-    });
-
-    // Register tools
-    orchestrator.registerTool(new ReadFileTool(fileSystem));
-    orchestrator.registerTool(new WriteFileTool(fileSystem));
-    orchestrator.registerTool(new SearchTool(fileSystem));
-  });
-
-  test(&apos;executes tools in dependency order&apos;, async () =&gt; {
-    // Setup test files
-    fileSystem.writeFile(&apos;/project/src/index.ts&apos;, &apos;export const foo = 1;&apos;);
-
-    // Mock AI to request tool calls
-    mockAI.setDefaultResponse(JSON.stringify({
-      toolCalls: [
-        {
-          tool: &apos;read_file&apos;,
-          parameters: { path: &apos;/project/src/index.ts&apos; }
-        },
-        {
-          tool: &apos;search_code&apos;,
-          parameters: { pattern: &apos;foo&apos;, path: &apos;/project/src&apos; },
-          dependencies: [&apos;read_file&apos;] // Depends on read_file
-        }
-      ]
-    }));
-
-    const result = await orchestrator.execute(&apos;Read and search code&apos;);
-
-    expect(result.success).toBe(true);
-    expect(result.toolResults).toHaveLength(2);
-
-    // Verify execution order
-    expect(result.toolResults[0].tool).toBe(&apos;read_file&apos;);
-    expect(result.toolResults[1].tool).toBe(&apos;search_code&apos;);
-  });
-
-  test(&apos;handles tool errors gracefully&apos;, async () =&gt; {
-    mockAI.setDefaultResponse(JSON.stringify({
-      toolCalls: [
-        {
-          tool: &apos;read_file&apos;,
-          parameters: { path: &apos;/nonexistent.ts&apos; }
-        }
-      ]
-    }));
-
-    const result = await orchestrator.execute(&apos;Read nonexistent file&apos;);
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain(&apos;File not found&apos;);
-  });
-
-  test(&apos;uses result caching&apos;, async () =&gt; {
-    fileSystem.writeFile(&apos;/project/test.ts&apos;, &apos;test content&apos;);
-
-    mockAI.setDefaultResponse(JSON.stringify({
-      toolCalls: [
-        {
-          tool: &apos;read_file&apos;,
-          parameters: { path: &apos;/project/test.ts&apos; }
-        }
-      ]
-    }));
-
-    // First execution
-    const result1 = await orchestrator.execute(&apos;Read file&apos;);
-    expect(result1.fromCache).toBe(false);
-
-    // Second execution (should use cache)
-    const result2 = await orchestrator.execute(&apos;Read file&apos;);
-    expect(result2.fromCache).toBe(true);
-    expect(result2.toolResults[0].result).toBe(result1.toolResults[0].result);
-  });
-});
-</codeblock>
-    <section><title>Testing Conversation Flow</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;ConversationManager Integration&apos;, () =&gt; {
-  let mockAI: MockAIProvider;
-  let conversationManager: ConversationManager;
-
-  beforeEach(() =&gt; {
-    mockAI = new MockAIProvider();
-    conversationManager = new ConversationManager(mockAI, {
-      maxTokens: 1000,
-      strategy: ContextWindowStrategy.RECENT
-    });
-  });
-
-  test(&apos;maintains conversation context&apos;, async () =&gt; {
-    // User asks question
-    mockAI.setResponse(
-      /What.*JavaScript/i,
-      &apos;JavaScript is a programming language for the web.&apos;
-    );
-
-    const response1 = await conversationManager.sendMessage(
-      &apos;What is JavaScript?&apos;
-    );
-
-    expect(response1).toContain(&apos;programming language&apos;);
-
-    // Follow-up question (requires context)
-    mockAI.setResponse(
-      /invented/i,
-      &apos;It was created by Brendan Eich in 1995.&apos;
-    );
-
-    const response2 = await conversationManager.sendMessage(
-      &apos;Who invented it?&apos;
-    );
-
-    expect(response2).toContain(&apos;Brendan Eich&apos;);
-
-    // Verify conversation history was sent
-    const calls = mockAI.getCalls();
-    expect(calls[1].messages).toContainEqual(
-      expect.objectContaining({ content: &apos;What is JavaScript?&apos; })
-    );
-  });
-
-  test(&apos;respects token limits&apos;, async () =&gt; {
-    conversationManager = new ConversationManager(mockAI, {
-      maxTokens: 100, // Very small limit
-      strategy: ContextWindowStrategy.RECENT
-    });
-
-    // Add many messages
-    for (let i = 0; i &lt; 10; i++) {
-      mockAI.setDefaultResponse(&apos;Response&apos;);
-      await conversationManager.sendMessage(`Message ${i}`);
-    }
-
-    // Get messages for AI
-    const messages = conversationManager.getMessagesForAI();
-
-    // Should only include recent messages that fit
-    const totalTokens = messages.reduce((sum, msg) =&gt; sum + msg.tokens, 0);
-    expect(totalTokens).toBeLessThanOrEqual(100);
-  });
-});
-</codeblock>
-    <section><title>Testing VCS Intelligence</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;CommitWorkflow Integration&apos;, () =&gt; {
-  let mockAI: MockAIProvider;
-  let mockGit: MockGitService;
-  let workflow: CommitWorkflow;
-
-  beforeEach(() =&gt; {
-    mockAI = new MockAIProvider();
-    mockGit = new MockGitService();
-    workflow = new CommitWorkflow(mockAI, mockGit);
-  });
-
-  test(&apos;complete commit workflow&apos;, async () =&gt; {
-    // Setup git state
-    mockGit.setStatus({
-      branch: &apos;feature/auth&apos;,
-      files: [
-        { path: &apos;src/auth/login.ts&apos;, status: &apos;modified&apos;, staged: false },
-        { path: &apos;src/auth/token.ts&apos;, status: &apos;modified&apos;, staged: false }
-      ]
-    });
-
-    mockGit.setDiff({
-      files: [
-        { path: &apos;src/auth/login.ts&apos;, additions: 10, deletions: 2, changes: 12 },
-        { path: &apos;src/auth/token.ts&apos;, additions: 5, deletions: 1, changes: 6 }
-      ],
-      additions: 15,
-      deletions: 3
-    });
-
-    // Mock AI to generate commit message
-    mockAI.setDefaultResponse(
-      &apos;feat(auth): implement token-based authentication\n\n&apos; +
-      &apos;Add JWT token generation and validation&apos;
-    );
-
-    // Execute workflow
-    const result = await workflow.execute({
-      scope: &apos;auth&apos;,
-      autoStage: true
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.commitHash).toBeDefined();
-
-    // Verify git operations
-    expect(mockGit.wasCalledWith(&apos;add&apos;, [&apos;src/auth/login.ts&apos;, &apos;src/auth/token.ts&apos;])).toBe(true);
-    expect(mockGit.wasCalledWith(&apos;commit&apos;)).toBe(true);
-  });
-});
-</codeblock>
-    <section><title>10.5 Synthetic Test Generation</title></section>
-    <p>Generate test cases automatically to improve coverage and find edge cases.</p>
-    <section><title>Synthetic Test Generator</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Generates synthetic test cases for AI systems
- */
-export class SyntheticTestGenerator {
-  constructor(private aiProvider: AIProvider) {}
-
-  /**
-   * Generate test cases for a function
-   */
-  async generateTests(
-    functionCode: string,
-    options: GenerateTestsOptions = {}
-  ): Promise&lt;GeneratedTest[]&gt; {
-    const prompt = this.buildGenerationPrompt(functionCode, options);
-
-    const response = await this.aiProvider.complete({
-      messages: [
-        {
-          role: MessageRole.SYSTEM,
-          content: &apos;You generate comprehensive test cases for code.&apos;
-        },
-        {
-          role: MessageRole.USER,
-          content: prompt
-        }
-      ],
-      temperature: 0.7 // Higher temperature for diverse tests
-    });
-
-    return this.parseGeneratedTests(response.content);
+  constructor(
+    private config: SandboxConfig,
+    logger: Logger
+  ) {
+    this.validator = new SandboxValidator(config);
+    this.logger = logger;
   }
 
   /**
-   * Build prompt for test generation
+   * Execute command with sandbox restrictions
    */
-  private buildGenerationPrompt(
-    functionCode: string,
-    options: GenerateTestsOptions
-  ): string {
-    return `
-Generate comprehensive test cases for the following function:
+  async execute(command: string, cwd?: string): Promise&lt;ExecutionResult&gt; {
+    // Validate command
+    const validation = this.validator.isCommandAllowed(command);
 
-\`\`\`typescript
-${functionCode}
-\`\`\`
-
-Requirements:
-- Test happy path scenarios
-- Test edge cases (empty input, null, undefined, boundary values)
-- Test error cases
-- Test integration scenarios${options.includePerformance ? &apos;\n- Test performance characteristics&apos; : &apos;&apos;}
-
-Generate ${options.count || 10} test cases covering different scenarios.
-
-Output format (JSON):
-\`\`\`json
-[
-  {
-    &quot;description&quot;: &quot;Test description&quot;,
-    &quot;input&quot;: {...},
-    &quot;expectedOutput&quot;: {...},
-    &quot;expectedError&quot;: null | &quot;error message&quot;,
-    &quot;category&quot;: &quot;happy_path&quot; | &quot;edge_case&quot; | &quot;error_case&quot; | &quot;integration&quot;
-  }
-]
-\`\`\`
-    `.trim();
-  }
-
-  /**
-   * Parse generated test cases
-   */
-  private parseGeneratedTests(response: string): GeneratedTest[] {
-    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
-    const json = jsonMatch ? jsonMatch[1] : response;
-
-    return JSON.parse(json);
-  }
-
-  /**
-   * Generate edge cases for input type
-   */
-  async generateEdgeCases(inputType: string): Promise&lt;any[]&gt; {
-    const edgeCases: Record&lt;string, any[]&gt; = {
-      string: [&apos;&apos;, &apos; &apos;, &apos;\n&apos;, &apos;a&apos;.repeat(10000), &apos;🚀&apos;, &apos;null&apos;, &apos;undefined&apos;],
-      number: [0, -1, 1, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, NaN, Infinity, -Infinity],
-      boolean: [true, false],
-      array: [[], [1], Array(1000).fill(0)],
-      object: [{}, { key: &apos;value&apos; }, null]
-    };
-
-    return edgeCases[inputType] || [];
-  }
-}
-
-export interface GenerateTestsOptions {
-  count?: number;
-  includePerformance?: boolean;
-  includeIntegration?: boolean;
-}
-
-export interface GeneratedTest {
-  description: string;
-  input: any;
-  expectedOutput?: any;
-  expectedError?: string;
-  category: &apos;happy_path&apos; | &apos;edge_case&apos; | &apos;error_case&apos; | &apos;integration&apos;;
-}
-</codeblock>
-    <section><title>Using Synthetic Tests</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;Synthetic Tests&apos;, () =&gt; {
-  let generator: SyntheticTestGenerator;
-
-  beforeAll(async () =&gt; {
-    // Use real AI for generation (run once, cache results)
-    const ai = new AnthropicProvider({ apiKey: process.env.ANTHROPIC_API_KEY! });
-    generator = new SyntheticTestGenerator(ai);
-  });
-
-  test(&apos;run generated tests for TokenCounter&apos;, async () =&gt; {
-    const functionCode = `
-    export class TokenCounter {
-      count(text: string): number {
-        return text.split(/\\s+/).filter(word =&gt; word.length &gt; 0).length;
-      }
-    }
-    `;
-
-    // Generate tests (do this once, save results)
-    const generatedTests = await generator.generateTests(functionCode, {
-      count: 20
-    });
-
-    // Save to file for later use
-    fs.writeFileSync(
-      &apos;./tests/generated/token-counter.json&apos;,
-      JSON.stringify(generatedTests, null, 2)
-    );
-
-    // Run generated tests
-    const counter = new TokenCounter();
-
-    for (const test of generatedTests) {
-      if (test.expectedError) {
-        expect(() =&gt; counter.count(test.input.text)).toThrow(test.expectedError);
-      } else {
-        const result = counter.count(test.input.text);
-        expect(result).toBe(test.expectedOutput);
-      }
-    }
-  });
-});
-</codeblock>
-    <section><title>Property-Based Testing</title></section>
-    <codeblock outputclass="language-typescript">import { fc, test as fcTest } from &apos;fast-check&apos;;
-
-describe(&apos;Property-Based Tests&apos;, () =&gt; {
-  fcTest.prop([fc.string()])(&apos;TokenCounter count is non-negative&apos;, (text) =&gt; {
-    const counter = new TokenCounter();
-    const count = counter.count(text);
-
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  fcTest.prop([fc.array(fc.string())])(&apos;Joining and counting matches array length&apos;, (words) =&gt; {
-    const counter = new TokenCounter();
-    const text = words.join(&apos; &apos;);
-    const count = counter.count(text);
-
-    // Count should match number of non-empty words
-    const nonEmptyWords = words.filter(w =&gt; w.trim().length &gt; 0);
-    expect(count).toBe(nonEmptyWords.length);
-  });
-
-  fcTest.prop([fc.string(), fc.string()])(&apos;Count is additive&apos;, (text1, text2) =&gt; {
-    const counter = new TokenCounter();
-
-    const count1 = counter.count(text1);
-    const count2 = counter.count(text2);
-    const combinedCount = counter.count(text1 + &apos; &apos; + text2);
-
-    // Combined count should equal sum (plus separator handling)
-    expect(combinedCount).toBeGreaterThanOrEqual(count1 + count2);
-  });
-});
-</codeblock>
-    <section><title>10.6 Performance Testing</title></section>
-    <p>Test performance characteristics and ensure they meet requirements.</p>
-    <section><title>Performance Test Framework</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Performance test utilities
- */
-export class PerformanceTest {
-  /**
-   * Measure execution time
-   */
-  static async measure&lt;T&gt;(
-    name: string,
-    fn: () =&gt; Promise&lt;T&gt;
-  ): Promise&lt;{ result: T; duration: number }&gt; {
-    const start = performance.now();
-
-    const result = await fn();
-
-    const duration = performance.now() - start;
-
-    console.log(`${name}: ${duration.toFixed(2)}ms`);
-
-    return { result, duration };
-  }
-
-  /**
-   * Run benchmark with multiple iterations
-   */
-  static async benchmark(
-    name: string,
-    fn: () =&gt; Promise&lt;void&gt;,
-    iterations: number = 100
-  ): Promise&lt;BenchmarkResult&gt; {
-    const durations: number[] = [];
-
-    for (let i = 0; i &lt; iterations; i++) {
-      const start = performance.now();
-      await fn();
-      durations.push(performance.now() - start);
-    }
-
-    const sorted = durations.sort((a, b) =&gt; a - b);
-
-    const result = {
-      name,
-      iterations,
-      mean: durations.reduce((a, b) =&gt; a + b) / iterations,
-      median: sorted[Math.floor(iterations / 2)],
-      min: sorted[0],
-      max: sorted[sorted.length - 1],
-      p95: sorted[Math.floor(iterations * 0.95)],
-      p99: sorted[Math.floor(iterations * 0.99)]
-    };
-
-    console.table(result);
-
-    return result;
-  }
-
-  /**
-   * Assert performance requirement
-   */
-  static assertPerformance(
-    duration: number,
-    maxMs: number,
-    operation: string
-  ): void {
-    if (duration &gt; maxMs) {
-      throw new Error(
-        `Performance requirement failed: ${operation} took ${duration.toFixed(2)}ms (max: ${maxMs}ms)`
-      );
-    }
-  }
-}
-
-export interface BenchmarkResult {
-  name: string;
-  iterations: number;
-  mean: number;
-  median: number;
-  min: number;
-  max: number;
-  p95: number;
-  p99: number;
-}
-</codeblock>
-    <section><title>Performance Tests</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;Performance Tests&apos;, () =&gt; {
-  test(&apos;ConversationManager.getMessagesForAI completes within 50ms&apos;, async () =&gt; {
-    const manager = new ConversationManager(mockAI, {
-      maxTokens: 10000,
-      strategy: ContextWindowStrategy.RECENT
-    });
-
-    // Add 100 messages
-    for (let i = 0; i &lt; 100; i++) {
-      manager.addMessage({
-        role: i % 2 === 0 ? MessageRole.USER : MessageRole.ASSISTANT,
-        content: `Message ${i}`,
-        tokens: 10
+    if (!validation.allowed) {
+      this.logger.warn(&apos;Blocked command execution:&apos;, {
+        command,
+        reason: validation.reason
       });
-    }
 
-    const { duration } = await PerformanceTest.measure(
-      &apos;getMessagesForAI&apos;,
-      async () =&gt; manager.getMessagesForAI()
-    );
-
-    PerformanceTest.assertPerformance(duration, 50, &apos;getMessagesForAI&apos;);
-  });
-
-  test(&apos;DependencyGraph.topologicalSort scales linearly&apos;, async () =&gt; {
-    const sizes = [10, 100, 1000];
-    const results: BenchmarkResult[] = [];
-
-    for (const size of sizes) {
-      const graph = new DependencyGraph();
-
-      // Create chain: 0 -&gt; 1 -&gt; 2 -&gt; ... -&gt; size
-      for (let i = 0; i &lt; size; i++) {
-        graph.addNode(`node_${i}`);
-        if (i &gt; 0) {
-          graph.addEdge(`node_${i}`, `node_${i - 1}`);
-        }
-      }
-
-      const result = await PerformanceTest.benchmark(
-        `topologicalSort (n=${size})`,
-        async () =&gt; { graph.topologicalSort(); },
-        100
-      );
-
-      results.push(result);
-    }
-
-    // Verify linear scaling (mean should scale linearly with size)
-    const ratio1 = results[1].mean / results[0].mean;
-    const ratio2 = results[2].mean / results[1].mean;
-
-    // Ratios should be approximately equal for linear scaling
-    expect(Math.abs(ratio1 - ratio2)).toBeLessThan(5);
-  });
-
-  test(&apos;Cache hit vs miss performance&apos;, async () =&gt; {
-    const cache = new ResultCache({ maxSize: 1000, ttl: 60000 });
-
-    const value = { data: &apos;test&apos;.repeat(100) };
-
-    // Benchmark cache miss
-    const miss = await PerformanceTest.benchmark(
-      &apos;cache miss&apos;,
-      async () =&gt; {
-        cache.get(&apos;nonexistent&apos;);
-      },
-      10000
-    );
-
-    // Benchmark cache hit
-    cache.set(&apos;key&apos;, value);
-
-    const hit = await PerformanceTest.benchmark(
-      &apos;cache hit&apos;,
-      async () =&gt; {
-        cache.get(&apos;key&apos;);
-      },
-      10000
-    );
-
-    // Cache hit should be faster
-    expect(hit.mean).toBeLessThan(miss.mean);
-
-    // Both should be very fast (&lt;1ms)
-    expect(hit.mean).toBeLessThan(1);
-    expect(miss.mean).toBeLessThan(1);
-  });
-});
-</codeblock>
-    <section><title>Load Testing</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;Load Tests&apos;, () =&gt; {
-  test(&apos;handles concurrent requests&apos;, async () =&gt; {
-    const mockAI = new MockAIProvider();
-    mockAI.setDefaultResponse(&apos;Response&apos;);
-
-    const manager = new ConversationManager(mockAI);
-
-    // Send 100 concurrent requests
-    const promises = Array.from({ length: 100 }, (_, i) =&gt;
-      manager.sendMessage(`Message ${i}`)
-    );
-
-    const start = performance.now();
-    await Promise.all(promises);
-    const duration = performance.now() - start;
-
-    console.log(`100 concurrent requests: ${duration.toFixed(2)}ms`);
-
-    // Should handle all requests
-    expect(mockAI.getCallCount()).toBe(100);
-
-    // Should complete reasonably fast
-    PerformanceTest.assertPerformance(duration, 5000, &apos;100 concurrent requests&apos;);
-  });
-
-  test(&apos;memory usage remains stable under load&apos;, async () =&gt; {
-    const manager = new ConversationManager(mockAI);
-
-    const initialMemory = process.memoryUsage().heapUsed;
-
-    // Add 10,000 messages
-    for (let i = 0; i &lt; 10000; i++) {
-      manager.addMessage({
-        role: i % 2 === 0 ? MessageRole.USER : MessageRole.ASSISTANT,
-        content: `Message ${i}`,
-        tokens: 10
-      });
-    }
-
-    const finalMemory = process.memoryUsage().heapUsed;
-    const memoryIncreaseMB = (finalMemory - initialMemory) / 1024 / 1024;
-
-    console.log(`Memory increase: ${memoryIncreaseMB.toFixed(2)}MB`);
-
-    // Memory increase should be reasonable
-    expect(memoryIncreaseMB).toBeLessThan(100);
-  });
-});
-</codeblock>
-    <section><title>10.7 Quality-Based Assertions</title></section>
-    <p>Since AI outputs are non-deterministic, use quality-based assertions instead of exact matching.</p>
-    <section><title>Quality Assertion Library</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Quality-based assertions for AI outputs
- */
-export class AIAssertions {
-  /**
-   * Assert response contains code
-   */
-  static containsCode(response: string): void {
-    const codeBlockPattern = /```[\s\S]*?```/;
-
-    if (!codeBlockPattern.test(response)) {
-      throw new Error(&apos;Response does not contain code block&apos;);
-    }
-  }
-
-  /**
-   * Assert code is valid TypeScript
-   */
-  static async isValidTypeScript(code: string): Promise&lt;void&gt; {
-    const ts = await import(&apos;typescript&apos;);
-
-    const result = ts.transpileModule(code, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2020,
-        module: ts.ModuleKind.ESNext
-      }
-    });
-
-    if (result.diagnostics &amp;&amp; result.diagnostics.length &gt; 0) {
-      const errors = result.diagnostics.map(d =&gt; d.messageText).join(&apos;\n&apos;);
-      throw new Error(`TypeScript compilation errors:\n${errors}`);
-    }
-  }
-
-  /**
-   * Assert code passes linting
-   */
-  static async passesLint(code: string): Promise&lt;void&gt; {
-    const { ESLint } = await import(&apos;eslint&apos;);
-
-    const eslint = new ESLint({
-      useEslintrc: false,
-      baseConfig: {
-        extends: [&apos;eslint:recommended&apos;],
-        parserOptions: {
-          ecmaVersion: 2020,
-          sourceType: &apos;module&apos;
-        }
-      }
-    });
-
-    const results = await eslint.lintText(code);
-
-    const errors = results[0].messages.filter(m =&gt; m.severity === 2);
-
-    if (errors.length &gt; 0) {
-      const errorMessages = errors.map(e =&gt; e.message).join(&apos;\n&apos;);
-      throw new Error(`Linting errors:\n${errorMessages}`);
-    }
-  }
-
-  /**
-   * Assert code implements specific functionality
-   */
-  static implementsFunction(code: string, functionName: string): void {
-    const functionPattern = new RegExp(
-      `(function\\s+${functionName}|const\\s+${functionName}\\s*=|${functionName}\\s*:\\s*function)`
-    );
-
-    if (!functionPattern.test(code)) {
-      throw new Error(`Code does not implement function: ${functionName}`);
-    }
-  }
-
-  /**
-   * Assert response has minimum quality score
-   */
-  static async hasMinimumQuality(
-    response: string,
-    minScore: number,
-    criteria: QualityCriteria
-  ): Promise&lt;void&gt; {
-    const score = await this.calculateQualityScore(response, criteria);
-
-    if (score &lt; minScore) {
-      throw new Error(
-        `Quality score ${score.toFixed(2)} below minimum ${minScore}`
+      throw new SecurityError(
+        `Command denied: ${validation.reason}`,
+        validation.severity || &apos;high&apos;
       );
     }
-  }
 
-  /**
-   * Calculate quality score based on criteria
-   */
-  private static async calculateQualityScore(
-    response: string,
-    criteria: QualityCriteria
-  ): Promise&lt;number&gt; {
-    let score = 0;
-    let totalWeight = 0;
+    // Validate working directory
+    if (cwd) {
+      const cwdValidation = this.validator.isPathAllowed(cwd);
 
-    if (criteria.hasCode) {
-      totalWeight += criteria.hasCode;
-      if (/```[\s\S]*?```/.test(response)) {
-        score += criteria.hasCode;
-      }
-    }
-
-    if (criteria.hasExplanation) {
-      totalWeight += criteria.hasExplanation;
-      // Check for explanation text (not in code blocks)
-      const textOutsideCode = response.replace(/```[\s\S]*?```/g, &apos;&apos;);
-      if (textOutsideCode.trim().length &gt; 50) {
-        score += criteria.hasExplanation;
-      }
-    }
-
-    if (criteria.isValid) {
-      totalWeight += criteria.isValid;
-      const codeMatch = response.match(/```(?:typescript|javascript)?\n([\s\S]*?)```/);
-      if (codeMatch) {
-        try {
-          await this.isValidTypeScript(codeMatch[1]);
-          score += criteria.isValid;
-        } catch (error) {
-          // Not valid
-        }
-      }
-    }
-
-    return totalWeight &gt; 0 ? (score / totalWeight) * 100 : 0;
-  }
-
-  /**
-   * Assert semantic similarity to expected output
-   */
-  static async semanticallySimilar(
-    actual: string,
-    expected: string,
-    minSimilarity: number = 0.7
-  ): Promise&lt;void&gt; {
-    // Use Levenshtein distance for simple similarity
-    const similarity = this.calculateSimilarity(actual, expected);
-
-    if (similarity &lt; minSimilarity) {
-      throw new Error(
-        `Semantic similarity ${similarity.toFixed(2)} below minimum ${minSimilarity}`
-      );
-    }
-  }
-
-  /**
-   * Calculate similarity using Levenshtein distance
-   */
-  private static calculateSimilarity(str1: string, str2: string): number {
-    const len1 = str1.length;
-    const len2 = str2.length;
-
-    const matrix: number[][] = [];
-
-    for (let i = 0; i &lt;= len1; i++) {
-      matrix[i] = [i];
-    }
-
-    for (let j = 0; j &lt;= len2; j++) {
-      matrix[0][j] = j;
-    }
-
-    for (let i = 1; i &lt;= len1; i++) {
-      for (let j = 1; j &lt;= len2; j++) {
-        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,     // deletion
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j - 1] + cost // substitution
+      if (!cwdValidation.allowed) {
+        throw new SecurityError(
+          `Working directory denied: ${cwdValidation.reason}`,
+          cwdValidation.severity || &apos;medium&apos;
         );
       }
     }
 
-    const distance = matrix[len1][len2];
-    const maxLen = Math.max(len1, len2);
+    this.logger.info(&apos;Executing command:&apos;, { command, cwd });
 
-    return 1 - (distance / maxLen);
+    const startTime = Date.now();
+
+    return new Promise((resolve, reject) =&gt; {
+      // Parse command
+      const args = command.split(/\s+/);
+      const cmd = args[0];
+      const cmdArgs = args.slice(1);
+
+      // Spawn process
+      const proc = spawn(cmd, cmdArgs, {
+        cwd: cwd || this.config.workingDirectory,
+        env: this.getFilteredEnv(),
+        timeout: this.config.maxExecutionTime,
+        maxBuffer: this.config.maxMemory
+      });
+
+      let stdout = &apos;&apos;;
+      let stderr = &apos;&apos;;
+
+      proc.stdout.on(&apos;data&apos;, data =&gt; {
+        stdout += data.toString();
+      });
+
+      proc.stderr.on(&apos;data&apos;, data =&gt; {
+        stderr += data.toString();
+      });
+
+      proc.on(&apos;error&apos;, error =&gt; {
+        this.logger.error(&apos;Command execution error:&apos;, {
+          command,
+          error
+        });
+
+        reject(new SecurityError(
+          `Execution failed: ${error.message}`,
+          &apos;medium&apos;
+        ));
+      });
+
+      proc.on(&apos;exit&apos;, (code, signal) =&gt; {
+        const duration = Date.now() - startTime;
+
+        this.logger.info(&apos;Command completed:&apos;, {
+          command,
+          code,
+          signal,
+          duration
+        });
+
+        resolve({
+          success: code === 0,
+          exitCode: code || 0,
+          stdout,
+          stderr,
+          duration
+        });
+      });
+
+      // Timeout handler
+      if (this.config.maxExecutionTime) {
+        setTimeout(() =&gt; {
+          proc.kill(&apos;SIGTERM&apos;);
+
+          setTimeout(() =&gt; {
+            proc.kill(&apos;SIGKILL&apos;);
+          }, 5000); // Force kill after 5s
+
+        }, this.config.maxExecutionTime);
+      }
+    });
+  }
+
+  /**
+   * Get filtered environment variables
+   */
+  private getFilteredEnv(): NodeJS.ProcessEnv {
+    if (!this.config.allowedEnvVars) {
+      return {};
+    }
+
+    const filtered: NodeJS.ProcessEnv = {};
+
+    for (const key of this.config.allowedEnvVars) {
+      if (process.env[key] !== undefined) {
+        filtered[key] = process.env[key];
+      }
+    }
+
+    return filtered;
   }
 }
 
-export interface QualityCriteria {
-  hasCode?: number;        // Weight for containing code
-  hasExplanation?: number; // Weight for containing explanation
-  isValid?: number;        // Weight for valid syntax
-  passesLint?: number;     // Weight for passing linting
+export interface ExecutionResult {
+  success: boolean;
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  duration: number;
 }
 </codeblock>
-    <section><title>Using Quality Assertions</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;Code Generation Quality&apos;, () =&gt; {
-  let ai: AIProvider;
+    <section><title>9.3 Credential Management</title></section>
+    <p>Secure storage and handling of API keys, passwords, and other credentials is critical.</p>
+    <section><title>Credential Encryption</title></section>
+    <codeblock outputclass="language-typescript">import crypto from &apos;crypto&apos;;
 
-  beforeAll(() =&gt; {
-    ai = new AnthropicProvider({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  });
-
-  test(&apos;generates valid code with explanation&apos;, async () =&gt; {
-    const response = await ai.complete({
-      messages: [{
-        role: MessageRole.USER,
-        content: &apos;Write a TypeScript function to calculate fibonacci numbers&apos;
-      }]
-    });
-
-    // Quality-based assertions
-    AIAssertions.containsCode(response.content);
-
-    const codeMatch = response.content.match(/```typescript\n([\s\S]*?)```/);
-    expect(codeMatch).not.toBeNull();
-
-    const code = codeMatch![1];
-
-    // Assert valid TypeScript
-    await AIAssertions.isValidTypeScript(code);
-
-    // Assert implements fibonacci
-    AIAssertions.implementsFunction(code, &apos;fibonacci&apos;);
-
-    // Assert passes linting
-    await AIAssertions.passesLint(code);
-
-    // Assert minimum quality
-    await AIAssertions.hasMinimumQuality(response.content, 80, {
-      hasCode: 30,
-      hasExplanation: 30,
-      isValid: 40
-    });
-  });
-
-  test(&apos;generates semantically similar responses&apos;, async () =&gt; {
-    const response1 = await ai.complete({
-      messages: [{
-        role: MessageRole.USER,
-        content: &apos;Explain dependency injection&apos;
-      }],
-      temperature: 0.7
-    });
-
-    const response2 = await ai.complete({
-      messages: [{
-        role: MessageRole.USER,
-        content: &apos;Explain dependency injection&apos;
-      }],
-      temperature: 0.7
-    });
-
-    // Responses should be semantically similar even if not identical
-    await AIAssertions.semanticallySimilar(
-      response1.content,
-      response2.content,
-      0.6 // 60% similarity threshold
-    );
-  });
-});
-</codeblock>
-    <section><title>10.8 Regression Detection</title></section>
-    <p>Detect when changes degrade AI output quality.</p>
-    <section><title>Regression Test Suite</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Regression testing for AI outputs
+/**
+ * Encrypts and decrypts credentials using AES-256-GCM
  */
-export class RegressionTestSuite {
-  private baseline: Map&lt;string, BaselineResponse&gt; = new Map();
-
-  constructor(private baselinePath: string) {}
+export class CredentialEncryption {
+  private algorithm = &apos;aes-256-gcm&apos;;
+  private keyLength = 32; // 256 bits
 
   /**
-   * Load baseline responses
+   * Derive encryption key from password using PBKDF2
    */
-  async loadBaseline(): Promise&lt;void&gt; {
-    const data = await fs.readFile(this.baselinePath, &apos;utf-8&apos;);
-    const baseline = JSON.parse(data);
-
-    for (const [key, value] of Object.entries(baseline)) {
-      this.baseline.set(key, value as BaselineResponse);
-    }
+  private async deriveKey(password: string, salt: Buffer): Promise&lt;Buffer&gt; {
+    return new Promise((resolve, reject) =&gt; {
+      crypto.pbkdf2(
+        password,
+        salt,
+        100000, // iterations
+        this.keyLength,
+        &apos;sha256&apos;,
+        (err, key) =&gt; {
+          if (err) reject(err);
+          else resolve(key);
+        }
+      );
+    });
   }
 
   /**
-   * Save baseline responses
+   * Encrypt credential
    */
-  async saveBaseline(): Promise&lt;void&gt; {
-    const baseline = Object.fromEntries(this.baseline);
-    await fs.writeFile(
-      this.baselinePath,
-      JSON.stringify(baseline, null, 2)
-    );
+  async encrypt(
+    credential: string,
+    password: string
+  ): Promise&lt;EncryptedCredential&gt; {
+    // Generate random salt and IV
+    const salt = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(16);
+
+    // Derive key from password
+    const key = await this.deriveKey(password, salt);
+
+    // Create cipher
+    const cipher = crypto.createCipheriv(this.algorithm, key, iv);
+
+    // Encrypt
+    let encrypted = cipher.update(credential, &apos;utf8&apos;, &apos;hex&apos;);
+    encrypted += cipher.final(&apos;hex&apos;);
+
+    // Get auth tag
+    const authTag = cipher.getAuthTag();
+
+    return {
+      encrypted,
+      salt: salt.toString(&apos;hex&apos;),
+      iv: iv.toString(&apos;hex&apos;),
+      authTag: authTag.toString(&apos;hex&apos;),
+      algorithm: this.algorithm
+    };
   }
 
   /**
-   * Test against baseline
+   * Decrypt credential
    */
-  async testAgainstBaseline(
-    key: string,
-    currentResponse: string,
-    qualityCriteria: QualityCriteria
-  ): Promise&lt;RegressionResult&gt; {
-    const baseline = this.baseline.get(key);
+  async decrypt(
+    encryptedCredential: EncryptedCredential,
+    password: string
+  ): Promise&lt;string&gt; {
+    // Convert from hex
+    const salt = Buffer.from(encryptedCredential.salt, &apos;hex&apos;);
+    const iv = Buffer.from(encryptedCredential.iv, &apos;hex&apos;);
+    const authTag = Buffer.from(encryptedCredential.authTag, &apos;hex&apos;);
 
-    if (!baseline) {
-      // No baseline - create one
-      this.baseline.set(key, {
-        response: currentResponse,
-        qualityScore: await AIAssertions[&apos;calculateQualityScore&apos;](
-          currentResponse,
-          qualityCriteria
-        ),
-        timestamp: new Date().toISOString()
-      });
+    // Derive key
+    const key = await this.deriveKey(password, salt);
 
-      return {
-        status: &apos;new&apos;,
-        message: &apos;New baseline created&apos;
-      };
-    }
+    // Create decipher
+    const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+    decipher.setAuthTag(authTag);
 
-    // Calculate current quality score
-    const currentScore = await AIAssertions[&apos;calculateQualityScore&apos;](
-      currentResponse,
-      qualityCriteria
-    );
+    // Decrypt
+    let decrypted = decipher.update(encryptedCredential.encrypted, &apos;hex&apos;, &apos;utf8&apos;);
+    decrypted += decipher.final(&apos;utf8&apos;);
 
-    // Compare with baseline
-    const scoreDiff = currentScore - baseline.qualityScore;
-
-    if (scoreDiff &lt; -10) {
-      // Significant regression
-      return {
-        status: &apos;regression&apos;,
-        message: `Quality dropped by ${Math.abs(scoreDiff).toFixed(2)} points`,
-        baselineScore: baseline.qualityScore,
-        currentScore,
-        diff: scoreDiff
-      };
-    } else if (scoreDiff &gt; 10) {
-      // Significant improvement - update baseline
-      this.baseline.set(key, {
-        response: currentResponse,
-        qualityScore: currentScore,
-        timestamp: new Date().toISOString()
-      });
-
-      return {
-        status: &apos;improvement&apos;,
-        message: `Quality improved by ${scoreDiff.toFixed(2)} points`,
-        baselineScore: baseline.qualityScore,
-        currentScore,
-        diff: scoreDiff
-      };
-    } else {
-      // No significant change
-      return {
-        status: &apos;passed&apos;,
-        message: &apos;Quality within acceptable range&apos;,
-        baselineScore: baseline.qualityScore,
-        currentScore,
-        diff: scoreDiff
-      };
-    }
+    return decrypted;
   }
 }
 
-interface BaselineResponse {
-  response: string;
-  qualityScore: number;
-  timestamp: string;
-}
-
-interface RegressionResult {
-  status: &apos;new&apos; | &apos;passed&apos; | &apos;regression&apos; | &apos;improvement&apos;;
-  message: string;
-  baselineScore?: number;
-  currentScore?: number;
-  diff?: number;
+export interface EncryptedCredential {
+  encrypted: string;
+  salt: string;
+  iv: string;
+  authTag: string;
+  algorithm: string;
 }
 </codeblock>
-    <section><title>Regression Tests</title></section>
-    <codeblock outputclass="language-typescript">describe(&apos;Regression Tests&apos;, () =&gt; {
-  let ai: AIProvider;
-  let regressionSuite: RegressionTestSuite;
+    <section><title>Credential Store</title></section>
+    <codeblock outputclass="language-typescript">import fs from &apos;fs/promises&apos;;
+import os from &apos;os&apos;;
 
-  beforeAll(async () =&gt; {
-    ai = new AnthropicProvider({ apiKey: process.env.ANTHROPIC_API_KEY! });
-    regressionSuite = new RegressionTestSuite(&apos;./tests/baseline.json&apos;);
-    await regressionSuite.loadBaseline();
-  });
+/**
+ * Secure credential storage
+ */
+export class CredentialStore {
+  private encryption: CredentialEncryption;
+  private storePath: string;
+  private masterPassword: string;
+  private cache: Map&lt;string, string&gt; = new Map();
 
-  afterAll(async () =&gt; {
-    await regressionSuite.saveBaseline();
-  });
+  constructor(
+    storePath?: string,
+    masterPassword?: string
+  ) {
+    this.encryption = new CredentialEncryption();
+    this.storePath = storePath || path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;credentials.enc&apos;);
+    this.masterPassword = masterPassword || this.getMasterPassword();
+  }
 
-  test(&apos;code generation quality&apos;, async () =&gt; {
-    const response = await ai.complete({
-      messages: [{
-        role: MessageRole.USER,
-        content: &apos;Write a TypeScript function to reverse a string&apos;
-      }]
+  /**
+   * Get master password from environment or keychain
+   */
+  private getMasterPassword(): string {
+    // Try environment variable first
+    const envPassword = process.env.OLLAMA_CODE_MASTER_PASSWORD;
+    if (envPassword) {
+      return envPassword;
+    }
+
+    // TODO: Integrate with OS keychain
+    // - macOS: Keychain Access
+    // - Windows: Credential Manager
+    // - Linux: Secret Service API
+
+    throw new Error(
+      &apos;Master password not set. Set OLLAMA_CODE_MASTER_PASSWORD environment variable.&apos;
+    );
+  }
+
+  /**
+   * Store credential
+   */
+  async set(key: string, value: string): Promise&lt;void&gt; {
+    // Encrypt credential
+    const encrypted = await this.encryption.encrypt(value, this.masterPassword);
+
+    // Load existing store
+    const store = await this.load();
+
+    // Add encrypted credential
+    store[key] = encrypted;
+
+    // Save store
+    await this.save(store);
+
+    // Update cache
+    this.cache.set(key, value);
+  }
+
+  /**
+   * Get credential
+   */
+  async get(key: string): Promise&lt;string | null&gt; {
+    // Check cache
+    if (this.cache.has(key)) {
+      return this.cache.get(key)!;
+    }
+
+    // Load store
+    const store = await this.load();
+
+    // Get encrypted credential
+    const encrypted = store[key];
+
+    if (!encrypted) {
+      return null;
+    }
+
+    // Decrypt
+    const decrypted = await this.encryption.decrypt(encrypted, this.masterPassword);
+
+    // Cache
+    this.cache.set(key, decrypted);
+
+    return decrypted;
+  }
+
+  /**
+   * Delete credential
+   */
+  async delete(key: string): Promise&lt;void&gt; {
+    // Load store
+    const store = await this.load();
+
+    // Remove credential
+    delete store[key];
+
+    // Save
+    await this.save(store);
+
+    // Clear cache
+    this.cache.delete(key);
+  }
+
+  /**
+   * List credential keys (not values)
+   */
+  async list(): Promise&lt;string[]&gt; {
+    const store = await this.load();
+    return Object.keys(store);
+  }
+
+  /**
+   * Load credential store from disk
+   */
+  private async load(): Promise&lt;Record&lt;string, EncryptedCredential&gt;&gt; {
+    try {
+      const data = await fs.readFile(this.storePath, &apos;utf-8&apos;);
+      return JSON.parse(data);
+    } catch (error) {
+      // Store doesn&apos;t exist yet
+      return {};
+    }
+  }
+
+  /**
+   * Save credential store to disk
+   */
+  private async save(store: Record&lt;string, EncryptedCredential&gt;): Promise&lt;void&gt; {
+    // Ensure directory exists
+    const dir = path.dirname(this.storePath);
+    await fs.mkdir(dir, { recursive: true });
+
+    // Write with restrictive permissions
+    await fs.writeFile(
+      this.storePath,
+      JSON.stringify(store, null, 2),
+      { mode: 0o600 } // Owner read/write only
+    );
+  }
+
+  /**
+   * Clear cache (for security)
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
+}
+</codeblock>
+    <section><title>Credential Usage</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Example: Storing and using API keys
+ */
+
+// Initialize credential store
+const credentialStore = new CredentialStore();
+
+// Store API keys (one-time setup)
+await credentialStore.set(&apos;anthropic_api_key&apos;, &apos;sk-ant-...&apos;);
+await credentialStore.set(&apos;openai_api_key&apos;, &apos;sk-...&apos;);
+await credentialStore.set(&apos;github_token&apos;, &apos;ghp_...&apos;);
+
+// Retrieve API key when needed
+const anthropicKey = await credentialStore.get(&apos;anthropic_api_key&apos;);
+
+// Use with AI provider
+const provider = new AnthropicProvider({
+  apiKey: anthropicKey!,
+  model: &apos;claude-3-5-sonnet-20241022&apos;
+});
+
+// Delete credential
+await credentialStore.delete(&apos;old_api_key&apos;);
+
+// List all stored credentials
+const keys = await credentialStore.list();
+console.log(&apos;Stored credentials:&apos;, keys);
+// Output: [&apos;anthropic_api_key&apos;, &apos;openai_api_key&apos;, &apos;github_token&apos;]
+</codeblock>
+    <section><title>9.4 Input Validation and Sanitization</title></section>
+    <p>Validate and sanitize all user input to prevent injection attacks and data leakage.</p>
+    <section><title>Input Validator</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Validates and sanitizes user input
+ */
+export class InputValidator {
+  private logger: Logger;
+
+  // Patterns for sensitive data
+  private sensitivePatterns = [
+    // API keys
+    /sk-[a-zA-Z0-9]{20,}/g,
+    /sk-ant-[a-zA-Z0-9-_]{20,}/g,
+    /ghp_[a-zA-Z0-9]{36}/g,
+    /gho_[a-zA-Z0-9]{36}/g,
+
+    // AWS credentials
+    /AKIA[0-9A-Z]{16}/g,
+    /aws_secret_access_key[&quot;\s:=]+[a-zA-Z0-9/+=]{40}/gi,
+
+    // Private keys
+    /-----BEGIN (RSA |DSA |EC )?PRIVATE KEY-----/g,
+
+    // Passwords
+    /password[&quot;\s:=]+[^\s&quot;]{8,}/gi,
+    /passwd[&quot;\s:=]+[^\s&quot;]{8,}/gi,
+
+    // Tokens
+    /token[&quot;\s:=]+[a-zA-Z0-9_-]{20,}/gi,
+    /bearer\s+[a-zA-Z0-9_-]{20,}/gi,
+
+    // Database connection strings
+    /mongodb(\+srv)?:\/\/[^:]+:[^@]+@/gi,
+    /postgres:\/\/[^:]+:[^@]+@/gi,
+    /mysql:\/\/[^:]+:[^@]+@/gi,
+
+    // Email addresses (PII)
+    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+
+    // Credit card numbers
+    /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
+
+    // SSN
+    /\b\d{3}-\d{2}-\d{4}\b/g
+  ];
+
+  // Patterns for injection attempts
+  private injectionPatterns = [
+    // Command injection
+    /;\s*(rm|dd|mkfs|kill|shutdown)/i,
+    /\|\s*(curl|wget).*\|\s*sh/i,
+    /`[^`]*`/g, // Backticks
+    /\$\([^)]*\)/g, // Command substitution
+
+    // SQL injection
+    /(union|select|insert|update|delete|drop|create|alter).*from/gi,
+    /(&apos;|&quot;)\s*(or|and)\s*(&apos;|&quot;)/gi,
+
+    // Path traversal
+    /\.\.[\/\\]/g,
+    /(\.\.\/){2,}/g,
+
+    // XSS
+    /&lt;script[^&gt;]*&gt;.*?&lt;\/script&gt;/gi,
+    /javascript:/gi,
+    /on\w+\s*=/gi // Event handlers
+  ];
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Validate input and detect issues
+   */
+  validate(input: string): ValidationResult {
+    const issues: ValidationIssue[] = [];
+
+    // Check for sensitive data
+    for (const pattern of this.sensitivePatterns) {
+      if (pattern.test(input)) {
+        issues.push({
+          type: &apos;sensitive_data&apos;,
+          severity: &apos;critical&apos;,
+          message: &apos;Input contains sensitive data (API key, password, etc.)&apos;,
+          pattern: pattern.toString()
+        });
+      }
+    }
+
+    // Check for injection attempts
+    for (const pattern of this.injectionPatterns) {
+      if (pattern.test(input)) {
+        issues.push({
+          type: &apos;injection_attempt&apos;,
+          severity: &apos;high&apos;,
+          message: &apos;Input contains potential injection pattern&apos;,
+          pattern: pattern.toString()
+        });
+      }
+    }
+
+    // Check length
+    if (input.length &gt; 50000) {
+      issues.push({
+        type: &apos;excessive_length&apos;,
+        severity: &apos;medium&apos;,
+        message: &apos;Input exceeds maximum length&apos;,
+        pattern: &apos;length &gt; 50000&apos;
+      });
+    }
+
+    const valid = issues.length === 0;
+
+    if (!valid) {
+      this.logger.warn(&apos;Input validation failed:&apos;, {
+        issues,
+        inputLength: input.length
+      });
+    }
+
+    return {
+      valid,
+      issues
+    };
+  }
+
+  /**
+   * Sanitize input by redacting sensitive data
+   */
+  sanitize(input: string): string {
+    let sanitized = input;
+
+    // Redact sensitive patterns
+    for (const pattern of this.sensitivePatterns) {
+      sanitized = sanitized.replace(pattern, &apos;[REDACTED]&apos;);
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * Check if input is safe to send to AI
+   */
+  isSafeForAI(input: string): boolean {
+    const validation = this.validate(input);
+
+    // Block if contains sensitive data
+    const hasSensitiveData = validation.issues.some(
+      issue =&gt; issue.type === &apos;sensitive_data&apos;
+    );
+
+    return !hasSensitiveData;
+  }
+
+  /**
+   * Check if input is safe to execute
+   */
+  isSafeForExecution(input: string): boolean {
+    const validation = this.validate(input);
+
+    // Block if contains injection attempts
+    const hasInjection = validation.issues.some(
+      issue =&gt; issue.type === &apos;injection_attempt&apos;
+    );
+
+    return !hasInjection;
+  }
+}
+
+export interface ValidationIssue {
+  type: &apos;sensitive_data&apos; | &apos;injection_attempt&apos; | &apos;excessive_length&apos;;
+  severity: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;;
+  message: string;
+  pattern: string;
+}
+</codeblock>
+    <section><title>Privacy Filter</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Filters sensitive data before sending to AI
+ */
+export class PrivacyFilter {
+  private validator: InputValidator;
+  private logger: Logger;
+
+  constructor(logger: Logger) {
+    this.validator = new InputValidator(logger);
+    this.logger = logger;
+  }
+
+  /**
+   * Filter input before sending to AI
+   */
+  async filterForAI(input: string): Promise&lt;FilterResult&gt; {
+    // Sanitize sensitive data
+    const sanitized = this.validator.sanitize(input);
+
+    // Check if safe
+    const safe = this.validator.isSafeForAI(input);
+
+    if (!safe) {
+      this.logger.warn(&apos;Input filtered for AI:&apos;, {
+        originalLength: input.length,
+        sanitizedLength: sanitized.length
+      });
+    }
+
+    return {
+      filtered: sanitized,
+      hadSensitiveData: !safe,
+      redactions: this.countRedactions(input, sanitized)
+    };
+  }
+
+  /**
+   * Filter file content before sending to AI
+   */
+  async filterFileContent(
+    filePath: string,
+    content: string
+  ): Promise&lt;FilterResult&gt; {
+    // Check if file should be entirely blocked
+    if (this.isBlockedFile(filePath)) {
+      this.logger.warn(&apos;Blocked file from AI:&apos;, { path: filePath });
+
+      return {
+        filtered: `[File ${filePath} contains sensitive data and was not sent to AI]`,
+        hadSensitiveData: true,
+        redactions: 1
+      };
+    }
+
+    // Filter content
+    return this.filterForAI(content);
+  }
+
+  /**
+   * Check if file is sensitive and should be blocked
+   */
+  private isBlockedFile(filePath: string): boolean {
+    const blockedPatterns = [
+      /\.env$/,
+      /\.env\./,
+      /credentials/i,
+      /secrets/i,
+      /\.key$/,
+      /\.pem$/,
+      /id_rsa$/,
+      /id_dsa$/
+    ];
+
+    return blockedPatterns.some(pattern =&gt; pattern.test(filePath));
+  }
+
+  /**
+   * Count number of redactions made
+   */
+  private countRedactions(original: string, filtered: string): number {
+    const redactionPattern = /\[REDACTED\]/g;
+    const matches = filtered.match(redactionPattern);
+    return matches ? matches.length : 0;
+  }
+}
+
+export interface FilterResult {
+  filtered: string;
+  hadSensitiveData: boolean;
+  redactions: number;
+}
+</codeblock>
+    <section><title>9.5 Rate Limiting and Quotas</title></section>
+    <p>Prevent resource exhaustion by limiting API calls and resource usage.</p>
+    <section><title>Rate Limiter</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Token bucket rate limiter
+ */
+export class RateLimiter {
+  private tokens: number;
+  private lastRefill: number;
+
+  constructor(
+    private maxTokens: number,
+    private refillRate: number, // tokens per second
+    private logger: Logger
+  ) {
+    this.tokens = maxTokens;
+    this.lastRefill = Date.now();
+  }
+
+  /**
+   * Try to consume tokens
+   * @returns true if tokens available, false if rate limited
+   */
+  async tryConsume(tokensNeeded: number = 1): Promise&lt;boolean&gt; {
+    // Refill tokens based on time elapsed
+    this.refill();
+
+    if (this.tokens &gt;= tokensNeeded) {
+      this.tokens -= tokensNeeded;
+      return true;
+    }
+
+    this.logger.warn(&apos;Rate limit exceeded:&apos;, {
+      available: this.tokens,
+      needed: tokensNeeded
     });
 
-    const result = await regressionSuite.testAgainstBaseline(
-      &apos;reverse_string&apos;,
-      response.content,
-      {
-        hasCode: 30,
-        hasExplanation: 20,
-        isValid: 50
+    return false;
+  }
+
+  /**
+   * Wait until tokens are available
+   */
+  async consume(tokensNeeded: number = 1): Promise&lt;void&gt; {
+    while (true) {
+      if (await this.tryConsume(tokensNeeded)) {
+        return;
+      }
+
+      // Calculate wait time
+      const tokensToWait = tokensNeeded - this.tokens;
+      const waitMs = (tokensToWait / this.refillRate) * 1000;
+
+      // Wait
+      await new Promise(resolve =&gt; setTimeout(resolve, waitMs));
+    }
+  }
+
+  /**
+   * Refill tokens based on elapsed time
+   */
+  private refill(): void {
+    const now = Date.now();
+    const elapsedMs = now - this.lastRefill;
+    const elapsedSeconds = elapsedMs / 1000;
+
+    const tokensToAdd = elapsedSeconds * this.refillRate;
+
+    this.tokens = Math.min(this.maxTokens, this.tokens + tokensToAdd);
+    this.lastRefill = now;
+  }
+
+  /**
+   * Get current token count
+   */
+  getAvailableTokens(): number {
+    this.refill();
+    return this.tokens;
+  }
+}
+</codeblock>
+    <section><title>Budget Manager</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Manages budget limits for AI API calls
+ */
+export class BudgetManager {
+  private usage: UsageTracker;
+  private logger: Logger;
+
+  constructor(
+    private limits: BudgetLimits,
+    logger: Logger
+  ) {
+    this.usage = new UsageTracker();
+    this.logger = logger;
+  }
+
+  /**
+   * Check if request is within budget
+   */
+  async checkBudget(estimatedCost: number): Promise&lt;BudgetCheckResult&gt; {
+    const current = this.usage.getCurrentUsage();
+
+    // Check hourly limit
+    if (this.limits.hourlyLimit) {
+      const hourlyUsage = this.usage.getUsageInWindow(3600000); // 1 hour
+
+      if (hourlyUsage.cost + estimatedCost &gt; this.limits.hourlyLimit) {
+        return {
+          allowed: false,
+          reason: &apos;Hourly budget limit exceeded&apos;,
+          current: hourlyUsage.cost,
+          limit: this.limits.hourlyLimit
+        };
+      }
+    }
+
+    // Check daily limit
+    if (this.limits.dailyLimit) {
+      const dailyUsage = this.usage.getUsageInWindow(86400000); // 24 hours
+
+      if (dailyUsage.cost + estimatedCost &gt; this.limits.dailyLimit) {
+        return {
+          allowed: false,
+          reason: &apos;Daily budget limit exceeded&apos;,
+          current: dailyUsage.cost,
+          limit: this.limits.dailyLimit
+        };
+      }
+    }
+
+    // Check monthly limit
+    if (this.limits.monthlyLimit) {
+      const monthlyUsage = this.usage.getUsageInWindow(2592000000); // 30 days
+
+      if (monthlyUsage.cost + estimatedCost &gt; this.limits.monthlyLimit) {
+        return {
+          allowed: false,
+          reason: &apos;Monthly budget limit exceeded&apos;,
+          current: monthlyUsage.cost,
+          limit: this.limits.monthlyLimit
+        };
+      }
+    }
+
+    return { allowed: true };
+  }
+
+  /**
+   * Record usage
+   */
+  async recordUsage(cost: number, tokens: number, provider: string): Promise&lt;void&gt; {
+    this.usage.record({
+      timestamp: Date.now(),
+      cost,
+      tokens,
+      provider
+    });
+
+    this.logger.info(&apos;API usage recorded:&apos;, { cost, tokens, provider });
+  }
+
+  /**
+   * Get current usage stats
+   */
+  getUsageStats(): UsageStats {
+    return {
+      hourly: this.usage.getUsageInWindow(3600000),
+      daily: this.usage.getUsageInWindow(86400000),
+      monthly: this.usage.getUsageInWindow(2592000000),
+      total: this.usage.getCurrentUsage()
+    };
+  }
+}
+
+export interface BudgetLimits {
+  hourlyLimit?: number;
+  dailyLimit?: number;
+  monthlyLimit?: number;
+}
+
+export interface BudgetCheckResult {
+  allowed: boolean;
+  reason?: string;
+  current?: number;
+  limit?: number;
+}
+
+export interface UsageStats {
+  hourly: { cost: number; tokens: number };
+  daily: { cost: number; tokens: number };
+  monthly: { cost: number; tokens: number };
+  total: { cost: number; tokens: number };
+}
+
+/**
+ * Tracks API usage over time
+ */
+class UsageTracker {
+  private records: UsageRecord[] = [];
+
+  record(record: UsageRecord): void {
+    this.records.push(record);
+
+    // Clean old records (older than 30 days)
+    const cutoff = Date.now() - 2592000000;
+    this.records = this.records.filter(r =&gt; r.timestamp &gt; cutoff);
+  }
+
+  getUsageInWindow(windowMs: number): { cost: number; tokens: number } {
+    const cutoff = Date.now() - windowMs;
+
+    const filtered = this.records.filter(r =&gt; r.timestamp &gt; cutoff);
+
+    return {
+      cost: filtered.reduce((sum, r) =&gt; sum + r.cost, 0),
+      tokens: filtered.reduce((sum, r) =&gt; sum + r.tokens, 0)
+    };
+  }
+
+  getCurrentUsage(): { cost: number; tokens: number } {
+    return {
+      cost: this.records.reduce((sum, r) =&gt; sum + r.cost, 0),
+      tokens: this.records.reduce((sum, r) =&gt; sum + r.tokens, 0)
+    };
+  }
+}
+
+interface UsageRecord {
+  timestamp: number;
+  cost: number;
+  tokens: number;
+  provider: string;
+}
+</codeblock>
+    <section><title>9.6 Privacy-Preserving AI Interactions</title></section>
+    <p>Minimize data exposure to AI providers while maintaining functionality.</p>
+    <section><title>Local-First Strategy</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Privacy-preserving AI interaction strategy
+ */
+export class PrivacyPreservingAI {
+  private privacyFilter: PrivacyFilter;
+  private localProvider: AIProvider; // Ollama
+  private cloudProvider: AIProvider; // Anthropic/OpenAI
+  private logger: Logger;
+
+  constructor(
+    localProvider: AIProvider,
+    cloudProvider: AIProvider,
+    logger: Logger
+  ) {
+    this.privacyFilter = new PrivacyFilter(logger);
+    this.localProvider = localProvider;
+    this.cloudProvider = cloudProvider;
+    this.logger = logger;
+  }
+
+  /**
+   * Route request based on sensitivity
+   */
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    // Analyze sensitivity
+    const sensitivity = this.analyzeSensitivity(request);
+
+    this.logger.info(&apos;Privacy routing:&apos;, {
+      sensitivity: sensitivity.level,
+      reasons: sensitivity.reasons
+    });
+
+    // Route based on sensitivity
+    if (sensitivity.level === &apos;high&apos; || sensitivity.level === &apos;critical&apos;) {
+      // Use local provider for sensitive data
+      return this.localProvider.complete(request);
+
+    } else {
+      // Filter and use cloud provider for non-sensitive data
+      const filtered = await this.filterRequest(request);
+      return this.cloudProvider.complete(filtered);
+    }
+  }
+
+  /**
+   * Analyze sensitivity of request
+   */
+  private analyzeSensitivity(request: CompletionRequest): SensitivityAnalysis {
+    const reasons: string[] = [];
+    let level: SensitivityLevel = &apos;low&apos;;
+
+    // Check each message
+    for (const message of request.messages) {
+      const validation = new InputValidator(this.logger).validate(message.content);
+
+      for (const issue of validation.issues) {
+        if (issue.type === &apos;sensitive_data&apos;) {
+          level = &apos;critical&apos;;
+          reasons.push(`Message contains ${issue.message}`);
+        }
+      }
+    }
+
+    // Check for code files
+    const hasCodeFiles = request.messages.some(m =&gt;
+      m.content.includes(&apos;```&apos;) || m.content.length &gt; 5000
+    );
+
+    if (hasCodeFiles) {
+      if (level === &apos;low&apos;) level = &apos;medium&apos;;
+      reasons.push(&apos;Request contains code files&apos;);
+    }
+
+    return { level, reasons };
+  }
+
+  /**
+   * Filter request before sending to cloud
+   */
+  private async filterRequest(
+    request: CompletionRequest
+  ): Promise&lt;CompletionRequest&gt; {
+    const filteredMessages = await Promise.all(
+      request.messages.map(async msg =&gt; {
+        const result = await this.privacyFilter.filterForAI(msg.content);
+
+        return {
+          ...msg,
+          content: result.filtered
+        };
+      })
+    );
+
+    return {
+      ...request,
+      messages: filteredMessages
+    };
+  }
+}
+
+type SensitivityLevel = &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;;
+
+interface SensitivityAnalysis {
+  level: SensitivityLevel;
+  reasons: string[];
+}
+</codeblock>
+    <section><title>Anonymization</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Anonymizes code and data before sending to AI
+ */
+export class CodeAnonymizer {
+  private identifierMap: Map&lt;string, string&gt; = new Map();
+  private counter = 0;
+
+  /**
+   * Anonymize code by replacing identifiers
+   */
+  anonymize(code: string, language: string): AnonymizedCode {
+    // Simple anonymization (production would use AST parsing)
+    let anonymized = code;
+
+    // Replace function names
+    anonymized = anonymized.replace(
+      /function\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
+      (match, name) =&gt; {
+        const anon = this.getAnonymousName(name);
+        return `function ${anon}`;
       }
     );
 
-    if (result.status === &apos;regression&apos;) {
-      throw new Error(result.message);
+    // Replace variable names
+    anonymized = anonymized.replace(
+      /(?:const|let|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
+      (match, name) =&gt; {
+        const anon = this.getAnonymousName(name);
+        return match.replace(name, anon);
+      }
+    );
+
+    // Replace class names
+    anonymized = anonymized.replace(
+      /class\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
+      (match, name) =&gt; {
+        const anon = this.getAnonymousName(name);
+        return `class ${anon}`;
+      }
+    );
+
+    return {
+      anonymized,
+      identifierMap: new Map(this.identifierMap)
+    };
+  }
+
+  /**
+   * Deanonymize response from AI
+   */
+  deanonymize(code: string): string {
+    let deanonymized = code;
+
+    // Reverse identifier mapping
+    for (const [original, anon] of this.identifierMap) {
+      deanonymized = deanonymized.replace(
+        new RegExp(`\\b${anon}\\b`, &apos;g&apos;),
+        original
+      );
     }
 
-    expect(result.status).not.toBe(&apos;regression&apos;);
-  });
+    return deanonymized;
+  }
 
-  test(&apos;commit message quality&apos;, async () =&gt; {
-    const generator = new CommitMessageGenerator(ai);
+  /**
+   * Get or create anonymous name
+   */
+  private getAnonymousName(original: string): string {
+    if (this.identifierMap.has(original)) {
+      return this.identifierMap.get(original)!;
+    }
 
-    const diff: GitDiff = {
-      files: [
-        { path: &apos;src/auth/login.ts&apos;, additions: 15, deletions: 3, changes: 18 }
-      ],
-      additions: 15,
-      deletions: 3
+    const anon = `var_${this.counter++}`;
+    this.identifierMap.set(original, anon);
+
+    return anon;
+  }
+
+  /**
+   * Clear mapping
+   */
+  reset(): void {
+    this.identifierMap.clear();
+    this.counter = 0;
+  }
+}
+
+interface AnonymizedCode {
+  anonymized: string;
+  identifierMap: Map&lt;string, string&gt;;
+}
+</codeblock>
+    <section><title>9.7 Audit Logging and Compliance</title></section>
+    <p>Comprehensive audit logging enables forensics and compliance.</p>
+    <section><title>Audit Logger</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Audit logger for security-relevant events
+ */
+export class AuditLogger {
+  private logger: Logger;
+  private storage: AuditStorage;
+
+  constructor(logger: Logger, storage: AuditStorage) {
+    this.logger = logger;
+    this.storage = storage;
+  }
+
+  /**
+   * Log security event
+   */
+  async logSecurityEvent(event: SecurityEvent): Promise&lt;void&gt; {
+    // Add metadata
+    const auditEvent: AuditEvent = {
+      ...event,
+      timestamp: new Date(),
+      id: this.generateEventId()
     };
 
-    const message = await generator.generate(diff, { scope: &apos;auth&apos; });
+    // Redact sensitive data
+    const redacted = this.redactEvent(auditEvent);
 
-    const result = await regressionSuite.testAgainstBaseline(
-      &apos;commit_message_auth&apos;,
-      message.message,
-      {
-        hasExplanation: 100 // Commit messages should be explanatory
+    // Write to logger
+    this.logger.info(&apos;Security event:&apos;, redacted);
+
+    // Store for audit
+    await this.storage.store(redacted);
+  }
+
+  /**
+   * Log file access
+   */
+  async logFileAccess(
+    operation: &apos;read&apos; | &apos;write&apos; | &apos;delete&apos;,
+    filePath: string,
+    success: boolean,
+    user?: string
+  ): Promise&lt;void&gt; {
+    await this.logSecurityEvent({
+      type: &apos;file_access&apos;,
+      operation,
+      resource: filePath,
+      success,
+      user,
+      metadata: {}
+    });
+  }
+
+  /**
+   * Log command execution
+   */
+  async logCommandExecution(
+    command: string,
+    success: boolean,
+    exitCode?: number,
+    user?: string
+  ): Promise&lt;void&gt; {
+    await this.logSecurityEvent({
+      type: &apos;command_execution&apos;,
+      operation: &apos;execute&apos;,
+      resource: command,
+      success,
+      user,
+      metadata: { exitCode }
+    });
+  }
+
+  /**
+   * Log credential access
+   */
+  async logCredentialAccess(
+    operation: &apos;get&apos; | &apos;set&apos; | &apos;delete&apos;,
+    key: string,
+    success: boolean,
+    user?: string
+  ): Promise&lt;void&gt; {
+    await this.logSecurityEvent({
+      type: &apos;credential_access&apos;,
+      operation,
+      resource: key,
+      success,
+      user,
+      metadata: {}
+    });
+  }
+
+  /**
+   * Log security violation
+   */
+  async logViolation(
+    violationType: string,
+    resource: string,
+    reason: string,
+    severity: &apos;low&apos; | &apos;medium&apos; | &apos;high&apos; | &apos;critical&apos;,
+    user?: string
+  ): Promise&lt;void&gt; {
+    await this.logSecurityEvent({
+      type: &apos;security_violation&apos;,
+      operation: violationType,
+      resource,
+      success: false,
+      user,
+      metadata: { reason, severity }
+    });
+  }
+
+  /**
+   * Redact sensitive data from event
+   */
+  private redactEvent(event: AuditEvent): AuditEvent {
+    const redacted = { ...event };
+
+    // Redact resource if it contains sensitive data
+    if (redacted.resource) {
+      const validator = new InputValidator(this.logger);
+      redacted.resource = validator.sanitize(redacted.resource);
+    }
+
+    return redacted;
+  }
+
+  /**
+   * Generate unique event ID
+   */
+  private generateEventId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  }
+}
+
+export interface SecurityEvent {
+  type: string;
+  operation: string;
+  resource: string;
+  success: boolean;
+  user?: string;
+  metadata: Record&lt;string, any&gt;;
+}
+
+export interface AuditEvent extends SecurityEvent {
+  id: string;
+  timestamp: Date;
+}
+</codeblock>
+    <section><title>Audit Storage</title></section>
+    <codeblock outputclass="language-typescript">import fs from &apos;fs/promises&apos;;
+
+/**
+ * Stores audit events for compliance
+ */
+export class AuditStorage {
+  private logPath: string;
+  private rotateSize: number; // bytes
+  private maxFiles: number;
+
+  constructor(
+    logPath: string,
+    rotateSize: number = 10 * 1024 * 1024, // 10 MB
+    maxFiles: number = 10
+  ) {
+    this.logPath = logPath;
+    this.rotateSize = rotateSize;
+    this.maxFiles = maxFiles;
+  }
+
+  /**
+   * Store audit event
+   */
+  async store(event: AuditEvent): Promise&lt;void&gt; {
+    // Ensure directory exists
+    const dir = path.dirname(this.logPath);
+    await fs.mkdir(dir, { recursive: true });
+
+    // Append to log file
+    const line = JSON.stringify(event) + &apos;\n&apos;;
+    await fs.appendFile(this.logPath, line);
+
+    // Check if rotation needed
+    await this.rotateIfNeeded();
+  }
+
+  /**
+   * Query audit events
+   */
+  async query(filter: AuditFilter): Promise&lt;AuditEvent[]&gt; {
+    const events: AuditEvent[] = [];
+
+    // Read all log files
+    const files = await this.getLogFiles();
+
+    for (const file of files) {
+      const content = await fs.readFile(file, &apos;utf-8&apos;);
+      const lines = content.split(&apos;\n&apos;).filter(line =&gt; line.trim());
+
+      for (const line of lines) {
+        try {
+          const event = JSON.parse(line);
+
+          if (this.matchesFilter(event, filter)) {
+            events.push(event);
+          }
+        } catch (error) {
+          // Skip invalid lines
+        }
       }
-    );
+    }
 
-    expect(result.status).not.toBe(&apos;regression&apos;);
-  });
-});
+    return events;
+  }
+
+  /**
+   * Rotate log file if needed
+   */
+  private async rotateIfNeeded(): Promise&lt;void&gt; {
+    try {
+      const stats = await fs.stat(this.logPath);
+
+      if (stats.size &gt;= this.rotateSize) {
+        await this.rotate();
+      }
+    } catch (error) {
+      // File doesn&apos;t exist yet
+    }
+  }
+
+  /**
+   * Rotate log files
+   */
+  private async rotate(): Promise&lt;void&gt; {
+    // Move existing files
+    for (let i = this.maxFiles - 1; i &gt; 0; i--) {
+      const oldPath = `${this.logPath}.${i}`;
+      const newPath = `${this.logPath}.${i + 1}`;
+
+      try {
+        await fs.rename(oldPath, newPath);
+      } catch (error) {
+        // File doesn&apos;t exist
+      }
+    }
+
+    // Move current file to .1
+    await fs.rename(this.logPath, `${this.logPath}.1`);
+
+    // Delete oldest file if needed
+    const oldestPath = `${this.logPath}.${this.maxFiles + 1}`;
+    try {
+      await fs.unlink(oldestPath);
+    } catch (error) {
+      // File doesn&apos;t exist
+    }
+  }
+
+  /**
+   * Get all log files
+   */
+  private async getLogFiles(): Promise&lt;string[]&gt; {
+    const files = [this.logPath];
+
+    for (let i = 1; i &lt;= this.maxFiles; i++) {
+      const path = `${this.logPath}.${i}`;
+
+      try {
+        await fs.access(path);
+        files.push(path);
+      } catch (error) {
+        // File doesn&apos;t exist
+        break;
+      }
+    }
+
+    return files;
+  }
+
+  /**
+   * Check if event matches filter
+   */
+  private matchesFilter(event: AuditEvent, filter: AuditFilter): boolean {
+    if (filter.type &amp;&amp; event.type !== filter.type) {
+      return false;
+    }
+
+    if (filter.operation &amp;&amp; event.operation !== filter.operation) {
+      return false;
+    }
+
+    if (filter.user &amp;&amp; event.user !== filter.user) {
+      return false;
+    }
+
+    if (filter.startTime &amp;&amp; event.timestamp &lt; filter.startTime) {
+      return false;
+    }
+
+    if (filter.endTime &amp;&amp; event.timestamp &gt; filter.endTime) {
+      return false;
+    }
+
+    return true;
+  }
+}
+
+export interface AuditFilter {
+  type?: string;
+  operation?: string;
+  user?: string;
+  startTime?: Date;
+  endTime?: Date;
+}
+</codeblock>
+    <section><title>9.8 Security Best Practices</title></section>
+    <section><title>Security Checklist</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Security best practices checklist
+ */
+export const SECURITY_CHECKLIST = {
+  authentication: [
+    &apos;Use encrypted credential storage (AES-256-GCM)&apos;,
+    &apos;Never store credentials in plaintext&apos;,
+    &apos;Use OS keychain when available&apos;,
+    &apos;Rotate credentials regularly&apos;,
+    &apos;Use principle of least privilege&apos;
+  ],
+
+  authorization: [
+    &apos;Implement sandbox for file access&apos;,
+    &apos;Require approval for destructive operations&apos;,
+    &apos;Use allowlists for paths and commands&apos;,
+    &apos;Validate all user input&apos;,
+    &apos;Implement read-only mode&apos;
+  ],
+
+  dataProtection: [
+    &apos;Filter sensitive data before sending to AI&apos;,
+    &apos;Use local AI for sensitive code&apos;,
+    &apos;Redact secrets in logs&apos;,
+    &apos;Anonymize code when possible&apos;,
+    &apos;Encrypt data at rest and in transit&apos;
+  ],
+
+  rateLimiting: [
+    &apos;Implement rate limiting for API calls&apos;,
+    &apos;Set budget caps (hourly, daily, monthly)&apos;,
+    &apos;Monitor usage patterns&apos;,
+    &apos;Alert on unusual activity&apos;,
+    &apos;Implement request queuing&apos;
+  ],
+
+  auditLogging: [
+    &apos;Log all security-relevant events&apos;,
+    &apos;Include context (user, timestamp, resource)&apos;,
+    &apos;Redact sensitive data in logs&apos;,
+    &apos;Rotate logs regularly&apos;,
+    &apos;Enable forensic analysis&apos;
+  ],
+
+  inputValidation: [
+    &apos;Validate all user input&apos;,
+    &apos;Sanitize before processing&apos;,
+    &apos;Detect injection attempts&apos;,
+    &apos;Limit input length&apos;,
+    &apos;Use type checking&apos;
+  ],
+
+  errorHandling: [
+    &apos;Never expose sensitive data in errors&apos;,
+    &apos;Log errors securely&apos;,
+    &apos;Fail securely (deny by default)&apos;,
+    &apos;Handle edge cases&apos;,
+    &apos;Provide user-friendly messages&apos;
+  ],
+
+  deployment: [
+    &apos;Run with least privilege&apos;,
+    &apos;Use environment variables for config&apos;,
+    &apos;Enable security headers&apos;,
+    &apos;Keep dependencies updated&apos;,
+    &apos;Regular security audits&apos;
+  ]
+};
+</codeblock>
+    <section><title>Secure Configuration</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Secure default configuration
+ */
+export class SecureConfiguration {
+  /**
+   * Get production-ready security configuration
+   */
+  static getProductionConfig(): SecurityConfig {
+    return {
+      // Sandbox configuration
+      sandbox: {
+        ...DEFAULT_SANDBOX_CONFIG,
+        readOnly: false,
+        allowNetwork: false,
+        maxExecutionTime: 30000
+      },
+
+      // Credential configuration
+      credentials: {
+        storePath: path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;credentials.enc&apos;),
+        encryptionAlgorithm: &apos;aes-256-gcm&apos;,
+        keyDerivationIterations: 100000
+      },
+
+      // Rate limiting
+      rateLimits: {
+        requestsPerMinute: 60,
+        requestsPerHour: 1000,
+        requestsPerDay: 10000
+      },
+
+      // Budget limits
+      budget: {
+        hourlyLimit: 1.00, // $1/hour
+        dailyLimit: 10.00, // $10/day
+        monthlyLimit: 100.00 // $100/month
+      },
+
+      // Privacy
+      privacy: {
+        filterSensitiveData: true,
+        useLocalForSensitive: true,
+        anonymizeCode: false, // Optional
+        redactLogs: true
+      },
+
+      // Audit logging
+      audit: {
+        enabled: true,
+        logPath: path.join(os.homedir(), &apos;.ollama-code&apos;, &apos;audit.log&apos;),
+        rotateSize: 10 * 1024 * 1024, // 10 MB
+        maxFiles: 10
+      },
+
+      // Approval requirements
+      approval: {
+        requireForWrite: true,
+        requireForDelete: true,
+        requireForExecute: true,
+        requireFor2FA: [&apos;delete&apos;, &apos;execute_dangerous&apos;]
+      }
+    };
+  }
+
+  /**
+   * Get development configuration (more permissive)
+   */
+  static getDevelopmentConfig(): SecurityConfig {
+    const prod = this.getProductionConfig();
+
+    return {
+      ...prod,
+      sandbox: {
+        ...prod.sandbox,
+        allowNetwork: true,
+        maxExecutionTime: 60000
+      },
+      approval: {
+        ...prod.approval,
+        requireForWrite: false,
+        requireForExecute: false
+      }
+    };
+  }
+}
+
+export interface SecurityConfig {
+  sandbox: SandboxConfig;
+  credentials: CredentialConfig;
+  rateLimits: RateLimitConfig;
+  budget: BudgetLimits;
+  privacy: PrivacyConfig;
+  audit: AuditConfig;
+  approval: ApprovalConfig;
+}
+
+interface CredentialConfig {
+  storePath: string;
+  encryptionAlgorithm: string;
+  keyDerivationIterations: number;
+}
+
+interface RateLimitConfig {
+  requestsPerMinute: number;
+  requestsPerHour: number;
+  requestsPerDay: number;
+}
+
+interface PrivacyConfig {
+  filterSensitiveData: boolean;
+  useLocalForSensitive: boolean;
+  anonymizeCode: boolean;
+  redactLogs: boolean;
+}
+
+interface AuditConfig {
+  enabled: boolean;
+  logPath: string;
+  rotateSize: number;
+  maxFiles: number;
+}
+
+interface ApprovalConfig {
+  requireForWrite: boolean;
+  requireForDelete: boolean;
+  requireForExecute: boolean;
+  requireFor2FA: string[];
+}
 </codeblock>
     <section><title>Exercises</title></section>
-    <section><title>Exercise 1: Build a Test Factory</title></section>
-    <p><b>Goal:</b> Create a factory that generates test data for different scenarios.</p>
+    <section><title>Exercise 1: Implement Container-Based Sandboxing</title></section>
+    <p><b>Goal:</b> Enhance sandboxing by using Docker containers for complete isolation.</p>
     <p><b>Requirements:</b>
-1. Generate realistic conversation histories
-2. Generate git diffs with various patterns
-3. Generate file structures
-4. Support different complexity levels</p>
+1. Create <codeph>DockerSandbox</codeph> class that executes commands in containers
+2. Mount only allowed directories
+3. Limit CPU, memory, and network
+4. Collect output and cleanup containers
+5. Handle errors and timeouts</p>
     <p><b>Starter Code:</b></p>
-    <codeblock outputclass="language-typescript">export class TestDataFactory {
-  generateConversation(length: number): Message[] {
-    // TODO: Generate realistic conversation
-  }
-
-  generateGitDiff(fileCount: number, complexity: &apos;simple&apos; | &apos;complex&apos;): GitDiff {
-    // TODO: Generate git diff
-  }
-
-  generateFileStructure(depth: number, filesPerDir: number): FileTree {
-    // TODO: Generate file tree
+    <codeblock outputclass="language-typescript">export class DockerSandbox {
+  async execute(command: string, config: SandboxConfig): Promise&lt;ExecutionResult&gt; {
+    // TODO: Create Docker container with restrictions
+    // TODO: Mount allowed directories as volumes
+    // TODO: Execute command
+    // TODO: Collect output
+    // TODO: Cleanup container
   }
 }
 </codeblock>
-    <section><title>Exercise 2: Implement Snapshot Testing</title></section>
-    <p><b>Goal:</b> Add snapshot testing for AI outputs to detect unexpected changes.</p>
+    <section><title>Exercise 2: Implement Security Incident Response</title></section>
+    <p><b>Goal:</b> Build incident detection and response system.</p>
     <p><b>Requirements:</b>
-1. Capture AI response snapshots
-2. Compare new responses with snapshots
-3. Support updating snapshots
-4. Show clear diffs</p>
+1. Detect security incidents (multiple failed attempts, unusual patterns)
+2. Classify severity
+3. Trigger alerts
+4. Implement automatic response (block user, require re-auth)
+5. Generate incident reports</p>
     <p><b>Hints:</b>
-- Use JSON serialization for snapshots
-- Store snapshots in <codeph>__snapshots__</codeph> directory
-- Implement <codeph>toMatchSnapshot()</codeph> matcher</p>
-    <section><title>Exercise 3: Build a CI/CD Pipeline</title></section>
-    <p><b>Goal:</b> Create a GitHub Actions workflow that runs all tests.</p>
+- Track failed operations per user/IP
+- Use sliding window for rate detection
+- Integration with notification systems (email, Slack)</p>
+    <section><title>Exercise 3: GDPR Compliance Features</title></section>
+    <p><b>Goal:</b> Add GDPR compliance features for handling user data.</p>
     <p><b>Requirements:</b>
-1. Run unit tests (fast, no AI)
-2. Run integration tests with mocks
-3. Run regression tests (nightly, with real AI)
-4. Publish coverage reports
-5. Fail on regression</p>
+1. Implement data export (all user data in JSON)
+2. Implement data deletion (right to be forgotten)
+3. Add consent management (track consents)
+4. Implement data retention policies (auto-delete old data)
+5. Generate compliance reports</p>
+    <p><b>Example:</b></p>
+    <codeblock outputclass="language-typescript">export class GDPRCompliance {
+  async exportUserData(userId: string): Promise&lt;UserDataExport&gt; {
+    // Export all data for user
+  }
+
+  async deleteUserData(userId: string): Promise&lt;void&gt; {
+    // Delete all user data
+  }
+
+  async trackConsent(userId: string, consentType: string): Promise&lt;void&gt; {
+    // Record consent
+  }
+}
+</codeblock>
     <section><title>Summary</title></section>
-    <p>In this chapter, you built comprehensive testing strategies for AI systems.</p>
+    <p>In this chapter, you built comprehensive security controls for your AI coding assistant.</p>
     <section><title>Key Concepts</title></section>
     <ol>
       <li>
-        <b>Quality-Based Assertions</b>
-        - Test properties, not exact outputs
+        <b>Sandboxed Execution</b>
+        - Restrict file access, commands, and resource usage
       </li>
       <li>
-        <b>Mock AI Providers</b>
-        - Fast, deterministic unit tests
+        <b>Credential Management</b>
+        - Encrypted storage with AES-256-GCM
       </li>
       <li>
-        <b>Integration Testing</b>
-        - Test components working together
+        <b>Input Validation</b>
+        - Detect and prevent injection attacks
       </li>
       <li>
-        <b>Synthetic Test Generation</b>
-        - AI-generated test cases
+        <b>Rate Limiting</b>
+        - Prevent resource exhaustion with token bucket
       </li>
       <li>
-        <b>Performance Testing</b>
-        - Ensure speed and scalability
+        <b>Privacy Filtering</b>
+        - Remove sensitive data before AI processing
       </li>
       <li>
-        <b>Regression Detection</b>
-        - Prevent quality degradation
+        <b>Audit Logging</b>
+        - Complete forensic trail of all operations
+      </li>
+      <li>
+        <b>Security Best Practices</b>
+        - Production-ready security checklist
       </li>
     </ol>
-    <section><title>Testing Strategy Summary</title></section>
-    <codeblock>Unit Tests (Fast, Many)
-├─ Pure functions
-├─ Validation logic
-├─ Data transformations
-└─ No AI dependencies
-
-Integration Tests (Medium Speed, Some)
-├─ Mock AI providers
-├─ Component integration
-├─ Tool orchestration
-└─ Conversation flow
-
-E2E Tests (Slow, Few)
-├─ Real AI providers
-├─ Full workflows
-├─ Regression detection
-└─ Quality validation
+    <section><title>Security Layers</title></section>
+    <codeblock>User Input
+    ↓
+Input Validation (detect injection, sensitive data)
+    ↓
+Privacy Filter (redact secrets)
+    ↓
+Authorization (check permissions)
+    ↓
+Rate Limiting (check quotas)
+    ↓
+Sandboxed Execution (restricted environment)
+    ↓
+Audit Logging (record everything)
 </codeblock>
     <section><title>Real-World Impact</title></section>
-    <p><b>Before Testing:</b>
-- Manual verification only
-- Regressions slip into production
-- Slow development (fear of breaking things)
-- No confidence in refactoring</p>
-    <p><b>After Testing:</b>
-- 80% code coverage
-- Automated regression detection
-- Fast CI/CD (&lt; 5 minutes)
-- Confident refactoring</p>
+    <p><b>Before Security:</b></p>
+    <codeblock>User: &quot;Delete old database backups&quot;
+AI: [Executes: rm -rf /backups/*]
+Result: ❌ All backups deleted including production
+        ❌ No audit trail
+        ❌ No approval required
+</codeblock>
+    <p><b>After Security:</b></p>
+    <codeblock>User: &quot;Delete old database backups&quot;
+AI: [Security checks]
+    [Detects destructive operation]
+    ⚠️  This will delete files in /backups/
+    📋 Affected: 147 files (23 GB)
+    🔒 Requires approval
+
+User: [Types &apos;yes&apos;]
+AI: [Sandboxed execution]
+    [Only deletes files older than 90 days]
+    [Logs to audit trail]
+    ✓ Deleted 12 old backups (3.2 GB)
+    ✓ Kept 135 recent backups (19.8 GB)
+</codeblock>
+    <p><b>Security Metrics:</b>
+- 100% of destructive operations require approval
+- 0% sensitive data leakage to AI
+- Complete audit trail for compliance
+- Budget controls prevent cost overruns
+- Sandboxing prevents unauthorized access</p>
+    <section><title>Part III Complete!</title></section>
+    <p>You&apos;ve now completed all three chapters of Part III: Advanced Features:</p>
+    <ol>
+      <li>
+        ✅
+        <b>Chapter 7</b>
+        : VCS Intelligence - AI-powered git workflows
+      </li>
+      <li>
+        ✅
+        <b>Chapter 8</b>
+        : Interactive Modes - Natural language routing
+      </li>
+      <li>
+        ✅
+        <b>Chapter 9</b>
+        : Security - Complete security framework
+      </li>
+    </ol>
     <section><title>Next Steps</title></section>
-    <p>In <b>Chapter 11: Performance Optimization →</b>, you&apos;ll learn how to make your AI assistant blazing fast with intelligent caching, parallel execution, and optimization techniques.</p>
-    <p><i>Chapter 10 | Testing AI Systems | Complete</i></p>
+    <p>In <b>Part IV: Production Readiness</b>, you&apos;ll learn how to test, optimize, and monitor your AI coding assistant for production deployment.</p>
+    <p><i>Chapter 9 | Security, Privacy, and Sandboxing | Complete</i></p>
   </body>
 </topic>

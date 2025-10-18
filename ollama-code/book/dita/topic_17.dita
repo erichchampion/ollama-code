@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_17">
+  <title>Appendix A: API Reference</title>
+  <body>
+    <section><title>Overview</title></section>
+    <p>This appendix provides a comprehensive API reference for all major interfaces, classes, and types used throughout the book. Use this as a quick lookup guide when implementing your own AI coding assistant.</p>
+    <p><b>Organization:</b>
+- AI Provider APIs
+- Tool APIs
+- Conversation APIs
+- Plugin APIs
+- Configuration APIs
+- Utility APIs</p>
+    <section><title>AI Provider APIs</title></section>
+    <section><title>AIProvider Interface</title></section>
+    <p>Base interface for all AI providers.</p>
+    <codeblock outputclass="language-typescript">interface AIProvider {
+  readonly name: string;
+  readonly supportedModels: string[];
+
+  // Core methods
+  complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt;;
+  streamComplete(request: CompletionRequest): AsyncGenerator&lt;string&gt;;
+
+  // Model management
+  listModels(): Promise&lt;ModelInfo[]&gt;;
+  getModelInfo(modelId: string): Promise&lt;ModelInfo&gt;;
+
+  // Health and metrics
+  healthCheck(): Promise&lt;HealthStatus&gt;;
+  getUsageStats(): UsageStats;
+
+  // Lifecycle
+  initialize(): Promise&lt;void&gt;;
+  dispose(): Promise&lt;void&gt;;
+}
+</codeblock>
+    <section><title>CompletionRequest</title></section>
+    <codeblock outputclass="language-typescript">interface CompletionRequest {
+  // Messages
+  messages: Message[];
+
+  // Model configuration
+  model?: string;
+  temperature?: number;        // 0.0 - 2.0, default: 0.7
+  maxTokens?: number;          // Max output tokens
+  topP?: number;               // Nucleus sampling, 0.0 - 1.0
+  topK?: number;               // Top-K sampling
+
+  // Stop sequences
+  stopSequences?: string[];
+
+  // Tools
+  tools?: Tool[];
+  toolChoice?: &apos;auto&apos; | &apos;required&apos; | &apos;none&apos;;
+
+  // Streaming
+  stream?: boolean;
+}
+</codeblock>
+    <section><title>CompletionResponse</title></section>
+    <codeblock outputclass="language-typescript">interface CompletionResponse {
+  // Response content
+  content: string;
+  role: MessageRole;
+
+  // Model info
+  model: string;
+
+  // Token usage
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+
+  // Tool calls (if applicable)
+  toolCalls?: ToolCall[];
+
+  // Metadata
+  finishReason?: &apos;stop&apos; | &apos;length&apos; | &apos;tool_calls&apos; | &apos;content_filter&apos;;
+  metadata?: Record&lt;string, any&gt;;
+}
+</codeblock>
+    <section><title>OllamaProvider</title></section>
+    <codeblock outputclass="language-typescript">class OllamaProvider implements AIProvider {
+  constructor(config: OllamaConfig);
+
+  // Configuration
+  configure(config: Partial&lt;OllamaConfig&gt;): void;
+
+  // Model pulling
+  pullModel(modelName: string, onProgress?: (progress: number) =&gt; void): Promise&lt;void&gt;;
+
+  // Additional methods
+  generateEmbeddings(text: string): Promise&lt;number[]&gt;;
+}
+
+interface OllamaConfig {
+  baseUrl: string;             // Default: &apos;http://localhost:11434&apos;
+  model: string;               // e.g., &apos;codellama:7b&apos;
+  timeout?: number;            // Request timeout in ms
+  keepAlive?: string;          // Keep model loaded, e.g., &apos;5m&apos;
+}
+</codeblock>
+    <section><title>OpenAIProvider</title></section>
+    <codeblock outputclass="language-typescript">class OpenAIProvider implements AIProvider {
+  constructor(config: OpenAIConfig);
+
+  // Configuration
+  configure(config: Partial&lt;OpenAIConfig&gt;): void;
+
+  // Fine-tuning
+  createFineTune(params: FineTuneParams): Promise&lt;FineTuneJob&gt;;
+
+  // Embeddings
+  createEmbeddings(input: string | string[]): Promise&lt;number[][]&gt;;
+}
+
+interface OpenAIConfig {
+  apiKey: string;
+  model: string;               // e.g., &apos;gpt-4-turbo&apos;
+  organization?: string;
+  baseUrl?: string;            // For Azure OpenAI
+  timeout?: number;
+}
+</codeblock>
+    <section><title>AnthropicProvider</title></section>
+    <codeblock outputclass="language-typescript">class AnthropicProvider implements AIProvider {
+  constructor(config: AnthropicConfig);
+
+  // Configuration
+  configure(config: Partial&lt;AnthropicConfig&gt;): void;
+}
+
+interface AnthropicConfig {
+  apiKey: string;
+  model: string;               // e.g., &apos;claude-3-opus-20240229&apos;
+  maxTokens?: number;
+  timeout?: number;
+}
+</codeblock>
+    <section><title>Tool APIs</title></section>
+    <section><title>Tool Interface</title></section>
+    <codeblock outputclass="language-typescript">interface Tool {
+  readonly metadata: ToolMetadata;
+
+  // Execution
+  execute(params: Record&lt;string, any&gt;): Promise&lt;ToolResult&gt;;
+
+  // Validation
+  validateParams(params: Record&lt;string, any&gt;): ValidationResult;
+
+  // Lifecycle
+  initialize?(): Promise&lt;void&gt;;
+  dispose?(): Promise&lt;void&gt;;
+}
+</codeblock>
+    <section><title>ToolMetadata</title></section>
+    <codeblock outputclass="language-typescript">interface ToolMetadata {
+  name: string;
+  description: string;
+  category?: ToolCategory;
+
+  // Parameter schema (JSON Schema)
+  parameters: {
+    type: &apos;object&apos;;
+    properties: Record&lt;string, ParameterSchema&gt;;
+    required?: string[];
+  };
+
+  // Dependencies
+  dependencies?: string[];      // Other tool names
+
+  // Execution hints
+  async?: boolean;              // Can run asynchronously
+  cacheable?: boolean;          // Results can be cached
+  dangerous?: boolean;          // Requires approval
+
+  // Examples
+  examples?: ToolExample[];
+}
+
+type ToolCategory =
+  | &apos;filesystem&apos;
+  | &apos;git&apos;
+  | &apos;code-analysis&apos;
+  | &apos;network&apos;
+  | &apos;database&apos;
+  | &apos;custom&apos;;
+
+interface ToolExample {
+  description: string;
+  params: Record&lt;string, any&gt;;
+  expectedResult?: any;
+}
+</codeblock>
+    <section><title>ToolResult</title></section>
+    <codeblock outputclass="language-typescript">interface ToolResult {
+  success: boolean;
+  data?: any;
+  error?: ToolError;
+  metadata?: {
+    executionTime?: number;
+    cached?: boolean;
+    fromCache?: boolean;
+  };
+}
+
+interface ToolError {
+  code: string;
+  message: string;
+  details?: any;
+  recoverable?: boolean;
+}
+</codeblock>
+    <section><title>ToolOrchestrator</title></section>
+    <codeblock outputclass="language-typescript">class ToolOrchestrator {
+  constructor(config?: OrchestratorConfig);
+
+  // Tool registration
+  registerTool(tool: Tool): void;
+  unregisterTool(toolName: string): void;
+  getTool(toolName: string): Tool | undefined;
+  getAvailableTools(): ToolMetadata[];
+
+  // Execution
+  executeTools(toolCalls: ToolCall[]): Promise&lt;ToolResult[]&gt;;
+  executeToolSequence(sequence: ToolCall[]): Promise&lt;ToolResult[]&gt;;
+  executeToolsParallel(toolCalls: ToolCall[]): Promise&lt;ToolResult[]&gt;;
+
+  // Dependency resolution
+  resolveDependencies(toolNames: string[]): string[];
+
+  // Approval system
+  setApprovalHandler(handler: ApprovalHandler): void;
+
+  // Cache management
+  clearCache(): void;
+  getCacheStats(): CacheStats;
+}
+
+interface OrchestratorConfig {
+  maxConcurrency?: number;      // Max parallel tools
+  cacheEnabled?: boolean;
+  cacheTTL?: number;            // Cache time-to-live in ms
+  approvalRequired?: boolean;
+  timeout?: number;             // Per-tool timeout
+}
+</codeblock>
+    <section><title>Conversation APIs</title></section>
+    <section><title>ConversationManager</title></section>
+    <codeblock outputclass="language-typescript">class ConversationManager {
+  constructor(config?: ConversationConfig);
+
+  // Message management
+  addMessage(message: Message): void;
+  getMessages(): Message[];
+  clearMessages(): void;
+
+  // Context management
+  getContext(maxTokens?: number): Message[];
+  estimateTokens(messages: Message[]): number;
+
+  // Persistence
+  save(conversationId: string): Promise&lt;void&gt;;
+  load(conversationId: string): Promise&lt;void&gt;;
+  list(): Promise&lt;ConversationInfo[]&gt;;
+  delete(conversationId: string): Promise&lt;void&gt;;
+
+  // Search
+  search(query: string): Promise&lt;Message[]&gt;;
+}
+
+interface ConversationConfig {
+  maxTokens?: number;           // Max context window
+  strategy?: ContextStrategy;   // Context retention strategy
+  persistPath?: string;         // Where to save conversations
+  autoSave?: boolean;
+}
+
+type ContextStrategy =
+  | &apos;recent&apos;                    // Keep recent messages
+  | &apos;important&apos;                 // Keep important messages
+  | &apos;sliding-summary&apos;           // Summarize old messages
+  | &apos;relevant&apos;;                 // Keep relevant to current topic
+</codeblock>
+    <section><title>Message</title></section>
+    <codeblock outputclass="language-typescript">interface Message {
+  role: MessageRole;
+  content: string;
+
+  // Optional fields
+  name?: string;               // Function/tool name for tool messages
+  toolCalls?: ToolCall[];      // For assistant messages with tool calls
+  toolCallId?: string;         // For tool response messages
+
+  // Metadata
+  timestamp?: number;
+  tokens?: number;
+  importance?: number;         // 0-1, for importance-based retention
+  metadata?: Record&lt;string, any&gt;;
+}
+
+type MessageRole =
+  | &apos;system&apos;
+  | &apos;user&apos;
+  | &apos;assistant&apos;
+  | &apos;tool&apos;;
+</codeblock>
+    <section><title>ToolCall</title></section>
+    <codeblock outputclass="language-typescript">interface ToolCall {
+  id: string;
+  type: &apos;function&apos;;
+  function: {
+    name: string;
+    arguments: string;         // JSON string
+  };
+}
+</codeblock>
+    <section><title>Plugin APIs</title></section>
+    <section><title>Plugin Interface</title></section>
+    <codeblock outputclass="language-typescript">interface Plugin {
+  readonly metadata: PluginMetadata;
+
+  // Lifecycle
+  activate(context: PluginContext): Promise&lt;void&gt;;
+  deactivate(): Promise&lt;void&gt;;
+
+  // Optional hooks
+  onInstall?(): Promise&lt;void&gt;;
+  onUninstall?(): Promise&lt;void&gt;;
+  onUpdate?(oldVersion: string, newVersion: string): Promise&lt;void&gt;;
+}
+</codeblock>
+    <section><title>PluginMetadata</title></section>
+    <codeblock outputclass="language-typescript">interface PluginMetadata {
+  id: string;                  // Unique identifier
+  name: string;
+  version: string;             // SemVer
+  description: string;
+  author: string;
+
+  // Dependencies
+  dependencies?: {
+    platform?: string;         // Platform version (SemVer range)
+    plugins?: Record&lt;string, string&gt;; // Plugin dependencies
+    node?: string;             // Node.js version
+  };
+
+  // Capabilities
+  capabilities?: string[];
+
+  // Repository
+  repository?: {
+    type: &apos;git&apos; | &apos;npm&apos;;
+    url: string;
+  };
+
+  // License
+  license?: string;
+
+  // Homepage
+  homepage?: string;
+}
+</codeblock>
+    <section><title>PluginContext</title></section>
+    <codeblock outputclass="language-typescript">interface PluginContext {
+  // Extension points
+  extensions: ExtensionRegistry;
+
+  // Configuration
+  config: PluginConfiguration;
+
+  // Storage
+  storage: PluginStorage;
+
+  // Logging
+  logger: Logger;
+
+  // Events
+  events: EventEmitter;
+}
+
+interface ExtensionRegistry {
+  get&lt;T&gt;(extensionPoint: string): ExtensionPoint&lt;T&gt;;
+}
+
+interface ExtensionPoint&lt;T&gt; {
+  register(extension: T): void;
+  unregister(extension: T): void;
+  getExtensions(): T[];
+}
+</codeblock>
+    <section><title>PluginManager</title></section>
+    <codeblock outputclass="language-typescript">class PluginManager {
+  // Loading
+  load(plugin: Plugin): Promise&lt;void&gt;;
+  unload(pluginId: string): Promise&lt;void&gt;;
+  reload(pluginId: string): Promise&lt;void&gt;;
+
+  // Discovery
+  discover(source: PluginSource): Promise&lt;Plugin[]&gt;;
+
+  // State
+  getLoaded(): LoadedPlugin[];
+  getPlugin(pluginId: string): LoadedPlugin | undefined;
+
+  // Events
+  on(event: PluginEvent, handler: EventHandler): void;
+}
+
+type PluginSource =
+  | &apos;npm&apos;
+  | &apos;filesystem&apos;
+  | &apos;registry&apos;;
+
+type PluginEvent =
+  | &apos;loaded&apos;
+  | &apos;unloaded&apos;
+  | &apos;error&apos;;
+
+interface LoadedPlugin {
+  plugin: Plugin;
+  context: PluginContext;
+  state: PluginState;
+}
+
+type PluginState =
+  | &apos;active&apos;
+  | &apos;inactive&apos;
+  | &apos;error&apos;;
+</codeblock>
+    <section><title>Configuration APIs</title></section>
+    <section><title>Configuration</title></section>
+    <codeblock outputclass="language-typescript">interface Configuration {
+  // AI Provider settings
+  providers: {
+    ollama?: OllamaConfig;
+    openai?: OpenAIConfig;
+    anthropic?: AnthropicConfig;
+    google?: GoogleConfig;
+  };
+
+  // Default provider
+  defaultProvider: string;
+
+  // Tool settings
+  tools: {
+    maxConcurrency?: number;
+    timeout?: number;
+    approvalRequired?: boolean;
+  };
+
+  // Conversation settings
+  conversation: {
+    maxTokens?: number;
+    strategy?: ContextStrategy;
+    autoSave?: boolean;
+  };
+
+  // Plugin settings
+  plugins: {
+    enabled: string[];
+    config: Record&lt;string, any&gt;;
+  };
+
+  // Security settings
+  security: {
+    sandboxEnabled?: boolean;
+    allowedCommands?: string[];
+    allowedPaths?: string[];
+    maxFileSize?: number;
+  };
+
+  // Logging settings
+  logging: {
+    level?: LogLevel;
+    format?: &apos;json&apos; | &apos;text&apos;;
+    destination?: &apos;console&apos; | &apos;file&apos;;
+    filePath?: string;
+  };
+
+  // Performance settings
+  performance: {
+    cacheEnabled?: boolean;
+    cacheTTL?: number;
+    maxCacheSize?: number;
+  };
+}
+
+type LogLevel =
+  | &apos;debug&apos;
+  | &apos;info&apos;
+  | &apos;warn&apos;
+  | &apos;error&apos;;
+</codeblock>
+    <section><title>ConfigurationManager</title></section>
+    <codeblock outputclass="language-typescript">class ConfigurationManager {
+  // Loading
+  load(path?: string): Promise&lt;Configuration&gt;;
+  loadFromEnv(): Configuration;
+
+  // Saving
+  save(config: Configuration, path?: string): Promise&lt;void&gt;;
+
+  // Access
+  get&lt;T&gt;(key: string): T | undefined;
+  set&lt;T&gt;(key: string, value: T): void;
+
+  // Validation
+  validate(config: Configuration): ValidationResult;
+
+  // Watching
+  watch(callback: (config: Configuration) =&gt; void): void;
+  unwatch(): void;
+}
+</codeblock>
+    <section><title>Utility APIs</title></section>
+    <section><title>Logger</title></section>
+    <codeblock outputclass="language-typescript">interface Logger {
+  debug(message: string, ...args: any[]): void;
+  info(message: string, ...args: any[]): void;
+  warn(message: string, ...args: any[]): void;
+  error(message: string, error?: Error, ...args: any[]): void;
+
+  // Structured logging
+  log(level: LogLevel, message: string, metadata?: Record&lt;string, any&gt;): void;
+
+  // Child loggers
+  child(context: Record&lt;string, any&gt;): Logger;
+}
+</codeblock>
+    <section><title>EventEmitter</title></section>
+    <codeblock outputclass="language-typescript">class EventEmitter {
+  on(event: string, handler: EventHandler): void;
+  off(event: string, handler: EventHandler): void;
+  once(event: string, handler: EventHandler): void;
+  emit(event: string, ...args: any[]): void;
+  removeAllListeners(event?: string): void;
+}
+
+type EventHandler = (...args: any[]) =&gt; void;
+</codeblock>
+    <section><title>Cache</title></section>
+    <codeblock outputclass="language-typescript">interface Cache&lt;T&gt; {
+  get(key: string): T | null;
+  set(key: string, value: T, ttl?: number): void;
+  has(key: string): boolean;
+  delete(key: string): void;
+  clear(): void;
+
+  // Statistics
+  getStats(): CacheStats;
+}
+
+interface CacheStats {
+  hits: number;
+  misses: number;
+  hitRate: number;
+  size: number;
+  maxSize: number;
+}
+</codeblock>
+    <section><title>Disposable</title></section>
+    <codeblock outputclass="language-typescript">interface IDisposable {
+  dispose(): void | Promise&lt;void&gt;;
+}
+
+class DisposableStore {
+  add(disposable: IDisposable): void;
+  dispose(): Promise&lt;void&gt;;
+}
+</codeblock>
+    <section><title>Type Definitions</title></section>
+    <section><title>Common Types</title></section>
+    <codeblock outputclass="language-typescript">// Health status
+interface HealthStatus {
+  healthy: boolean;
+  status: &apos;healthy&apos; | &apos;degraded&apos; | &apos;unhealthy&apos;;
+  checks: HealthCheck[];
+  timestamp: number;
+}
+
+interface HealthCheck {
+  name: string;
+  status: &apos;pass&apos; | &apos;fail&apos; | &apos;warn&apos;;
+  message?: string;
+  duration?: number;
+}
+
+// Usage statistics
+interface UsageStats {
+  totalRequests: number;
+  totalTokens: number;
+  totalCost: number;
+
+  // Breakdown
+  requestsByModel: Record&lt;string, number&gt;;
+  tokensByModel: Record&lt;string, number&gt;;
+  costByModel: Record&lt;string, number&gt;;
+
+  // Time range
+  startTime: number;
+  endTime: number;
+}
+
+// Model information
+interface ModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+
+  // Capabilities
+  capabilities: {
+    completion: boolean;
+    streaming: boolean;
+    tools: boolean;
+    vision: boolean;
+  };
+
+  // Context
+  contextWindow: number;
+  maxOutputTokens: number;
+
+  // Pricing
+  pricing?: {
+    input: number;            // Per 1M tokens
+    output: number;           // Per 1M tokens
+  };
+}
+
+// Validation result
+interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+}
+
+interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+}
+
+interface ValidationWarning {
+  field: string;
+  message: string;
+}
+
+// Conversation info
+interface ConversationInfo {
+  id: string;
+  title?: string;
+  messageCount: number;
+  createdAt: number;
+  updatedAt: number;
+  preview?: string;
+}
+</codeblock>
+    <section><title>Error Types</title></section>
+    <section><title>AIProviderError</title></section>
+    <codeblock outputclass="language-typescript">class AIProviderError extends Error {
+  constructor(
+    message: string,
+    public code: AIErrorCode,
+    public provider: string,
+    public details?: any
+  );
+}
+
+type AIErrorCode =
+  | &apos;NETWORK_ERROR&apos;
+  | &apos;AUTHENTICATION_ERROR&apos;
+  | &apos;RATE_LIMIT_ERROR&apos;
+  | &apos;INVALID_REQUEST&apos;
+  | &apos;MODEL_NOT_FOUND&apos;
+  | &apos;CONTEXT_LENGTH_EXCEEDED&apos;
+  | &apos;CONTENT_FILTER&apos;
+  | &apos;TIMEOUT&apos;
+  | &apos;UNKNOWN_ERROR&apos;;
+</codeblock>
+    <section><title>ToolError</title></section>
+    <codeblock outputclass="language-typescript">class ToolError extends Error {
+  constructor(
+    message: string,
+    public code: ToolErrorCode,
+    public toolName: string,
+    public recoverable: boolean = false
+  );
+}
+
+type ToolErrorCode =
+  | &apos;VALIDATION_ERROR&apos;
+  | &apos;EXECUTION_ERROR&apos;
+  | &apos;DEPENDENCY_ERROR&apos;
+  | &apos;TIMEOUT&apos;
+  | &apos;PERMISSION_DENIED&apos;
+  | &apos;NOT_FOUND&apos;;
+</codeblock>
+    <section><title>PluginError</title></section>
+    <codeblock outputclass="language-typescript">class PluginError extends Error {
+  constructor(
+    message: string,
+    public code: PluginErrorCode,
+    public pluginId: string
+  );
+}
+
+type PluginErrorCode =
+  | &apos;ACTIVATION_ERROR&apos;
+  | &apos;DEACTIVATION_ERROR&apos;
+  | &apos;DEPENDENCY_ERROR&apos;
+  | &apos;VERSION_MISMATCH&apos;
+  | &apos;INVALID_PLUGIN&apos;;
+</codeblock>
+    <section><title>Constants</title></section>
+    <section><title>Token Limits</title></section>
+    <codeblock outputclass="language-typescript">const TOKEN_LIMITS = {
+  // Ollama models
+  &apos;codellama:7b&apos;: 4096,
+  &apos;codellama:13b&apos;: 4096,
+  &apos;codellama:34b&apos;: 8192,
+  &apos;llama2:7b&apos;: 4096,
+  &apos;llama2:13b&apos;: 4096,
+  &apos;mistral:7b&apos;: 8192,
+
+  // OpenAI models
+  &apos;gpt-3.5-turbo&apos;: 16385,
+  &apos;gpt-4&apos;: 8192,
+  &apos;gpt-4-32k&apos;: 32768,
+  &apos;gpt-4-turbo&apos;: 128000,
+
+  // Anthropic models
+  &apos;claude-3-haiku&apos;: 200000,
+  &apos;claude-3-sonnet&apos;: 200000,
+  &apos;claude-3-opus&apos;: 200000,
+
+  // Google models
+  &apos;gemini-1.0-pro&apos;: 32760,
+  &apos;gemini-1.5-pro&apos;: 1000000,
+};
+</codeblock>
+    <section><title>Default Values</title></section>
+    <codeblock outputclass="language-typescript">const DEFAULTS = {
+  TEMPERATURE: 0.7,
+  MAX_TOKENS: 2048,
+  TOP_P: 1.0,
+  TOP_K: 40,
+
+  CACHE_TTL: 5 * 60 * 1000,     // 5 minutes
+  REQUEST_TIMEOUT: 30 * 1000,    // 30 seconds
+  MAX_CONCURRENCY: 5,
+
+  LOG_LEVEL: &apos;info&apos; as LogLevel,
+
+  CONVERSATION_MAX_TOKENS: 8000,
+  CONVERSATION_STRATEGY: &apos;recent&apos; as ContextStrategy,
+};
+</codeblock>
+    <section><title>Usage Examples</title></section>
+    <section><title>Creating an AI Provider</title></section>
+    <codeblock outputclass="language-typescript">import { OllamaProvider, OpenAIProvider } from &apos;ollama-code&apos;;
+
+// Ollama provider
+const ollama = new OllamaProvider({
+  baseUrl: &apos;http://localhost:11434&apos;,
+  model: &apos;codellama:7b&apos;
+});
+
+// OpenAI provider
+const openai = new OpenAIProvider({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: &apos;gpt-4-turbo&apos;
+});
+
+// Use provider
+const response = await ollama.complete({
+  messages: [
+    { role: &apos;user&apos;, content: &apos;Explain async/await in JavaScript&apos; }
+  ],
+  temperature: 0.3
+});
+
+console.log(response.content);
+</codeblock>
+    <section><title>Creating a Custom Tool</title></section>
+    <codeblock outputclass="language-typescript">import { Tool, ToolMetadata, ToolResult } from &apos;ollama-code&apos;;
+
+class CustomSearchTool implements Tool {
+  readonly metadata: ToolMetadata = {
+    name: &apos;custom-search&apos;,
+    description: &apos;Search custom documentation&apos;,
+    parameters: {
+      type: &apos;object&apos;,
+      properties: {
+        query: {
+          type: &apos;string&apos;,
+          description: &apos;Search query&apos;
+        }
+      },
+      required: [&apos;query&apos;]
+    }
+  };
+
+  async execute(params: { query: string }): Promise&lt;ToolResult&gt; {
+    // Implementation
+    const results = await this.search(params.query);
+
+    return {
+      success: true,
+      data: results
+    };
+  }
+
+  validateParams(params: any): ValidationResult {
+    if (!params.query || typeof params.query !== &apos;string&apos;) {
+      return {
+        valid: false,
+        errors: [{
+          field: &apos;query&apos;,
+          message: &apos;Query must be a string&apos;,
+          code: &apos;INVALID_TYPE&apos;
+        }],
+        warnings: []
+      };
+    }
+
+    return { valid: true, errors: [], warnings: [] };
+  }
+
+  private async search(query: string) {
+    // Search implementation
+    return [];
+  }
+}
+</codeblock>
+    <section><title>Creating a Plugin</title></section>
+    <codeblock outputclass="language-typescript">import { Plugin, PluginMetadata, PluginContext } from &apos;ollama-code&apos;;
+
+class MyPlugin implements Plugin {
+  readonly metadata: PluginMetadata = {
+    id: &apos;my-plugin&apos;,
+    name: &apos;My Custom Plugin&apos;,
+    version: &apos;1.0.0&apos;,
+    description: &apos;Custom plugin example&apos;,
+    author: &apos;Your Name&apos;,
+    dependencies: {
+      platform: &apos;^1.0.0&apos;
+    }
+  };
+
+  async activate(context: PluginContext): Promise&lt;void&gt; {
+    // Register tools
+    const toolExtensions = context.extensions.get(&apos;tools&apos;);
+    toolExtensions.register(new CustomSearchTool());
+
+    // Register commands
+    const commandExtensions = context.extensions.get(&apos;commands&apos;);
+    // ...
+
+    // Listen to events
+    context.events.on(&apos;completion:started&apos;, () =&gt; {
+      context.logger.info(&apos;Completion started&apos;);
+    });
+  }
+
+  async deactivate(): Promise&lt;void&gt; {
+    // Cleanup
+  }
+}
+</codeblock>
+    <section><title>Migration Guide</title></section>
+    <section><title>From v0.x to v1.x</title></section>
+    <p><b>Breaking Changes:</b></p>
+    <ol>
+      <li>
+        <b>AIProvider interface</b>
+        -
+        <codeph>complete()</codeph>
+        now returns
+        <codeph>CompletionResponse</codeph>
+        instead of
+        <codeph>string</codeph>
+        ```typescript
+        // Before (v0.x)
+        const result = await provider.complete(prompt);
+        console.log(result);
+      </li>
+    </ol>
+    <p>// After (v1.x)
+   const response = await provider.complete({ messages: [{ role: &apos;user&apos;, content: prompt }] });
+   console.log(response.content);
+   ```</p>
+    <ol>
+      <li>
+        <b>Tool execution</b>
+        - Results now wrapped in
+        <codeph>ToolResult</codeph>
+        ```typescript
+        // Before (v0.x)
+        const data = await tool.execute(params);
+      </li>
+    </ol>
+    <p>// After (v1.x)
+   const result = await tool.execute(params);
+   if (result.success) {
+     const data = result.data;
+   }
+   ```</p>
+    <ol>
+      <li>
+        <b>Configuration</b>
+        - Flat config to nested structure
+        ```typescript
+        // Before (v0.x)
+        {
+        ollamaUrl: &apos;http://localhost:11434&apos;,
+        ollamaModel: &apos;codellama:7b&apos;
+        }
+      </li>
+    </ol>
+    <p>// After (v1.x)
+   {
+     providers: {
+       ollama: {
+         baseUrl: &apos;http://localhost:11434&apos;,
+         model: &apos;codellama:7b&apos;
+       }
+     }
+   }
+   ```</p>
+    <p><i>Appendix A | API Reference | 10-15 pages</i></p>
+  </body>
+</topic>

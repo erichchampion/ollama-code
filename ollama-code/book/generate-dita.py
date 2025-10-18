@@ -585,13 +585,26 @@ def convert_headings_to_lists(md_text: str) -> str:
                 output.append(f"{indent}{item_counters[indent_level]}. {clean_heading}")
 
         elif line.strip() and not line.strip().startswith('#'):
-            # This is content under a heading (likely a numbered list)
+            # This is content under a heading (likely a numbered or bullet list)
             stripped = line.strip()
 
             # Check if it's a numbered list item with a link
             if stripped and stripped[0].isdigit() and '. ' in stripped[:5]:
                 # This is a numbered list item - extract the content after "N. "
                 content = stripped.split('. ', 1)[1] if '. ' in stripped else stripped
+
+                # Indent under the current heading
+                indent_level = len(heading_stack)
+                # Use 4 spaces per level (CommonMark requires 4 spaces for nesting)
+                indent = '    ' * indent_level
+
+                # Increment counter for items at this level
+                item_counters[indent_level] = item_counters.get(indent_level, 0) + 1
+
+                output.append(f"{indent}{item_counters[indent_level]}. {content}")
+            elif stripped.startswith('- '):
+                # This is a bullet list item - extract the content after "- "
+                content = stripped[2:].strip()
 
                 # Indent under the current heading
                 indent_level = len(heading_stack)

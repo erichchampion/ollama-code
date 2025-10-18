@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
 <topic id="topic_12">
-  <title>Chapter 12: Monitoring, Observability, and Reliability</title>
+  <title>Chapter 11: Performance Optimization</title>
   <body>
     <section><title>Table of Contents</title></section>
     <ul>
       <li>
-        12.1 Observability Overview
+        11.1 Performance Challenges
       </li>
       <li>
-        12.2 Structured Logging
+        11.2 Intelligent Caching Strategies
       </li>
       <li>
-        12.3 Distributed Tracing
+        11.3 Parallel Execution Optimization
       </li>
       <li>
-        12.4 Metrics Collection
+        11.4 Lazy Loading Patterns
       </li>
       <li>
-        12.5 Error Tracking and Alerting
+        11.5 Memory Management
       </li>
       <li>
-        12.6 Health Checks
+        11.6 Connection Pooling
       </li>
       <li>
-        12.7 Reliability Patterns
+        11.7 Response Streaming
       </li>
       <li>
-        12.8 Dashboards and Visualization
+        11.8 Profiling and Benchmarking
       </li>
       <li>
         Exercises
@@ -36,2030 +36,1950 @@
         Summary
       </li>
     </ul>
-    <section><title>12.1 Observability Overview</title></section>
-    <p>Observability is the ability to understand what&apos;s happening inside your system by examining its outputs. For AI systems, this is critical because of non-deterministic behavior and complex failure modes.</p>
-    <section><title>The Three Pillars of Observability</title></section>
+    <section><title>11.1 Performance Challenges</title></section>
+    <p>AI coding assistants face unique performance challenges: slow LLM API calls, large context windows, and expensive tool execution.</p>
+    <section><title>Performance Bottlenecks</title></section>
     <codeblock outputclass="language-typescript">/**
- * The three pillars of observability
+ * Common performance bottlenecks in AI systems
  */
-export enum ObservabilityPillar {
-  /** Logs: Discrete events with context */
-  LOGS = &apos;logs&apos;,
+export enum PerformanceBottleneck {
+  /** LLM API calls (1-5 seconds each) */
+  API_LATENCY = &apos;api_latency&apos;,
 
-  /** Metrics: Numerical measurements over time */
-  METRICS = &apos;metrics&apos;,
+  /** Large prompts and responses */
+  LARGE_PAYLOADS = &apos;large_payloads&apos;,
 
-  /** Traces: Request flow through system */
-  TRACES = &apos;traces&apos;
+  /** Sequential tool execution */
+  SEQUENTIAL_EXECUTION = &apos;sequential_execution&apos;,
+
+  /** Repeated identical operations */
+  NO_CACHING = &apos;no_caching&apos;,
+
+  /** Memory leaks from large conversations */
+  MEMORY_LEAKS = &apos;memory_leaks&apos;,
+
+  /** Blocking I/O operations */
+  BLOCKING_IO = &apos;blocking_io&apos;,
+
+  /** Cold start for lazy-loaded modules */
+  COLD_START = &apos;cold_start&apos;
 }
 
 /**
- * Observability requirements for AI systems
+ * Performance targets for production
  */
-export const OBSERVABILITY_REQUIREMENTS = {
-  logs: {
-    structured: true,        // Machine-parseable format
-    contextual: true,        // Include request/user context
-    searchable: true,        // Full-text search capability
-    retention: 30,           // Days to retain
-    sampling: false          // No sampling (capture all)
-  },
+export const PERFORMANCE_TARGETS = {
+  // Response time targets
+  firstTokenLatency: 500,      // ms - Time to first token
+  simpleQuery: 2000,           // ms - Total time for simple queries
+  complexQuery: 5000,          // ms - Total time for complex queries
 
-  metrics: {
-    granularity: 60,         // Seconds between measurements
-    dimensions: [            // Metric dimensions
-      &apos;provider&apos;,
-      &apos;model&apos;,
-      &apos;operation&apos;,
-      &apos;status&apos;
-    ],
-    aggregations: [          // Aggregation types
-      &apos;sum&apos;,
-      &apos;avg&apos;,
-      &apos;p50&apos;,
-      &apos;p95&apos;,
-      &apos;p99&apos;
-    ]
-  },
+  // Throughput targets
+  requestsPerSecond: 10,       // Concurrent requests handled
 
-  traces: {
-    sampleRate: 1.0,         // 100% sampling in production
-    includeContext: true,    // Include full request context
-    maxSpans: 1000,          // Max spans per trace
-    retention: 7             // Days to retain
-  }
+  // Resource targets
+  memoryUsage: 512 * 1024 * 1024, // 512 MB max
+  cpuUsage: 80,                // % max
+
+  // Cache targets
+  cacheHitRate: 70,            // % - Cache effectiveness
+
+  // Cost targets
+  costPerQuery: 0.01           // $ - Average cost per query
 };
 </codeblock>
-    <section><title>Observability Goals</title></section>
+    <section><title>Before vs After Optimization</title></section>
     <codeblock outputclass="language-typescript">/**
- * What we want to know about our AI system
+ * Performance comparison: Before optimization
  */
-export interface ObservabilityGoals {
-  // Performance
-  howFast: {
-    firstTokenLatency: number;    // Time to first token
-    totalLatency: number;         // Total request time
-    cacheHitRate: number;         // Cache effectiveness
-  };
+async function analyzeCodebase_SLOW() {
+  // Sequential execution - SLOW!
+  const files = await listFiles(&apos;src/&apos;);        // 150ms
 
-  // Reliability
-  howReliable: {
-    errorRate: number;            // % of requests failing
-    availability: number;         // % uptime
-    successRate: number;          // % of successful requests
-  };
+  for (const file of files) {                   // 10 files
+    const content = await readFile(file);       // 50ms each = 500ms
+    const analysis = await analyzeWithAI(content); // 1,500ms each = 15,000ms
+    await saveAnalysis(file, analysis);         // 30ms each = 300ms
+  }
 
-  // Cost
-  howExpensive: {
-    costPerRequest: number;       // Average cost
-    totalCost: number;            // Total spend
-    tokenUsage: number;           // Tokens consumed
-  };
-
-  // Quality
-  howGood: {
-    qualityScore: number;         // Output quality (0-100)
-    userSatisfaction: number;     // User feedback
-    regressionRate: number;       // % quality regressions
-  };
-
-  // Usage
-  whoAndWhat: {
-    activeUsers: number;          // Users in time period
-    requestsPerUser: number;      // Usage per user
-    topOperations: string[];      // Most common operations
-  };
-}
-</codeblock>
-    <section><title>Before vs After Observability</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Without observability
- */
-function withoutObservability() {
-  // User reports issue
-  console.log(&apos;User: My request failed&apos;);
-
-  // You have no visibility
-  // - No logs to check
-  // - No metrics to analyze
-  // - No trace to follow
-  // - No error details
-
-  // Result: 60+ minutes debugging
-  // - Checking code
-  // - Adding console.log
-  // - Reproducing locally
-  // - Guessing root cause
+  // Total: 15,950ms (~16 seconds) ❌
 }
 
 /**
- * With observability
+ * Performance comparison: After optimization
  */
-async function withObservability() {
-  // User reports issue
-  console.log(&apos;User: My request failed at 14:32&apos;);
+async function analyzeCodebase_FAST() {
+  // Parallel execution with caching
+  const files = await listFiles(&apos;src/&apos;);        // 150ms
 
-  // Check dashboard
-  const trace = await tracing.getTrace(&apos;req_abc123&apos;);
+  // Read all files in parallel
+  const contents = await Promise.all(           // 50ms (parallelized)
+    files.map(file =&gt; readFile(file))
+  );
 
-  console.log(`
-📊 Request Trace: req_abc123
-├─ User: user_456
-├─ Timestamp: 2024-01-15 14:32:15
-├─ Duration: 3,456ms
-├─ Status: FAILED
-├─
-├─ Spans:
-│  ├─ [200ms] Validate Input ✓
-│  ├─ [150ms] Check Cache ✓ (miss)
-│  ├─ [2,100ms] AI Provider: Anthropic
-│  │  ├─ Status: 429 Rate Limit
-│  │  └─ Error: Rate limit exceeded
-│  ├─ [890ms] Fallback: OpenAI ✓
-│  │  └─ Success
-│  └─ [116ms] Cache Result ✓
-├─
-├─ Root Cause: Anthropic rate limit
-├─ Resolution: Fallback succeeded
-└─ Action Taken: Increased rate limit
-  `);
+  // Analyze in parallel with caching
+  const analyses = await Promise.all(           // 1,500ms (parallelized + cache hits)
+    contents.map((content, i) =&gt; {
+      const cacheKey = hashContent(content);
+      return getCachedOrAnalyze(cacheKey, content);
+    })
+  );
 
-  // Result: 2 minutes to identify and resolve
+  // Save in parallel
+  await Promise.all(                            // 30ms (parallelized)
+    analyses.map((analysis, i) =&gt;
+      saveAnalysis(files[i], analysis)
+    )
+  );
+
+  // Total: 1,730ms (~1.7 seconds) ✓
+  // 9.2x faster! 🚀
 }
 </codeblock>
-    <section><title>12.2 Structured Logging</title></section>
-    <p>Structured logging uses machine-parseable formats (JSON) instead of plain text, enabling powerful querying and analysis.</p>
-    <section><title>Structured Logger</title></section>
-    <codeblock outputclass="language-typescript">import winston from &apos;winston&apos;;
+    <section><title>Optimization Strategy</title></section>
+    <codeblock>┌─────────────────────────────────────────────────────────────┐
+│              Performance Optimization Strategy               │
+└─────────────────────────────────────────────────────────────┘
 
-/**
- * Structured logger with context
- */
-export class StructuredLogger {
-  private logger: winston.Logger;
+1. Measure First
+   └─ Profile actual performance
+   └─ Identify real bottlenecks
+   └─ Set measurable targets
 
-  constructor(options: LoggerOptions = {}) {
-    this.logger = winston.createLogger({
-      level: options.level || &apos;info&apos;,
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-      ),
-      defaultMeta: {
-        service: options.service || &apos;ollama-code&apos;,
-        environment: process.env.NODE_ENV || &apos;development&apos;,
-        version: options.version || &apos;1.0.0&apos;
-      },
-      transports: [
-        // Console (for development)
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-          )
-        }),
+2. Low-Hanging Fruit
+   └─ Add caching (biggest impact)
+   └─ Parallelize independent operations
+   └─ Reduce payload sizes
 
-        // File (for production)
-        new winston.transports.File({
-          filename: &apos;logs/error.log&apos;,
-          level: &apos;error&apos;
-        }),
-        new winston.transports.File({
-          filename: &apos;logs/combined.log&apos;
-        })
-      ]
-    });
-  }
+3. Advanced Optimizations
+   └─ Lazy loading
+   └─ Connection pooling
+   └─ Memory optimization
+   └─ Streaming
 
-  /**
-   * Log with context
-   */
-  info(message: string, context?: LogContext): void {
-    this.logger.info(message, this.enrichContext(context));
-  }
-
-  warn(message: string, context?: LogContext): void {
-    this.logger.warn(message, this.enrichContext(context));
-  }
-
-  error(message: string, error?: Error, context?: LogContext): void {
-    this.logger.error(message, {
-      ...this.enrichContext(context),
-      error: error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      } : undefined
-    });
-  }
-
-  debug(message: string, context?: LogContext): void {
-    this.logger.debug(message, this.enrichContext(context));
-  }
-
-  /**
-   * Enrich context with metadata
-   */
-  private enrichContext(context?: LogContext): Record&lt;string, any&gt; {
-    return {
-      ...context,
-      timestamp: new Date().toISOString(),
-      pid: process.pid,
-      hostname: require(&apos;os&apos;).hostname()
-    };
-  }
-
-  /**
-   * Create child logger with fixed context
-   */
-  child(context: LogContext): StructuredLogger {
-    const child = new StructuredLogger({
-      service: this.logger.defaultMeta?.service,
-      level: this.logger.level
-    });
-
-    // Add fixed context to all logs
-    child.logger.defaultMeta = {
-      ...child.logger.defaultMeta,
-      ...context
-    };
-
-    return child;
-  }
-}
-
-interface LoggerOptions {
-  service?: string;
-  level?: string;
-  version?: string;
-}
-
-interface LogContext {
-  requestId?: string;
-  userId?: string;
-  operation?: string;
-  duration?: number;
-  [key: string]: any;
-}
+4. Validate
+   └─ Measure improvements
+   └─ Monitor in production
+   └─ Iterate
 </codeblock>
-    <section><title>Request Logger</title></section>
+    <section><title>11.2 Intelligent Caching Strategies</title></section>
+    <p>Caching is the highest-impact optimization. Cache AI responses, tool results, and expensive computations.</p>
+    <section><title>Multi-Level Cache</title></section>
     <codeblock outputclass="language-typescript">/**
- * Logs AI requests with full context
+ * Multi-level cache with different strategies per level
  */
-export class RequestLogger {
-  constructor(private logger: StructuredLogger) {}
+export class MultiLevelCache {
+  private l1Cache: Map&lt;string, CacheEntry&gt;; // Memory cache (fast)
+  private l2Cache: LRUCache&lt;string, CacheEntry&gt;; // LRU cache (medium)
+  private l3Cache: DiskCache; // Disk cache (slow but persistent)
 
-  /**
-   * Log AI request start
-   */
-  logRequestStart(request: CompletionRequest, context: RequestContext): void {
-    this.logger.info(&apos;AI request started&apos;, {
-      requestId: context.requestId,
-      userId: context.userId,
-      provider: request.model?.split(&apos;/&apos;)[0],
-      model: request.model,
-      messageCount: request.messages.length,
-      temperature: request.temperature,
-      maxTokens: request.maxTokens,
-      operation: context.operation
+  constructor(
+    private options: CacheOptions
+  ) {
+    this.l1Cache = new Map();
+    this.l2Cache = new LRUCache({
+      max: options.l2MaxSize || 1000,
+      ttl: options.l2TTL || 1000 * 60 * 60 // 1 hour
     });
+    this.l3Cache = new DiskCache(options.l3Path || &apos;.cache&apos;);
   }
 
   /**
-   * Log AI request completion
+   * Get value from cache (checks all levels)
    */
-  logRequestComplete(
-    request: CompletionRequest,
-    response: CompletionResponse,
-    context: RequestContext,
-    duration: number
-  ): void {
-    this.logger.info(&apos;AI request completed&apos;, {
-      requestId: context.requestId,
-      userId: context.userId,
-      provider: response.metadata?.provider,
-      model: response.model,
-      duration,
-      inputTokens: response.usage?.inputTokens,
-      outputTokens: response.usage?.outputTokens,
-      totalTokens: response.usage?.totalTokens,
-      cost: this.calculateCost(response),
-      fromCache: response.metadata?.fromCache || false,
-      operation: context.operation
-    });
-  }
-
-  /**
-   * Log AI request error
-   */
-  logRequestError(
-    request: CompletionRequest,
-    error: Error,
-    context: RequestContext,
-    duration: number
-  ): void {
-    this.logger.error(&apos;AI request failed&apos;, error, {
-      requestId: context.requestId,
-      userId: context.userId,
-      model: request.model,
-      duration,
-      operation: context.operation,
-      errorType: error.name,
-      retryable: this.isRetryable(error)
-    });
-  }
-
-  /**
-   * Log tool execution
-   */
-  logToolExecution(
-    tool: string,
-    params: Record&lt;string, any&gt;,
-    result: ToolResult,
-    duration: number,
-    context: RequestContext
-  ): void {
-    this.logger.info(&apos;Tool executed&apos;, {
-      requestId: context.requestId,
-      tool,
-      params: this.sanitizeParams(params),
-      success: result.success,
-      duration,
-      fromCache: result.fromCache || false,
-      operation: context.operation
-    });
-  }
-
-  /**
-   * Calculate request cost
-   */
-  private calculateCost(response: CompletionResponse): number {
-    if (!response.usage) return 0;
-
-    // Approximate costs (would use actual provider pricing)
-    const inputCost = response.usage.inputTokens * 0.00001;
-    const outputCost = response.usage.outputTokens * 0.00003;
-
-    return inputCost + outputCost;
-  }
-
-  /**
-   * Check if error is retryable
-   */
-  private isRetryable(error: Error): boolean {
-    const retryableErrors = [
-      &apos;RateLimitError&apos;,
-      &apos;TimeoutError&apos;,
-      &apos;NetworkError&apos;,
-      &apos;ServiceUnavailableError&apos;
-    ];
-
-    return retryableErrors.includes(error.name);
-  }
-
-  /**
-   * Sanitize sensitive parameters
-   */
-  private sanitizeParams(params: Record&lt;string, any&gt;): Record&lt;string, any&gt; {
-    const sanitized = { ...params };
-
-    // Redact sensitive fields
-    const sensitiveFields = [&apos;apiKey&apos;, &apos;password&apos;, &apos;token&apos;, &apos;secret&apos;];
-
-    for (const field of sensitiveFields) {
-      if (field in sanitized) {
-        sanitized[field] = &apos;[REDACTED]&apos;;
-      }
+  async get&lt;T&gt;(key: string): Promise&lt;T | null&gt; {
+    // Check L1 (memory)
+    const l1Entry = this.l1Cache.get(key);
+    if (l1Entry &amp;&amp; !this.isExpired(l1Entry)) {
+      return l1Entry.value as T;
     }
 
-    return sanitized;
-  }
-}
+    // Check L2 (LRU)
+    const l2Entry = this.l2Cache.get(key);
+    if (l2Entry &amp;&amp; !this.isExpired(l2Entry)) {
+      // Promote to L1
+      this.l1Cache.set(key, l2Entry);
+      return l2Entry.value as T;
+    }
 
-interface RequestContext {
-  requestId: string;
-  userId?: string;
-  operation: string;
-}
-</codeblock>
-    <section><title>Log Querying</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Query structured logs
- */
-export class LogQuery {
-  constructor(private logsPath: string) {}
+    // Check L3 (disk)
+    const l3Entry = await this.l3Cache.get(key);
+    if (l3Entry &amp;&amp; !this.isExpired(l3Entry)) {
+      // Promote to L2 and L1
+      this.l2Cache.set(key, l3Entry);
+      this.l1Cache.set(key, l3Entry);
+      return l3Entry.value as T;
+    }
+
+    return null;
+  }
 
   /**
-   * Query logs by criteria
+   * Set value in cache (writes to all levels)
    */
-  async query(criteria: QueryCriteria): Promise&lt;LogEntry[]&gt; {
-    const logs = await this.readLogs();
+  async set&lt;T&gt;(
+    key: string,
+    value: T,
+    options?: SetOptions
+  ): Promise&lt;void&gt; {
+    const entry: CacheEntry = {
+      value,
+      timestamp: Date.now(),
+      ttl: options?.ttl || this.options.defaultTTL || 1000 * 60 * 60,
+      size: this.estimateSize(value)
+    };
 
-    return logs.filter(log =&gt; {
-      // Filter by time range
-      if (criteria.startTime &amp;&amp; new Date(log.timestamp) &lt; criteria.startTime) {
-        return false;
-      }
+    // Write to L1
+    this.l1Cache.set(key, entry);
 
-      if (criteria.endTime &amp;&amp; new Date(log.timestamp) &gt; criteria.endTime) {
-        return false;
-      }
+    // Write to L2
+    this.l2Cache.set(key, entry);
 
-      // Filter by level
-      if (criteria.level &amp;&amp; log.level !== criteria.level) {
-        return false;
-      }
-
-      // Filter by service
-      if (criteria.service &amp;&amp; log.service !== criteria.service) {
-        return false;
-      }
-
-      // Filter by request ID
-      if (criteria.requestId &amp;&amp; log.requestId !== criteria.requestId) {
-        return false;
-      }
-
-      // Filter by user ID
-      if (criteria.userId &amp;&amp; log.userId !== criteria.userId) {
-        return false;
-      }
-
-      // Filter by operation
-      if (criteria.operation &amp;&amp; log.operation !== criteria.operation) {
-        return false;
-      }
-
-      return true;
+    // Write to L3 (async, don&apos;t wait)
+    this.l3Cache.set(key, entry).catch(err =&gt; {
+      console.error(&apos;L3 cache write failed:&apos;, err);
     });
   }
 
   /**
-   * Get error rate
+   * Invalidate cache entry
    */
-  async getErrorRate(timeRange: TimeRange): Promise&lt;number&gt; {
-    const logs = await this.query({
-      startTime: timeRange.start,
-      endTime: timeRange.end
-    });
-
-    const errors = logs.filter(log =&gt; log.level === &apos;error&apos;).length;
-    const total = logs.length;
-
-    return total &gt; 0 ? errors / total : 0;
+  async invalidate(key: string): Promise&lt;void&gt; {
+    this.l1Cache.delete(key);
+    this.l2Cache.delete(key);
+    await this.l3Cache.delete(key);
   }
 
   /**
-   * Get average duration
+   * Clear entire cache
    */
-  async getAverageDuration(
-    operation: string,
-    timeRange: TimeRange
-  ): Promise&lt;number&gt; {
-    const logs = await this.query({
-      operation,
-      startTime: timeRange.start,
-      endTime: timeRange.end
-    });
-
-    const durations = logs
-      .filter(log =&gt; log.duration !== undefined)
-      .map(log =&gt; log.duration!);
-
-    if (durations.length === 0) return 0;
-
-    return durations.reduce((a, b) =&gt; a + b, 0) / durations.length;
+  async clear(): Promise&lt;void&gt; {
+    this.l1Cache.clear();
+    this.l2Cache.clear();
+    await this.l3Cache.clear();
   }
 
   /**
-   * Read logs from file
+   * Check if entry is expired
    */
-  private async readLogs(): Promise&lt;LogEntry[]&gt; {
-    const content = await fs.readFile(this.logsPath, &apos;utf-8&apos;);
-    const lines = content.split(&apos;\n&apos;).filter(line =&gt; line.trim());
+  private isExpired(entry: CacheEntry): boolean {
+    return Date.now() - entry.timestamp &gt; entry.ttl;
+  }
 
-    return lines.map(line =&gt; JSON.parse(line));
+  /**
+   * Estimate size of value in bytes
+   */
+  private estimateSize(value: any): number {
+    return JSON.stringify(value).length;
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats(): CacheStats {
+    return {
+      l1Size: this.l1Cache.size,
+      l2Size: this.l2Cache.size,
+      l3Size: this.l3Cache.getSize(),
+      totalMemoryUsage: this.calculateMemoryUsage()
+    };
+  }
+
+  private calculateMemoryUsage(): number {
+    let total = 0;
+
+    for (const entry of this.l1Cache.values()) {
+      total += entry.size;
+    }
+
+    return total;
   }
 }
 
-interface QueryCriteria {
-  startTime?: Date;
-  endTime?: Date;
-  level?: string;
-  service?: string;
-  requestId?: string;
-  userId?: string;
-  operation?: string;
+interface CacheEntry {
+  value: any;
+  timestamp: number;
+  ttl: number;
+  size: number;
 }
 
-interface TimeRange {
-  start: Date;
-  end: Date;
+interface CacheOptions {
+  l2MaxSize?: number;
+  l2TTL?: number;
+  l3Path?: string;
+  defaultTTL?: number;
 }
 
-interface LogEntry {
-  timestamp: string;
-  level: string;
-  message: string;
-  service: string;
-  requestId?: string;
-  userId?: string;
-  operation?: string;
-  duration?: number;
-  [key: string]: any;
+interface SetOptions {
+  ttl?: number;
 }
-</codeblock>
-    <section><title>12.3 Distributed Tracing</title></section>
-    <p>Distributed tracing tracks requests as they flow through your system, showing the complete call graph.</p>
-    <section><title>Trace Context</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Trace context for distributed tracing
- */
-export class TraceContext {
-  constructor(
-    public readonly traceId: string,
-    public readonly spanId: string,
-    public readonly parentSpanId?: string
-  ) {}
 
-  /**
-   * Create root trace context
-   */
-  static createRoot(): TraceContext {
-    return new TraceContext(
-      this.generateId(),
-      this.generateId()
-    );
-  }
-
-  /**
-   * Create child span
-   */
-  createChild(): TraceContext {
-    return new TraceContext(
-      this.traceId,
-      TraceContext.generateId(),
-      this.spanId
-    );
-  }
-
-  /**
-   * Generate unique ID
-   */
-  private static generateId(): string {
-    return crypto.randomBytes(16).toString(&apos;hex&apos;);
-  }
+interface CacheStats {
+  l1Size: number;
+  l2Size: number;
+  l3Size: number;
+  totalMemoryUsage: number;
 }
 </codeblock>
-    <section><title>Tracer</title></section>
+    <section><title>AI Response Cache</title></section>
     <codeblock outputclass="language-typescript">/**
- * Distributed tracer
+ * Cache for AI responses with semantic key generation
  */
-export class Tracer {
-  private spans: Map&lt;string, Span&gt; = new Map();
-  private logger: StructuredLogger;
+export class AIResponseCache {
+  private cache: MultiLevelCache;
+  private logger: Logger;
 
-  constructor(logger: StructuredLogger) {
+  constructor(cache: MultiLevelCache, logger: Logger) {
+    this.cache = cache;
     this.logger = logger;
   }
 
   /**
-   * Start a span
+   * Get cached AI response
    */
-  startSpan(
-    name: string,
-    context: TraceContext,
-    attributes?: Record&lt;string, any&gt;
-  ): Span {
-    const span: Span = {
-      traceId: context.traceId,
-      spanId: context.spanId,
-      parentSpanId: context.parentSpanId,
-      name,
-      startTime: Date.now(),
-      attributes: attributes || {},
-      events: [],
-      status: SpanStatus.UNSET
-    };
+  async get(request: CompletionRequest): Promise&lt;CompletionResponse | null&gt; {
+    const key = this.generateCacheKey(request);
 
-    this.spans.set(span.spanId, span);
+    const cached = await this.cache.get&lt;CachedResponse&gt;(key);
 
-    this.logger.debug(&apos;Span started&apos;, {
-      traceId: span.traceId,
-      spanId: span.spanId,
-      name: span.name
-    });
+    if (cached) {
+      this.logger.debug(&apos;AI cache hit&apos;, { key });
 
-    return span;
-  }
-
-  /**
-   * End a span
-   */
-  endSpan(span: Span, status: SpanStatus = SpanStatus.OK): void {
-    span.endTime = Date.now();
-    span.duration = span.endTime - span.startTime;
-    span.status = status;
-
-    this.logger.info(&apos;Span completed&apos;, {
-      traceId: span.traceId,
-      spanId: span.spanId,
-      name: span.name,
-      duration: span.duration,
-      status: span.status
-    });
-
-    // Export span to trace collector
-    this.exportSpan(span);
-  }
-
-  /**
-   * Add event to span
-   */
-  addEvent(span: Span, name: string, attributes?: Record&lt;string, any&gt;): void {
-    span.events.push({
-      name,
-      timestamp: Date.now(),
-      attributes: attributes || {}
-    });
-  }
-
-  /**
-   * Set span error
-   */
-  setError(span: Span, error: Error): void {
-    span.status = SpanStatus.ERROR;
-    span.attributes.error = {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    };
-  }
-
-  /**
-   * Get trace
-   */
-  async getTrace(traceId: string): Promise&lt;Trace&gt; {
-    const spans = Array.from(this.spans.values())
-      .filter(s =&gt; s.traceId === traceId)
-      .sort((a, b) =&gt; a.startTime - b.startTime);
-
-    return {
-      traceId,
-      spans,
-      duration: this.calculateTraceDuration(spans),
-      status: this.calculateTraceStatus(spans)
-    };
-  }
-
-  /**
-   * Export span to trace collector
-   */
-  private exportSpan(span: Span): void {
-    // Would export to OpenTelemetry, Jaeger, etc.
-    // For now, just log
-    this.logger.debug(&apos;Span exported&apos;, {
-      span: JSON.stringify(span)
-    });
-  }
-
-  /**
-   * Calculate total trace duration
-   */
-  private calculateTraceDuration(spans: Span[]): number {
-    if (spans.length === 0) return 0;
-
-    const start = Math.min(...spans.map(s =&gt; s.startTime));
-    const end = Math.max(...spans.map(s =&gt; s.endTime || s.startTime));
-
-    return end - start;
-  }
-
-  /**
-   * Calculate trace status
-   */
-  private calculateTraceStatus(spans: Span[]): SpanStatus {
-    if (spans.some(s =&gt; s.status === SpanStatus.ERROR)) {
-      return SpanStatus.ERROR;
+      return {
+        ...cached.response,
+        metadata: {
+          ...cached.response.metadata,
+          fromCache: true,
+          cacheAge: Date.now() - cached.timestamp
+        }
+      };
     }
 
-    return SpanStatus.OK;
+    this.logger.debug(&apos;AI cache miss&apos;, { key });
+    return null;
+  }
+
+  /**
+   * Cache AI response
+   */
+  async set(
+    request: CompletionRequest,
+    response: CompletionResponse,
+    ttl?: number
+  ): Promise&lt;void&gt; {
+    const key = this.generateCacheKey(request);
+
+    await this.cache.set(key, {
+      request,
+      response,
+      timestamp: Date.now()
+    }, { ttl });
+
+    this.logger.debug(&apos;AI response cached&apos;, { key });
+  }
+
+  /**
+   * Generate cache key from request
+   * Uses semantic hashing to match similar requests
+   */
+  private generateCacheKey(request: CompletionRequest): string {
+    // Normalize request for consistent caching
+    const normalized = {
+      model: request.model,
+      messages: request.messages.map(m =&gt; ({
+        role: m.role,
+        content: this.normalizeContent(m.content)
+      })),
+      temperature: request.temperature || 0.7,
+      maxTokens: request.maxTokens
+    };
+
+    // Hash normalized request
+    const hash = crypto
+      .createHash(&apos;sha256&apos;)
+      .update(JSON.stringify(normalized))
+      .digest(&apos;hex&apos;);
+
+    return `ai:${hash}`;
+  }
+
+  /**
+   * Normalize content to improve cache hit rate
+   */
+  private normalizeContent(content: string): string {
+    return content
+      .trim()
+      .replace(/\s+/g, &apos; &apos;) // Normalize whitespace
+      .toLowerCase();
+  }
+
+  /**
+   * Get cache hit rate
+   */
+  async getHitRate(): Promise&lt;number&gt; {
+    // Implement hit rate tracking
+    // This would require tracking hits and misses
+    return 0.75; // Placeholder
   }
 }
 
-interface Span {
-  traceId: string;
-  spanId: string;
-  parentSpanId?: string;
-  name: string;
-  startTime: number;
-  endTime?: number;
-  duration?: number;
-  attributes: Record&lt;string, any&gt;;
-  events: SpanEvent[];
-  status: SpanStatus;
-}
-
-interface SpanEvent {
-  name: string;
+interface CachedResponse {
+  request: CompletionRequest;
+  response: CompletionResponse;
   timestamp: number;
-  attributes: Record&lt;string, any&gt;;
-}
-
-enum SpanStatus {
-  UNSET = &apos;unset&apos;,
-  OK = &apos;ok&apos;,
-  ERROR = &apos;error&apos;
-}
-
-interface Trace {
-  traceId: string;
-  spans: Span[];
-  duration: number;
-  status: SpanStatus;
 }
 </codeblock>
-    <section><title>Traced AI Service</title></section>
+    <section><title>Tool Result Cache</title></section>
     <codeblock outputclass="language-typescript">/**
- * AI service with distributed tracing
+ * Cache for tool execution results
  */
-export class TracedAIService {
-  constructor(
-    private provider: AIProvider,
-    private tracer: Tracer,
-    private logger: StructuredLogger
-  ) {}
+export class ToolResultCache {
+  private cache: MultiLevelCache;
+
+  constructor(cache: MultiLevelCache) {
+    this.cache = cache;
+  }
 
   /**
-   * Complete with tracing
+   * Get cached tool result
    */
-  async complete(
-    request: CompletionRequest,
-    context: TraceContext
-  ): Promise&lt;CompletionResponse&gt; {
-    // Create span for AI request
-    const span = this.tracer.startSpan(&apos;ai.complete&apos;, context, {
-      provider: this.provider.constructor.name,
-      model: request.model,
-      messageCount: request.messages.length,
-      temperature: request.temperature
-    });
+  async get(
+    toolName: string,
+    params: Record&lt;string, any&gt;
+  ): Promise&lt;ToolResult | null&gt; {
+    const key = this.generateKey(toolName, params);
+    return this.cache.get&lt;ToolResult&gt;(key);
+  }
 
-    try {
-      // Add event for request start
-      this.tracer.addEvent(span, &apos;request.started&apos;, {
-        inputTokens: this.estimateTokens(request.messages)
-      });
+  /**
+   * Cache tool result
+   */
+  async set(
+    toolName: string,
+    params: Record&lt;string, any&gt;,
+    result: ToolResult,
+    ttl?: number
+  ): Promise&lt;void&gt; {
+    const key = this.generateKey(toolName, params);
+    await this.cache.set(key, result, { ttl });
+  }
 
-      // Call AI provider
-      const response = await this.provider.complete(request);
+  /**
+   * Invalidate cache for specific file
+   */
+  async invalidateFile(filePath: string): Promise&lt;void&gt; {
+    // Invalidate all tool results related to this file
+    const patterns = [
+      `tool:read_file:${filePath}`,
+      `tool:search_code:*${filePath}*`,
+      `tool:analyze_code:${filePath}`
+    ];
 
-      // Add event for response
-      this.tracer.addEvent(span, &apos;response.received&apos;, {
-        outputTokens: response.usage?.outputTokens,
-        fromCache: response.metadata?.fromCache
-      });
-
-      // Update span attributes
-      span.attributes.outputTokens = response.usage?.outputTokens;
-      span.attributes.totalTokens = response.usage?.totalTokens;
-      span.attributes.cost = this.calculateCost(response);
-
-      // End span successfully
-      this.tracer.endSpan(span, SpanStatus.OK);
-
-      return response;
-
-    } catch (error) {
-      // Record error in span
-      this.tracer.setError(span, error as Error);
-      this.tracer.endSpan(span, SpanStatus.ERROR);
-
-      throw error;
+    for (const pattern of patterns) {
+      await this.cache.invalidate(pattern);
     }
   }
 
   /**
-   * Execute tool with tracing
+   * Generate cache key
+   */
+  private generateKey(
+    toolName: string,
+    params: Record&lt;string, any&gt;
+  ): string {
+    // Sort params for consistent key generation
+    const sortedParams = Object.keys(params)
+      .sort()
+      .reduce((acc, key) =&gt; {
+        acc[key] = params[key];
+        return acc;
+      }, {} as Record&lt;string, any&gt;);
+
+    const paramsHash = crypto
+      .createHash(&apos;sha256&apos;)
+      .update(JSON.stringify(sortedParams))
+      .digest(&apos;hex&apos;)
+      .substring(0, 16);
+
+    return `tool:${toolName}:${paramsHash}`;
+  }
+}
+</codeblock>
+    <section><title>Cache-Aware Service</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * AI service with intelligent caching
+ */
+export class CachedAIService {
+  private provider: AIProvider;
+  private aiCache: AIResponseCache;
+  private toolCache: ToolResultCache;
+  private logger: Logger;
+
+  constructor(
+    provider: AIProvider,
+    cache: MultiLevelCache,
+    logger: Logger
+  ) {
+    this.provider = provider;
+    this.aiCache = new AIResponseCache(cache, logger);
+    this.toolCache = new ToolResultCache(cache);
+    this.logger = logger;
+  }
+
+  /**
+   * Complete with caching
+   */
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    // Check cache first
+    const cached = await this.aiCache.get(request);
+
+    if (cached) {
+      return cached;
+    }
+
+    // Cache miss - call provider
+    const startTime = performance.now();
+
+    const response = await this.provider.complete(request);
+
+    const duration = performance.now() - startTime;
+
+    // Cache response (TTL based on temperature)
+    const ttl = this.calculateTTL(request.temperature || 0.7);
+    await this.aiCache.set(request, response, ttl);
+
+    this.logger.info(&apos;AI completion&apos;, {
+      cached: false,
+      duration,
+      tokens: response.usage?.totalTokens
+    });
+
+    return response;
+  }
+
+  /**
+   * Execute tool with caching
    */
   async executeTool(
     tool: Tool,
     params: Record&lt;string, any&gt;,
-    context: TraceContext
+    context: ToolContext
   ): Promise&lt;ToolResult&gt; {
-    // Create child span for tool
-    const childContext = context.createChild();
-    const span = this.tracer.startSpan(`tool.${tool.name}`, childContext, {
-      tool: tool.name,
-      params: this.sanitizeParams(params)
-    });
+    // Skip cache for non-cacheable tools
+    if (!tool.cacheable) {
+      return tool.execute(params, context);
+    }
 
-    try {
-      const result = await tool.execute(params, {
-        traceContext: childContext
-      });
+    // Check cache
+    const cached = await this.toolCache.get(tool.name, params);
 
-      span.attributes.success = result.success;
-      span.attributes.fromCache = result.fromCache || false;
+    if (cached) {
+      this.logger.debug(&apos;Tool cache hit&apos;, { tool: tool.name });
+      return cached;
+    }
 
-      this.tracer.endSpan(span, SpanStatus.OK);
+    // Cache miss - execute tool
+    const result = await tool.execute(params, context);
 
-      return result;
+    // Cache result (TTL based on tool type)
+    const ttl = this.getToolCacheTTL(tool.name);
+    await this.toolCache.set(tool.name, params, result, ttl);
 
-    } catch (error) {
-      this.tracer.setError(span, error as Error);
-      this.tracer.endSpan(span, SpanStatus.ERROR);
+    return result;
+  }
 
-      throw error;
+  /**
+   * Calculate cache TTL based on temperature
+   * Higher temperature = shorter TTL (more variation)
+   */
+  private calculateTTL(temperature: number): number {
+    const baseTTL = 1000 * 60 * 60; // 1 hour
+
+    if (temperature &lt; 0.3) {
+      return baseTTL * 24; // 24 hours (very deterministic)
+    } else if (temperature &lt; 0.7) {
+      return baseTTL * 4; // 4 hours
+    } else {
+      return baseTTL; // 1 hour (more random)
     }
   }
 
-  private estimateTokens(messages: Message[]): number {
-    return messages.reduce((total, msg) =&gt; {
-      return total + msg.content.split(/\s+/).length;
-    }, 0);
+  /**
+   * Get cache TTL for tool
+   */
+  private getToolCacheTTL(toolName: string): number {
+    const ttls: Record&lt;string, number&gt; = {
+      read_file: 1000 * 60 * 5,      // 5 minutes (files change)
+      search_code: 1000 * 60 * 10,   // 10 minutes
+      git_status: 1000 * 60 * 1,     // 1 minute (changes frequently)
+      analyze_code: 1000 * 60 * 30   // 30 minutes (expensive)
+    };
+
+    return ttls[toolName] || 1000 * 60 * 5; // Default 5 minutes
   }
 
-  private calculateCost(response: CompletionResponse): number {
-    if (!response.usage) return 0;
+  /**
+   * Get cache statistics
+   */
+  async getCacheStats(): Promise&lt;{
+    hitRate: number;
+    size: number;
+    memoryUsage: number;
+  }&gt; {
+    const hitRate = await this.aiCache.getHitRate();
+    // Would implement full stats tracking
 
-    const inputCost = response.usage.inputTokens * 0.00001;
-    const outputCost = response.usage.outputTokens * 0.00003;
-
-    return inputCost + outputCost;
-  }
-
-  private sanitizeParams(params: Record&lt;string, any&gt;): Record&lt;string, any&gt; {
-    // Redact sensitive fields
-    const sanitized = { ...params };
-    const sensitiveFields = [&apos;apiKey&apos;, &apos;password&apos;, &apos;token&apos;];
-
-    for (const field of sensitiveFields) {
-      if (field in sanitized) {
-        sanitized[field] = &apos;[REDACTED]&apos;;
-      }
-    }
-
-    return sanitized;
+    return {
+      hitRate,
+      size: 0,
+      memoryUsage: 0
+    };
   }
 }
 </codeblock>
-    <section><title>12.4 Metrics Collection</title></section>
-    <p>Collect numerical metrics over time to track performance, usage, and costs.</p>
-    <section><title>Metrics Collector</title></section>
+    <section><title>11.3 Parallel Execution Optimization</title></section>
+    <p>Execute independent operations in parallel instead of sequentially.</p>
+    <section><title>Parallel Executor</title></section>
     <codeblock outputclass="language-typescript">/**
- * Collects and aggregates metrics
+ * Executes operations in parallel with concurrency control
  */
-export class MetricsCollector {
-  private metrics: Map&lt;string, Metric[]&gt; = new Map();
-  private logger: StructuredLogger;
-
-  constructor(logger: StructuredLogger) {
-    this.logger = logger;
-  }
+export class ParallelExecutor {
+  constructor(
+    private maxConcurrency: number = 10,
+    private logger: Logger
+  ) {}
 
   /**
-   * Record a counter metric
+   * Execute operations in parallel with concurrency limit
    */
-  incrementCounter(
-    name: string,
-    value: number = 1,
-    tags?: Record&lt;string, string&gt;
-  ): void {
-    this.recordMetric({
-      name,
-      type: MetricType.COUNTER,
-      value,
-      tags: tags || {},
-      timestamp: Date.now()
-    });
-  }
+  async executeAll&lt;T&gt;(
+    operations: Array&lt;() =&gt; Promise&lt;T&gt;&gt;,
+    options?: ExecutionOptions
+  ): Promise&lt;T[]&gt; {
+    const results: T[] = [];
+    const executing: Promise&lt;void&gt;[] = [];
 
-  /**
-   * Record a gauge metric
-   */
-  setGauge(
-    name: string,
-    value: number,
-    tags?: Record&lt;string, string&gt;
-  ): void {
-    this.recordMetric({
-      name,
-      type: MetricType.GAUGE,
-      value,
-      tags: tags || {},
-      timestamp: Date.now()
-    });
-  }
+    const startTime = performance.now();
 
-  /**
-   * Record a histogram metric
-   */
-  recordHistogram(
-    name: string,
-    value: number,
-    tags?: Record&lt;string, string&gt;
-  ): void {
-    this.recordMetric({
-      name,
-      type: MetricType.HISTOGRAM,
-      value,
-      tags: tags || {},
-      timestamp: Date.now()
-    });
-  }
+    for (let i = 0; i &lt; operations.length; i++) {
+      const operation = operations[i];
 
-  /**
-   * Record a timing metric
-   */
-  recordTiming(
-    name: string,
-    durationMs: number,
-    tags?: Record&lt;string, string&gt;
-  ): void {
-    this.recordHistogram(name, durationMs, tags);
-  }
+      // Execute operation
+      const promise = operation()
+        .then(result =&gt; {
+          results[i] = result;
+        })
+        .catch(error =&gt; {
+          if (options?.failFast) {
+            throw error;
+          }
 
-  /**
-   * Store metric
-   */
-  private recordMetric(metric: Metric): void {
-    if (!this.metrics.has(metric.name)) {
-      this.metrics.set(metric.name, []);
+          this.logger.error(&apos;Parallel execution error&apos;, { index: i, error });
+          results[i] = error;
+        });
+
+      executing.push(promise);
+
+      // Wait if we&apos;ve hit concurrency limit
+      if (executing.length &gt;= this.maxConcurrency) {
+        await Promise.race(executing);
+
+        // Remove completed promises
+        const completed = executing.filter(p =&gt; {
+          // Check if promise is settled (no good way in JS, so we track separately)
+          return false; // Placeholder
+        });
+
+        completed.forEach(p =&gt; {
+          const index = executing.indexOf(p);
+          if (index &gt; -1) executing.splice(index, 1);
+        });
+      }
     }
 
-    this.metrics.get(metric.name)!.push(metric);
+    // Wait for remaining operations
+    await Promise.all(executing);
 
-    // Log metric
-    this.logger.debug(&apos;Metric recorded&apos;, {
-      metric: metric.name,
-      value: metric.value,
-      type: metric.type,
-      tags: metric.tags
+    const duration = performance.now() - startTime;
+
+    this.logger.info(&apos;Parallel execution completed&apos;, {
+      operations: operations.length,
+      duration,
+      throughput: operations.length / (duration / 1000)
     });
+
+    return results;
   }
 
   /**
-   * Get metric statistics
+   * Execute operations in batches
    */
-  getStats(
-    name: string,
-    timeRange: TimeRange
-  ): MetricStats | null {
-    const metrics = this.metrics.get(name);
+  async executeBatches&lt;T&gt;(
+    operations: Array&lt;() =&gt; Promise&lt;T&gt;&gt;,
+    batchSize: number = this.maxConcurrency
+  ): Promise&lt;T[]&gt; {
+    const results: T[] = [];
 
-    if (!metrics) return null;
+    for (let i = 0; i &lt; operations.length; i += batchSize) {
+      const batch = operations.slice(i, i + batchSize);
 
-    // Filter by time range
-    const filtered = metrics.filter(m =&gt;
-      m.timestamp &gt;= timeRange.start.getTime() &amp;&amp;
-      m.timestamp &lt;= timeRange.end.getTime()
+      this.logger.debug(&apos;Executing batch&apos;, {
+        batch: Math.floor(i / batchSize) + 1,
+        size: batch.length
+      });
+
+      const batchResults = await Promise.all(
+        batch.map(op =&gt; op())
+      );
+
+      results.push(...batchResults);
+    }
+
+    return results;
+  }
+
+  /**
+   * Map operation over array in parallel
+   */
+  async map&lt;T, R&gt;(
+    items: T[],
+    fn: (item: T, index: number) =&gt; Promise&lt;R&gt;,
+    concurrency: number = this.maxConcurrency
+  ): Promise&lt;R[]&gt; {
+    const operations = items.map((item, index) =&gt; () =&gt; fn(item, index));
+
+    return this.executeAll(operations);
+  }
+}
+
+interface ExecutionOptions {
+  failFast?: boolean; // Stop on first error
+  timeout?: number;   // Timeout per operation
+}
+</codeblock>
+    <section><title>Parallel Tool Execution</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Optimized tool orchestrator with parallel execution
+ */
+export class ParallelToolOrchestrator extends ToolOrchestrator {
+  private executor: ParallelExecutor;
+
+  constructor(
+    aiProvider: AIProvider,
+    options: OrchestratorOptions
+  ) {
+    super(aiProvider, options);
+    this.executor = new ParallelExecutor(
+      options.maxParallelTools || 5,
+      options.logger
     );
+  }
 
-    if (filtered.length === 0) return null;
+  /**
+   * Execute tools in parallel based on dependency graph
+   */
+  async executePlan(plan: ExecutionPlan): Promise&lt;ExecutionResult&gt; {
+    const graph = this.buildDependencyGraph(plan.toolCalls);
 
-    const values = filtered.map(m =&gt; m.value).sort((a, b) =&gt; a - b);
+    // Get execution levels (tools that can run in parallel)
+    const levels = graph.getExecutionLevels();
+
+    const results: ToolResult[] = [];
+    const resultMap = new Map&lt;string, ToolResult&gt;();
+
+    // Execute each level in parallel
+    for (let levelIndex = 0; levelIndex &lt; levels.length; levelIndex++) {
+      const level = levels[levelIndex];
+
+      this.logger.info(&apos;Executing tool level&apos;, {
+        level: levelIndex + 1,
+        tools: level.length
+      });
+
+      // Execute all tools in this level in parallel
+      const levelResults = await this.executor.map(
+        level,
+        async (toolId) =&gt; {
+          const toolCall = plan.toolCalls.find(tc =&gt; tc.id === toolId)!;
+
+          // Resolve parameters (may reference previous tool results)
+          const params = this.resolveParameters(
+            toolCall.parameters,
+            resultMap
+          );
+
+          // Execute tool
+          const tool = this.registry.get(toolCall.tool);
+          if (!tool) {
+            throw new Error(`Tool not found: ${toolCall.tool}`);
+          }
+
+          const result = await this.cachedExecute(tool, params);
+
+          // Store result for dependent tools
+          resultMap.set(toolId, result);
+
+          return result;
+        }
+      );
+
+      results.push(...levelResults);
+    }
 
     return {
-      count: filtered.length,
-      sum: values.reduce((a, b) =&gt; a + b, 0),
-      avg: values.reduce((a, b) =&gt; a + b, 0) / values.length,
-      min: values[0],
-      max: values[values.length - 1],
-      p50: values[Math.floor(values.length * 0.5)],
-      p95: values[Math.floor(values.length * 0.95)],
-      p99: values[Math.floor(values.length * 0.99)]
+      success: true,
+      toolResults: results,
+      metadata: {
+        levels: levels.length,
+        parallelism: levels.map(l =&gt; l.length)
+      }
     };
   }
 
   /**
-   * Export metrics to monitoring system
+   * Cached tool execution
    */
-  exportMetrics(): void {
-    // Would export to Prometheus, CloudWatch, etc.
-    for (const [name, metrics] of this.metrics.entries()) {
-      this.logger.info(&apos;Exporting metrics&apos;, {
-        metric: name,
-        count: metrics.length
-      });
+  private async cachedExecute(
+    tool: Tool,
+    params: Record&lt;string, any&gt;
+  ): Promise&lt;ToolResult&gt; {
+    // Use cache if available
+    if (this.cache &amp;&amp; tool.cacheable) {
+      const cached = await this.cache.get(tool.name, params);
+      if (cached) {
+        return cached;
+      }
+    }
+
+    const result = await tool.execute(params, this.context);
+
+    // Cache result
+    if (this.cache &amp;&amp; tool.cacheable) {
+      await this.cache.set(tool.name, params, result);
+    }
+
+    return result;
+  }
+}
+</codeblock>
+    <section><title>Parallel File Processing</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Process multiple files in parallel
+ */
+export class ParallelFileProcessor {
+  constructor(
+    private ai: AIProvider,
+    private executor: ParallelExecutor,
+    private logger: Logger
+  ) {}
+
+  /**
+   * Analyze multiple files in parallel
+   */
+  async analyzeFiles(
+    filePaths: string[],
+    options?: AnalysisOptions
+  ): Promise&lt;Map&lt;string, Analysis&gt;&gt; {
+    this.logger.info(&apos;Analyzing files in parallel&apos;, {
+      count: filePaths.length
+    });
+
+    const startTime = performance.now();
+
+    // Execute in parallel
+    const analyses = await this.executor.map(
+      filePaths,
+      async (filePath) =&gt; {
+        // Read file
+        const content = await fs.readFile(filePath, &apos;utf-8&apos;);
+
+        // Analyze with AI (cached)
+        const analysis = await this.analyzeContent(content, filePath);
+
+        return { filePath, analysis };
+      },
+      options?.concurrency || 5
+    );
+
+    const duration = performance.now() - startTime;
+
+    this.logger.info(&apos;File analysis completed&apos;, {
+      count: filePaths.length,
+      duration,
+      avgDuration: duration / filePaths.length
+    });
+
+    // Convert to map
+    const resultMap = new Map&lt;string, Analysis&gt;();
+    analyses.forEach(({ filePath, analysis }) =&gt; {
+      resultMap.set(filePath, analysis);
+    });
+
+    return resultMap;
+  }
+
+  /**
+   * Analyze file content
+   */
+  private async analyzeContent(
+    content: string,
+    filePath: string
+  ): Promise&lt;Analysis&gt; {
+    const response = await this.ai.complete({
+      messages: [{
+        role: MessageRole.USER,
+        content: `Analyze this ${path.extname(filePath)} file:\n\n${content}`
+      }],
+      temperature: 0.3
+    });
+
+    return this.parseAnalysis(response.content);
+  }
+
+  private parseAnalysis(content: string): Analysis {
+    // Parse AI response into structured analysis
+    return {
+      summary: content,
+      complexity: 0,
+      issues: []
+    };
+  }
+}
+
+interface AnalysisOptions {
+  concurrency?: number;
+}
+
+interface Analysis {
+  summary: string;
+  complexity: number;
+  issues: string[];
+}
+</codeblock>
+    <section><title>11.4 Lazy Loading Patterns</title></section>
+    <p>Load modules and data only when needed to reduce startup time and memory usage.</p>
+    <section><title>Lazy Module Loader</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Lazy loads modules on demand
+ */
+export class LazyModuleLoader&lt;T&gt; {
+  private instance?: T;
+  private loading?: Promise&lt;T&gt;;
+
+  constructor(
+    private loader: () =&gt; Promise&lt;T&gt;,
+    private logger?: Logger
+  ) {}
+
+  /**
+   * Get module instance (loads if needed)
+   */
+  async get(): Promise&lt;T&gt; {
+    // Return cached instance
+    if (this.instance) {
+      return this.instance;
+    }
+
+    // Return in-flight loading promise
+    if (this.loading) {
+      return this.loading;
+    }
+
+    // Start loading
+    this.logger?.debug(&apos;Lazy loading module&apos;);
+
+    const startTime = performance.now();
+
+    this.loading = this.loader();
+
+    try {
+      this.instance = await this.loading;
+
+      const duration = performance.now() - startTime;
+
+      this.logger?.debug(&apos;Module loaded&apos;, { duration });
+
+      return this.instance;
+
+    } finally {
+      this.loading = undefined;
+    }
+  }
+
+  /**
+   * Check if module is loaded
+   */
+  isLoaded(): boolean {
+    return this.instance !== undefined;
+  }
+
+  /**
+   * Unload module (for memory management)
+   */
+  unload(): void {
+    this.instance = undefined;
+  }
+}
+</codeblock>
+    <section><title>Lazy Command Registry</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Command registry with lazy loading
+ */
+export class LazyCommandRegistry {
+  private loaders: Map&lt;string, LazyModuleLoader&lt;RoutableCommand&gt;&gt; = new Map();
+  private logger: Logger;
+
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  /**
+   * Register command with lazy loader
+   */
+  register(
+    name: string,
+    loader: () =&gt; Promise&lt;new () =&gt; RoutableCommand&gt;,
+    dependencies?: any
+  ): void {
+    const moduleLoader = new LazyModuleLoader(
+      async () =&gt; {
+        const CommandClass = await loader();
+        return new CommandClass(dependencies);
+      },
+      this.logger
+    );
+
+    this.loaders.set(name, moduleLoader);
+  }
+
+  /**
+   * Get command (loads if needed)
+   */
+  async get(name: string): Promise&lt;RoutableCommand | null&gt; {
+    const loader = this.loaders.get(name);
+
+    if (!loader) {
+      return null;
+    }
+
+    return loader.get();
+  }
+
+  /**
+   * Preload commonly used commands
+   */
+  async preload(commandNames: string[]): Promise&lt;void&gt; {
+    this.logger.info(&apos;Preloading commands&apos;, { commands: commandNames });
+
+    await Promise.all(
+      commandNames.map(name =&gt; this.get(name))
+    );
+  }
+
+  /**
+   * Get loading statistics
+   */
+  getStats(): {
+    total: number;
+    loaded: number;
+    notLoaded: number;
+  } {
+    let loaded = 0;
+
+    for (const loader of this.loaders.values()) {
+      if (loader.isLoaded()) {
+        loaded++;
+      }
+    }
+
+    return {
+      total: this.loaders.size,
+      loaded,
+      notLoaded: this.loaders.size - loaded
+    };
+  }
+}
+</codeblock>
+    <section><title>Lazy Data Loading</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Lazy loads large datasets
+ */
+export class LazyDataset&lt;T&gt; {
+  private data?: T[];
+  private loading?: Promise&lt;T[]&gt;;
+
+  constructor(
+    private loader: () =&gt; Promise&lt;T[]&gt;,
+    private pageSize: number = 100
+  ) {}
+
+  /**
+   * Get page of data
+   */
+  async getPage(page: number): Promise&lt;T[]&gt; {
+    const allData = await this.getAll();
+
+    const start = page * this.pageSize;
+    const end = start + this.pageSize;
+
+    return allData.slice(start, end);
+  }
+
+  /**
+   * Get all data (loads if needed)
+   */
+  async getAll(): Promise&lt;T[]&gt; {
+    if (this.data) {
+      return this.data;
+    }
+
+    if (this.loading) {
+      return this.loading;
+    }
+
+    this.loading = this.loader();
+    this.data = await this.loading;
+    this.loading = undefined;
+
+    return this.data;
+  }
+
+  /**
+   * Unload data to free memory
+   */
+  unload(): void {
+    this.data = undefined;
+  }
+}
+</codeblock>
+    <section><title>11.5 Memory Management</title></section>
+    <p>Manage memory carefully to prevent leaks and reduce usage.</p>
+    <section><title>Memory-Aware Conversation Manager</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Conversation manager with memory limits
+ */
+export class MemoryAwareConversationManager extends ConversationManager {
+  private maxMemoryBytes: number;
+
+  constructor(
+    aiProvider: AIProvider,
+    options: ConversationOptions &amp; { maxMemoryMB?: number }
+  ) {
+    super(aiProvider, options);
+    this.maxMemoryBytes = (options.maxMemoryMB || 100) * 1024 * 1024;
+  }
+
+  /**
+   * Add message with memory check
+   */
+  override addMessage(message: Message): void {
+    super.addMessage(message);
+
+    // Check memory usage
+    const currentMemory = this.estimateMemoryUsage();
+
+    if (currentMemory &gt; this.maxMemoryBytes) {
+      this.trimMessages();
+    }
+  }
+
+  /**
+   * Estimate memory usage of conversation
+   */
+  private estimateMemoryUsage(): number {
+    let bytes = 0;
+
+    for (const message of this.messages) {
+      // Rough estimate: 2 bytes per character (UTF-16)
+      bytes += message.content.length * 2;
+
+      // Add overhead for object structure
+      bytes += 100;
+    }
+
+    return bytes;
+  }
+
+  /**
+   * Trim old messages to reduce memory
+   */
+  private trimMessages(): void {
+    const systemMessages = this.messages.filter(
+      m =&gt; m.role === MessageRole.SYSTEM
+    );
+
+    const nonSystemMessages = this.messages.filter(
+      m =&gt; m.role !== MessageRole.SYSTEM
+    );
+
+    // Keep system messages + recent 50% of conversation
+    const keepCount = Math.floor(nonSystemMessages.length / 2);
+    const keptMessages = nonSystemMessages.slice(-keepCount);
+
+    this.messages = [...systemMessages, ...keptMessages];
+
+    this.logger.info(&apos;Trimmed conversation for memory&apos;, {
+      removed: nonSystemMessages.length - keptMessages.length,
+      remaining: this.messages.length
+    });
+  }
+
+  /**
+   * Get memory statistics
+   */
+  getMemoryStats(): {
+    messages: number;
+    bytes: number;
+    megabytes: number;
+  } {
+    const bytes = this.estimateMemoryUsage();
+
+    return {
+      messages: this.messages.length,
+      bytes,
+      megabytes: bytes / 1024 / 1024
+    };
+  }
+}
+</codeblock>
+    <section><title>Object Pooling</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Object pool to reduce allocations
+ */
+export class ObjectPool&lt;T&gt; {
+  private available: T[] = [];
+  private inUse = new Set&lt;T&gt;();
+
+  constructor(
+    private factory: () =&gt; T,
+    private reset: (obj: T) =&gt; void,
+    private initialSize: number = 10
+  ) {
+    // Pre-allocate objects
+    for (let i = 0; i &lt; initialSize; i++) {
+      this.available.push(this.factory());
+    }
+  }
+
+  /**
+   * Acquire object from pool
+   */
+  acquire(): T {
+    let obj: T;
+
+    if (this.available.length &gt; 0) {
+      obj = this.available.pop()!;
+    } else {
+      // Pool exhausted - create new object
+      obj = this.factory();
+    }
+
+    this.inUse.add(obj);
+
+    return obj;
+  }
+
+  /**
+   * Release object back to pool
+   */
+  release(obj: T): void {
+    if (!this.inUse.has(obj)) {
+      throw new Error(&apos;Object not in use&apos;);
+    }
+
+    this.inUse.delete(obj);
+
+    // Reset object state
+    this.reset(obj);
+
+    this.available.push(obj);
+  }
+
+  /**
+   * Get pool statistics
+   */
+  getStats(): {
+    available: number;
+    inUse: number;
+    total: number;
+  } {
+    return {
+      available: this.available.length,
+      inUse: this.inUse.size,
+      total: this.available.length + this.inUse.size
+    };
+  }
+}
+
+/**
+ * Example: Pool for message objects
+ */
+const messagePool = new ObjectPool&lt;Message&gt;(
+  () =&gt; ({
+    id: &apos;&apos;,
+    role: MessageRole.USER,
+    content: &apos;&apos;,
+    timestamp: new Date(),
+    metadata: {}
+  }),
+  (msg) =&gt; {
+    msg.id = &apos;&apos;;
+    msg.role = MessageRole.USER;
+    msg.content = &apos;&apos;;
+    msg.timestamp = new Date();
+    msg.metadata = {};
+  },
+  100 // Pre-allocate 100 messages
+);
+</codeblock>
+    <section><title>Memory Profiling</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Memory profiler for detecting leaks
+ */
+export class MemoryProfiler {
+  private snapshots: MemorySnapshot[] = [];
+
+  /**
+   * Take memory snapshot
+   */
+  snapshot(label: string): MemorySnapshot {
+    const usage = process.memoryUsage();
+
+    const snapshot: MemorySnapshot = {
+      label,
+      timestamp: Date.now(),
+      heapUsed: usage.heapUsed,
+      heapTotal: usage.heapTotal,
+      external: usage.external,
+      rss: usage.rss
+    };
+
+    this.snapshots.push(snapshot);
+
+    return snapshot;
+  }
+
+  /**
+   * Compare two snapshots
+   */
+  compare(label1: string, label2: string): MemoryComparison {
+    const snap1 = this.snapshots.find(s =&gt; s.label === label1);
+    const snap2 = this.snapshots.find(s =&gt; s.label === label2);
+
+    if (!snap1 || !snap2) {
+      throw new Error(&apos;Snapshot not found&apos;);
+    }
+
+    return {
+      heapUsedDelta: snap2.heapUsed - snap1.heapUsed,
+      heapTotalDelta: snap2.heapTotal - snap1.heapTotal,
+      externalDelta: snap2.external - snap1.external,
+      rssDelta: snap2.rss - snap1.rss,
+      durationMs: snap2.timestamp - snap1.timestamp
+    };
+  }
+
+  /**
+   * Detect memory leak
+   */
+  detectLeak(threshold: number = 10 * 1024 * 1024): boolean {
+    if (this.snapshots.length &lt; 2) {
+      return false;
+    }
+
+    const first = this.snapshots[0];
+    const last = this.snapshots[this.snapshots.length - 1];
+
+    const delta = last.heapUsed - first.heapUsed;
+
+    return delta &gt; threshold;
+  }
+
+  /**
+   * Get memory trend
+   */
+  getTrend(): &apos;increasing&apos; | &apos;stable&apos; | &apos;decreasing&apos; {
+    if (this.snapshots.length &lt; 3) {
+      return &apos;stable&apos;;
+    }
+
+    const recent = this.snapshots.slice(-5);
+
+    const deltas = recent.slice(1).map((snap, i) =&gt; {
+      return snap.heapUsed - recent[i].heapUsed;
+    });
+
+    const avgDelta = deltas.reduce((a, b) =&gt; a + b, 0) / deltas.length;
+
+    if (avgDelta &gt; 1024 * 1024) {
+      return &apos;increasing&apos;;
+    } else if (avgDelta &lt; -1024 * 1024) {
+      return &apos;decreasing&apos;;
+    } else {
+      return &apos;stable&apos;;
     }
   }
 }
 
-enum MetricType {
-  COUNTER = &apos;counter&apos;,
-  GAUGE = &apos;gauge&apos;,
-  HISTOGRAM = &apos;histogram&apos;
+interface MemorySnapshot {
+  label: string;
+  timestamp: number;
+  heapUsed: number;
+  heapTotal: number;
+  external: number;
+  rss: number;
 }
 
-interface Metric {
-  name: string;
-  type: MetricType;
-  value: number;
-  tags: Record&lt;string, string&gt;;
+interface MemoryComparison {
+  heapUsedDelta: number;
+  heapTotalDelta: number;
+  externalDelta: number;
+  rssDelta: number;
+  durationMs: number;
+}
+</codeblock>
+    <section><title>11.6 Connection Pooling</title></section>
+    <p>Reuse HTTP connections to reduce overhead.</p>
+    <section><title>HTTP Connection Pool</title></section>
+    <codeblock outputclass="language-typescript">import http from &apos;http&apos;;
+import https from &apos;https&apos;;
+
+/**
+ * HTTP agent with connection pooling
+ */
+export class ConnectionPool {
+  private httpAgent: http.Agent;
+  private httpsAgent: https.Agent;
+
+  constructor(options: PoolOptions = {}) {
+    this.httpAgent = new http.Agent({
+      keepAlive: true,
+      keepAliveMsecs: options.keepAliveMsecs || 1000,
+      maxSockets: options.maxSockets || 50,
+      maxFreeSockets: options.maxFreeSockets || 10,
+      timeout: options.timeout || 60000
+    });
+
+    this.httpsAgent = new https.Agent({
+      keepAlive: true,
+      keepAliveMsecs: options.keepAliveMsecs || 1000,
+      maxSockets: options.maxSockets || 50,
+      maxFreeSockets: options.maxFreeSockets || 10,
+      timeout: options.timeout || 60000
+    });
+  }
+
+  /**
+   * Get HTTP agent
+   */
+  getHttpAgent(): http.Agent {
+    return this.httpAgent;
+  }
+
+  /**
+   * Get HTTPS agent
+   */
+  getHttpsAgent(): https.Agent {
+    return this.httpsAgent;
+  }
+
+  /**
+   * Get agent stats
+   */
+  getStats(): PoolStats {
+    return {
+      http: this.getAgentStats(this.httpAgent),
+      https: this.getAgentStats(this.httpsAgent)
+    };
+  }
+
+  private getAgentStats(agent: http.Agent): AgentStats {
+    return {
+      sockets: Object.keys(agent.sockets).length,
+      freeSockets: Object.keys(agent.freeSockets || {}).length,
+      requests: Object.keys(agent.requests || {}).length
+    };
+  }
+
+  /**
+   * Destroy all connections
+   */
+  destroy(): void {
+    this.httpAgent.destroy();
+    this.httpsAgent.destroy();
+  }
+}
+
+interface PoolOptions {
+  keepAliveMsecs?: number;
+  maxSockets?: number;
+  maxFreeSockets?: number;
+  timeout?: number;
+}
+
+interface PoolStats {
+  http: AgentStats;
+  https: AgentStats;
+}
+
+interface AgentStats {
+  sockets: number;
+  freeSockets: number;
+  requests: number;
+}
+</codeblock>
+    <section><title>AI Provider with Connection Pooling</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * AI provider using connection pool
+ */
+export class PooledAIProvider implements AIProvider {
+  private pool: ConnectionPool;
+  private baseURL: string;
+
+  constructor(
+    options: ProviderOptions,
+    pool?: ConnectionPool
+  ) {
+    this.pool = pool || new ConnectionPool();
+    this.baseURL = options.baseURL;
+  }
+
+  async complete(request: CompletionRequest): Promise&lt;CompletionResponse&gt; {
+    const response = await fetch(this.baseURL + &apos;/completions&apos;, {
+      method: &apos;POST&apos;,
+      headers: {
+        &apos;Content-Type&apos;: &apos;application/json&apos;
+      },
+      body: JSON.stringify(request),
+      // Use connection pool
+      agent: this.pool.getHttpsAgent()
+    });
+
+    return response.json();
+  }
+
+  // ... other methods
+}
+</codeblock>
+    <section><title>11.7 Response Streaming</title></section>
+    <p>Stream responses to reduce perceived latency.</p>
+    <section><title>Streaming Response Handler</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Handles streaming responses for lower perceived latency
+ */
+export class StreamingResponseHandler {
+  async handleStream(
+    stream: AsyncIterableIterator&lt;StreamEvent&gt;,
+    onToken: (token: string) =&gt; void,
+    onComplete: (fullResponse: string) =&gt; void
+  ): Promise&lt;void&gt; {
+    let fullResponse = &apos;&apos;;
+    let firstTokenTime: number | null = null;
+
+    const startTime = performance.now();
+
+    for await (const event of stream) {
+      if (event.type === StreamEventType.CONTENT) {
+        // Record first token latency
+        if (!firstTokenTime) {
+          firstTokenTime = performance.now() - startTime;
+          console.log(`First token: ${firstTokenTime.toFixed(2)}ms`);
+        }
+
+        fullResponse += event.content;
+        onToken(event.content);
+      } else if (event.type === StreamEventType.DONE) {
+        break;
+      }
+    }
+
+    const totalTime = performance.now() - startTime;
+
+    console.log(`Total time: ${totalTime.toFixed(2)}ms`);
+    console.log(`Tokens/second: ${(fullResponse.length / (totalTime / 1000)).toFixed(2)}`);
+
+    onComplete(fullResponse);
+  }
+}
+
+/**
+ * Example usage
+ */
+async function streamExample() {
+  const provider = new AnthropicProvider({ apiKey: &apos;...&apos; });
+
+  const stream = provider.stream({
+    messages: [{
+      role: MessageRole.USER,
+      content: &apos;Write a long essay about AI&apos;
+    }]
+  });
+
+  const handler = new StreamingResponseHandler();
+
+  await handler.handleStream(
+    stream,
+    (token) =&gt; {
+      // Display token immediately
+      process.stdout.write(token);
+    },
+    (fullResponse) =&gt; {
+      console.log(&apos;\n\nComplete!&apos;);
+      console.log(`Total length: ${fullResponse.length} characters`);
+    }
+  );
+}
+</codeblock>
+    <section><title>11.8 Profiling and Benchmarking</title></section>
+    <p>Measure performance to identify bottlenecks and track improvements.</p>
+    <section><title>Performance Profiler</title></section>
+    <codeblock outputclass="language-typescript">/**
+ * Profiles code execution to find bottlenecks
+ */
+export class PerformanceProfiler {
+  private measurements: Map&lt;string, Measurement[]&gt; = new Map();
+
+  /**
+   * Start timing an operation
+   */
+  start(label: string): () =&gt; void {
+    const startTime = performance.now();
+
+    return () =&gt; {
+      const duration = performance.now() - startTime;
+
+      if (!this.measurements.has(label)) {
+        this.measurements.set(label, []);
+      }
+
+      this.measurements.get(label)!.push({
+        duration,
+        timestamp: Date.now()
+      });
+    };
+  }
+
+  /**
+   * Measure async operation
+   */
+  async measure&lt;T&gt;(
+    label: string,
+    fn: () =&gt; Promise&lt;T&gt;
+  ): Promise&lt;T&gt; {
+    const end = this.start(label);
+
+    try {
+      return await fn();
+    } finally {
+      end();
+    }
+  }
+
+  /**
+   * Get statistics for label
+   */
+  getStats(label: string): ProfileStats | null {
+    const measurements = this.measurements.get(label);
+
+    if (!measurements || measurements.length === 0) {
+      return null;
+    }
+
+    const durations = measurements.map(m =&gt; m.duration).sort((a, b) =&gt; a - b);
+
+    return {
+      count: measurements.length,
+      mean: durations.reduce((a, b) =&gt; a + b) / measurements.length,
+      median: durations[Math.floor(durations.length / 2)],
+      min: durations[0],
+      max: durations[durations.length - 1],
+      p95: durations[Math.floor(durations.length * 0.95)],
+      p99: durations[Math.floor(durations.length * 0.99)]
+    };
+  }
+
+  /**
+   * Get report of all measurements
+   */
+  getReport(): ProfileReport {
+    const report: ProfileReport = {};
+
+    for (const [label, measurements] of this.measurements.entries()) {
+      const stats = this.getStats(label);
+      if (stats) {
+        report[label] = stats;
+      }
+    }
+
+    return report;
+  }
+
+  /**
+   * Print report to console
+   */
+  printReport(): void {
+    console.log(&apos;\n📊 Performance Profile Report\n&apos;);
+    console.table(this.getReport());
+  }
+
+  /**
+   * Clear all measurements
+   */
+  clear(): void {
+    this.measurements.clear();
+  }
+}
+
+interface Measurement {
+  duration: number;
   timestamp: number;
 }
 
-interface MetricStats {
+interface ProfileStats {
   count: number;
-  sum: number;
-  avg: number;
+  mean: number;
+  median: number;
   min: number;
   max: number;
-  p50: number;
   p95: number;
   p99: number;
 }
+
+type ProfileReport = Record&lt;string, ProfileStats&gt;;
 </codeblock>
-    <section><title>Key Metrics for AI Systems</title></section>
+    <section><title>Benchmarking Suite</title></section>
     <codeblock outputclass="language-typescript">/**
- * Tracks key metrics for AI systems
+ * Comprehensive benchmarking suite
  */
-export class AIMetrics {
-  constructor(private collector: MetricsCollector) {}
+export class BenchmarkSuite {
+  private benchmarks: Benchmark[] = [];
 
   /**
-   * Record request metrics
+   * Add benchmark
    */
-  recordRequest(
-    provider: string,
-    duration: number,
-    success: boolean,
-    cached: boolean
-  ): void {
-    // Request count
-    this.collector.incrementCounter(&apos;ai.requests.total&apos;, 1, {
-      provider,
-      status: success ? &apos;success&apos; : &apos;error&apos;,
-      cached: cached.toString()
-    });
-
-    // Request duration
-    this.collector.recordTiming(&apos;ai.requests.duration&apos;, duration, {
-      provider
-    });
-
-    // Cache hit rate
-    if (cached) {
-      this.collector.incrementCounter(&apos;ai.cache.hits&apos;, 1, { provider });
-    } else {
-      this.collector.incrementCounter(&apos;ai.cache.misses&apos;, 1, { provider });
-    }
+  add(name: string, fn: () =&gt; Promise&lt;void&gt;): this {
+    this.benchmarks.push({ name, fn });
+    return this;
   }
 
   /**
-   * Record token usage
+   * Run all benchmarks
    */
-  recordTokens(
-    provider: string,
-    inputTokens: number,
-    outputTokens: number
-  ): void {
-    this.collector.incrementCounter(&apos;ai.tokens.input&apos;, inputTokens, {
-      provider
-    });
+  async run(iterations: number = 100): Promise&lt;BenchmarkResults&gt; {
+    const results: BenchmarkResults = {};
 
-    this.collector.incrementCounter(&apos;ai.tokens.output&apos;, outputTokens, {
-      provider
-    });
-  }
+    for (const benchmark of this.benchmarks) {
+      console.log(`Running: ${benchmark.name}`);
 
-  /**
-   * Record cost
-   */
-  recordCost(provider: string, cost: number): void {
-    this.collector.incrementCounter(&apos;ai.cost.total&apos;, cost, {
-      provider
-    });
-  }
+      const durations: number[] = [];
 
-  /**
-   * Record error
-   */
-  recordError(provider: string, errorType: string): void {
-    this.collector.incrementCounter(&apos;ai.errors.total&apos;, 1, {
-      provider,
-      errorType
-    });
-  }
-
-  /**
-   * Record tool execution
-   */
-  recordToolExecution(
-    tool: string,
-    duration: number,
-    success: boolean
-  ): void {
-    this.collector.incrementCounter(&apos;tools.executions.total&apos;, 1, {
-      tool,
-      status: success ? &apos;success&apos; : &apos;error&apos;
-    });
-
-    this.collector.recordTiming(&apos;tools.executions.duration&apos;, duration, {
-      tool
-    });
-  }
-
-  /**
-   * Record memory usage
-   */
-  recordMemoryUsage(): void {
-    const usage = process.memoryUsage();
-
-    this.collector.setGauge(&apos;system.memory.heap_used&apos;, usage.heapUsed);
-    this.collector.setGauge(&apos;system.memory.heap_total&apos;, usage.heapTotal);
-    this.collector.setGauge(&apos;system.memory.external&apos;, usage.external);
-    this.collector.setGauge(&apos;system.memory.rss&apos;, usage.rss);
-  }
-}
-</codeblock>
-    <section><title>12.5 Error Tracking and Alerting</title></section>
-    <p>Track errors and send alerts when issues occur.</p>
-    <section><title>Error Tracker</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Tracks and categorizes errors
- */
-export class ErrorTracker {
-  private errors: Map&lt;string, ErrorEntry[]&gt; = new Map();
-  private logger: StructuredLogger;
-  private alerting: AlertingService;
-
-  constructor(
-    logger: StructuredLogger,
-    alerting: AlertingService
-  ) {
-    this.logger = logger;
-    this.alerting = alerting;
-  }
-
-  /**
-   * Track error
-   */
-  async trackError(
-    error: Error,
-    context: ErrorContext
-  ): Promise&lt;void&gt; {
-    const entry: ErrorEntry = {
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      },
-      context,
-      timestamp: Date.now(),
-      fingerprint: this.generateFingerprint(error, context)
-    };
-
-    // Store error
-    if (!this.errors.has(entry.fingerprint)) {
-      this.errors.set(entry.fingerprint, []);
-    }
-
-    this.errors.get(entry.fingerprint)!.push(entry);
-
-    // Log error
-    this.logger.error(&apos;Error tracked&apos;, error, {
-      fingerprint: entry.fingerprint,
-      operation: context.operation,
-      requestId: context.requestId
-    });
-
-    // Check if alert needed
-    await this.checkAlerts(entry.fingerprint);
-  }
-
-  /**
-   * Generate error fingerprint for grouping
-   */
-  private generateFingerprint(error: Error, context: ErrorContext): string {
-    // Group errors by name, message pattern, and operation
-    const parts = [
-      error.name,
-      this.normalizeMessage(error.message),
-      context.operation
-    ];
-
-    return crypto
-      .createHash(&apos;sha256&apos;)
-      .update(parts.join(&apos;:&apos;))
-      .digest(&apos;hex&apos;)
-      .substring(0, 16);
-  }
-
-  /**
-   * Normalize error message to group similar errors
-   */
-  private normalizeMessage(message: string): string {
-    return message
-      .replace(/\d+/g, &apos;N&apos;)           // Numbers -&gt; N
-      .replace(/[a-f0-9-]{36}/g, &apos;UUID&apos;) // UUIDs -&gt; UUID
-      .replace(/&quot;[^&quot;]*&quot;/g, &apos;STR&apos;);    // Strings -&gt; STR
-  }
-
-  /**
-   * Check if alerts should be sent
-   */
-  private async checkAlerts(fingerprint: string): Promise&lt;void&gt; {
-    const errors = this.errors.get(fingerprint) || [];
-
-    // Alert on first occurrence
-    if (errors.length === 1) {
-      await this.alerting.send({
-        severity: AlertSeverity.INFO,
-        title: &apos;New error type detected&apos;,
-        message: `${errors[0].error.name}: ${errors[0].error.message}`,
-        context: errors[0].context
-      });
-    }
-
-    // Alert on spike (&gt;10 in last 5 minutes)
-    const recentErrors = errors.filter(
-      e =&gt; Date.now() - e.timestamp &lt; 5 * 60 * 1000
-    );
-
-    if (recentErrors.length &gt;= 10) {
-      await this.alerting.send({
-        severity: AlertSeverity.WARNING,
-        title: &apos;Error spike detected&apos;,
-        message: `${recentErrors.length} occurrences in 5 minutes`,
-        context: errors[0].context
-      });
-    }
-
-    // Alert on sustained high rate (&gt;50 in last hour)
-    const lastHourErrors = errors.filter(
-      e =&gt; Date.now() - e.timestamp &lt; 60 * 60 * 1000
-    );
-
-    if (lastHourErrors.length &gt;= 50) {
-      await this.alerting.send({
-        severity: AlertSeverity.CRITICAL,
-        title: &apos;High error rate&apos;,
-        message: `${lastHourErrors.length} occurrences in last hour`,
-        context: errors[0].context
-      });
-    }
-  }
-
-  /**
-   * Get error statistics
-   */
-  getStats(timeRange: TimeRange): ErrorStats {
-    let totalErrors = 0;
-    const errorsByType = new Map&lt;string, number&gt;();
-    const errorsByOperation = new Map&lt;string, number&gt;();
-
-    for (const [fingerprint, entries] of this.errors.entries()) {
-      const filtered = entries.filter(
-        e =&gt; e.timestamp &gt;= timeRange.start.getTime() &amp;&amp;
-             e.timestamp &lt;= timeRange.end.getTime()
-      );
-
-      totalErrors += filtered.length;
-
-      for (const entry of filtered) {
-        // Count by type
-        const type = entry.error.name;
-        errorsByType.set(type, (errorsByType.get(type) || 0) + 1);
-
-        // Count by operation
-        const op = entry.context.operation;
-        errorsByOperation.set(op, (errorsByOperation.get(op) || 0) + 1);
+      for (let i = 0; i &lt; iterations; i++) {
+        const start = performance.now();
+        await benchmark.fn();
+        durations.push(performance.now() - start);
       }
+
+      results[benchmark.name] = this.calculateStats(durations);
     }
+
+    return results;
+  }
+
+  /**
+   * Compare benchmarks
+   */
+  compare(
+    baseline: string,
+    comparison: string,
+    results: BenchmarkResults
+  ): Comparison {
+    const baselineStats = results[baseline];
+    const comparisonStats = results[comparison];
+
+    if (!baselineStats || !comparisonStats) {
+      throw new Error(&apos;Benchmark not found&apos;);
+    }
+
+    const improvement = (baselineStats.mean - comparisonStats.mean) / baselineStats.mean;
 
     return {
-      totalErrors,
-      uniqueErrors: this.errors.size,
-      errorsByType: Object.fromEntries(errorsByType),
-      errorsByOperation: Object.fromEntries(errorsByOperation)
+      baseline: baseline,
+      comparison: comparison,
+      baselineMean: baselineStats.mean,
+      comparisonMean: comparisonStats.mean,
+      improvement: improvement * 100,
+      faster: improvement &gt; 0
+    };
+  }
+
+  private calculateStats(durations: number[]): ProfileStats {
+    const sorted = durations.sort((a, b) =&gt; a - b);
+
+    return {
+      count: durations.length,
+      mean: durations.reduce((a, b) =&gt; a + b) / durations.length,
+      median: sorted[Math.floor(sorted.length / 2)],
+      min: sorted[0],
+      max: sorted[sorted.length - 1],
+      p95: sorted[Math.floor(sorted.length * 0.95)],
+      p99: sorted[Math.floor(sorted.length * 0.99)]
     };
   }
 }
 
-interface ErrorEntry {
-  error: {
-    name: string;
-    message: string;
-    stack?: string;
-  };
-  context: ErrorContext;
-  timestamp: number;
-  fingerprint: string;
+interface Benchmark {
+  name: string;
+  fn: () =&gt; Promise&lt;void&gt;;
 }
 
-interface ErrorContext {
-  requestId?: string;
-  userId?: string;
-  operation: string;
-  [key: string]: any;
-}
+type BenchmarkResults = Record&lt;string, ProfileStats&gt;;
 
-interface ErrorStats {
-  totalErrors: number;
-  uniqueErrors: number;
-  errorsByType: Record&lt;string, number&gt;;
-  errorsByOperation: Record&lt;string, number&gt;;
+interface Comparison {
+  baseline: string;
+  comparison: string;
+  baselineMean: number;
+  comparisonMean: number;
+  improvement: number; // percentage
+  faster: boolean;
 }
 </codeblock>
-    <section><title>Alerting Service</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Sends alerts via multiple channels
- */
-export class AlertingService {
-  private channels: AlertChannel[] = [];
-  private logger: StructuredLogger;
+    <section><title>Example Benchmarks</title></section>
+    <codeblock outputclass="language-typescript">// Create benchmark suite
+const suite = new BenchmarkSuite();
 
-  constructor(logger: StructuredLogger) {
-    this.logger = logger;
-  }
-
-  /**
-   * Add alert channel
-   */
-  addChannel(channel: AlertChannel): void {
-    this.channels.push(channel);
-  }
-
-  /**
-   * Send alert
-   */
-  async send(alert: Alert): Promise&lt;void&gt; {
-    this.logger.info(&apos;Sending alert&apos;, {
-      severity: alert.severity,
-      title: alert.title
-    });
-
-    // Send to all channels
+// Add benchmarks
+suite
+  .add(&apos;sequential-file-read&apos;, async () =&gt; {
+    for (let i = 0; i &lt; 10; i++) {
+      await fs.readFile(`file${i}.txt`);
+    }
+  })
+  .add(&apos;parallel-file-read&apos;, async () =&gt; {
     await Promise.all(
-      this.channels.map(channel =&gt; channel.send(alert))
+      Array.from({ length: 10 }, (_, i) =&gt;
+        fs.readFile(`file${i}.txt`)
+      )
     );
-  }
-}
-
-interface Alert {
-  severity: AlertSeverity;
-  title: string;
-  message: string;
-  context?: Record&lt;string, any&gt;;
-}
-
-enum AlertSeverity {
-  INFO = &apos;info&apos;,
-  WARNING = &apos;warning&apos;,
-  CRITICAL = &apos;critical&apos;
-}
-
-interface AlertChannel {
-  send(alert: Alert): Promise&lt;void&gt;;
-}
-
-/**
- * Slack alert channel
- */
-export class SlackAlertChannel implements AlertChannel {
-  constructor(private webhookUrl: string) {}
-
-  async send(alert: Alert): Promise&lt;void&gt; {
-    const color = {
-      [AlertSeverity.INFO]: &apos;#36a64f&apos;,
-      [AlertSeverity.WARNING]: &apos;#ff9900&apos;,
-      [AlertSeverity.CRITICAL]: &apos;#ff0000&apos;
-    }[alert.severity];
-
-    await fetch(this.webhookUrl, {
-      method: &apos;POST&apos;,
-      headers: { &apos;Content-Type&apos;: &apos;application/json&apos; },
-      body: JSON.stringify({
-        attachments: [{
-          color,
-          title: alert.title,
-          text: alert.message,
-          fields: alert.context ? Object.entries(alert.context).map(([key, value]) =&gt; ({
-            title: key,
-            value: String(value),
-            short: true
-          })) : []
-        }]
-      })
-    });
-  }
-}
-
-/**
- * Email alert channel
- */
-export class EmailAlertChannel implements AlertChannel {
-  constructor(private emailService: any) {}
-
-  async send(alert: Alert): Promise&lt;void&gt; {
-    await this.emailService.send({
-      to: &apos;ops@example.com&apos;,
-      subject: `[${alert.severity.toUpperCase()}] ${alert.title}`,
-      body: alert.message
-    });
-  }
-}
-</codeblock>
-    <section><title>12.6 Health Checks</title></section>
-    <p>Health checks verify system components are working correctly.</p>
-    <section><title>Health Check System</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Health check system
- */
-export class HealthCheckSystem {
-  private checks: Map&lt;string, HealthCheck&gt; = new Map();
-  private logger: StructuredLogger;
-
-  constructor(logger: StructuredLogger) {
-    this.logger = logger;
-  }
-
-  /**
-   * Register health check
-   */
-  register(name: string, check: HealthCheck): void {
-    this.checks.set(name, check);
-  }
-
-  /**
-   * Run all health checks
-   */
-  async runAll(): Promise&lt;HealthReport&gt; {
-    const results: Record&lt;string, HealthCheckResult&gt; = {};
-
-    for (const [name, check] of this.checks.entries()) {
-      try {
-        const startTime = performance.now();
-
-        const result = await Promise.race([
-          check.check(),
-          this.timeout(5000) // 5 second timeout
-        ]);
-
-        const duration = performance.now() - startTime;
-
-        results[name] = {
-          status: result ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,
-          duration,
-          message: result ? &apos;OK&apos; : &apos;Failed&apos;
-        };
-
-      } catch (error) {
-        results[name] = {
-          status: HealthStatus.UNHEALTHY,
-          duration: 0,
-          message: (error as Error).message
-        };
-      }
-    }
-
-    const overallStatus = Object.values(results).every(
-      r =&gt; r.status === HealthStatus.HEALTHY
-    ) ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY;
-
-    return {
-      status: overallStatus,
-      checks: results,
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  /**
-   * Timeout helper
-   */
-  private timeout(ms: number): Promise&lt;never&gt; {
-    return new Promise((_, reject) =&gt;
-      setTimeout(() =&gt; reject(new Error(&apos;Health check timeout&apos;)), ms)
-    );
-  }
-}
-
-interface HealthCheck {
-  check(): Promise&lt;boolean&gt;;
-}
-
-interface HealthCheckResult {
-  status: HealthStatus;
-  duration: number;
-  message: string;
-}
-
-enum HealthStatus {
-  HEALTHY = &apos;healthy&apos;,
-  UNHEALTHY = &apos;unhealthy&apos;,
-  DEGRADED = &apos;degraded&apos;
-}
-
-interface HealthReport {
-  status: HealthStatus;
-  checks: Record&lt;string, HealthCheckResult&gt;;
-  timestamp: string;
-}
-</codeblock>
-    <section><title>Common Health Checks</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Database health check
- */
-export class DatabaseHealthCheck implements HealthCheck {
-  constructor(private db: any) {}
-
-  async check(): Promise&lt;boolean&gt; {
-    try {
-      await this.db.query(&apos;SELECT 1&apos;);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-}
-
-/**
- * AI provider health check
- */
-export class AIProviderHealthCheck implements HealthCheck {
-  constructor(private provider: AIProvider) {}
-
-  async check(): Promise&lt;boolean&gt; {
-    try {
-      const health = await this.provider.healthCheck();
-      return health.healthy;
-    } catch (error) {
-      return false;
-    }
-  }
-}
-
-/**
- * Disk space health check
- */
-export class DiskSpaceHealthCheck implements HealthCheck {
-  constructor(private minFreeGB: number = 1) {}
-
-  async check(): Promise&lt;boolean&gt; {
-    const { available } = await import(&apos;fs&apos;).promises.statfs(&apos;/&apos;);
-    const freeGB = available / 1024 / 1024 / 1024;
-
-    return freeGB &gt;= this.minFreeGB;
-  }
-}
-
-/**
- * Memory health check
- */
-export class MemoryHealthCheck implements HealthCheck {
-  constructor(private maxUsagePercent: number = 80) {}
-
-  async check(): Promise&lt;boolean&gt; {
-    const usage = process.memoryUsage();
-    const usagePercent = (usage.heapUsed / usage.heapTotal) * 100;
-
-    return usagePercent &lt; this.maxUsagePercent;
-  }
-}
-</codeblock>
-    <section><title>12.7 Reliability Patterns</title></section>
-    <p>Implement patterns that improve system reliability.</p>
-    <section><title>Circuit Breaker</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Circuit breaker prevents cascading failures
- */
-export class CircuitBreaker {
-  private state: CircuitState = CircuitState.CLOSED;
-  private failures = 0;
-  private lastFailureTime = 0;
-  private successCount = 0;
-
-  constructor(
-    private options: CircuitBreakerOptions,
-    private logger: StructuredLogger
-  ) {}
-
-  /**
-   * Execute function with circuit breaker
-   */
-  async execute&lt;T&gt;(fn: () =&gt; Promise&lt;T&gt;): Promise&lt;T&gt; {
-    // Check circuit state
-    if (this.state === CircuitState.OPEN) {
-      // Check if we should try again
-      if (Date.now() - this.lastFailureTime &gt;= this.options.resetTimeout) {
-        this.logger.info(&apos;Circuit breaker: Entering half-open state&apos;);
-        this.state = CircuitState.HALF_OPEN;
-      } else {
-        throw new Error(&apos;Circuit breaker is OPEN&apos;);
-      }
-    }
-
-    try {
-      const result = await fn();
-
-      // Success
-      this.onSuccess();
-
-      return result;
-
-    } catch (error) {
-      // Failure
-      this.onFailure();
-
-      throw error;
-    }
-  }
-
-  /**
-   * Handle success
-   */
-  private onSuccess(): void {
-    this.failures = 0;
-
-    if (this.state === CircuitState.HALF_OPEN) {
-      this.successCount++;
-
-      if (this.successCount &gt;= this.options.successThreshold) {
-        this.logger.info(&apos;Circuit breaker: Closing circuit&apos;);
-        this.state = CircuitState.CLOSED;
-        this.successCount = 0;
-      }
-    }
-  }
-
-  /**
-   * Handle failure
-   */
-  private onFailure(): void {
-    this.failures++;
-    this.lastFailureTime = Date.now();
-
-    if (this.failures &gt;= this.options.failureThreshold) {
-      this.logger.warn(&apos;Circuit breaker: Opening circuit&apos;, {
-        failures: this.failures
-      });
-
-      this.state = CircuitState.OPEN;
-    }
-  }
-
-  /**
-   * Get circuit state
-   */
-  getState(): CircuitState {
-    return this.state;
-  }
-}
-
-enum CircuitState {
-  CLOSED = &apos;closed&apos;,     // Normal operation
-  OPEN = &apos;open&apos;,         // Reject all requests
-  HALF_OPEN = &apos;half_open&apos; // Try limited requests
-}
-
-interface CircuitBreakerOptions {
-  failureThreshold: number;    // Failures before opening
-  successThreshold: number;    // Successes before closing
-  resetTimeout: number;        // ms before trying again
-}
-</codeblock>
-    <section><title>Retry with Exponential Backoff</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Retry failed operations with exponential backoff
- */
-export class RetryPolicy {
-  constructor(
-    private options: RetryOptions,
-    private logger: StructuredLogger
-  ) {}
-
-  /**
-   * Execute with retry
-   */
-  async execute&lt;T&gt;(fn: () =&gt; Promise&lt;T&gt;): Promise&lt;T&gt; {
-    let lastError: Error | undefined;
-
-    for (let attempt = 0; attempt &lt; this.options.maxAttempts; attempt++) {
-      try {
-        return await fn();
-
-      } catch (error) {
-        lastError = error as Error;
-
-        // Check if retryable
-        if (!this.isRetryable(error as Error)) {
-          throw error;
-        }
-
-        // Last attempt - don&apos;t wait
-        if (attempt === this.options.maxAttempts - 1) {
-          break;
-        }
-
-        // Calculate backoff
-        const backoffMs = this.calculateBackoff(attempt);
-
-        this.logger.info(&apos;Retrying after error&apos;, {
-          attempt: attempt + 1,
-          maxAttempts: this.options.maxAttempts,
-          backoffMs,
-          error: (error as Error).message
-        });
-
-        // Wait before retry
-        await this.sleep(backoffMs);
-      }
-    }
-
-    throw lastError;
-  }
-
-  /**
-   * Check if error is retryable
-   */
-  private isRetryable(error: Error): boolean {
-    const retryableErrors = [
-      &apos;RateLimitError&apos;,
-      &apos;TimeoutError&apos;,
-      &apos;NetworkError&apos;,
-      &apos;ServiceUnavailableError&apos;
-    ];
-
-    return retryableErrors.includes(error.name);
-  }
-
-  /**
-   * Calculate exponential backoff
-   */
-  private calculateBackoff(attempt: number): number {
-    const baseDelay = this.options.baseDelayMs || 1000;
-    const maxDelay = this.options.maxDelayMs || 30000;
-
-    // Exponential: baseDelay * 2^attempt
-    let delay = baseDelay * Math.pow(2, attempt);
-
-    // Add jitter to prevent thundering herd
-    if (this.options.jitter) {
-      delay = delay * (0.5 + Math.random() * 0.5);
-    }
-
-    // Cap at max delay
-    return Math.min(delay, maxDelay);
-  }
-
-  private sleep(ms: number): Promise&lt;void&gt; {
-    return new Promise(resolve =&gt; setTimeout(resolve, ms));
-  }
-}
-
-interface RetryOptions {
-  maxAttempts: number;
-  baseDelayMs?: number;
-  maxDelayMs?: number;
-  jitter?: boolean;
-}
-</codeblock>
-    <section><title>12.8 Dashboards and Visualization</title></section>
-    <p>Create dashboards to visualize metrics and system health.</p>
-    <section><title>Dashboard Data Provider</title></section>
-    <codeblock outputclass="language-typescript">/**
- * Provides data for dashboards
- */
-export class DashboardDataProvider {
-  constructor(
-    private metrics: MetricsCollector,
-    private logs: LogQuery,
-    private tracer: Tracer
-  ) {}
-
-  /**
-   * Get overview metrics
-   */
-  async getOverview(timeRange: TimeRange): Promise&lt;DashboardOverview&gt; {
-    return {
-      requests: await this.getRequestMetrics(timeRange),
-      errors: await this.getErrorMetrics(timeRange),
-      performance: await this.getPerformanceMetrics(timeRange),
-      cost: await this.getCostMetrics(timeRange)
-    };
-  }
-
-  /**
-   * Get request metrics
-   */
-  private async getRequestMetrics(timeRange: TimeRange): Promise&lt;RequestMetrics&gt; {
-    const totalRequests = this.metrics.getStats(&apos;ai.requests.total&apos;, timeRange);
-    const successRate = await this.calculateSuccessRate(timeRange);
-    const cacheHitRate = await this.calculateCacheHitRate(timeRange);
-
-    return {
-      total: totalRequests?.count || 0,
-      successRate,
-      cacheHitRate
-    };
-  }
-
-  /**
-   * Get error metrics
-   */
-  private async getErrorMetrics(timeRange: TimeRange): Promise&lt;ErrorMetrics&gt; {
-    const errorRate = await this.logs.getErrorRate(timeRange);
-    const errorStats = await this.logs.query({
-      level: &apos;error&apos;,
-      startTime: timeRange.start,
-      endTime: timeRange.end
-    });
-
-    return {
-      rate: errorRate,
-      total: errorStats.length
-    };
-  }
-
-  /**
-   * Get performance metrics
-   */
-  private async getPerformanceMetrics(timeRange: TimeRange): Promise&lt;PerformanceMetrics&gt; {
-    const durationStats = this.metrics.getStats(&apos;ai.requests.duration&apos;, timeRange);
-
-    return {
-      avgLatency: durationStats?.avg || 0,
-      p95Latency: durationStats?.p95 || 0,
-      p99Latency: durationStats?.p99 || 0
-    };
-  }
-
-  /**
-   * Get cost metrics
-   */
-  private async getCostMetrics(timeRange: TimeRange): Promise&lt;CostMetrics&gt; {
-    const costStats = this.metrics.getStats(&apos;ai.cost.total&apos;, timeRange);
-    const tokenStats = this.metrics.getStats(&apos;ai.tokens.input&apos;, timeRange);
-
-    return {
-      total: costStats?.sum || 0,
-      avgPerRequest: costStats?.avg || 0,
-      totalTokens: tokenStats?.sum || 0
-    };
-  }
-
-  private async calculateSuccessRate(timeRange: TimeRange): Promise&lt;number&gt; {
-    // Implementation would query actual metrics
-    return 0.98; // 98% success rate
-  }
-
-  private async calculateCacheHitRate(timeRange: TimeRange): Promise&lt;number&gt; {
-    const hits = this.metrics.getStats(&apos;ai.cache.hits&apos;, timeRange);
-    const misses = this.metrics.getStats(&apos;ai.cache.misses&apos;, timeRange);
-
-    const totalHits = hits?.sum || 0;
-    const totalMisses = misses?.sum || 0;
-    const total = totalHits + totalMisses;
-
-    return total &gt; 0 ? totalHits / total : 0;
-  }
-}
-
-interface DashboardOverview {
-  requests: RequestMetrics;
-  errors: ErrorMetrics;
-  performance: PerformanceMetrics;
-  cost: CostMetrics;
-}
-
-interface RequestMetrics {
-  total: number;
-  successRate: number;
-  cacheHitRate: number;
-}
-
-interface ErrorMetrics {
-  rate: number;
-  total: number;
-}
-
-interface PerformanceMetrics {
-  avgLatency: number;
-  p95Latency: number;
-  p99Latency: number;
-}
-
-interface CostMetrics {
-  total: number;
-  avgPerRequest: number;
-  totalTokens: number;
-}
+  })
+  .add(&apos;cached-ai-call&apos;, async () =&gt; {
+    await cachedAI.complete(request);
+  })
+  .add(&apos;uncached-ai-call&apos;, async () =&gt; {
+    await uncachedAI.complete(request);
+  });
+
+// Run benchmarks
+const results = await suite.run(100);
+
+// Compare
+const comparison = suite.compare(
+  &apos;sequential-file-read&apos;,
+  &apos;parallel-file-read&apos;,
+  results
+);
+
+console.log(`Parallel is ${comparison.improvement.toFixed(2)}% faster`);
 </codeblock>
     <section><title>Exercises</title></section>
-    <section><title>Exercise 1: Build a Real-Time Dashboard</title></section>
-    <p><b>Goal:</b> Create a real-time dashboard showing system metrics.</p>
+    <section><title>Exercise 1: Implement Adaptive Caching</title></section>
+    <p><b>Goal:</b> Build a cache that adapts TTL based on access patterns.</p>
     <p><b>Requirements:</b>
-1. Display key metrics (requests/sec, error rate, latency)
-2. Auto-refresh every 10 seconds
-3. Show trends (up/down arrows)
-4. Highlight anomalies
-5. Export to JSON</p>
-    <section><title>Exercise 2: Implement SLO Tracking</title></section>
-    <p><b>Goal:</b> Track Service Level Objectives (SLOs) and alert on violations.</p>
+1. Track access frequency per key
+2. Increase TTL for frequently accessed items
+3. Decrease TTL for rarely accessed items
+4. Implement LFU (Least Frequently Used) eviction</p>
+    <p><b>Starter Code:</b></p>
+    <codeblock outputclass="language-typescript">export class AdaptiveCache {
+  async get(key: string): Promise&lt;any&gt; {
+    // TODO: Track access, adjust TTL
+  }
+
+  async set(key: string, value: any): Promise&lt;void&gt; {
+    // TODO: Set with adaptive TTL
+  }
+}
+</codeblock>
+    <section><title>Exercise 2: Build a Query Optimizer</title></section>
+    <p><b>Goal:</b> Optimize multiple queries by deduplication and batching.</p>
     <p><b>Requirements:</b>
-1. Define SLOs (e.g., 99% requests &lt; 2s)
-2. Track error budgets
-3. Calculate SLO compliance
-4. Alert when SLO at risk
-5. Generate SLO reports</p>
-    <section><title>Exercise 3: Create Incident Response System</title></section>
-    <p><b>Goal:</b> Automate incident detection and response.</p>
+1. Deduplicate identical concurrent requests
+2. Batch similar requests together
+3. Cache results for deduped requests
+4. Measure improvement</p>
+    <p><b>Hints:</b>
+- Use request fingerprinting for deduplication
+- Implement request queue with timeout
+- Batch requests to same provider</p>
+    <section><title>Exercise 3: Memory Leak Detection</title></section>
+    <p><b>Goal:</b> Create automated memory leak detection system.</p>
     <p><b>Requirements:</b>
-1. Detect incidents from metrics/logs
-2. Create incident record
-3. Send alerts to on-call
-4. Track MTTR (Mean Time To Resolution)
-5. Generate post-mortems</p>
+1. Take periodic memory snapshots
+2. Analyze memory growth trends
+3. Detect potential leaks
+4. Generate alerts
+5. Identify leak sources</p>
     <section><title>Summary</title></section>
-    <p>In this chapter, you built comprehensive observability for your AI assistant.</p>
+    <p>In this chapter, you optimized your AI assistant for production performance.</p>
     <section><title>Key Concepts</title></section>
     <ol>
       <li>
-        <b>Structured Logging</b>
-        - Machine-parseable logs with full context
+        <b>Intelligent Caching</b>
+        - Multi-level cache with semantic keys (70%+ hit rate)
       </li>
       <li>
-        <b>Distributed Tracing</b>
-        - Track requests through entire system
+        <b>Parallel Execution</b>
+        - Execute independent operations concurrently (3-5x faster)
       </li>
       <li>
-        <b>Metrics Collection</b>
-        - Track performance, cost, and usage
+        <b>Lazy Loading</b>
+        - Load modules on demand (50% faster startup)
       </li>
       <li>
-        <b>Error Tracking</b>
-        - Categorize and alert on errors
+        <b>Memory Management</b>
+        - Prevent leaks, reduce usage (60% less memory)
       </li>
       <li>
-        <b>Health Checks</b>
-        - Verify system components
+        <b>Connection Pooling</b>
+        - Reuse HTTP connections (lower latency)
       </li>
       <li>
-        <b>Reliability Patterns</b>
-        - Circuit breaker, retry, fallback
+        <b>Response Streaming</b>
+        - Stream responses for lower perceived latency
       </li>
       <li>
-        <b>Dashboards</b>
-        - Visualize system health
+        <b>Profiling</b>
+        - Measure and optimize bottlenecks
       </li>
     </ol>
-    <section><title>Observability Stack</title></section>
-    <codeblock>Logs (Structured JSON)
-├─ What happened
-├─ Full context
-└─ Searchable
+    <section><title>Performance Improvements</title></section>
+    <codeblock>Before Optimization:
+├─ First response: 5,000ms
+├─ Cached response: 5,000ms (no cache)
+├─ 10 file analysis: 15,000ms (sequential)
+├─ Memory usage: 800MB
+└─ Startup time: 2,000ms
 
-Metrics (Time Series)
-├─ How much/how fast
-├─ Trends over time
-└─ Alerting
-
-Traces (Request Flow)
-├─ Where time spent
-├─ Bottleneck identification
-└─ Error propagation
+After Optimization:
+├─ First response: 1,500ms (3.3x faster)
+├─ Cached response: 50ms (100x faster)
+├─ 10 file analysis: 1,700ms (8.8x faster)
+├─ Memory usage: 320MB (60% reduction)
+└─ Startup time: 400ms (5x faster)
 </codeblock>
     <section><title>Real-World Impact</title></section>
-    <p><b>Before Observability:</b>
-- 60+ minutes to debug issues
-- No visibility into performance
-- Reactive incident response
-- Unknown cost drivers</p>
-    <p><b>After Observability:</b>
-- 2 minutes to identify root cause
-- Real-time performance monitoring
-- Proactive issue detection
-- Complete cost visibility</p>
-    <section><title>Production Readiness Achieved!</title></section>
-    <p>With Parts I-IV complete, you now have a production-ready AI coding assistant:</p>
-    <ul>
-      <li>
-        ✅
-        <b>Part I</b>
-        : Multi-provider AI, DI, services
-      </li>
-      <li>
-        ✅
-        <b>Part II</b>
-        : Tools, streaming, conversations
-      </li>
-      <li>
-        ✅
-        <b>Part III</b>
-        : VCS, NL routing, security
-      </li>
-      <li>
-        ✅
-        <b>Part IV</b>
-        : Testing, performance, observability
-      </li>
-    </ul>
+    <p><b>Cost Savings:</b>
+- 70% cache hit rate = 70% fewer API calls
+- $100/month → $30/month (70% cost reduction)</p>
+    <p><b>User Experience:</b>
+- 3-5x faster responses
+- Instant cached results
+- Lower perceived latency with streaming</p>
+    <p><b>Scalability:</b>
+- 10x higher concurrency
+- Lower resource usage
+- Better reliability</p>
     <section><title>Next Steps</title></section>
-    <p>In <b>Part V: Extensibility</b>, you&apos;ll learn how to extend your system with plugins, IDE integrations, and custom tools.</p>
-    <p><i>Chapter 12 | Monitoring, Observability, and Reliability | Complete</i>
-<i>Part IV | Production Readiness | Complete</i></p>
+    <p>In <b>Chapter 12: Monitoring, Observability, and Reliability →</b>, you&apos;ll learn how to monitor your optimized system in production with comprehensive logging, metrics, tracing, and alerting.</p>
+    <p><i>Chapter 11 | Performance Optimization | Complete</i></p>
   </body>
 </topic>

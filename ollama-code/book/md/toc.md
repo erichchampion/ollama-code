@@ -72,18 +72,6 @@
 
 ---
 
-## Book Statistics
-
-- **Total Pages:** ~1,263-1,440
-- **Total Words:** ~445,000
-- **Code Examples:** 750+
-- **Hands-On Exercises:** 55+
-- **Parts:** 5
-- **Chapters:** 15
-- **Appendices:** 5
-
----
-
 ## Quick Navigation by Topic
 
 ### Getting Started

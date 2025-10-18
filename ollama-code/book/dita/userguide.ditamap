@@ -4,49 +4,73 @@
   <title>Building AI Coding Assistants: A Comprehensive Guide</title>
   <topichead navtitle="Table of Contents">
     <topichead navtitle="Front Matter">
+      <topicref href="topic_1.dita"/>
     </topichead>
   </topichead>
   <topichead navtitle="Part I: Foundations">
-    <topicref href="topic_1.dita"/>
     <topicref href="topic_2.dita"/>
     <topicref href="topic_3.dita"/>
+    <topicref href="topic_4.dita"/>
   </topichead>
   <topichead navtitle="Part II: Core Architecture">
-    <topicref href="topic_4.dita"/>
     <topicref href="topic_5.dita"/>
     <topicref href="topic_6.dita"/>
+    <topicref href="topic_7.dita"/>
   </topichead>
   <topichead navtitle="Part III: Advanced Features">
-    <topicref href="topic_7.dita"/>
     <topicref href="topic_8.dita"/>
     <topicref href="topic_9.dita"/>
+    <topicref href="topic_10.dita"/>
   </topichead>
   <topichead navtitle="Part IV: Production Readiness">
-    <topicref href="topic_10.dita"/>
     <topicref href="topic_11.dita"/>
     <topicref href="topic_12.dita"/>
+    <topicref href="topic_13.dita"/>
   </topichead>
   <topichead navtitle="Part V: Extensibility and Platform Building">
-    <topicref href="topic_13.dita"/>
     <topicref href="topic_14.dita"/>
     <topicref href="topic_15.dita"/>
+    <topicref href="topic_16.dita"/>
   </topichead>
   <topichead navtitle="Appendices">
-  </topichead>
-  <topichead navtitle="Book Statistics">
+    <topicref href="topic_17.dita"/>
+    <topicref href="topic_18.dita"/>
+    <topicref href="topic_19.dita"/>
+    <topicref href="topic_20.dita"/>
+    <topicref href="topic_21.dita"/>
   </topichead>
   <topichead navtitle="Quick Navigation by Topic">
     <topichead navtitle="Getting Started">
+      <topicref href="topic_2.dita"/>
+      <topicref href="topic_3.dita"/>
+      <topicref href="topic_18.dita"/>
     </topichead>
     <topichead navtitle="Architecture &amp; Design">
+      <topicref href="topic_4.dita"/>
+      <topicref href="topic_5.dita"/>
+      <topicref href="topic_6.dita"/>
+      <topicref href="topic_7.dita"/>
     </topichead>
     <topichead navtitle="Advanced Features">
+      <topicref href="topic_8.dita"/>
+      <topicref href="topic_9.dita"/>
+      <topicref href="topic_10.dita"/>
     </topichead>
     <topichead navtitle="Production &amp; Performance">
+      <topicref href="topic_11.dita"/>
+      <topicref href="topic_12.dita"/>
+      <topicref href="topic_13.dita"/>
+      <topicref href="topic_20.dita"/>
     </topichead>
     <topichead navtitle="Extensibility &amp; Platform">
+      <topicref href="topic_14.dita"/>
+      <topicref href="topic_15.dita"/>
+      <topicref href="topic_16.dita"/>
     </topichead>
     <topichead navtitle="Reference">
+      <topicref href="topic_17.dita"/>
+      <topicref href="topic_19.dita"/>
+      <topicref href="topic_21.dita"/>
     </topichead>
   </topichead>
 </map>

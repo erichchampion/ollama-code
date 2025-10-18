@@ -100,6 +100,7 @@
     "docs:accessibility:scan": "node scripts/accessibility-docs.js scan",
     "docs:accessibility:report": "node scripts/accessibility-docs.js report",
     "docs:accessibility:status": "node scripts/accessibility-docs.js status",
+    "book:extract": "ts-node --esm scripts/extract-book-content.ts",
     "docs:comprehensive": "node scripts/comprehensive-docs-automation.js",
     "docs:comprehensive:full": "node scripts/comprehensive-docs-automation.js full",
     "docs:comprehensive:maintenance": "node scripts/comprehensive-docs-automation.js maintenance",

@@ -222,6 +222,23 @@ def run_dita_ot(ditamap_path: Path, output_dir: Path, output_pdf: str, dita_dir:
         log(f"❌ Error checking DITA-OT version: {e}")
         sys.exit(1)
 
+    # Check if pdf-theme plugin is installed
+    try:
+        result = subprocess.run(
+            [DITA_COMMAND, "plugins"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        if "pdf-theme" not in result.stdout:
+            log(f"❌ Error: pdf-theme plugin is not installed.")
+            log("   Please run ./install-pdf-theme.sh to install the plugin.")
+            sys.exit(1)
+        log(f"✓ pdf-theme plugin is installed")
+    except subprocess.CalledProcessError as e:
+        log(f"❌ Error checking installed plugins: {e}")
+        sys.exit(1)
+
     # Create custom PDF configuration
     custom_dir = create_pdf_customization(dita_dir)
 
@@ -231,7 +248,7 @@ def run_dita_ot(ditamap_path: Path, output_dir: Path, output_pdf: str, dita_dir:
     cmd = [
         DITA_COMMAND,
         "-i", str(ditamap_path),
-        "-f", "pdf",
+        "-f", "pdf-theme",
         "-o", str(output_dir),
         f"-Dargs.rellinks=none",
         f"-Dpdf.formatter=fop"
