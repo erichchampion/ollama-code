@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --- CONFIGURATION ---
 DITA_DIR = "dita"
-OUTPUT_PDF = "UserGuide_DITA.pdf"
+OUTPUT_PDF = "Building AI Coding Assistants.pdf"
 DITA_COMMAND = "dita"
 LOG_FILE = "generate-pdf.log"
 
